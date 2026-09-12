@@ -129,30 +129,62 @@ export function GhostButton({
 }
 
 const ICON_TONES = {
-  brand: "text-cyan",
-  cyan: "text-cyan",
-  violet: "text-violet",
-  growth: "text-growth",
-  warning: "text-warning",
+  brand: { glyph: "text-cyan", fill: "bg-primary/25 ring-primary/40" },
+  cyan: { glyph: "text-cyan", fill: "bg-cyan/18 ring-cyan/35" },
+  violet: { glyph: "text-violet", fill: "bg-violet/25 ring-violet/40" },
+  growth: { glyph: "text-growth", fill: "bg-growth/18 ring-growth/35" },
+  warning: { glyph: "text-warning", fill: "bg-warning/18 ring-warning/35" },
+  magenta: { glyph: "text-magenta", fill: "bg-magenta/22 ring-magenta/38" },
 } as const;
 
-/** Small rounded icon tile used across quick-access grids and list rows. */
+/**
+ * Small rounded icon tile used across quick-access grids and list rows.
+ *
+ * `filled` gives each tone its own coloured square, the way the quick-access grid
+ * reads in the product design; the default shares one blue wash for list rows, where
+ * per-row colour would be noise.
+ */
 export function IconTile({
   icon: Icon,
   tone = "brand",
   size = "md",
+  filled = false,
   className,
 }: {
   icon: ComponentType<{ className?: string }>;
   tone?: keyof typeof ICON_TONES;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
+  filled?: boolean;
   className?: string;
 }) {
-  const box = size === "sm" ? "h-8 w-8" : size === "lg" ? "h-12 w-12" : "h-10 w-10";
-  const glyph = size === "sm" ? "h-4 w-4" : size === "lg" ? "h-5.5 w-5.5" : "h-5 w-5";
+  const box =
+    size === "sm"
+      ? "h-8 w-8"
+      : size === "lg"
+        ? "h-12 w-12"
+        : size === "xl"
+          ? "h-14 w-14"
+          : "h-10 w-10";
+  const glyph =
+    size === "sm"
+      ? "h-4 w-4"
+      : size === "lg"
+        ? "h-5.5 w-5.5"
+        : size === "xl"
+          ? "h-6 w-6"
+          : "h-5 w-5";
+  const { glyph: glyphTone, fill } = ICON_TONES[tone];
   return (
-    <span className={cn("nuru-icon-tile", box, className)}>
-      <Icon className={cn(glyph, ICON_TONES[tone])} />
+    <span
+      className={cn(
+        filled
+          ? cn("inline-flex items-center justify-center rounded-lg ring-1 ring-inset", fill)
+          : "nuru-icon-tile",
+        box,
+        className,
+      )}
+    >
+      <Icon className={cn(glyph, glyphTone)} />
     </span>
   );
 }

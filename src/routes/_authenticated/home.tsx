@@ -6,10 +6,10 @@ import {
   Bell,
   BookOpen,
   CalendarDays,
-  Church,
   Clapperboard,
   GraduationCap,
   HandHeart,
+  Handshake,
   LayoutGrid,
   Music2,
   Share2,
@@ -57,14 +57,14 @@ export const Route = createFileRoute("/_authenticated/home")({
 });
 
 const QUICK = [
+  { to: "/bible", label: "Bible", icon: BookOpen, tone: "brand" as const },
   { to: "/reels", label: "Reels", icon: Clapperboard, tone: "violet" as const },
   { to: "/ai", label: "Nuru AI", icon: Sparkles, tone: "cyan" as const },
-  { to: "/church", label: "My Church", icon: Church, tone: "brand" as const },
-  { to: "/hub", label: "Hub", icon: LayoutGrid, tone: "cyan" as const },
-  { to: "/community", label: "Groups", icon: UsersRound, tone: "brand" as const },
-  { to: "/mentors", label: "Mentors", icon: Sparkles, tone: "violet" as const },
+  { to: "/learn", label: "Courses", icon: GraduationCap, tone: "warning" as const },
+  { to: "/community", label: "Groups", icon: UsersRound, tone: "growth" as const },
+  { to: "/mentors", label: "Mentors", icon: Handshake, tone: "magenta" as const },
   { to: "/events", label: "Events", icon: CalendarDays, tone: "brand" as const },
-  { to: "/music", label: "Music", icon: Music2, tone: "growth" as const },
+  { to: "/music", label: "Music", icon: Music2, tone: "violet" as const },
 ] as const;
 
 const CHALLENGES = [
@@ -112,6 +112,13 @@ function DashboardCard({
 
 type VerseData = { text: string; reference: string; translation: string } | undefined;
 
+/**
+ * Frosted segment used for the three verse actions. They sit on top of the hero
+ * image, so they tint the photo rather than painting a solid surface over it.
+ */
+const VERSE_ACTION =
+  "inline-flex min-h-10 items-center justify-center gap-1.5 rounded-sm bg-foreground/10 px-2 text-xs font-semibold text-foreground ring-1 ring-inset ring-foreground/20 backdrop-blur-sm transition-colors hover:bg-foreground/20";
+
 function TodaysLightSection({
   isLoading,
   verseData,
@@ -128,9 +135,9 @@ function TodaysLightSection({
         src={verseBg}
         alt=""
         loading="eager"
-        className="absolute inset-0 h-full w-full object-cover opacity-35"
+        className="absolute inset-0 h-full w-full object-cover opacity-70"
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/70 to-background/90" />
+      <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/60 to-background/85" />
       <div className="relative">
         <div className="flex items-center justify-between">
           <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-cyan">
@@ -146,23 +153,23 @@ function TodaysLightSection({
         <p className="mt-2 text-xs font-medium text-cyan">
           {verseData ? `${verseData.reference} · ${verseData.translation}` : verseRef}
         </p>
-        <div className="mt-4 flex items-center gap-2">
-          <Link
-            to="/bible"
-            className="inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-full bg-primary px-4 text-xs font-semibold text-primary-foreground nuru-glow-sm"
-          >
-            Read &amp; Reflect <ArrowRight className="h-3.5 w-3.5" />
+        <div className="mt-4 grid grid-cols-3 gap-2">
+          <Link to="/bible" className={VERSE_ACTION}>
+            <BookOpen className="h-4 w-4 shrink-0" /> Read
           </Link>
           <Link
-            to="/bible"
-            aria-label="Open the Bible"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-border-strong bg-surface-2/70 text-cyan"
+            to="/ai"
+            search={{
+              contextType: "verse",
+              contextLabel: verseData?.reference ?? verseRef,
+              q: `Help me reflect on ${verseData?.reference ?? verseRef} today.`,
+            }}
+            className={VERSE_ACTION}
           >
-            <BookOpen className="h-4 w-4" />
+            <Sparkles className="h-4 w-4 shrink-0" /> Reflect
           </Link>
           <button
             type="button"
-            aria-label="Share today's verse"
             onClick={() => {
               const text = verseData
                 ? `"${verseData.text}" — ${verseData.reference}`
@@ -170,9 +177,9 @@ function TodaysLightSection({
               if (navigator.share) void navigator.share({ text }).catch(() => {});
               else void navigator.clipboard.writeText(text);
             }}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-border-strong bg-surface-2/70 text-cyan"
+            className={VERSE_ACTION}
           >
-            <Share2 className="h-4 w-4" />
+            <Share2 className="h-4 w-4 shrink-0" /> Share
           </button>
         </div>
       </div>
@@ -240,9 +247,9 @@ function ChallengeSection({ challenge }: { challenge: { ref: string; prompt: str
         </div>
         <Link
           to="/bible"
-          className="shrink-0 rounded-full bg-primary px-3.5 py-2 text-[11px] font-semibold text-primary-foreground nuru-glow-sm"
+          className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-full bg-primary px-4 text-xs font-semibold text-primary-foreground nuru-glow-sm"
         >
-          Accept
+          I'm in
         </Link>
       </div>
     </section>
@@ -276,28 +283,33 @@ function UpcomingSection({
     <section>
       <SectionHeader title="Upcoming" action="All events" to="/events" />
       <div className="space-y-2">
-        {upcoming.map((e) => (
-          <Link key={e.id} to="/events" className="nuru-card flex items-center gap-3 p-3">
-            <img
-              src={resolveMedia(e.cover_url)}
-              alt=""
-              width={128}
-              height={128}
-              loading="lazy"
-              className="h-14 w-14 rounded-xl object-cover"
-            />
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-sm font-semibold">{e.title}</span>
-              <span className="block truncate text-xs text-muted-foreground">
-                {eventDate(e.starts_at)}
+        {upcoming.map((e) => {
+          const starts = new Date(e.starts_at);
+          return (
+            <Link key={e.id} to="/events" className="nuru-card flex items-center gap-3 p-3">
+              <span className="flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-2xl bg-primary/25 ring-1 ring-inset ring-primary/40">
+                <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-cyan">
+                  {starts.toLocaleDateString(undefined, { month: "short" })}
+                </span>
+                <span className="font-display text-lg font-bold leading-none">
+                  {starts.getDate()}
+                </span>
               </span>
-              <span className="block truncate text-[11px] font-medium text-cyan">
-                {e.location ?? "Online"}
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-semibold">{e.title}</span>
+                <span className="block truncate text-xs text-muted-foreground">
+                  {eventDate(e.starts_at)}
+                </span>
+                <span className="block truncate text-[11px] font-medium text-cyan">
+                  {e.location ?? "Online"}
+                </span>
               </span>
-            </span>
-            <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-          </Link>
-        ))}
+              <span className="shrink-0 rounded-full bg-primary px-3.5 py-2 text-[11px] font-semibold text-primary-foreground nuru-glow-sm">
+                RSVP
+              </span>
+            </Link>
+          );
+        })}
       </div>
     </section>
   );
@@ -368,16 +380,18 @@ function MusicMediaSection({
 function QuickAccessSection() {
   return (
     <section>
-      <SectionHeader title="Quick access" />
+      <SectionHeader title="Quick access" action="See all" to="/hub" />
       <nav aria-label="Quick access" className="grid grid-cols-4 gap-x-2 gap-y-4">
         {QUICK.map(({ to, label, icon: Icon, tone }) => (
           <Link
             key={to}
             to={to}
-            className="flex flex-col items-center gap-1.5 text-center transition-transform active:scale-95"
+            className="flex flex-col items-center gap-2 text-center transition-transform active:scale-95"
           >
-            <IconTile icon={Icon} tone={tone} size="lg" />
-            <span className="text-[11px] font-medium text-secondary-foreground">{label}</span>
+            <IconTile icon={Icon} tone={tone} size="xl" filled />
+            <span className="text-[11px] font-medium leading-tight text-secondary-foreground">
+              {label}
+            </span>
           </Link>
         ))}
       </nav>

@@ -8,10 +8,14 @@ import {
   CalendarDays,
   Church,
   Clapperboard,
+  GraduationCap,
+  HandHeart,
   LayoutGrid,
   Music2,
   Share2,
+  ShieldCheck,
   Sparkles,
+  Sprout,
   Target,
   UsersRound,
 } from "lucide-react";
@@ -20,6 +24,8 @@ import { eventDate } from "@/lib/format";
 import { resolveMedia } from "@/lib/media";
 import { fetchVerseOfTheDay, verseOfTheDayRef } from "@/lib/bible";
 import {
+  fetchCourses,
+  fetchDevotionals,
   fetchEvents,
   fetchGroups,
   fetchMentors,
@@ -420,6 +426,223 @@ function CommunitySection({
   );
 }
 
+function DevotionalsSection({
+  isLoading,
+  devotionals,
+}: {
+  isLoading: boolean;
+  devotionals: { id: string; title: string; scripture_ref: string | null; read_minutes: number }[];
+}) {
+  return (
+    <section>
+      <SectionHeader title="Bible & devotionals" action="Open" to="/bible" />
+      {isLoading ? (
+        <CardSkeleton count={2} height="h-16" />
+      ) : devotionals.length === 0 ? (
+        <div className="nuru-card flex items-center gap-3 p-4">
+          <IconTile icon={BookOpen} tone="cyan" size="lg" />
+          <p className="min-w-0 flex-1 text-sm font-medium leading-snug text-secondary-foreground">
+            New devotionals are being written for you.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {devotionals.map((d) => (
+            <Link key={d.id} to="/bible" className="nuru-card flex items-center gap-3 p-3">
+              <IconTile icon={BookOpen} tone="cyan" size="lg" />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-semibold">{d.title}</span>
+                <span className="block truncate text-xs text-muted-foreground">
+                  {[d.scripture_ref, `${d.read_minutes} min read`].filter(Boolean).join(" · ")}
+                </span>
+              </span>
+              <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+            </Link>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function CoursesSection({
+  isLoading,
+  courses,
+}: {
+  isLoading: boolean;
+  courses: { id: string; title: string; cover_url: string | null; lesson_count: number }[];
+}) {
+  return (
+    <section>
+      <SectionHeader title="Courses" action="View all" to="/learn" />
+      {isLoading ? (
+        <CardSkeleton count={2} height="h-16" />
+      ) : courses.length === 0 ? (
+        <div className="nuru-card flex items-center gap-3 p-4">
+          <IconTile icon={GraduationCap} tone="brand" size="lg" />
+          <p className="min-w-0 flex-1 text-sm font-medium leading-snug text-secondary-foreground">
+            Courses are being prepared for your church.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {courses.map((c) => (
+            <Link key={c.id} to="/learn" className="nuru-card flex items-center gap-3 p-3">
+              <img
+                src={resolveMedia(c.cover_url)}
+                alt=""
+                width={112}
+                height={112}
+                loading="lazy"
+                className="h-12 w-12 shrink-0 rounded-xl object-cover"
+              />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-semibold">{c.title}</span>
+                <span className="block truncate text-xs text-muted-foreground">
+                  {c.lesson_count} {c.lesson_count === 1 ? "lesson" : "lessons"}
+                </span>
+              </span>
+              <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+            </Link>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function MentorsSection({
+  isLoading,
+  mentors,
+}: {
+  isLoading: boolean;
+  mentors: {
+    id: string;
+    display_name: string;
+    photo_url: string | null;
+    role_title: string | null;
+    verified: boolean;
+  }[];
+}) {
+  return (
+    <section>
+      <SectionHeader title="Mentors" action="View all" to="/mentors" />
+      {isLoading ? (
+        <CardSkeleton count={2} height="h-16" />
+      ) : mentors.length === 0 ? (
+        <div className="nuru-card flex items-center gap-3 p-4">
+          <IconTile icon={Sparkles} tone="violet" size="lg" />
+          <p className="min-w-0 flex-1 text-sm font-medium leading-snug text-secondary-foreground">
+            Mentors are joining Nuru Faith soon.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {mentors.map((m) => (
+            <Link key={m.id} to="/mentors" className="nuru-card flex items-center gap-3 p-3">
+              <Avatar src={m.photo_url} name={m.display_name} />
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center gap-1.5">
+                  <span className="truncate text-sm font-semibold">{m.display_name}</span>
+                  {m.verified && <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-cyan" />}
+                </span>
+                <span className="block truncate text-xs text-muted-foreground">
+                  {m.role_title ?? "Mentor"}
+                </span>
+              </span>
+              <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+            </Link>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+const CORE_FEATURES = [
+  {
+    icon: Sprout,
+    title: "Grow in Faith",
+    body: "Bible studies, devotionals, teachings and church resources.",
+    to: "/bible",
+  },
+  {
+    icon: UsersRound,
+    title: "Connect & Belong",
+    body: "Join church and area-based groups, events and communities.",
+    to: "/community",
+  },
+  {
+    icon: GraduationCap,
+    title: "Learn & Be Equipped",
+    body: "Courses, mentorship, leadership development and practical resources.",
+    to: "/learn",
+  },
+  {
+    icon: HandHeart,
+    title: "Serve & Make an Impact",
+    body: "Volunteer, raise funds and support community initiatives.",
+    to: "/serve",
+  },
+  {
+    icon: Clapperboard,
+    title: "Create & Share",
+    body: "Share testimonies, worship, reels, art, ideas and inspiration.",
+    to: "/reels",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Safe & Positive Space",
+    body: "A moderated, Christ-centred community for the next generation.",
+    to: "/hub",
+  },
+] as const;
+
+/** Reference left column: brand, mission, and the six core features. */
+function BrandPanel() {
+  return (
+    <div className="space-y-5">
+      <div>
+        <NuruLogo />
+        <p className="mt-2 text-sm font-medium text-cyan">Connect · Grow · Live Your Faith</p>
+      </div>
+
+      <div>
+        <p className="script text-3xl leading-tight text-foreground">
+          A Brighter
+          <br />
+          Generation
+          <br />
+          for Christ
+        </p>
+        <p className="mt-3 text-sm leading-relaxed text-secondary-foreground">
+          A digital faith community for young people to learn, connect, grow and make an impact in
+          their churches, communities and beyond.
+        </p>
+      </div>
+
+      <section className="nuru-card p-4">
+        <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-cyan">
+          Core features
+        </h2>
+        <ul className="mt-3 space-y-3.5">
+          {CORE_FEATURES.map(({ icon: Icon, title, body, to }) => (
+            <li key={title}>
+              <Link to={to} className="flex gap-3 transition-opacity hover:opacity-80">
+                <IconTile icon={Icon} tone="cyan" />
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-semibold">{title}</span>
+                  <span className="block text-xs leading-snug text-muted-foreground">{body}</span>
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
+    </div>
+  );
+}
+
 function HomeScreen() {
   const { userId } = useAuth();
   const navigate = useNavigate();
@@ -452,6 +675,8 @@ function HomeScreen() {
   });
   const groups = useQuery({ queryKey: ["groups"], queryFn: () => fetchGroups() });
   const mentors = useQuery({ queryKey: ["mentors"], queryFn: () => fetchMentors() });
+  const devotionals = useQuery({ queryKey: ["devotionals"], queryFn: fetchDevotionals });
+  const courses = useQuery({ queryKey: ["courses"], queryFn: fetchCourses });
 
   useEffect(() => {
     if (profile.data && profile.data.onboarded === false)
@@ -476,7 +701,7 @@ function HomeScreen() {
   const upcoming = (events.data ?? []).slice(0, 2);
 
   return (
-    <AppShell wide>
+    <AppShell wide="xl">
       <div className="mx-auto w-full max-w-xl">
         <header className="flex items-center justify-between px-4 pt-[max(1.25rem,env(safe-area-inset-top))] pb-2">
           <NuruLogo compact />
@@ -550,9 +775,12 @@ function HomeScreen() {
         <p className="script px-4 pt-9 text-center text-2xl text-cyan/80">Let your light shine.</p>
       </div>
 
-      {/* Desktop/tablet dashboard: dense main + rail composition, not a stretched mobile column */}
-      <section className="hidden pt-10 lg:grid lg:grid-cols-3 lg:gap-6 lg:pb-10">
-        <div className="space-y-7 lg:col-span-2">
+      {/* Desktop: the reference's three-column ecosystem — brand and core features on
+          the left, the phone experience in the centre, content rails on the right. */}
+      <section className="hidden px-4 pt-10 lg:grid lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.3fr)_minmax(0,0.95fr)] lg:gap-7 lg:pb-10">
+        <BrandPanel />
+
+        <div className="space-y-7">
           <TodaysLightSection
             isLoading={verse.isLoading}
             verseData={verse.data}
@@ -561,45 +789,30 @@ function HomeScreen() {
           <QuickAccessSection />
           <ContinueGrowingSection continueSeries={continueSeries} />
           <ChallengeSection challenge={challenge} />
+          <UpcomingSection upcoming={upcoming} />
         </div>
 
         <div className="space-y-7">
-          <UpcomingSection upcoming={upcoming} />
+          <DevotionalsSection
+            isLoading={devotionals.isLoading}
+            devotionals={(devotionals.data ?? []).slice(0, 3)}
+          />
+          <CoursesSection
+            isLoading={courses.isLoading}
+            courses={(courses.data ?? []).slice(0, 3)}
+          />
+          <CommunitySection isLoading={groups.isLoading} groups={(groups.data ?? []).slice(0, 3)} />
+          <MentorsSection
+            isLoading={mentors.isLoading}
+            mentors={(mentors.data ?? []).slice(0, 3)}
+          />
           <MusicMediaSection isLoading={media.isLoading} items={media.data ?? []} />
-          <DashboardCard
-            to="/community"
-            icon={UsersRound}
-            tone="brand"
-            title="Community & Groups"
-            body={
-              (groups.data ?? []).length > 0
-                ? ((groups.data ?? [])[0] as { name?: string }).name || "Join a group"
-                : "Groups are being set up for your church"
-            }
-            meta={
-              (groups.data ?? []).length > 0 ? `${(groups.data ?? []).length} groups` : undefined
-            }
-          />
-          <DashboardCard
-            to="/mentors"
-            icon={Sparkles}
-            tone="violet"
-            title="Mentors"
-            body={
-              (mentors.data ?? []).length > 0
-                ? "Connect with mentors walking with young people in faith"
-                : "Mentors are joining Nuru Faith soon"
-            }
-            meta={
-              (mentors.data ?? []).length > 0 ? `${(mentors.data ?? []).length} mentors` : undefined
-            }
-          />
           <DashboardCard
             to="/hub"
             icon={LayoutGrid}
             tone="cyan"
-            title="Hub & Announcements"
-            body="Everything else — news, resources, testimonies and more"
+            title="Nuru Faith Hub"
+            body="News, resources, testimonies, jobs, scholarships and more"
             meta={undefined}
           />
         </div>

@@ -33,8 +33,10 @@ import {
   GhostButton,
   GradientButton,
   IconTile,
+  ScreenHero,
   SectionHeader,
 } from "@/components/nuru/Primitives";
+import heroBg from "@/assets/walk-purpose.jpg";
 
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
@@ -151,6 +153,7 @@ function ProfileScreen() {
           </Link>
         }
       />
+      <ScreenHero image={heroBg} />
 
       <section className="flex items-center gap-4 px-4 py-5">
         <Avatar src={p?.avatar_url} name={p?.full_name} size="lg" />

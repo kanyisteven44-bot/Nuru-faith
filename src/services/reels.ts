@@ -31,7 +31,16 @@ export const REPORT_REASONS = [
 export type ReelFeed = "For You" | "Following" | "My Church";
 
 const REEL_SELECT =
-  "id, author_id, creator_name, creator_handle, creator_avatar_url, caption, hashtags, video_url, poster_url, audio_title, scripture_ref, topic, is_bible_teaching, church_id, series_id, like_count, comment_count, view_count, created_at, churches(name, slug, verified)";
+  "id, author_id, creator_name, creator_handle, creator_avatar_url, caption, hashtags, video_url, poster_url, audio_title, scripture_ref, topic, is_bible_teaching, church_id, series_id, like_count, comment_count, view_count, created_at, source_type, rights_status, external_id, external_url, title, churches(name, slug, verified)";
+
+export type ReelSourceType =
+  | "nuru_original"
+  | "user_upload"
+  | "church_upload"
+  | "creator_upload"
+  | "youtube"
+  | "tiktok"
+  | "instagram";
 
 export type Reel = {
   id: string;
@@ -53,6 +62,11 @@ export type Reel = {
   comment_count: number;
   view_count: number;
   created_at: string;
+  source_type: ReelSourceType;
+  rights_status: string;
+  external_id: string | null;
+  external_url: string | null;
+  title: string | null;
   churches: { name: string; slug: string; verified: boolean } | null;
 };
 
@@ -258,6 +272,11 @@ export async function createReel(input: {
   isBibleTeaching: boolean;
   churchId: string | null;
   groupId: string | null;
+  /** Only set for imported (non-Nuru) Reels; uploads keep the column defaults. */
+  sourceType?: ReelSourceType;
+  rightsStatus?: string;
+  externalId?: string | null;
+  externalUrl?: string | null;
 }) {
   const { error } = await supabase.from("reels").insert({
     author_id: input.authorId,
@@ -274,6 +293,10 @@ export async function createReel(input: {
     church_id: input.churchId,
     group_id: input.groupId,
     status: "published",
+    ...(input.sourceType ? { source_type: input.sourceType } : {}),
+    ...(input.rightsStatus ? { rights_status: input.rightsStatus } : {}),
+    ...(input.externalId !== undefined ? { external_id: input.externalId } : {}),
+    ...(input.externalUrl !== undefined ? { external_url: input.externalUrl } : {}),
   });
   if (error) throw new Error(error.message);
 }

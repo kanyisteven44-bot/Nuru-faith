@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Heart, Pause, Play, Volume2, VolumeX } from "lucide-react";
+import { ExternalLink, Heart, Pause, Play, Volume2, VolumeX } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { resolveMedia } from "@/lib/media";
 import { compactNumber } from "@/lib/format";
 import type { Reel } from "@/services/reels";
+import { SOURCE_LABEL, type ImportedSource } from "@/lib/reelImport";
+import { YouTubePlayer } from "@/components/youtube/YouTubePlayer";
 import { ReelActions } from "./ReelActions";
 import { ReelCaption } from "./ReelCaption";
 import { ReelFaithActions } from "./ReelFaithActions";
@@ -53,7 +55,14 @@ export function ReelPane(props: ReelPaneProps) {
   const [manualStart, setManualStart] = useState(false);
 
   const hasVideo = !!reel.video_url;
+  const isYouTubeEmbed = reel.source_type === "youtube" && !!reel.external_id;
+  const isLinkOutOnly =
+    (reel.source_type === "tiktok" || reel.source_type === "instagram") && !!reel.external_url;
   const shouldLoad = near && (autoplayAllowed || manualStart || active);
+
+  function openOriginal() {
+    if (reel.external_url) window.open(reel.external_url, "_blank", "noopener,noreferrer");
+  }
 
   /* --- active detection: only the mostly-visible reel plays --- */
   useEffect(() => {
@@ -150,6 +159,14 @@ export function ReelPane(props: ReelPaneProps) {
             preload={active ? "auto" : "metadata"}
             className="h-full w-full object-cover"
           />
+        ) : isYouTubeEmbed && shouldLoad ? (
+          <YouTubePlayer
+            videoId={reel.external_id!}
+            title={reel.caption || reel.creator_name}
+            autoplay={active}
+            muted={muted}
+            className="h-full rounded-none"
+          />
         ) : (
           <img
             src={resolveMedia(reel.poster_url)}
@@ -161,6 +178,36 @@ export function ReelPane(props: ReelPaneProps) {
           />
         )}
       </div>
+
+      {isLinkOutOnly && (
+        <button
+          type="button"
+          onClick={openOriginal}
+          className="absolute left-1/2 top-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-2"
+        >
+          <span className="flex h-16 w-16 items-center justify-center rounded-full nuru-gradient-bg nuru-glow">
+            <ExternalLink className="h-6 w-6 text-primary-foreground" />
+          </span>
+          <span className="rounded-full bg-black/50 px-3 py-1.5 text-[11px] font-medium text-white">
+            Open on {SOURCE_LABEL[reel.source_type as ImportedSource]}
+          </span>
+        </button>
+      )}
+
+      {(isYouTubeEmbed || isLinkOutOnly) && (
+        <div className="absolute left-3 top-14 z-10 flex items-center gap-1.5 rounded-full bg-black/40 py-1.5 pl-1.5 pr-3 text-[11px] font-medium text-white backdrop-blur-md">
+          <span className="rounded-full bg-white/15 px-2 py-0.5">
+            {SOURCE_LABEL[reel.source_type as ImportedSource]}
+          </span>
+          <button
+            type="button"
+            onClick={openOriginal}
+            className="inline-flex items-center gap-1 underline-offset-2 hover:underline"
+          >
+            Open original <ExternalLink className="h-3 w-3" />
+          </button>
+        </div>
+      )}
 
       {/* legibility gradients only where text sits */}
       <div
@@ -210,14 +257,16 @@ export function ReelPane(props: ReelPaneProps) {
         />
       )}
 
-      <button
-        type="button"
-        onClick={props.onToggleMuted}
-        aria-label={muted ? "Unmute Reel" : "Mute Reel"}
-        className="absolute right-3 top-14 z-10 rounded-full bg-black/40 p-2 text-white backdrop-blur-md transition-transform active:scale-90"
-      >
-        {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-      </button>
+      {!isYouTubeEmbed && (
+        <button
+          type="button"
+          onClick={props.onToggleMuted}
+          aria-label={muted ? "Unmute Reel" : "Mute Reel"}
+          className="absolute right-3 top-14 z-10 rounded-full bg-black/40 p-2 text-white backdrop-blur-md transition-transform active:scale-90"
+        >
+          {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+        </button>
+      )}
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0">
         <div className="pointer-events-auto flex items-end gap-3 px-3 pb-1">

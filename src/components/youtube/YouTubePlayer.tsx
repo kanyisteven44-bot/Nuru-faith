@@ -13,12 +13,15 @@ export function YouTubePlayer({
   title,
   className,
   autoplay = false,
+  muted,
 }: {
   videoId?: string;
   playlistId?: string;
   title: string;
   className?: string;
   autoplay?: boolean;
+  /** Most browsers only allow unattended autoplay when the player starts muted. */
+  muted?: boolean;
 }) {
   const frameRef = useRef<HTMLIFrameElement | null>(null);
 
@@ -45,13 +48,19 @@ export function YouTubePlayer({
     autoplay: autoplay ? "1" : "0",
   });
   if (playlistId && !videoId) params.set("list", playlistId);
+  if (muted !== undefined) params.set("mute", muted ? "1" : "0");
 
   const src = videoId
     ? `https://www.youtube-nocookie.com/embed/${videoId}?${params}`
     : `https://www.youtube-nocookie.com/embed/videoseries?${params}`;
 
   return (
-    <div className={cn("relative w-full overflow-hidden rounded-2xl bg-black", className)}>
+    <div
+      className={cn(
+        "relative flex w-full items-center justify-center overflow-hidden rounded-2xl bg-black",
+        className,
+      )}
+    >
       <div className="aspect-video w-full">
         <iframe
           ref={frameRef}

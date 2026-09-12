@@ -1,5 +1,6 @@
-import { Flag, HelpCircle, Link2, Pencil, Trash2, ThumbsDown } from "lucide-react";
+import { ExternalLink, Flag, HelpCircle, Link2, Pencil, Trash2, ThumbsDown } from "lucide-react";
 import type { Reel } from "@/services/reels";
+import { SOURCE_LABEL, type ImportedSource } from "@/lib/reelImport";
 import { Sheet } from "./Sheet";
 
 export type WhyReason = string;
@@ -78,6 +79,13 @@ export function ReelMoreMenu({
           onClick={onWhy}
         />
         <Row icon={<Link2 className="h-4.5 w-4.5" />} label="Copy link" onClick={onCopyLink} />
+        {reel.external_url && (
+          <Row
+            icon={<ExternalLink className="h-4.5 w-4.5" />}
+            label={`Open original on ${SOURCE_LABEL[reel.source_type as ImportedSource]}`}
+            onClick={() => window.open(reel.external_url!, "_blank", "noopener,noreferrer")}
+          />
+        )}
         <Row
           icon={<Flag className="h-4.5 w-4.5" />}
           label="Report"

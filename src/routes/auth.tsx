@@ -4,7 +4,6 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { Apple, Loader2, Mail, Phone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
 import { NuruLogo } from "@/components/nuru/Logo";
 import { GradientButton } from "@/components/nuru/Primitives";
 import hero from "@/assets/cross-sunrise.jpg";
@@ -103,18 +102,20 @@ function AuthPage() {
   async function social(provider: "google" | "apple") {
     setBusy(true);
     try {
-      const result = await lovable.auth.signInWithOAuth(provider, {
-        redirect_uri: window.location.origin,
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${window.location.origin}/home`,
+        },
       });
-      if (result.error) {
-        toast.error(result.error.message ?? "Sign-in isn't available right now");
-        return;
+      // On success the browser is redirected to the provider now; Supabase
+      // owns the session from here and will hand control back at redirectTo.
+      if (error) {
+        toast.error(error.message || "Sign-in isn't available right now");
+        setBusy(false);
       }
-      if (result.redirected) return;
-      navigate({ to: "/home" });
     } catch {
       toast.error("Sign-in isn't available right now");
-    } finally {
       setBusy(false);
     }
   }

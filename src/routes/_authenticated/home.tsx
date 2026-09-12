@@ -9,6 +9,7 @@ import {
   Church,
   Clapperboard,
   LayoutGrid,
+  Music2,
   Share2,
   Sparkles,
   Target,
@@ -20,6 +21,7 @@ import { resolveMedia } from "@/lib/media";
 import { fetchVerseOfTheDay, verseOfTheDayRef } from "@/lib/bible";
 import { fetchEvents, fetchNotifications, fetchProfile } from "@/services/content";
 import { fetchMyProgress, fetchSeries } from "@/services/series";
+import { fetchMediaItems } from "@/services/media";
 import { AppShell } from "@/components/nuru/AppShell";
 import { Avatar } from "@/components/nuru/PostCard";
 import { CardSkeleton, IconTile, ProgressBar, SectionHeader } from "@/components/nuru/Primitives";
@@ -44,11 +46,11 @@ const QUICK = [
   { to: "/reels", label: "Reels", icon: Clapperboard, tone: "violet" as const },
   { to: "/ai", label: "Nuru AI", icon: Sparkles, tone: "cyan" as const },
   { to: "/church", label: "My Church", icon: Church, tone: "brand" as const },
-  { to: "/bible", label: "Bible", icon: BookOpen, tone: "cyan" as const },
+  { to: "/hub", label: "Hub", icon: LayoutGrid, tone: "cyan" as const },
   { to: "/community", label: "Groups", icon: UsersRound, tone: "brand" as const },
   { to: "/mentors", label: "Mentors", icon: Sparkles, tone: "violet" as const },
   { to: "/events", label: "Events", icon: CalendarDays, tone: "brand" as const },
-  { to: "/hub", label: "Hub", icon: LayoutGrid, tone: "cyan" as const },
+  { to: "/music", label: "Music", icon: Music2, tone: "growth" as const },
 ] as const;
 
 const CHALLENGES = [
@@ -86,6 +88,10 @@ function HomeScreen() {
     queryKey: ["notifications", userId],
     queryFn: () => fetchNotifications(userId!),
     enabled: !!userId,
+  });
+  const media = useQuery({
+    queryKey: ["home-media"],
+    queryFn: () => fetchMediaItems({ limit: 6 }),
   });
 
   useEffect(() => {
@@ -297,6 +303,54 @@ function HomeScreen() {
           </div>
         </section>
       )}
+
+      {/* Music & Media */}
+      <section className="px-4 pt-7">
+        <SectionHeader title="Music & media" action="Open" to="/music" />
+        {media.isLoading ? (
+          <CardSkeleton count={1} height="h-32" />
+        ) : (media.data ?? []).length > 0 ? (
+          <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4">
+            {(media.data ?? []).map((item) => (
+              <Link
+                key={item.id}
+                to="/music"
+                className="nuru-card w-32 shrink-0 overflow-hidden p-2.5 transition-colors active:opacity-90"
+              >
+                <div className="relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-lg bg-surface-2">
+                  {item.thumbnail_url ? (
+                    <img
+                      src={resolveMedia(item.thumbnail_url)}
+                      alt=""
+                      loading="lazy"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <Music2 className="h-6 w-6 text-cyan/60" />
+                  )}
+                </div>
+                <p className="mt-2 line-clamp-2 text-xs font-semibold leading-snug">{item.title}</p>
+                <p className="truncate text-[11px] text-muted-foreground">
+                  {item.creator_name ?? "Nuru Faith"}
+                </p>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="nuru-card flex items-center gap-3 p-4">
+            <IconTile icon={Music2} tone="growth" size="lg" />
+            <p className="min-w-0 flex-1 text-sm font-medium leading-snug text-secondary-foreground">
+              Worship, sermons and Christian video are on their way to your feed.
+            </p>
+            <Link
+              to="/music"
+              className="shrink-0 rounded-full border border-border-strong bg-surface-2/70 px-3.5 py-2 text-[11px] font-semibold text-cyan"
+            >
+              Browse
+            </Link>
+          </div>
+        )}
+      </section>
 
       <p className="script px-4 pt-9 text-center text-2xl text-cyan/80">Let your light shine.</p>
     </AppShell>

@@ -20,10 +20,12 @@ export function AppShell({
   flush = false,
 }: {
   children: ReactNode;
-  wide?: boolean;
+  /** "xl" is the Home dashboard's three-column ecosystem layout; true is the 5xl default. */
+  wide?: boolean | "xl";
   /** Full-bleed screens (Reels) manage their own height and skip the bottom padding. */
   flush?: boolean;
 }) {
+  const maxWidth = wide === "xl" ? "max-w-7xl" : wide ? "max-w-5xl" : "max-w-xl";
   const [createOpen, setCreateOpen] = useState(false);
   const { userId } = useAuth();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -43,13 +45,7 @@ export function AppShell({
           className="pointer-events-none fixed inset-x-0 top-0 z-0 h-72 bg-[radial-gradient(70%_100%_at_50%_0%,color-mix(in_oklab,var(--primary)_16%,transparent),transparent_75%)]"
         />
       )}
-      <main
-        className={cn(
-          "relative z-10 mx-auto w-full",
-          flush ? "" : "pb-28",
-          wide ? "max-w-5xl" : "max-w-xl",
-        )}
-      >
+      <main className={cn("relative z-10 mx-auto w-full", flush ? "" : "pb-28", maxWidth)}>
         {children}
       </main>
 
@@ -60,7 +56,7 @@ export function AppShell({
         <ul
           className={cn(
             "mx-auto grid grid-cols-5 items-end px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1.5",
-            wide ? "max-w-5xl" : "max-w-xl",
+            maxWidth,
           )}
         >
           {NAV.slice(0, 2).map((item) => (

@@ -15,11 +15,17 @@ the repo.
 | `SUPABASE_PUBLISHABLE_KEY` | `client.ts` (SSR fallback), `auth-middleware.ts` | **Runtime** | Server-only usage here; same publishable key as above |
 | `SUPABASE_SERVICE_ROLE_KEY` | `src/integrations/supabase/client.server.ts` | **Runtime** | **Server-only. Never** expose to the client or prefix with `VITE_` — bypasses RLS |
 | `YOUTUBE_API_KEY` | `src/lib/youtube.functions.ts` | **Runtime** (only when YouTube-backed features are hit) | Server-only |
-| `LOVABLE_API_KEY` | `src/lib/ai.functions.ts` | **Runtime** (only when AI features are hit) | Server-only |
+| `AI_GATEWAY_API_KEY` | `src/lib/ai.functions.ts` (via the `ai` SDK) | **Runtime** (only when AI features are hit) — **not needed on Vercel**, see below | Server-only |
 | `LOVABLE_CRON_SECRET` | `src/integrations/supabase/cron-auth.ts` | **Runtime** (cron endpoint auth) | Server-only |
 | `LOVABLE_CRON_SECRET_PREVIOUS` | `src/integrations/supabase/cron-auth.ts` | Optional — fallback during secret rotation | Server-only |
 
 Notes:
+- Nuru AI calls the Vercel AI Gateway through the `ai` SDK. On Vercel it
+  authenticates automatically via OIDC, so **no AI key needs to be set** for a
+  Vercel deployment; set `AI_GATEWAY_API_KEY` only when running the server
+  somewhere else. If the gateway runs out of credits the UI surfaces that
+  directly ("Nuru AI is out of credits"), which is a billing issue rather than a
+  missing variable.
 - `VITE_SUPABASE_URL`/`VITE_SUPABASE_PUBLISHABLE_KEY` and
   `SUPABASE_URL`/`SUPABASE_PUBLISHABLE_KEY` point at the same Supabase
   project — set both pairs to the same values so build-time (client) and

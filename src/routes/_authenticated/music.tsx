@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Music2, Pause, Play, Search, X } from "lucide-react";
+import { BadgeCheck, Music2, Pause, Play, Search, X } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { resolveMedia } from "@/lib/media";
@@ -136,6 +136,7 @@ function MusicScreen() {
                 title="Worship right now"
                 query="christian worship live"
                 onSelect={openVideo}
+                showUnavailableNotice
               />
               <MediaCategoryRail
                 title="Songs for hard days"
@@ -157,6 +158,7 @@ function MusicScreen() {
                 title="Worship sets"
                 query="worship set full"
                 onSelect={openVideo}
+                showUnavailableNotice
               />
               <MediaCategoryRail title="Hymns" query="christian hymns" onSelect={openVideo} />
               <MediaCategoryRail
@@ -246,9 +248,22 @@ function MusicScreen() {
               )}
               <div className="space-y-2">
                 {(artists.data ?? []).map((a) => (
-                  <div key={a.id} className="nuru-card p-3">
-                    <p className="text-sm font-semibold">{a.name}</p>
-                    <p className="text-[11px] text-muted-foreground">{a.description}</p>
+                  <div key={a.id} className="nuru-card flex items-center gap-3 p-3">
+                    <IconTile icon={Music2} tone="cyan" />
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center gap-1.5">
+                        <span className="truncate text-sm font-semibold">{a.name}</span>
+                        {a.is_verified && (
+                          <BadgeCheck
+                            className="h-3.5 w-3.5 shrink-0 text-cyan"
+                            aria-label="Verified"
+                          />
+                        )}
+                      </span>
+                      <span className="block truncate text-[11px] text-muted-foreground">
+                        {a.description}
+                      </span>
+                    </span>
                   </div>
                 ))}
               </div>
@@ -257,12 +272,13 @@ function MusicScreen() {
                   {(artists.data ?? [])
                     .filter((a) => a.youtube_channel_id)
                     .slice(0, 3)
-                    .map((a) => (
+                    .map((a, i) => (
                       <MediaCategoryRail
                         key={a.id}
                         title={a.name}
                         channelId={a.youtube_channel_id!}
                         onSelect={openVideo}
+                        showUnavailableNotice={i === 0}
                       />
                     ))}
                 </div>
@@ -327,6 +343,7 @@ function MusicScreen() {
                   title="Christian teaching"
                   query="bible teaching sermon"
                   onSelect={openVideo}
+                  showUnavailableNotice
                 />
                 <MediaCategoryRail
                   title="Testimonies"

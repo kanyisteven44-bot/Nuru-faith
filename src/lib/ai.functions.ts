@@ -1,6 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
+import { APICallError, LoadAPIKeyError, generateText } from "ai";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
+// Routed through the Vercel AI Gateway's default global provider: authenticated
+// via Vercel OIDC in production, or AI_GATEWAY_API_KEY when running elsewhere.
+const NURU_AI_MODEL = "openai/gpt-4o-mini";
 
 const MessageSchema = z.object({
   role: z.enum(["user", "assistant"]),
@@ -78,76 +83,33 @@ export const askNuruAi = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => InputSchema.parse(input))
   .handler(async ({ data }) => {
-    const apiKey = process.env["LOVABLE_API_KEY"];
-    if (!apiKey) throw new Error("Nuru AI is not configured yet.");
+    try {
+      const result = await generateText({
+        model: NURU_AI_MODEL,
+        system: buildSystemPrompt(data),
+        messages: data.messages.map((m) => ({ role: m.role, content: m.content })),
+      });
 
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Lovable-API-Key": apiKey,
-        "X-Lovable-AIG-SDK": "fetch",
-      },
-      body: JSON.stringify({
-        model: "openai/gpt-6-astra",
-        stream: true,
-        instructions: buildSystemPrompt(data),
-        reasoning: { effort: "low" },
-        input: data.messages.map((m) => ({
-          role: m.role,
-          content: [{ type: m.role === "user" ? "input_text" : "output_text", text: m.content }],
-        })),
-      }),
-    });
-
-    if (!res.ok || !res.body) {
-      const body = await res.text().catch(() => "");
-      if (res.status === 429)
-        throw new Error("Nuru AI is busy right now. Please try again in a moment.");
-      if (res.status === 402)
+      return {
+        content:
+          result.text.trim() ||
+          "I couldn't put an answer together this time. Try asking in a slightly different way.",
+      };
+    } catch (err) {
+      if (LoadAPIKeyError.isInstance(err)) throw new Error("Nuru AI is not configured yet.");
+      if (APICallError.isInstance(err)) {
+        if (err.statusCode === 429)
+          throw new Error("Nuru AI is busy right now. Please try again in a moment.");
+        if (err.statusCode === 402)
+          throw new Error(
+            "Nuru AI is out of credits. The app owner needs to top up AI Gateway credits in Vercel.",
+          );
+        if (err.statusCode === 403)
+          throw new Error("Nuru AI is currently disabled for this workspace.");
         throw new Error(
-          "Nuru AI is out of credits. The app owner needs to top up AI credits in Lovable.",
+          `Nuru AI could not answer (${err.statusCode ?? "error"}). ${(err.responseBody ?? "").slice(0, 200)}`,
         );
-      if (res.status === 403) throw new Error("Nuru AI is currently disabled for this workspace.");
-      throw new Error(`Nuru AI could not answer (${res.status}). ${body.slice(0, 200)}`);
-    }
-
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
-    let text = "";
-
-    for (;;) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      const parts = buffer.split("\n\n");
-      buffer = parts.pop() ?? "";
-      for (const part of parts) {
-        for (const line of part.split("\n")) {
-          if (!line.startsWith("data:")) continue;
-          const payload = line.slice(5).trim();
-          if (!payload || payload === "[DONE]") continue;
-          try {
-            const evt = JSON.parse(payload) as {
-              type?: string;
-              delta?: string;
-              response?: { output_text?: string };
-            };
-            if (evt.type === "response.output_text.delta" && typeof evt.delta === "string")
-              text += evt.delta;
-            if (evt.type === "response.completed" && !text && evt.response?.output_text)
-              text = evt.response.output_text;
-          } catch {
-            /* ignore keep-alive or partial frames */
-          }
-        }
       }
+      throw err instanceof Error ? err : new Error("Nuru AI could not answer.");
     }
-
-    return {
-      content:
-        text.trim() ||
-        "I couldn't put an answer together this time. Try asking in a slightly different way.",
-    };
   });

@@ -10,12 +10,19 @@ export function MediaCategoryRail({
   channelId,
   onSelect,
   limit = 8,
+  showUnavailableNotice = false,
 }: {
   title: string;
   query?: string;
   channelId?: string;
   onSelect: (video: YouTubeVideo) => void;
   limit?: number;
+  /**
+   * When YouTube is unreachable every rail on the screen fails the same way, so only
+   * the first rail of a section explains it. The rest stay silent instead of repeating
+   * the same apology three or four times down the page.
+   */
+  showUnavailableNotice?: boolean;
 }) {
   const result = useQuery(
     youtubeQuery({
@@ -28,7 +35,7 @@ export function MediaCategoryRail({
   const message = youtubeErrorMessage(result.data?.error);
   const videos = result.data?.videos ?? [];
 
-  if (!result.isLoading && !message && videos.length === 0) return null;
+  if (!result.isLoading && videos.length === 0 && !(message && showUnavailableNotice)) return null;
 
   return (
     <section className="pt-5">

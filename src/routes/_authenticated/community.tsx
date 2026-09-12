@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { HandHeart, Users } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-import { timeAgo } from "@/lib/format";
+import { compactNumber, timeAgo } from "@/lib/format";
 import {
   fetchGroups,
   fetchMyGroupIds,
@@ -124,7 +124,10 @@ function CommunityScreen() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold">{g.name}</p>
                   <p className="line-clamp-1 text-xs text-muted-foreground">
-                    {g.member_count} members · {g.category}
+                    {g.member_count > 0
+                      ? `${compactNumber(g.member_count)} ${g.member_count === 1 ? "member" : "members"}`
+                      : "Be the first to join"}{" "}
+                    · {g.category}
                     {g.privacy !== "public" ? ` · ${g.privacy}` : ""}
                   </p>
                 </div>

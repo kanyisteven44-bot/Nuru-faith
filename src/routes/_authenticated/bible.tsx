@@ -10,6 +10,7 @@ import { fetchDevotionals, fetchPlanDays, fetchReadingPlans } from "@/services/c
 import { fetchSavedScriptures, fetchSeries, removeSavedScripture } from "@/services/series";
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
 import { ScriptureText } from "@/components/nuru/Scripture";
+import heroBg from "@/assets/bible-candle.jpg";
 import {
   CardSkeleton,
   Chip,
@@ -75,18 +76,27 @@ function BibleScreen() {
 
       {/* Verse of the day */}
       <section className="px-4 pt-4">
-        <article className="nuru-card-hero p-5">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-cyan">
-            Verse of the day
-          </p>
-          <p className="mt-3 font-display text-[17px] font-semibold leading-snug">
-            {verse.data ? `"${verse.data.text}"` : "Loading today's verse…"}
-          </p>
-          <p className="mt-2 text-xs font-medium text-cyan">
-            {verse.data
-              ? `${verse.data.reference} · ${verse.data.translation}`
-              : verseOfTheDayRef()}
-          </p>
+        <article className="nuru-card-hero relative overflow-hidden p-5">
+          <img
+            src={heroBg}
+            alt=""
+            loading="eager"
+            className="absolute inset-0 h-full w-full object-cover opacity-35"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/70 to-background/90" />
+          <div className="relative">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-cyan">
+              Verse of the day
+            </p>
+            <p className="mt-3 font-display text-[17px] font-semibold leading-snug">
+              {verse.data ? `"${verse.data.text}"` : "Loading today's verse…"}
+            </p>
+            <p className="mt-2 text-xs font-medium text-cyan">
+              {verse.data
+                ? `${verse.data.reference} · ${verse.data.translation}`
+                : verseOfTheDayRef()}
+            </p>
+          </div>
         </article>
       </section>
 

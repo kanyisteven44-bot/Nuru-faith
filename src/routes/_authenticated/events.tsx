@@ -16,7 +16,9 @@ import {
   GhostButton,
   GradientButton,
   PillTabs,
+  ScreenHero,
 } from "@/components/nuru/Primitives";
+import heroBg from "@/assets/church-interior.jpg";
 
 export const Route = createFileRoute("/_authenticated/events")({
   head: () => ({
@@ -71,6 +73,7 @@ function EventsScreen() {
   return (
     <AppShell>
       <ScreenHeader title="Events" subtitle="Show up, belong, serve" />
+      <ScreenHero image={heroBg} />
 
       <div className="px-4 py-3">
         <PillTabs tabs={FILTERS} value={filter} onChange={setFilter} />

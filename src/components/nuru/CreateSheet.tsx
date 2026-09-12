@@ -7,13 +7,16 @@ import {
   CalendarPlus,
   Clapperboard,
   HandHeart,
+  Link2,
   MessageSquarePlus,
   PenLine,
   Sparkles,
+  Upload,
   X,
 } from "lucide-react";
 import { createPost, createPrayerRequest, fetchProfile } from "@/services/content";
 import { createReel, REEL_TOPICS, uploadReelVideo } from "@/services/reels";
+import { detectReelSource, SOURCE_LABEL } from "@/lib/reelImport";
 import { GradientButton, ComingSoon } from "./Primitives";
 
 type Mode = "menu" | "post" | "prayer" | "testimony" | "reflection" | "reel";
@@ -55,6 +58,8 @@ export function CreateSheet({
   const [anonymous, setAnonymous] = useState(false);
   const [saving, setSaving] = useState(false);
   const [video, setVideo] = useState<File | null>(null);
+  const [reelSource, setReelSource] = useState<"upload" | "import">("upload");
+  const [importUrl, setImportUrl] = useState("");
   const [topic, setTopic] = useState<string>(REEL_TOPICS[0]);
   const [bibleTeaching, setBibleTeaching] = useState(false);
   const queryClient = useQueryClient();
@@ -73,6 +78,8 @@ export function CreateSheet({
       setScripture("");
       setAnonymous(false);
       setVideo(null);
+      setReelSource("upload");
+      setImportUrl("");
       setBibleTeaching(false);
     }
   }, [open]);
@@ -90,7 +97,14 @@ export function CreateSheet({
     setSaving(true);
     try {
       if (mode === "reel") {
-        const videoUrl = video ? await uploadReelVideo(userId, video) : null;
+        const detected = reelSource === "import" ? detectReelSource(importUrl) : null;
+        if (reelSource === "import" && !detected) {
+          throw new Error(
+            "That link isn't a YouTube, TikTok or Instagram video link Nuru Faith recognizes.",
+          );
+        }
+        const videoUrl =
+          reelSource === "upload" && video ? await uploadReelVideo(userId, video) : null;
         await createReel({
           authorId: userId,
           creatorName: profile.data?.full_name ?? "Nuru member",
@@ -98,13 +112,21 @@ export function CreateSheet({
           creatorAvatarUrl: profile.data?.avatar_url ?? null,
           caption: body.trim(),
           videoUrl,
-          posterUrl: null,
+          posterUrl: detected?.posterUrl ?? null,
           scriptureRef: scripture.trim() || null,
           hashtags: Array.from(body.matchAll(/#(\w+)/g)).map((m) => m[1] as string),
           topic,
           isBibleTeaching: bibleTeaching,
           churchId: profile.data?.church_id ?? null,
           groupId: null,
+          ...(detected
+            ? {
+                sourceType: detected.sourceType,
+                rightsStatus: "external_embed",
+                externalId: detected.externalId,
+                externalUrl: detected.externalUrl,
+              }
+            : {}),
         });
         await queryClient.invalidateQueries({ queryKey: ["reels"] });
         toast.success("Reel published");
@@ -220,19 +242,86 @@ export function CreateSheet({
             )}
             {mode === "reel" && (
               <>
-                <label
-                  className="block text-xs font-semibold text-muted-foreground"
-                  htmlFor="reel-video"
-                >
-                  Video (up to about 60 seconds)
-                </label>
-                <input
-                  id="reel-video"
-                  type="file"
-                  accept="video/*"
-                  onChange={(e) => setVideo(e.target.files?.[0] ?? null)}
-                  className="w-full rounded-2xl border border-input bg-surface-2 px-4 py-3 text-xs"
-                />
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setReelSource("upload")}
+                    className={
+                      reelSource === "upload"
+                        ? "flex flex-1 items-center justify-center gap-1.5 rounded-full nuru-gradient-bg px-3 py-2 text-xs font-semibold text-primary-foreground"
+                        : "flex flex-1 items-center justify-center gap-1.5 rounded-full bg-surface-2 px-3 py-2 text-xs text-secondary-foreground"
+                    }
+                  >
+                    <Upload className="h-3.5 w-3.5" /> Upload video
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setReelSource("import")}
+                    className={
+                      reelSource === "import"
+                        ? "flex flex-1 items-center justify-center gap-1.5 rounded-full nuru-gradient-bg px-3 py-2 text-xs font-semibold text-primary-foreground"
+                        : "flex flex-1 items-center justify-center gap-1.5 rounded-full bg-surface-2 px-3 py-2 text-xs text-secondary-foreground"
+                    }
+                  >
+                    <Link2 className="h-3.5 w-3.5" /> Import link
+                  </button>
+                </div>
+
+                {reelSource === "upload" ? (
+                  <>
+                    <label
+                      className="block text-xs font-semibold text-muted-foreground"
+                      htmlFor="reel-video"
+                    >
+                      Video (up to about 60 seconds)
+                    </label>
+                    <input
+                      id="reel-video"
+                      type="file"
+                      accept="video/*"
+                      onChange={(e) => setVideo(e.target.files?.[0] ?? null)}
+                      className="w-full rounded-2xl border border-input bg-surface-2 px-4 py-3 text-xs"
+                    />
+                  </>
+                ) : (
+                  <>
+                    <label
+                      className="block text-xs font-semibold text-muted-foreground"
+                      htmlFor="reel-import-url"
+                    >
+                      YouTube, TikTok or Instagram link
+                    </label>
+                    <input
+                      id="reel-import-url"
+                      type="url"
+                      inputMode="url"
+                      value={importUrl}
+                      onChange={(e) => setImportUrl(e.target.value)}
+                      placeholder="https://youtube.com/watch?v=… or a TikTok/Instagram link"
+                      className="w-full rounded-2xl border border-input bg-surface-2 px-4 py-3 text-sm outline-none focus:border-primary"
+                    />
+                    {importUrl.trim() &&
+                      (() => {
+                        const detected = detectReelSource(importUrl);
+                        return detected ? (
+                          <p className="text-[11px] font-medium text-cyan">
+                            Recognized as a {SOURCE_LABEL[detected.sourceType]} link — it will play
+                            back through {SOURCE_LABEL[detected.sourceType]}'s own player, with a
+                            link to open the original.
+                          </p>
+                        ) : (
+                          <p className="text-[11px] text-destructive">
+                            That doesn't look like a YouTube, TikTok or Instagram video link.
+                          </p>
+                        );
+                      })()}
+                    <p className="text-[11px] text-muted-foreground">
+                      Nuru Faith never downloads or rehosts imported video — it stays on the
+                      original platform and is always credited to its creator.
+                    </p>
+                  </>
+                )}
+
                 <div className="flex flex-wrap gap-2">
                   {REEL_TOPICS.map((t) => (
                     <button
@@ -284,7 +373,11 @@ export function CreateSheet({
               <GradientButton
                 className="flex-1"
                 onClick={submit}
-                disabled={saving || body.trim().length < 3}
+                disabled={
+                  saving ||
+                  body.trim().length < 3 ||
+                  (mode === "reel" && reelSource === "import" && !detectReelSource(importUrl))
+                }
               >
                 {saving ? "Sharing…" : "Share"}
               </GradientButton>

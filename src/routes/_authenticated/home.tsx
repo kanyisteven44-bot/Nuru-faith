@@ -8,6 +8,7 @@ import {
   CalendarDays,
   Church,
   Clapperboard,
+  GraduationCap,
   LayoutGrid,
   Music2,
   Share2,
@@ -19,9 +20,16 @@ import { useAuth } from "@/hooks/useAuth";
 import { eventDate } from "@/lib/format";
 import { resolveMedia } from "@/lib/media";
 import { fetchVerseOfTheDay, verseOfTheDayRef } from "@/lib/bible";
-import { fetchEvents, fetchNotifications, fetchProfile } from "@/services/content";
+import {
+  fetchEvents,
+  fetchGroups,
+  fetchMentors,
+  fetchNotifications,
+  fetchProfile,
+} from "@/services/content";
 import { fetchMyProgress, fetchSeries } from "@/services/series";
 import { fetchMediaItems } from "@/services/media";
+import verseBg from "@/assets/bible-candle.jpg";
 import { AppShell } from "@/components/nuru/AppShell";
 import { Avatar } from "@/components/nuru/PostCard";
 import { CardSkeleton, IconTile, ProgressBar, SectionHeader } from "@/components/nuru/Primitives";
@@ -63,6 +71,39 @@ const CHALLENGES = [
   { ref: "1 Corinthians 13", prompt: "Read 1 Corinthians 13 and forgive someone in prayer." },
 ];
 
+function DashboardCard({
+  to,
+  icon,
+  tone,
+  title,
+  body,
+  meta,
+}: {
+  to: string;
+  icon: React.ComponentType<{ className?: string }>;
+  tone: "brand" | "cyan" | "violet" | "growth";
+  title: string;
+  body: string;
+  meta: string | undefined;
+}) {
+  return (
+    <Link
+      to={to}
+      className="nuru-card flex flex-col gap-3 p-5 transition-colors hover:bg-accent/40 active:opacity-90"
+    >
+      <div className="flex items-center justify-between">
+        <IconTile icon={icon} tone={tone} size="lg" />
+        <ArrowRight className="h-4 w-4 text-muted-foreground" />
+      </div>
+      <div className="min-w-0">
+        <p className="font-display text-sm font-semibold">{title}</p>
+        <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{body}</p>
+        {meta && <p className="mt-1.5 text-[11px] font-medium text-cyan">{meta}</p>}
+      </div>
+    </Link>
+  );
+}
+
 function HomeScreen() {
   const { userId } = useAuth();
   const navigate = useNavigate();
@@ -93,6 +134,8 @@ function HomeScreen() {
     queryKey: ["home-media"],
     queryFn: () => fetchMediaItems({ limit: 6 }),
   });
+  const groups = useQuery({ queryKey: ["groups"], queryFn: () => fetchGroups() });
+  const mentors = useQuery({ queryKey: ["mentors"], queryFn: () => fetchMentors() });
 
   useEffect(() => {
     if (profile.data && profile.data.onboarded === false)
@@ -117,242 +160,344 @@ function HomeScreen() {
   const upcoming = (events.data ?? []).slice(0, 2);
 
   return (
-    <AppShell>
-      <header className="flex items-center justify-between px-4 pt-[max(1.25rem,env(safe-area-inset-top))] pb-2">
-        <NuruLogo compact />
-        <div className="flex items-center gap-2">
-          <Link
-            to="/notifications"
-            aria-label="Notifications"
-            className="relative rounded-full border border-border bg-surface-2/60 p-2.5 text-secondary-foreground transition-colors hover:text-foreground"
-          >
-            <Bell className="h-5 w-5" />
-            {unread > 0 && (
-              <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-primary-foreground ring-2 ring-background">
-                {unread}
-              </span>
-            )}
-          </Link>
-          <Link to="/profile" aria-label="Your profile">
-            <Avatar src={profile.data?.avatar_url} name={profile.data?.full_name} />
-          </Link>
-        </div>
-      </header>
-
-      {/* Greeting */}
-      <section className="px-4 pt-1">
-        <h1 className="font-display text-[26px] font-semibold leading-tight">
-          Shalom, {name}! <span className="align-middle">👋</span>
-        </h1>
-        <p className="mt-1 text-sm text-secondary-foreground">
-          You are loved. You are called. You are sent.
-        </p>
-      </section>
-
-      {/* Today's Light */}
-      <section className="px-4 pt-4">
-        {verse.isLoading ? (
-          <CardSkeleton count={1} height="h-52" />
-        ) : (
-          <article className="nuru-card-hero overflow-hidden p-5">
-            <div className="flex items-center justify-between">
-              <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-cyan">
-                <Sparkles className="h-3.5 w-3.5" /> Today's Light
-              </p>
-              <span className="text-[11px] text-muted-foreground">
-                {new Date().toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-              </span>
-            </div>
-            <p className="mt-3 font-display text-[17px] font-semibold leading-snug">
-              {verse.data ? `"${verse.data.text}"` : "Scripture is loading…"}
-            </p>
-            <p className="mt-2 text-xs font-medium text-cyan">
-              {verse.data
-                ? `${verse.data.reference} · ${verse.data.translation}`
-                : verseOfTheDayRef()}
-            </p>
-            <div className="mt-4 flex items-center gap-2">
-              <Link
-                to="/bible"
-                className="inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-full bg-primary px-4 text-xs font-semibold text-primary-foreground nuru-glow-sm"
-              >
-                Read &amp; Reflect <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-              <Link
-                to="/bible"
-                aria-label="Open the Bible"
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-border-strong bg-surface-2/70 text-cyan"
-              >
-                <BookOpen className="h-4 w-4" />
-              </Link>
-              <button
-                type="button"
-                aria-label="Share today's verse"
-                onClick={() => {
-                  const text = verse.data
-                    ? `"${verse.data.text}" — ${verse.data.reference}`
-                    : "A verse from Nuru Faith";
-                  if (navigator.share) void navigator.share({ text }).catch(() => {});
-                  else void navigator.clipboard.writeText(text);
-                }}
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-border-strong bg-surface-2/70 text-cyan"
-              >
-                <Share2 className="h-4 w-4" />
-              </button>
-            </div>
-          </article>
-        )}
-      </section>
-
-      {/* Quick Access */}
-      <section className="px-4 pt-6">
-        <SectionHeader title="Quick access" />
-        <nav aria-label="Quick access" className="grid grid-cols-4 gap-x-2 gap-y-4">
-          {QUICK.map(({ to, label, icon: Icon, tone }) => (
+    <AppShell wide>
+      <div className="mx-auto w-full max-w-xl">
+        <header className="flex items-center justify-between px-4 pt-[max(1.25rem,env(safe-area-inset-top))] pb-2">
+          <NuruLogo compact />
+          <div className="flex items-center gap-2">
             <Link
-              key={to}
-              to={to}
-              className="flex flex-col items-center gap-1.5 text-center transition-transform active:scale-95"
+              to="/notifications"
+              aria-label="Notifications"
+              className="relative rounded-full border border-border bg-surface-2/60 p-2.5 text-secondary-foreground transition-colors hover:text-foreground"
             >
-              <IconTile icon={Icon} tone={tone} size="lg" />
-              <span className="text-[11px] font-medium text-secondary-foreground">{label}</span>
-            </Link>
-          ))}
-        </nav>
-      </section>
-
-      {/* Continue Growing */}
-      {continueSeries?.series && (
-        <section className="px-4 pt-7">
-          <SectionHeader title="Continue growing" action="All series" to="/series" />
-          <Link
-            to="/series/$slug"
-            params={{ slug: continueSeries.series.slug }}
-            className="nuru-card flex gap-3 overflow-hidden p-3 transition-colors active:opacity-90"
-          >
-            <img
-              src={resolveMedia(continueSeries.series.cover_image)}
-              alt=""
-              loading="lazy"
-              className="h-[72px] w-[72px] shrink-0 rounded-xl object-cover"
-            />
-            <div className="min-w-0 flex-1">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-cyan/80">
-                {continueSeries.progress ? "In progress" : "Scripture series"}
-              </p>
-              <p className="truncate text-sm font-semibold">{continueSeries.series.title}</p>
-              <p className="line-clamp-1 text-xs text-muted-foreground">
-                {continueSeries.series.session_count} sessions ·{" "}
-                {continueSeries.series.estimated_duration} min
-              </p>
-              <ProgressBar
-                className="mt-2"
-                value={continueSeries.progress?.progress_percent ?? 0}
-              />
-            </div>
-          </Link>
-        </section>
-      )}
-
-      {/* Today's Challenge */}
-      <section className="px-4 pt-7">
-        <SectionHeader title="Today's challenge" />
-        <div className="nuru-card flex items-center gap-3 p-4">
-          <IconTile icon={Target} tone="growth" size="lg" />
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium leading-snug text-secondary-foreground">
-              {challenge.prompt}
-            </p>
-          </div>
-          <Link
-            to="/bible"
-            className="shrink-0 rounded-full bg-primary px-3.5 py-2 text-[11px] font-semibold text-primary-foreground nuru-glow-sm"
-          >
-            Accept
-          </Link>
-        </div>
-      </section>
-
-      {/* Upcoming */}
-      {upcoming.length > 0 && (
-        <section className="px-4 pt-7">
-          <SectionHeader title="Upcoming" action="All events" to="/events" />
-          <div className="space-y-2">
-            {upcoming.map((e) => (
-              <Link key={e.id} to="/events" className="nuru-card flex items-center gap-3 p-3">
-                <img
-                  src={resolveMedia(e.cover_url)}
-                  alt=""
-                  width={128}
-                  height={128}
-                  loading="lazy"
-                  className="h-14 w-14 rounded-xl object-cover"
-                />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-semibold">{e.title}</span>
-                  <span className="block truncate text-xs text-muted-foreground">
-                    {eventDate(e.starts_at)}
-                  </span>
-                  <span className="block truncate text-[11px] font-medium text-cyan">
-                    {e.location ?? "Online"}
-                  </span>
+              <Bell className="h-5 w-5" />
+              {unread > 0 && (
+                <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-primary-foreground ring-2 ring-background">
+                  {unread}
                 </span>
-                <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Music & Media */}
-      <section className="px-4 pt-7">
-        <SectionHeader title="Music & media" action="Open" to="/music" />
-        {media.isLoading ? (
-          <CardSkeleton count={1} height="h-32" />
-        ) : (media.data ?? []).length > 0 ? (
-          <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4">
-            {(media.data ?? []).map((item) => (
-              <Link
-                key={item.id}
-                to="/music"
-                className="nuru-card w-32 shrink-0 overflow-hidden p-2.5 transition-colors active:opacity-90"
-              >
-                <div className="relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-lg bg-surface-2">
-                  {item.thumbnail_url ? (
-                    <img
-                      src={resolveMedia(item.thumbnail_url)}
-                      alt=""
-                      loading="lazy"
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <Music2 className="h-6 w-6 text-cyan/60" />
-                  )}
-                </div>
-                <p className="mt-2 line-clamp-2 text-xs font-semibold leading-snug">{item.title}</p>
-                <p className="truncate text-[11px] text-muted-foreground">
-                  {item.creator_name ?? "Nuru Faith"}
-                </p>
-              </Link>
-            ))}
-          </div>
-        ) : (
-          <div className="nuru-card flex items-center gap-3 p-4">
-            <IconTile icon={Music2} tone="growth" size="lg" />
-            <p className="min-w-0 flex-1 text-sm font-medium leading-snug text-secondary-foreground">
-              Worship, sermons and Christian video are on their way to your feed.
-            </p>
-            <Link
-              to="/music"
-              className="shrink-0 rounded-full border border-border-strong bg-surface-2/70 px-3.5 py-2 text-[11px] font-semibold text-cyan"
-            >
-              Browse
+              )}
+            </Link>
+            <Link to="/profile" aria-label="Your profile">
+              <Avatar src={profile.data?.avatar_url} name={profile.data?.full_name} />
             </Link>
           </div>
-        )}
-      </section>
+        </header>
 
-      <p className="script px-4 pt-9 text-center text-2xl text-cyan/80">Let your light shine.</p>
+        {/* Greeting */}
+        <section className="px-4 pt-1">
+          <h1 className="font-display text-[26px] font-semibold leading-tight">
+            Shalom, {name}! <span className="align-middle">👋</span>
+          </h1>
+          <p className="mt-1 text-sm text-secondary-foreground">
+            You are loved. You are called. You are sent.
+          </p>
+        </section>
+
+        {/* Today's Light */}
+        <section className="px-4 pt-4">
+          {verse.isLoading ? (
+            <CardSkeleton count={1} height="h-52" />
+          ) : (
+            <article className="nuru-card-hero relative overflow-hidden p-5">
+              <img
+                src={verseBg}
+                alt=""
+                loading="eager"
+                className="absolute inset-0 h-full w-full object-cover opacity-35"
+              />
+              <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/70 to-background/90" />
+              <div className="relative">
+                <div className="flex items-center justify-between">
+                  <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-cyan">
+                    <Sparkles className="h-3.5 w-3.5" /> Today's Light
+                  </p>
+                  <span className="text-[11px] text-muted-foreground">
+                    {new Date().toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                  </span>
+                </div>
+                <p className="mt-3 font-display text-[17px] font-semibold leading-snug">
+                  {verse.data ? `"${verse.data.text}"` : "Scripture is loading…"}
+                </p>
+                <p className="mt-2 text-xs font-medium text-cyan">
+                  {verse.data
+                    ? `${verse.data.reference} · ${verse.data.translation}`
+                    : verseOfTheDayRef()}
+                </p>
+                <div className="mt-4 flex items-center gap-2">
+                  <Link
+                    to="/bible"
+                    className="inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-full bg-primary px-4 text-xs font-semibold text-primary-foreground nuru-glow-sm"
+                  >
+                    Read &amp; Reflect <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
+                  <Link
+                    to="/bible"
+                    aria-label="Open the Bible"
+                    className="flex h-10 w-10 items-center justify-center rounded-full border border-border-strong bg-surface-2/70 text-cyan"
+                  >
+                    <BookOpen className="h-4 w-4" />
+                  </Link>
+                  <button
+                    type="button"
+                    aria-label="Share today's verse"
+                    onClick={() => {
+                      const text = verse.data
+                        ? `"${verse.data.text}" — ${verse.data.reference}`
+                        : "A verse from Nuru Faith";
+                      if (navigator.share) void navigator.share({ text }).catch(() => {});
+                      else void navigator.clipboard.writeText(text);
+                    }}
+                    className="flex h-10 w-10 items-center justify-center rounded-full border border-border-strong bg-surface-2/70 text-cyan"
+                  >
+                    <Share2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            </article>
+          )}
+        </section>
+
+        {/* Quick Access */}
+        <section className="px-4 pt-6">
+          <SectionHeader title="Quick access" />
+          <nav aria-label="Quick access" className="grid grid-cols-4 gap-x-2 gap-y-4">
+            {QUICK.map(({ to, label, icon: Icon, tone }) => (
+              <Link
+                key={to}
+                to={to}
+                className="flex flex-col items-center gap-1.5 text-center transition-transform active:scale-95"
+              >
+                <IconTile icon={Icon} tone={tone} size="lg" />
+                <span className="text-[11px] font-medium text-secondary-foreground">{label}</span>
+              </Link>
+            ))}
+          </nav>
+        </section>
+
+        {/* Continue Growing */}
+        {continueSeries?.series && (
+          <section className="px-4 pt-7">
+            <SectionHeader title="Continue growing" action="All series" to="/series" />
+            <Link
+              to="/series/$slug"
+              params={{ slug: continueSeries.series.slug }}
+              className="nuru-card flex gap-3 overflow-hidden p-3 transition-colors active:opacity-90"
+            >
+              <img
+                src={resolveMedia(continueSeries.series.cover_image)}
+                alt=""
+                loading="lazy"
+                className="h-[72px] w-[72px] shrink-0 rounded-xl object-cover"
+              />
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-cyan/80">
+                  {continueSeries.progress ? "In progress" : "Scripture series"}
+                </p>
+                <p className="truncate text-sm font-semibold">{continueSeries.series.title}</p>
+                <p className="line-clamp-1 text-xs text-muted-foreground">
+                  {continueSeries.series.session_count} sessions ·{" "}
+                  {continueSeries.series.estimated_duration} min
+                </p>
+                <ProgressBar
+                  className="mt-2"
+                  value={continueSeries.progress?.progress_percent ?? 0}
+                />
+              </div>
+            </Link>
+          </section>
+        )}
+
+        {/* Today's Challenge */}
+        <section className="px-4 pt-7">
+          <SectionHeader title="Today's challenge" />
+          <div className="nuru-card flex items-center gap-3 p-4">
+            <IconTile icon={Target} tone="growth" size="lg" />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium leading-snug text-secondary-foreground">
+                {challenge.prompt}
+              </p>
+            </div>
+            <Link
+              to="/bible"
+              className="shrink-0 rounded-full bg-primary px-3.5 py-2 text-[11px] font-semibold text-primary-foreground nuru-glow-sm"
+            >
+              Accept
+            </Link>
+          </div>
+        </section>
+
+        {/* Upcoming */}
+        {upcoming.length > 0 && (
+          <section className="px-4 pt-7">
+            <SectionHeader title="Upcoming" action="All events" to="/events" />
+            <div className="space-y-2">
+              {upcoming.map((e) => (
+                <Link key={e.id} to="/events" className="nuru-card flex items-center gap-3 p-3">
+                  <img
+                    src={resolveMedia(e.cover_url)}
+                    alt=""
+                    width={128}
+                    height={128}
+                    loading="lazy"
+                    className="h-14 w-14 rounded-xl object-cover"
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold">{e.title}</span>
+                    <span className="block truncate text-xs text-muted-foreground">
+                      {eventDate(e.starts_at)}
+                    </span>
+                    <span className="block truncate text-[11px] font-medium text-cyan">
+                      {e.location ?? "Online"}
+                    </span>
+                  </span>
+                  <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Music & Media */}
+        <section className="px-4 pt-7">
+          <SectionHeader title="Music & media" action="Open" to="/music" />
+          {media.isLoading ? (
+            <CardSkeleton count={1} height="h-32" />
+          ) : (media.data ?? []).length > 0 ? (
+            <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4">
+              {(media.data ?? []).map((item) => (
+                <Link
+                  key={item.id}
+                  to="/music"
+                  className="nuru-card w-32 shrink-0 overflow-hidden p-2.5 transition-colors active:opacity-90"
+                >
+                  <div className="relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-lg bg-surface-2">
+                    {item.thumbnail_url ? (
+                      <img
+                        src={resolveMedia(item.thumbnail_url)}
+                        alt=""
+                        loading="lazy"
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <Music2 className="h-6 w-6 text-cyan/60" />
+                    )}
+                  </div>
+                  <p className="mt-2 line-clamp-2 text-xs font-semibold leading-snug">
+                    {item.title}
+                  </p>
+                  <p className="truncate text-[11px] text-muted-foreground">
+                    {item.creator_name ?? "Nuru Faith"}
+                  </p>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="nuru-card flex items-center gap-3 p-4">
+              <IconTile icon={Music2} tone="growth" size="lg" />
+              <p className="min-w-0 flex-1 text-sm font-medium leading-snug text-secondary-foreground">
+                Worship, sermons and Christian video are on their way to your feed.
+              </p>
+              <Link
+                to="/music"
+                className="shrink-0 rounded-full border border-border-strong bg-surface-2/70 px-3.5 py-2 text-[11px] font-semibold text-cyan"
+              >
+                Browse
+              </Link>
+            </div>
+          )}
+        </section>
+
+        <p className="script px-4 pt-9 text-center text-2xl text-cyan/80">Let your light shine.</p>
+      </div>
+
+      {/* Desktop/tablet dashboard */}
+      <section className="hidden px-0 pt-10 lg:block">
+        <SectionHeader title="Explore Nuru Faith" />
+        <div className="grid grid-cols-2 gap-4 xl:grid-cols-3">
+          <DashboardCard
+            to="/bible"
+            icon={BookOpen}
+            tone="cyan"
+            title="Bible & Devotionals"
+            body={verse.data ? `"${verse.data.text}"` : "Today's verse is loading…"}
+            meta={verse.data ? verse.data.reference : undefined}
+          />
+          <DashboardCard
+            to="/series"
+            icon={GraduationCap}
+            tone="violet"
+            title="Scripture Series"
+            body={
+              continueSeries?.series
+                ? continueSeries.series.title
+                : (series.data ?? []).length > 0
+                  ? "Guided series to grow through Scripture together"
+                  : "New series are on their way"
+            }
+            meta={
+              (series.data ?? []).length > 0
+                ? `${(series.data ?? []).length} series available`
+                : undefined
+            }
+          />
+          <DashboardCard
+            to="/community"
+            icon={UsersRound}
+            tone="brand"
+            title="Community & Groups"
+            body={
+              (groups.data ?? []).length > 0
+                ? ((groups.data ?? [])[0] as { name?: string }).name || "Join a group"
+                : "Groups are being set up for your church"
+            }
+            meta={
+              (groups.data ?? []).length > 0 ? `${(groups.data ?? []).length} groups` : undefined
+            }
+          />
+          <DashboardCard
+            to="/mentors"
+            icon={Sparkles}
+            tone="violet"
+            title="Mentors"
+            body={
+              (mentors.data ?? []).length > 0
+                ? "Connect with mentors walking with young people in faith"
+                : "Mentors are joining Nuru Faith soon"
+            }
+            meta={
+              (mentors.data ?? []).length > 0 ? `${(mentors.data ?? []).length} mentors` : undefined
+            }
+          />
+          <DashboardCard
+            to="/events"
+            icon={CalendarDays}
+            tone="brand"
+            title="Events"
+            body={upcoming[0] ? upcoming[0].title : "No upcoming events yet — check back soon"}
+            meta={upcoming[0] ? eventDate(upcoming[0].starts_at) : undefined}
+          />
+          <DashboardCard
+            to="/music"
+            icon={Music2}
+            tone="growth"
+            title="Music & Media"
+            body={
+              (media.data ?? []).length > 0
+                ? "Worship, sermons and Christian video"
+                : "Worship and media are on their way"
+            }
+            meta={(media.data ?? []).length > 0 ? `${(media.data ?? []).length} items` : undefined}
+          />
+          <DashboardCard
+            to="/hub"
+            icon={LayoutGrid}
+            tone="cyan"
+            title="Hub & Announcements"
+            body="Everything else — news, resources, testimonies and more"
+            meta={undefined}
+          />
+        </div>
+      </section>
     </AppShell>
   );
 }

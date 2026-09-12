@@ -39,6 +39,7 @@ import { AppShell } from "@/components/nuru/AppShell";
 import { Avatar } from "@/components/nuru/PostCard";
 import { CardSkeleton, IconTile, ProgressBar, SectionHeader } from "@/components/nuru/Primitives";
 import { NuruLogo } from "@/components/nuru/Logo";
+import { FaithJourneyTrack } from "@/components/nuru/FaithJourney";
 
 export const Route = createFileRoute("/_authenticated/home")({
   head: () => ({
@@ -703,8 +704,11 @@ function HomeScreen() {
   return (
     <AppShell wide="xl">
       <div className="mx-auto w-full max-w-xl">
-        <header className="flex items-center justify-between px-4 pt-[max(1.25rem,env(safe-area-inset-top))] pb-2">
-          <NuruLogo compact />
+        <header className="flex items-center justify-between px-4 pt-[max(1.25rem,env(safe-area-inset-top))] pb-2 lg:justify-end">
+          {/* Desktop carries the brand in the left column, so the mark is mobile-only here. */}
+          <span className="lg:hidden">
+            <NuruLogo compact />
+          </span>
           <div className="flex items-center gap-2">
             <Link
               to="/notifications"
@@ -816,6 +820,11 @@ function HomeScreen() {
             meta={undefined}
           />
         </div>
+      </section>
+
+      {/* Reference bottom band: the milestone track across the full dashboard width. */}
+      <section className="hidden px-4 pb-10 lg:block">
+        <FaithJourneyTrack streak={profile.data?.faith_streak ?? 0} />
       </section>
     </AppShell>
   );

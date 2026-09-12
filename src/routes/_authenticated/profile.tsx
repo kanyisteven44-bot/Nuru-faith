@@ -36,6 +36,7 @@ import {
   ScreenHero,
   SectionHeader,
 } from "@/components/nuru/Primitives";
+import { FaithJourneyStrip } from "@/components/nuru/FaithJourney";
 import heroBg from "@/assets/walk-purpose.jpg";
 
 export const Route = createFileRoute("/_authenticated/profile")({
@@ -173,7 +174,7 @@ function ProfileScreen() {
       {p?.bio && !editing && <p className="px-4 pb-4 text-sm text-secondary-foreground">{p.bio}</p>}
 
       <div className="px-4">
-        <JourneyStrip streak={p?.faith_streak ?? 0} />
+        <FaithJourneyStrip streak={p?.faith_streak ?? 0} />
       </div>
 
       <div className="grid grid-cols-3 gap-2 px-4 pt-4">
@@ -296,39 +297,6 @@ function ProfileScreen() {
         </button>
       </div>
     </AppShell>
-  );
-}
-
-const JOURNEY = ["Explorer", "Growing Disciple", "Active Member", "Kingdom Impact"] as const;
-
-function JourneyStrip({ streak }: { streak: number }) {
-  const stage = streak >= 90 ? 3 : streak >= 30 ? 2 : streak >= 7 ? 1 : 0;
-  return (
-    <div className="nuru-card p-4">
-      <div className="flex items-center justify-between">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-cyan/80">
-          Faith journey
-        </p>
-        <p className="text-xs font-semibold text-foreground">{JOURNEY[stage]}</p>
-      </div>
-      <div className="mt-3 flex items-center gap-1.5">
-        {JOURNEY.map((label, i) => (
-          <div key={label} className="flex-1">
-            <div
-              className={cn(
-                "h-1.5 rounded-full transition-colors",
-                i <= stage ? "bg-gradient-to-r from-cyan to-primary" : "bg-surface-2",
-              )}
-            />
-          </div>
-        ))}
-      </div>
-      <p className="mt-2 text-[11px] text-muted-foreground">
-        {stage < 3
-          ? `Keep showing up — you're growing toward ${JOURNEY[stage + 1]}.`
-          : "You're living it out. Keep leading the way."}
-      </p>
-    </div>
   );
 }
 

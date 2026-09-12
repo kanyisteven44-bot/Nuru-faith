@@ -21,6 +21,7 @@ import {
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
 import { AiMarkdown } from "@/components/nuru/AiMarkdown";
 import { CardSkeleton, ComingSoon, IconTile } from "@/components/nuru/Primitives";
+import heroBg from "@/assets/mountain-dawn.jpg";
 
 type Search = {
   contextType?: string | undefined;
@@ -256,20 +257,31 @@ function AiScreen() {
       <div className="space-y-4 px-4 py-4">
         {messages.length === 0 && (
           <>
-            <div className="nuru-card-hero p-5">
-              <IconTile icon={Sparkles} tone="cyan" size="lg" />
-              <h2 className="mt-3 font-display text-lg font-semibold">Ask anything about faith</h2>
-              <p className="mt-1 text-sm text-secondary-foreground">
-                Nuru AI explains Scripture in context, shows how different Christian traditions
-                understand it, and always points you back to the Bible and to real people in your
-                church.
-              </p>
-              <p className="mt-3 rounded-2xl bg-surface-2 p-3 text-xs text-muted-foreground">
-                Nuru AI is a study helper, not a pastor, priest or counsellor. It can be wrong.
-                Check what it says against the Bible and talk with trusted leaders in your church.
-                If you are in danger or crisis, contact someone you trust or your local emergency
-                services straight away.
-              </p>
+            <div className="nuru-card-hero relative overflow-hidden p-5">
+              <img
+                src={heroBg}
+                alt=""
+                loading="eager"
+                className="absolute inset-0 h-full w-full object-cover opacity-30"
+              />
+              <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/75 to-background/90" />
+              <div className="relative">
+                <IconTile icon={Sparkles} tone="cyan" size="lg" />
+                <h2 className="mt-3 font-display text-lg font-semibold">
+                  Ask anything about faith
+                </h2>
+                <p className="mt-1 text-sm text-secondary-foreground">
+                  Nuru AI explains Scripture in context, shows how different Christian traditions
+                  understand it, and always points you back to the Bible and to real people in your
+                  church.
+                </p>
+                <p className="mt-3 rounded-2xl bg-surface-2 p-3 text-xs text-muted-foreground">
+                  Nuru AI is a study helper, not a pastor, priest or counsellor. It can be wrong.
+                  Check what it says against the Bible and talk with trusted leaders in your church.
+                  If you are in danger or crisis, contact someone you trust or your local emergency
+                  services straight away.
+                </p>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-2">

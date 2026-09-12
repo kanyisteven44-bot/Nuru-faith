@@ -100,9 +100,9 @@
   --destructive: oklch(0.68 0.2 15);
   --destructive-foreground: oklch(0.99 0.004 250);
 
-  /* thin blue borders */
-  --border: oklch(0.68 0.11 254 / 15%);
-  --border-strong: oklch(0.7 0.13 254 / 32%);
+  /* thin electric-blue borders */
+  --border: oklch(0.7 0.13 254 / 24%);
+  --border-strong: oklch(0.72 0.15 254 / 38%);
   --input: oklch(0.7 0.12 254 / 22%);
   --ring: oklch(0.66 0.19 264);
 
@@ -217,7 +217,7 @@
 @utility nuru-card-hero {
   background-image: var(--gradient-hero);
   border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-2xl);
+  border-radius: var(--radius-xl);
   box-shadow: var(--shadow-raised);
 }
 

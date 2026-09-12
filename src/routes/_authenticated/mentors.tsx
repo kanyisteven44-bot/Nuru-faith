@@ -15,8 +15,10 @@ import {
   EmptyState,
   GradientButton,
   PillTabs,
+  ScreenHero,
   SectionHeader,
 } from "@/components/nuru/Primitives";
+import heroBg from "@/assets/walk-purpose.jpg";
 
 export const Route = createFileRoute("/_authenticated/mentors")({
   head: () => ({
@@ -79,6 +81,7 @@ function MentorsScreen() {
   return (
     <AppShell>
       <ScreenHeader title="Mentorship" subtitle="Walk with someone further along" />
+      <ScreenHero image={heroBg} />
 
       <div className="px-4 py-3">
         <PillTabs tabs={TABS} value={tab} onChange={setTab} />

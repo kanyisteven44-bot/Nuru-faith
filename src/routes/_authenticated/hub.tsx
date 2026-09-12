@@ -12,8 +12,9 @@ import {
   Users,
 } from "lucide-react";
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
-import { IconTile, SectionHeader } from "@/components/nuru/Primitives";
+import { IconTile, ScreenHero, SectionHeader } from "@/components/nuru/Primitives";
 import { TAGLINE } from "@/constants/nuru";
+import heroBg from "@/assets/quiet-night.jpg";
 
 export const Route = createFileRoute("/_authenticated/hub")({
   head: () => ({
@@ -68,6 +69,7 @@ function HubScreen() {
   return (
     <AppShell>
       <ScreenHeader title="Nuru Faith Hub" subtitle={TAGLINE} />
+      <ScreenHero image={heroBg} />
       <div className="space-y-7 px-4 py-4">
         {GROUPS.map((g) => (
           <section key={g.title}>

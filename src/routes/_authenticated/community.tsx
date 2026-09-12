@@ -24,7 +24,9 @@ import {
   GhostButton,
   IconTile,
   PillTabs,
+  ScreenHero,
 } from "@/components/nuru/Primitives";
+import heroBg from "@/assets/friends-dusk.jpg";
 
 export const Route = createFileRoute("/_authenticated/community")({
   head: () => ({
@@ -83,6 +85,7 @@ function CommunityScreen() {
   return (
     <AppShell>
       <ScreenHeader title="Community" subtitle="Grow together, not alone" />
+      <ScreenHero image={heroBg} />
 
       <div className="px-4 py-3">
         <PillTabs tabs={TABS} value={tab} onChange={setTab} />

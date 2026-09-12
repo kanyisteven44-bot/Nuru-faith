@@ -16,8 +16,10 @@ import {
   EmptyState,
   IconTile,
   PillTabs,
+  ScreenHero,
   SectionHeader,
 } from "@/components/nuru/Primitives";
+import heroBg from "@/assets/worship-night.jpg";
 import { YouTubePlayer, YouTubeNotice } from "@/components/youtube/YouTubePlayer";
 import { YouTubeSearchResults } from "@/components/youtube/YouTubeSearchResults";
 import { MediaCategoryRail } from "@/components/youtube/MediaCategoryRail";
@@ -94,6 +96,7 @@ function MusicScreen() {
   return (
     <AppShell>
       <ScreenHeader title="Music & media" subtitle="Worship, teaching and sound for your week" />
+      <ScreenHero image={heroBg} />
 
       <div className="space-y-3 px-4 py-3">
         <div className="relative">

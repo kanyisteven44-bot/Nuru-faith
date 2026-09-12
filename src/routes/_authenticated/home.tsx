@@ -22,6 +22,7 @@ import { fetchVerseOfTheDay, verseOfTheDayRef } from "@/lib/bible";
 import { fetchEvents, fetchNotifications, fetchProfile } from "@/services/content";
 import { fetchMyProgress, fetchSeries } from "@/services/series";
 import { fetchMediaItems } from "@/services/media";
+import verseBg from "@/assets/bible-candle.jpg";
 import { AppShell } from "@/components/nuru/AppShell";
 import { Avatar } from "@/components/nuru/PostCard";
 import { CardSkeleton, IconTile, ProgressBar, SectionHeader } from "@/components/nuru/Primitives";
@@ -154,51 +155,60 @@ function HomeScreen() {
         {verse.isLoading ? (
           <CardSkeleton count={1} height="h-52" />
         ) : (
-          <article className="nuru-card-hero overflow-hidden p-5">
-            <div className="flex items-center justify-between">
-              <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-cyan">
-                <Sparkles className="h-3.5 w-3.5" /> Today's Light
+          <article className="nuru-card-hero relative overflow-hidden p-5">
+            <img
+              src={verseBg}
+              alt=""
+              loading="eager"
+              className="absolute inset-0 h-full w-full object-cover opacity-35"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/70 to-background/90" />
+            <div className="relative">
+              <div className="flex items-center justify-between">
+                <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-cyan">
+                  <Sparkles className="h-3.5 w-3.5" /> Today's Light
+                </p>
+                <span className="text-[11px] text-muted-foreground">
+                  {new Date().toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                </span>
+              </div>
+              <p className="mt-3 font-display text-[17px] font-semibold leading-snug">
+                {verse.data ? `"${verse.data.text}"` : "Scripture is loading…"}
               </p>
-              <span className="text-[11px] text-muted-foreground">
-                {new Date().toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-              </span>
-            </div>
-            <p className="mt-3 font-display text-[17px] font-semibold leading-snug">
-              {verse.data ? `"${verse.data.text}"` : "Scripture is loading…"}
-            </p>
-            <p className="mt-2 text-xs font-medium text-cyan">
-              {verse.data
-                ? `${verse.data.reference} · ${verse.data.translation}`
-                : verseOfTheDayRef()}
-            </p>
-            <div className="mt-4 flex items-center gap-2">
-              <Link
-                to="/bible"
-                className="inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-full bg-primary px-4 text-xs font-semibold text-primary-foreground nuru-glow-sm"
-              >
-                Read &amp; Reflect <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-              <Link
-                to="/bible"
-                aria-label="Open the Bible"
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-border-strong bg-surface-2/70 text-cyan"
-              >
-                <BookOpen className="h-4 w-4" />
-              </Link>
-              <button
-                type="button"
-                aria-label="Share today's verse"
-                onClick={() => {
-                  const text = verse.data
-                    ? `"${verse.data.text}" — ${verse.data.reference}`
-                    : "A verse from Nuru Faith";
-                  if (navigator.share) void navigator.share({ text }).catch(() => {});
-                  else void navigator.clipboard.writeText(text);
-                }}
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-border-strong bg-surface-2/70 text-cyan"
-              >
-                <Share2 className="h-4 w-4" />
-              </button>
+              <p className="mt-2 text-xs font-medium text-cyan">
+                {verse.data
+                  ? `${verse.data.reference} · ${verse.data.translation}`
+                  : verseOfTheDayRef()}
+              </p>
+              <div className="mt-4 flex items-center gap-2">
+                <Link
+                  to="/bible"
+                  className="inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-full bg-primary px-4 text-xs font-semibold text-primary-foreground nuru-glow-sm"
+                >
+                  Read &amp; Reflect <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+                <Link
+                  to="/bible"
+                  aria-label="Open the Bible"
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-border-strong bg-surface-2/70 text-cyan"
+                >
+                  <BookOpen className="h-4 w-4" />
+                </Link>
+                <button
+                  type="button"
+                  aria-label="Share today's verse"
+                  onClick={() => {
+                    const text = verse.data
+                      ? `"${verse.data.text}" — ${verse.data.reference}`
+                      : "A verse from Nuru Faith";
+                    if (navigator.share) void navigator.share({ text }).catch(() => {});
+                    else void navigator.clipboard.writeText(text);
+                  }}
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-border-strong bg-surface-2/70 text-cyan"
+                >
+                  <Share2 className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           </article>
         )}

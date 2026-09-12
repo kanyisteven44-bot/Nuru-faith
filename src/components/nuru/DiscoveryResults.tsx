@@ -1,4 +1,5 @@
-﻿import { Link } from "@tanstack/react-router";
+﻿import { useEffect } from "react";
+import { Link } from "@tanstack/react-router";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { searchDiscovery } from "@/lib/discovery.functions";
 import { DISCOVERY_LABELS, type DiscoveryKind } from "@/lib/content-policy";
@@ -9,10 +10,21 @@ export function DiscoveryResults({
   kind,
   query,
   userId,
+  hideWhenEmpty = false,
+  onEmptyChange,
 }: {
   kind: DiscoveryKind;
   query: string;
   userId: string | null;
+  /**
+   * The "All" tab stacks every category at once, so a category with nothing in it
+   * drops out rather than contributing another "No results here" card. Picking a
+   * single category still shows the empty state — there the silence would be a
+   * dead screen with no explanation.
+   */
+  hideWhenEmpty?: boolean;
+  /** Lets the "All" tab tell the difference between "still loading" and "nothing matched anywhere". */
+  onEmptyChange?: (empty: boolean) => void;
 }) {
   const results = useInfiniteQuery({
     queryKey: ["discovery", userId, kind, query],
@@ -23,6 +35,9 @@ export function DiscoveryResults({
     staleTime: 60_000,
   });
   const items = results.data?.pages.flatMap((page) => page.items) ?? [];
+  const isEmpty = results.isSuccess && items.length === 0;
+  useEffect(() => onEmptyChange?.(isEmpty), [isEmpty, onEmptyChange]);
+  if (hideWhenEmpty && isEmpty) return null;
   return (
     <section className="space-y-2 px-4 pb-5" aria-label={DISCOVERY_LABELS[kind]}>
       <SectionHeader title={DISCOVERY_LABELS[kind]} />

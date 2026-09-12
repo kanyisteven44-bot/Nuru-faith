@@ -358,6 +358,68 @@ function MusicMediaSection({
   );
 }
 
+function QuickAccessSection() {
+  return (
+    <section>
+      <SectionHeader title="Quick access" />
+      <nav aria-label="Quick access" className="grid grid-cols-4 gap-x-2 gap-y-4">
+        {QUICK.map(({ to, label, icon: Icon, tone }) => (
+          <Link
+            key={to}
+            to={to}
+            className="flex flex-col items-center gap-1.5 text-center transition-transform active:scale-95"
+          >
+            <IconTile icon={Icon} tone={tone} size="lg" />
+            <span className="text-[11px] font-medium text-secondary-foreground">{label}</span>
+          </Link>
+        ))}
+      </nav>
+    </section>
+  );
+}
+
+function CommunitySection({
+  isLoading,
+  groups,
+}: {
+  isLoading: boolean;
+  groups: { id: string; name: string; category: string | null; member_count: number }[];
+}) {
+  return (
+    <section>
+      <SectionHeader title="Community" action="All groups" to="/community" />
+      {isLoading ? (
+        <CardSkeleton count={2} height="h-16" />
+      ) : groups.length === 0 ? (
+        <div className="nuru-card flex items-center gap-3 p-4">
+          <IconTile icon={UsersRound} tone="brand" size="lg" />
+          <p className="min-w-0 flex-1 text-sm font-medium leading-snug text-secondary-foreground">
+            Groups for your church are being set up.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {groups.map((g) => (
+            <Link key={g.id} to="/community" className="nuru-card flex items-center gap-3 p-3">
+              <IconTile icon={UsersRound} tone="brand" size="lg" />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-semibold">{g.name}</span>
+                <span className="block truncate text-xs text-muted-foreground">
+                  {g.member_count > 0
+                    ? `${g.member_count} ${g.member_count === 1 ? "member" : "members"}`
+                    : "Be the first to join"}
+                  {g.category ? ` · ${g.category}` : ""}
+                </span>
+              </span>
+              <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+            </Link>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
 function HomeScreen() {
   const { userId } = useAuth();
   const navigate = useNavigate();
@@ -446,35 +508,22 @@ function HomeScreen() {
             You are loved. You are called. You are sent.
           </p>
         </section>
-
-        {/* Quick Access */}
-        <section className="px-4 pt-4">
-          <SectionHeader title="Quick access" />
-          <nav aria-label="Quick access" className="grid grid-cols-4 gap-x-2 gap-y-4">
-            {QUICK.map(({ to, label, icon: Icon, tone }) => (
-              <Link
-                key={to}
-                to={to}
-                className="flex flex-col items-center gap-1.5 text-center transition-transform active:scale-95"
-              >
-                <IconTile icon={Icon} tone={tone} size="lg" />
-                <span className="text-[11px] font-medium text-secondary-foreground">{label}</span>
-              </Link>
-            ))}
-          </nav>
-        </section>
       </div>
 
-      {/* Mobile: everything below Quick Access stacks in one narrow column.
-          Desktop/tablet renders the dashboard composition below instead. */}
+      {/* Mobile follows the reference phone order: greeting, daily verse hero, quick
+          access, then the feed. Desktop renders the dashboard composition below. */}
       <div className="mx-auto w-full max-w-xl lg:hidden">
-        <section className="px-4 pt-7">
+        <section className="px-4 pt-5">
           <TodaysLightSection
             isLoading={verse.isLoading}
             verseData={verse.data}
             verseRef={verseOfTheDayRef()}
           />
         </section>
+
+        <div className="px-4 pt-7">
+          <QuickAccessSection />
+        </div>
 
         {continueSeries?.series && (
           <div className="px-4 pt-7">
@@ -494,6 +543,10 @@ function HomeScreen() {
           <MusicMediaSection isLoading={media.isLoading} items={media.data ?? []} />
         </div>
 
+        <div className="px-4 pt-7">
+          <CommunitySection isLoading={groups.isLoading} groups={(groups.data ?? []).slice(0, 3)} />
+        </div>
+
         <p className="script px-4 pt-9 text-center text-2xl text-cyan/80">Let your light shine.</p>
       </div>
 
@@ -505,6 +558,7 @@ function HomeScreen() {
             verseData={verse.data}
             verseRef={verseOfTheDayRef()}
           />
+          <QuickAccessSection />
           <ContinueGrowingSection continueSeries={continueSeries} />
           <ChallengeSection challenge={challenge} />
         </div>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Search } from "lucide-react";
 import { z } from "zod";
@@ -8,9 +8,11 @@ import {
   DISCOVERY_LABELS,
   SUGGESTED_SEARCHES,
   normalizeSearch,
+  type DiscoveryKind,
 } from "@/lib/content-policy";
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
 import { DiscoveryResults } from "@/components/nuru/DiscoveryResults";
+import { EmptyState } from "@/components/nuru/Primitives";
 
 const schema = z.object({
   q: z.string().max(120).catch(""),
@@ -54,6 +56,21 @@ function ExploreScreen() {
       /* Search remains usable when storage is unavailable. */
     }
   }, [userId]);
+  const [emptyKinds, setEmptyKinds] = useState<Partial<Record<DiscoveryKind, boolean>>>({});
+  useEffect(() => setEmptyKinds({}), [search.q, search.kind]);
+  const markEmpty = useCallback((kind: DiscoveryKind, empty: boolean) => {
+    setEmptyKinds((prev) => (prev[kind] === empty ? prev : { ...prev, [kind]: empty }));
+  }, []);
+  const emptyHandlers = useMemo(
+    () =>
+      Object.fromEntries(
+        DISCOVERY_KINDS.map((kind) => [kind, (empty: boolean) => markEmpty(kind, empty)]),
+      ) as Record<DiscoveryKind, (empty: boolean) => void>,
+    [markEmpty],
+  );
+  const nothingMatched =
+    search.kind === "all" && DISCOVERY_KINDS.every((kind) => emptyKinds[kind] === true);
+
   function remember(value: string) {
     const q = normalizeSearch(value);
     setInput(q);
@@ -153,8 +170,27 @@ function ExploreScreen() {
       </div>
       <div aria-live="polite">
         {(search.kind === "all" ? DISCOVERY_KINDS : [search.kind]).map((kind) => (
-          <DiscoveryResults key={kind} kind={kind} query={search.q} userId={userId} />
+          <DiscoveryResults
+            key={kind}
+            kind={kind}
+            query={search.q}
+            userId={userId}
+            hideWhenEmpty={search.kind === "all"}
+            onEmptyChange={emptyHandlers[kind]}
+          />
         ))}
+        {nothingMatched && (
+          <div className="px-4 pb-5">
+            <EmptyState
+              title={search.q ? `Nothing found for "${search.q}"` : "Nothing to show yet"}
+              description={
+                search.q
+                  ? "Try another word or topic, or pick a category above."
+                  : "Approved content will appear here as churches and the Nuru team add it."
+              }
+            />
+          </div>
+        )}
       </div>
     </AppShell>
   );

@@ -95,14 +95,21 @@ function EventsScreen() {
               key={e.id}
               className={cn("overflow-hidden", featured ? "nuru-card-hero" : "nuru-card")}
             >
-              <img
-                src={resolveMedia(e.cover_url)}
-                alt=""
-                width={1024}
-                height={480}
-                loading="lazy"
-                className="h-36 w-full object-cover"
-              />
+              <div className="relative">
+                <img
+                  src={resolveMedia(e.cover_url)}
+                  alt=""
+                  width={1024}
+                  height={480}
+                  loading="lazy"
+                  className="h-36 w-full object-cover"
+                />
+                {featured && (
+                  <span className="absolute left-3 top-3 rounded-full bg-warning px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-background">
+                    Featured
+                  </span>
+                )}
+              </div>
               <div className="p-4">
                 <div className="flex items-start gap-2">
                   <div className="min-w-0 flex-1">

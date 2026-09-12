@@ -9,6 +9,7 @@ import { COUNTRIES, DENOMINATIONS, INTERESTS } from "@/constants/nuru";
 import { fetchChurches, joinChurch, saveInterests, updateProfile } from "@/services/content";
 import { GradientButton } from "@/components/nuru/Primitives";
 import { NuruLogo } from "@/components/nuru/Logo";
+import hero from "@/assets/walk-purpose.jpg";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
   head: () => ({
@@ -84,177 +85,186 @@ function Onboarding() {
   const steps = ["About you", "Your faith", "What you love", "Your church"];
 
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-6 py-8">
-      <div className="mb-6 flex items-center gap-3">
-        {step > 0 && (
-          <button
-            onClick={() => setStep((s) => s - 1)}
-            aria-label="Back"
-            className="rounded-full p-2 hover:bg-surface-2"
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </button>
-        )}
-        <NuruLogo compact />
-      </div>
+    <div className="relative min-h-dvh bg-background">
+      <img
+        src={hero}
+        alt=""
+        loading="eager"
+        className="absolute inset-x-0 top-0 h-64 w-full object-cover opacity-30"
+      />
+      <div className="absolute inset-x-0 top-0 h-64 bg-gradient-to-b from-background/20 to-background" />
+      <div className="relative mx-auto flex min-h-dvh w-full max-w-md flex-col px-6 py-8">
+        <div className="mb-6 flex items-center gap-3">
+          {step > 0 && (
+            <button
+              onClick={() => setStep((s) => s - 1)}
+              aria-label="Back"
+              className="rounded-full p-2 hover:bg-surface-2"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+          )}
+          <NuruLogo compact />
+        </div>
 
-      <div
-        className="mb-6 flex gap-1.5"
-        role="progressbar"
-        aria-valuenow={step + 1}
-        aria-valuemin={1}
-        aria-valuemax={4}
-      >
-        {steps.map((s, i) => (
-          <span
-            key={s}
-            className={cn(
-              "h-1 flex-1 rounded-full",
-              i <= step ? "nuru-gradient-bg" : "bg-surface-2",
-            )}
-          />
-        ))}
-      </div>
+        <div
+          className="mb-6 flex gap-1.5"
+          role="progressbar"
+          aria-valuenow={step + 1}
+          aria-valuemin={1}
+          aria-valuemax={4}
+        >
+          {steps.map((s, i) => (
+            <span
+              key={s}
+              className={cn(
+                "h-1 flex-1 rounded-full",
+                i <= step ? "nuru-gradient-bg" : "bg-surface-2",
+              )}
+            />
+          ))}
+        </div>
 
-      <h1 className="font-display text-2xl font-semibold">{steps[step]}</h1>
+        <h1 className="font-display text-2xl font-semibold">{steps[step]}</h1>
 
-      <div className="mt-6 flex-1 space-y-4">
-        {step === 0 && (
-          <>
-            <Labeled label="Full name" id="ob-name">
-              <input
-                id="ob-name"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                maxLength={100}
-                className="input-nuru"
-                placeholder="Stephen Mwangi"
-              />
-            </Labeled>
-            <Labeled label="Username" id="ob-user">
-              <input
-                id="ob-user"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                maxLength={30}
-                className="input-nuru"
-                placeholder="stephen"
-              />
-            </Labeled>
-            <Labeled label="Country" id="ob-country">
-              <select
-                id="ob-country"
-                value={country}
-                onChange={(e) => setCountry(e.target.value)}
-                className="input-nuru"
-              >
-                {COUNTRIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </Labeled>
-          </>
-        )}
-
-        {step === 1 && (
-          <>
-            <p className="text-sm text-muted-foreground">Where are you on your journey?</p>
-            <div className="space-y-2">
-              {STAGES.map((s) => (
-                <SelectCard
-                  key={s.key}
-                  selected={stage === s.key}
-                  onClick={() => setStage(s.key)}
-                  title={s.label}
-                  hint={s.hint}
+        <div className="mt-6 flex-1 space-y-4">
+          {step === 0 && (
+            <>
+              <Labeled label="Full name" id="ob-name">
+                <input
+                  id="ob-name"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  maxLength={100}
+                  className="input-nuru"
+                  placeholder="Stephen Mwangi"
                 />
-              ))}
-            </div>
-            <Labeled label="Denomination (optional)" id="ob-denom">
-              <select
-                id="ob-denom"
-                value={denomination}
-                onChange={(e) => setDenomination(e.target.value)}
-                className="input-nuru"
-              >
-                <option value="">Prefer not to say</option>
-                {DENOMINATIONS.map((d) => (
-                  <option key={d} value={d}>
-                    {d}
-                  </option>
-                ))}
-              </select>
-            </Labeled>
-          </>
-        )}
-
-        {step === 2 && (
-          <>
-            <p className="text-sm text-muted-foreground">
-              Pick at least three so we can shape your feed.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {INTERESTS.map((i) => {
-                const on = interests.includes(i);
-                return (
-                  <button
-                    key={i}
-                    type="button"
-                    aria-pressed={on}
-                    onClick={() =>
-                      setInterests((prev) => (on ? prev.filter((x) => x !== i) : [...prev, i]))
-                    }
-                    className={cn(
-                      "min-h-11 rounded-full border px-4 text-sm transition-colors",
-                      on
-                        ? "border-transparent nuru-gradient-bg font-semibold text-primary-foreground"
-                        : "border-border bg-surface-2 text-secondary-foreground",
-                    )}
-                  >
-                    {i}
-                  </button>
-                );
-              })}
-            </div>
-          </>
-        )}
-
-        {step === 3 && (
-          <>
-            <p className="text-sm text-muted-foreground">
-              Join your church community — you can change this later.
-            </p>
-            <div className="space-y-2">
-              {filteredChurches.map((c) => (
-                <SelectCard
-                  key={c.id}
-                  selected={churchId === c.id}
-                  onClick={() => setChurchId(churchId === c.id ? null : c.id)}
-                  title={c.name}
-                  hint={[c.denomination, c.city].filter(Boolean).join(" · ")}
+              </Labeled>
+              <Labeled label="Username" id="ob-user">
+                <input
+                  id="ob-user"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  maxLength={30}
+                  className="input-nuru"
+                  placeholder="stephen"
                 />
-              ))}
-            </div>
-          </>
-        )}
-      </div>
+              </Labeled>
+              <Labeled label="Country" id="ob-country">
+                <select
+                  id="ob-country"
+                  value={country}
+                  onChange={(e) => setCountry(e.target.value)}
+                  className="input-nuru"
+                >
+                  {COUNTRIES.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </Labeled>
+            </>
+          )}
 
-      <div className="sticky bottom-4 mt-6">
-        {step < 3 ? (
-          <GradientButton
-            className="w-full"
-            onClick={() => setStep((s) => s + 1)}
-            disabled={step === 2 && interests.length < 3}
-          >
-            Continue
-          </GradientButton>
-        ) : (
-          <GradientButton className="w-full" onClick={finish} disabled={saving}>
-            {saving && <Loader2 className="h-4 w-4 animate-spin" />} Enter Nuru Faith
-          </GradientButton>
-        )}
+          {step === 1 && (
+            <>
+              <p className="text-sm text-muted-foreground">Where are you on your journey?</p>
+              <div className="space-y-2">
+                {STAGES.map((s) => (
+                  <SelectCard
+                    key={s.key}
+                    selected={stage === s.key}
+                    onClick={() => setStage(s.key)}
+                    title={s.label}
+                    hint={s.hint}
+                  />
+                ))}
+              </div>
+              <Labeled label="Denomination (optional)" id="ob-denom">
+                <select
+                  id="ob-denom"
+                  value={denomination}
+                  onChange={(e) => setDenomination(e.target.value)}
+                  className="input-nuru"
+                >
+                  <option value="">Prefer not to say</option>
+                  {DENOMINATIONS.map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
+              </Labeled>
+            </>
+          )}
+
+          {step === 2 && (
+            <>
+              <p className="text-sm text-muted-foreground">
+                Pick at least three so we can shape your feed.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {INTERESTS.map((i) => {
+                  const on = interests.includes(i);
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      aria-pressed={on}
+                      onClick={() =>
+                        setInterests((prev) => (on ? prev.filter((x) => x !== i) : [...prev, i]))
+                      }
+                      className={cn(
+                        "min-h-11 rounded-full border px-4 text-sm transition-colors",
+                        on
+                          ? "border-transparent nuru-gradient-bg font-semibold text-primary-foreground"
+                          : "border-border bg-surface-2 text-secondary-foreground",
+                      )}
+                    >
+                      {i}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
+          {step === 3 && (
+            <>
+              <p className="text-sm text-muted-foreground">
+                Join your church community — you can change this later.
+              </p>
+              <div className="space-y-2">
+                {filteredChurches.map((c) => (
+                  <SelectCard
+                    key={c.id}
+                    selected={churchId === c.id}
+                    onClick={() => setChurchId(churchId === c.id ? null : c.id)}
+                    title={c.name}
+                    hint={[c.denomination, c.city].filter(Boolean).join(" · ")}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+
+        <div className="sticky bottom-4 mt-6">
+          {step < 3 ? (
+            <GradientButton
+              className="w-full"
+              onClick={() => setStep((s) => s + 1)}
+              disabled={step === 2 && interests.length < 3}
+            >
+              Continue
+            </GradientButton>
+          ) : (
+            <GradientButton className="w-full" onClick={finish} disabled={saving}>
+              {saving && <Loader2 className="h-4 w-4 animate-spin" />} Enter Nuru Faith
+            </GradientButton>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -39,7 +39,7 @@ export function AppShell({
 
       <nav
         aria-label="Main"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/85 backdrop-blur-xl"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-cyan/25 bg-[#001a3d]/95 shadow-[0_-10px_30px_-24px_var(--brand-cyan)] backdrop-blur-xl"
       >
         <ul
           className={cn(
@@ -73,7 +73,7 @@ function NavItem({
         to={to}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "flex min-h-12 flex-col items-center justify-center gap-1 rounded-lg text-[10px] font-semibold transition-colors",
+          "flex min-h-12 flex-col items-center justify-center gap-1 rounded-md text-[10px] font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan",
           active ? "text-primary" : "text-muted-foreground hover:text-secondary-foreground",
         )}
       >

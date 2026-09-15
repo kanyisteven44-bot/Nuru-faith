@@ -74,21 +74,21 @@
   --radius: 0.75rem;
 
   /* deep midnight surfaces — near-black navy climbing to a lifted card */
-  --background: oklch(0.132 0.039 258);
-  --surface: oklch(0.174 0.047 258);
-  --surface-2: oklch(0.215 0.052 258);
+  --background: #00132f;
+  --surface: #02244b;
+  --surface-2: #073565;
   --foreground: oklch(0.99 0.004 250);
-  --card: oklch(0.177 0.049 258);
+  --card: #032955;
   --card-foreground: oklch(0.99 0.004 250);
   --popover: oklch(0.208 0.04 260);
   --popover-foreground: oklch(0.99 0.004 250);
 
   /* brand light — electric blue lead, cyan accent, violet used sparingly */
-  --brand-cyan: oklch(0.83 0.132 216);
-  --primary: oklch(0.605 0.196 264);
+  --brand-cyan: #35d9ff;
+  --primary: #168cff;
   --primary-foreground: oklch(0.99 0.004 250);
-  --brand-violet: oklch(0.63 0.196 292);
-  --brand-magenta: oklch(0.7 0.223 340);
+  --brand-violet: #7e6cff;
+  --brand-magenta: #f257a7;
 
   --secondary: oklch(0.246 0.042 259);
   --secondary-foreground: oklch(0.84 0.028 245);
@@ -97,14 +97,14 @@
   --accent: oklch(0.32 0.09 265);
   --accent-foreground: oklch(0.99 0.004 250);
 
-  --growth: oklch(0.79 0.146 168);
-  --warning: oklch(0.83 0.14 78);
+  --growth: #36e4b5;
+  --warning: #ffb546;
   --destructive: oklch(0.68 0.2 15);
   --destructive-foreground: oklch(0.99 0.004 250);
 
   /* thin electric-blue borders */
-  --border: oklch(0.7 0.15 246 / 28%);
-  --border-strong: oklch(0.76 0.16 239 / 46%);
+  --border: rgb(36 154 255 / 34%);
+  --border-strong: rgb(53 217 255 / 58%);
   --input: oklch(0.7 0.12 254 / 22%);
   --ring: oklch(0.66 0.19 264);
 
@@ -212,7 +212,9 @@
   background-color: var(--color-card);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-card);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 3%),
+    var(--shadow-card);
 }
 
 /* Card that leans into the brand — used for the one hero surface per screen. */
@@ -220,7 +222,26 @@
   background-image: var(--gradient-hero);
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-raised);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 5%),
+    var(--shadow-raised);
+}
+
+@layer components {
+  .input-nuru {
+    min-height: 3rem;
+    width: 100%;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    padding: 0.75rem 1rem;
+    color: var(--foreground);
+    outline: none;
+  }
+  .input-nuru:focus {
+    border-color: var(--brand-cyan);
+    box-shadow: 0 0 0 2px rgb(53 217 255 / 12%);
+  }
 }
 
 @utility nuru-glow {

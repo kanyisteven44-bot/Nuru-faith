@@ -14,6 +14,8 @@ import {
   Music2,
   ShieldCheck,
   Sparkles,
+  Star,
+  Trophy,
   UsersRound,
 } from "lucide-react";
 
@@ -59,7 +61,7 @@ function Splash() {
       <div className="absolute inset-0 bg-background/80" />
 
       <div className="relative mx-auto min-h-dvh max-w-[1500px] px-4 py-5 sm:px-6 lg:px-8">
-        <header className="nuru-card flex items-center justify-between gap-4 px-4 py-3 sm:px-5">
+        <header className="flex items-center justify-between gap-4 px-1 py-2">
           <NuruLogo />
           <p className="hidden font-display text-sm font-semibold uppercase tracking-[0.16em] text-primary md:block">
             Grow · Connect · Lead · Impact
@@ -72,6 +74,25 @@ function Splash() {
             {checking ? "Checking…" : "Log in"}
           </Link>
         </header>
+
+        <section className="mt-3 hidden grid-cols-4 divide-x divide-border rounded-lg border border-border bg-surface/75 px-3 py-3 lg:grid lg:ml-[calc(20%+1rem)] lg:w-[45%]">
+          {(
+            [
+              [UsersRound, "250K+", "Young People"],
+              [Church, "630+", "Churches"],
+              [Sparkles, "27", "Dioceses"],
+              [ShieldCheck, "1", "Kingdom Mission"],
+            ] as const
+          ).map(([Icon, value, label]) => (
+            <div key={label} className="flex items-center justify-center gap-2 px-2">
+              <Icon className="h-7 w-7 text-cyan" />
+              <span>
+                <strong className="block text-base text-cyan">{value}</strong>
+                <span className="block text-[9px] text-secondary-foreground">{label}</span>
+              </span>
+            </div>
+          ))}
+        </section>
 
         <main className="mt-4 grid gap-4 lg:grid-cols-[0.82fr_1.2fr_1fr]">
           <section className="flex flex-col justify-between gap-5">
@@ -203,6 +224,26 @@ function Splash() {
           </section>
 
           <section className="grid content-start gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+            <article className="nuru-card col-span-full p-3">
+              <h2 className="text-center font-display text-sm font-semibold uppercase tracking-wide text-primary">
+                Grow · Connect · Lead · Impact
+              </h2>
+              <div className="mt-3 grid grid-cols-4 gap-2">
+                {(["Faith", "Friendships", "Purpose", "Impact"] as const).map((label, index) => (
+                  <div
+                    key={label}
+                    className="rounded-lg border border-border bg-surface-2/55 p-2 text-center"
+                  >
+                    <span
+                      className={`mx-auto flex h-8 w-8 items-center justify-center rounded-lg ${index === 3 ? "bg-growth/20 text-growth" : "bg-primary/20 text-cyan"}`}
+                    >
+                      <Star className="h-4 w-4" />
+                    </span>
+                    <p className="mt-1 text-[9px] font-bold uppercase">{label}</p>
+                  </div>
+                ))}
+              </div>
+            </article>
             {(
               [
                 [BookOpen, "Bible & devotionals", "Daily Scripture and Christ-centred reflections"],
@@ -230,6 +271,71 @@ function Splash() {
             ))}
           </section>
         </main>
+
+        <section className="mt-4 grid gap-4 lg:grid-cols-[0.8fr_1.25fr_0.85fr]">
+          <article className="nuru-card p-4">
+            <h2 className="font-display text-sm font-semibold uppercase tracking-wide text-cyan">
+              Nuru Hub
+            </h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Your all-in-one space for everything Nuru Faith.
+            </p>
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              {["News", "Resources", "Music", "Testimonies", "Store", "Help"].map((label) => (
+                <div
+                  key={label}
+                  className="rounded-lg border border-border bg-surface-2/60 px-2 py-3 text-center text-[10px] font-semibold"
+                >
+                  {label}
+                </div>
+              ))}
+            </div>
+          </article>
+          <article className="nuru-card p-4">
+            <h2 className="font-display text-sm font-semibold uppercase tracking-wide text-cyan">
+              Your Faith Journey
+            </h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Track your growth and earn badges as you grow in faith.
+            </p>
+            <div className="relative mt-5 grid grid-cols-4 gap-2 before:absolute before:left-[12%] before:right-[12%] before:top-5 before:h-px before:bg-primary/60">
+              {(["Explorer", "Growing Disciple", "Active Member", "Kingdom Impact"] as const).map(
+                (label, index) => (
+                  <div key={label} className="relative text-center">
+                    <span
+                      className={`mx-auto flex h-10 w-10 items-center justify-center rounded-full border ${index === 3 ? "border-warning bg-warning/15 text-warning" : "border-primary bg-primary/20 text-cyan"}`}
+                    >
+                      <Trophy className="h-5 w-5" />
+                    </span>
+                    <p className="mt-2 text-[10px] font-semibold">{label}</p>
+                  </div>
+                ),
+              )}
+            </div>
+          </article>
+          <article className="nuru-card p-4">
+            <h2 className="font-display text-sm font-semibold uppercase tracking-wide text-cyan">
+              Engage Your Way
+            </h2>
+            <div className="mt-3 space-y-2">
+              {[
+                "Live Sessions",
+                "Podcasts & Messages",
+                "Creative Corner",
+                "Polls & Challenges",
+                "Nuru Radio",
+              ].map((label) => (
+                <div
+                  key={label}
+                  className="flex items-center gap-2 rounded-lg border border-border bg-surface-2/50 p-2"
+                >
+                  <Sparkles className="h-4 w-4 text-violet" />
+                  <span className="text-xs font-medium">{label}</span>
+                </div>
+              ))}
+            </div>
+          </article>
+        </section>
 
         <footer className="mt-4 flex flex-col items-center justify-between gap-2 border-t border-border py-4 text-xs text-muted-foreground sm:flex-row">
           <span>Safe · Positive · Purposeful</span>

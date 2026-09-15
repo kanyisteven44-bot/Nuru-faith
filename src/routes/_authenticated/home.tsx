@@ -62,13 +62,13 @@ export const Route = createFileRoute("/_authenticated/home")({
 });
 
 const QUICK = [
-  { to: "/reels", label: "Reels", icon: Clapperboard, tone: "brand" as const },
-  { to: "/ai", label: "Nuru AI", icon: Sparkles, tone: "cyan" as const },
-  { to: "/church", label: "My Church", icon: Church, tone: "brand" as const },
-  { to: "/hub", label: "Hub", icon: LayoutGrid, tone: "warning" as const },
+  { to: "/bible", label: "Bible", icon: BookOpen, tone: "violet" as const },
+  { to: "/bible", label: "Devotionals", icon: Heart, tone: "growth" as const },
+  { to: "/learn", label: "Courses", icon: GraduationCap, tone: "warning" as const },
   { to: "/community", label: "Groups", icon: UsersRound, tone: "violet" as const },
-  { to: "/mentors", label: "Mentors", icon: Sparkles, tone: "warning" as const },
   { to: "/events", label: "Events", icon: CalendarDays, tone: "brand" as const },
+  { to: "/mentors", label: "Mentors", icon: UsersRound, tone: "warning" as const },
+  { to: "/serve", label: "Serve", icon: HandHeart, tone: "growth" as const },
   { to: "/music", label: "Music", icon: Music2, tone: "growth" as const },
 ] as const;
 
@@ -151,19 +151,18 @@ function TodaysLightSection({
         <p className="mt-2 text-xs font-medium text-cyan">
           {verseData ? `${verseData.reference} · ${verseData.translation}` : verseRef}
         </p>
-        <div className="mt-4 flex items-center gap-2">
+        <div className="mt-4 grid grid-cols-3 gap-2">
           <Link
             to="/bible"
-            className="inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary px-4 text-xs font-semibold text-primary-foreground nuru-glow-sm"
+            className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-primary/60 bg-primary/20 px-3 text-xs font-semibold text-cyan"
           >
-            Read &amp; Reflect <ArrowRight className="h-3.5 w-3.5" />
+            <BookOpen className="h-3.5 w-3.5" /> Read
           </Link>
           <Link
             to="/bible"
-            aria-label="Open the Bible"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-border-strong bg-surface-2/70 text-cyan"
+            className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-violet/60 bg-violet/20 px-3 text-xs font-semibold text-violet"
           >
-            <BookOpen className="h-4 w-4" />
+            <Sparkles className="h-3.5 w-3.5" /> Reflect
           </Link>
           <button
             type="button"
@@ -175,9 +174,9 @@ function TodaysLightSection({
               if (navigator.share) void navigator.share({ text }).catch(() => {});
               else void navigator.clipboard.writeText(text);
             }}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-border-strong bg-surface-2/70 text-cyan"
+            className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-border-strong bg-surface-2/70 px-3 text-xs font-semibold text-cyan"
           >
-            <Share2 className="h-4 w-4" />
+            <Share2 className="h-3.5 w-3.5" /> Share
           </button>
         </div>
       </div>

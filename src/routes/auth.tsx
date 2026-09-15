@@ -293,7 +293,7 @@ function SocialButton({ children, ...props }: React.ButtonHTMLAttributes<HTMLBut
     <button
       type="button"
       {...props}
-      className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full border border-border bg-surface-2 text-sm font-medium text-secondary-foreground transition-colors hover:bg-accent disabled:opacity-50"
+      className="flex min-h-12 w-full items-center justify-center gap-2 rounded-lg border border-border-strong bg-surface-2 text-sm font-medium text-secondary-foreground transition-colors hover:bg-accent disabled:opacity-50"
     >
       {children}
     </button>

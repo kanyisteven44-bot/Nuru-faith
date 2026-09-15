@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Search } from "lucide-react";
 import { resolveMedia } from "@/lib/media";
 import { fetchVerseOfTheDay, verseOfTheDayRef } from "@/lib/bible";
-import { fetchDevotionals } from "@/services/content";
+import { fetchDevotionals, fetchReadingPlans } from "@/services/content";
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
 import { CardSkeleton, EmptyState, PillTabs } from "@/components/nuru/Primitives";
 import verseBg from "@/assets/bible-candle.jpg";
@@ -28,6 +28,7 @@ type Tab = (typeof TABS)[number];
 function DevotionalsScreen() {
   const [tab, setTab] = useState<Tab>("Daily");
   const verse = useQuery({ queryKey: ["verse-of-day"], queryFn: fetchVerseOfTheDay });
+  const plans = useQuery({ queryKey: ["reading-plans"], queryFn: fetchReadingPlans });
   const devotionals = useQuery({ queryKey: ["devotionals"], queryFn: fetchDevotionals });
 
   const rows = devotionals.data ?? [];
@@ -139,19 +140,27 @@ function DevotionalsScreen() {
       )}
 
       {tab === "My Plan" && (
-        <div className="px-4 pt-2">
-          <EmptyState
-            title="No reading plan yet"
-            description="Start a plan from the Bible screen and track it here."
-            action={
-              <Link
-                to="/bible"
-                className="inline-flex min-h-10 items-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground"
-              >
-                Browse plans
-              </Link>
-            }
-          />
+        <div className="space-y-2 px-4 pt-2">
+          {plans.isLoading && <CardSkeleton count={3} height="h-16" />}
+          {!plans.isLoading && (plans.data ?? []).length === 0 && (
+            <EmptyState
+              title="No reading plans yet"
+              description="Guided plans will appear here as they're published."
+            />
+          )}
+          {(plans.data ?? []).map((p) => (
+            <div key={p.id} className="nuru-card flex items-center gap-3 p-3">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-primary/35 bg-primary/12 text-[11px] font-bold text-cyan">
+                {p.days}d
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-semibold">{p.title}</span>
+                <span className="block truncate text-[11px] text-muted-foreground">
+                  {p.description ?? `${p.days}-day plan`}
+                </span>
+              </span>
+            </div>
+          ))}
         </div>
       )}
     </AppShell>

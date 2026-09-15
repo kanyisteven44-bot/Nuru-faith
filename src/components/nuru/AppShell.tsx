@@ -3,7 +3,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { Bell, BookOpen, CalendarDays, Home, User, Users } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
-import { NuruLogo } from "@/components/nuru/Logo";
+import { NuruLogo, NuruMark } from "@/components/nuru/Logo";
 
 const NAV = [
   { to: "/home", label: "Home", icon: Home },
@@ -96,13 +96,26 @@ export function ScreenHeader({
   subtitle?: string;
   right?: ReactNode;
 }) {
+  const { user } = useAuth();
+  const avatar = user?.user_metadata?.["avatar_url"] ?? user?.user_metadata?.["picture"];
+
   return (
     <header className="nuru-screen-header">
-      <div className="min-w-0">
+      <NuruMark className="h-9 w-9 shrink-0 lg:hidden" />
+      <div className="min-w-0 flex-1">
         <h1 className="truncate font-display text-xl font-semibold">{title}</h1>
         {subtitle ? <p className="truncate text-xs text-muted-foreground">{subtitle}</p> : null}
       </div>
-      {right ? <div className="flex shrink-0 items-center gap-2">{right}</div> : null}
+      <div className="flex shrink-0 items-center gap-2">
+        {right}
+        <Link to="/profile" className="nuru-avatar-link lg:hidden" aria-label="Open profile">
+          {avatar ? (
+            <img src={avatar} alt="" className="h-full w-full object-cover" />
+          ) : (
+            <User className="h-4 w-4" />
+          )}
+        </Link>
+      </div>
     </header>
   );
 }

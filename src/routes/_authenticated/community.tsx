@@ -1,32 +1,22 @@
 import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { HandHeart, Users } from "lucide-react";
+import { Check, Plus, Search, Users } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-import { compactNumber, timeAgo } from "@/lib/format";
 import {
   fetchGroups,
+  fetchMyFollowing,
   fetchMyGroupIds,
   fetchMyPostLikes,
   fetchMySavedPosts,
   fetchPosts,
-  fetchPrayerRequests,
   joinGroup,
   leaveGroup,
 } from "@/services/content";
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
 import { PostCard, type PostRow } from "@/components/nuru/PostCard";
-import {
-  CardSkeleton,
-  EmptyState,
-  ErrorState,
-  GhostButton,
-  IconTile,
-  PillTabs,
-  ScreenHero,
-} from "@/components/nuru/Primitives";
-import heroBg from "@/assets/friends-dusk.jpg";
+import { CardSkeleton, EmptyState, ErrorState, PillTabs } from "@/components/nuru/Primitives";
 
 export const Route = createFileRoute("/_authenticated/community")({
   head: () => ({
@@ -43,13 +33,12 @@ export const Route = createFileRoute("/_authenticated/community")({
   component: CommunityScreen,
 });
 
-const TABS = ["Feed", "Groups", "Prayer wall"] as const;
+const TABS = ["For You", "Following", "Groups"] as const;
 type Tab = (typeof TABS)[number];
 
 function CommunityScreen() {
   const { userId } = useAuth();
-  const [tab, setTab] = useState<Tab>("Feed");
-  const queryClient = useQueryClient();
+  const [tab, setTab] = useState<Tab>("For You");
 
   const posts = useQuery({ queryKey: ["posts"], queryFn: () => fetchPosts() });
   const likes = useQuery({
@@ -62,112 +51,152 @@ function CommunityScreen() {
     queryFn: () => fetchMySavedPosts(userId!),
     enabled: !!userId,
   });
+
+  const likedIds = new Set(likes.data ?? []);
+  const savedIds = new Set(saves.data ?? []);
+  const rows = (posts.data ?? []) as PostRow[];
+  const following = useQuery({
+    queryKey: ["following", userId],
+    queryFn: () => fetchMyFollowing(userId!),
+    enabled: !!userId && tab === "Following",
+  });
+  const followingRows =
+    tab === "Following"
+      ? rows.filter((p) => p.author_id && (following.data ?? []).includes(p.author_id))
+      : rows;
+
+  return (
+    <AppShell>
+      <ScreenHeader
+        title="Community"
+        right={
+          <Link
+            to="/explore"
+            search={{ q: "", kind: "all" }}
+            aria-label="Search community"
+            className="p-1 text-secondary-foreground"
+          >
+            <Search className="h-5 w-5" />
+          </Link>
+        }
+      />
+
+      <div className="px-4 pb-1">
+        <PillTabs tabs={TABS} value={tab} onChange={setTab} />
+      </div>
+
+      {tab === "Groups" ? (
+        <GroupsTab userId={userId} />
+      ) : (
+        <div className="space-y-3 px-4 pt-2">
+          {posts.isLoading && <CardSkeleton count={3} height="h-48" />}
+          {posts.isError && (
+            <ErrorState message="Couldn't load the feed." onRetry={() => void posts.refetch()} />
+          )}
+          {!posts.isLoading && followingRows.length === 0 && (
+            <EmptyState
+              title={tab === "Following" ? "Nothing from people you follow" : "No posts yet"}
+              description={
+                tab === "Following"
+                  ? "Join a group to see what your community is sharing."
+                  : "Be the first to share what God is doing."
+              }
+              action={
+                <Link
+                  to="/create"
+                  className="inline-flex min-h-10 items-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground"
+                >
+                  Create a post
+                </Link>
+              }
+            />
+          )}
+          {followingRows.map((post) => (
+            <PostCard
+              key={post.id}
+              post={post}
+              userId={userId}
+              liked={likedIds.has(post.id)}
+              saved={savedIds.has(post.id)}
+            />
+          ))}
+        </div>
+      )}
+
+      <Link
+        to="/create"
+        aria-label="Create a post"
+        className="fixed bottom-24 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground nuru-glow transition-transform active:scale-95"
+      >
+        <Plus className="h-6 w-6" />
+      </Link>
+    </AppShell>
+  );
+}
+
+function GroupsTab({ userId }: { userId: string | null }) {
+  const qc = useQueryClient();
   const groups = useQuery({ queryKey: ["groups"], queryFn: () => fetchGroups() });
-  const myGroups = useQuery({
-    queryKey: ["my-groups", userId],
+  const mine = useQuery({
+    queryKey: ["my-group-ids", userId],
     queryFn: () => fetchMyGroupIds(userId!),
     enabled: !!userId,
   });
-  const prayers = useQuery({ queryKey: ["prayers"], queryFn: fetchPrayerRequests });
+  const joined = new Set(mine.data ?? []);
 
-  async function toggleGroup(groupId: string, joined: boolean) {
-    if (!userId) return;
+  async function toggle(groupId: string, isMember: boolean) {
+    if (!userId) {
+      toast.error("Sign in to join groups");
+      return;
+    }
     try {
-      if (joined) await leaveGroup(userId, groupId);
+      if (isMember) await leaveGroup(userId, groupId);
       else await joinGroup(userId, groupId);
-      await queryClient.invalidateQueries({ queryKey: ["my-groups", userId] });
-      toast.success(joined ? "Left the group" : "You've joined");
+      await qc.invalidateQueries({ queryKey: ["my-group-ids", userId] });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not update membership");
+      toast.error(e instanceof Error ? e.message : "Couldn't update that group");
     }
   }
 
   return (
-    <AppShell>
-      <ScreenHeader title="Community" subtitle="Grow together, not alone" />
-      <ScreenHero image={heroBg} />
-
-      <div className="px-4 py-3">
-        <PillTabs tabs={TABS} value={tab} onChange={setTab} />
-      </div>
-
-      {tab === "Feed" && (
-        <div className="space-y-4 px-4">
-          {posts.isLoading && <CardSkeleton count={3} height="h-40" />}
-          {posts.isError && <ErrorState onRetry={() => posts.refetch()} />}
-          {posts.data?.length === 0 && (
-            <EmptyState
-              title="No posts yet"
-              description="Be the first to share what God is doing."
-            />
-          )}
-          {(posts.data ?? []).map((p) => (
-            <PostCard
-              key={p.id}
-              post={p as unknown as PostRow}
-              userId={userId}
-              liked={(likes.data ?? []).includes(p.id)}
-              saved={(saves.data ?? []).includes(p.id)}
-            />
-          ))}
-        </div>
+    <div className="space-y-2 px-4 pt-2">
+      {groups.isLoading && <CardSkeleton count={4} height="h-16" />}
+      {!groups.isLoading && (groups.data ?? []).length === 0 && (
+        <EmptyState title="No groups yet" description="Groups from your church will appear here." />
       )}
-
-      {tab === "Groups" && (
-        <div className="space-y-2 px-4">
-          {groups.isLoading && <CardSkeleton count={4} height="h-20" />}
-          {(groups.data ?? []).map((g) => {
-            const joined = (myGroups.data ?? []).includes(g.id);
-            return (
-              <div key={g.id} className="nuru-card flex items-center gap-3 p-3.5">
-                <IconTile icon={Users} tone="brand" size="lg" />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold">{g.name}</p>
-                  <p className="line-clamp-1 text-xs text-muted-foreground">
-                    {g.member_count > 0
-                      ? `${compactNumber(g.member_count)} ${g.member_count === 1 ? "member" : "members"}`
-                      : "Be the first to join"}{" "}
-                    · {g.category}
-                    {g.privacy !== "public" ? ` · ${g.privacy}` : ""}
-                  </p>
-                </div>
-                <GhostButton
-                  className="min-h-9 px-4 text-xs"
-                  onClick={() => toggleGroup(g.id, joined)}
-                >
-                  {joined ? "Leave" : "Join"}
-                </GhostButton>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {tab === "Prayer wall" && (
-        <div className="space-y-2 px-4">
-          {prayers.isLoading && <CardSkeleton count={3} height="h-24" />}
-          {prayers.data?.length === 0 && (
-            <EmptyState
-              title="The wall is quiet"
-              description="Tap the centre button to share a prayer request."
-            />
-          )}
-          {(prayers.data ?? []).map((p) => (
-            <article key={p.id} className="nuru-card p-4">
-              <div className="mb-2 flex items-center gap-2.5">
-                <IconTile icon={HandHeart} tone="violet" size="sm" />
-                <p className="text-xs text-muted-foreground">
-                  {p.is_anonymous ? "Anonymous" : "A Nuru member"} · {timeAgo(p.created_at)}
-                </p>
-              </div>
-              <p className="text-sm leading-relaxed text-secondary-foreground">{p.body}</p>
-              <p className="mt-2 text-[11px] font-semibold text-cyan">
-                {p.prayer_count ?? 0} praying
-              </p>
-            </article>
-          ))}
-        </div>
-      )}
-    </AppShell>
+      {(groups.data ?? []).map((g) => {
+        const isMember = joined.has(g.id);
+        return (
+          <div key={g.id} className="nuru-card flex items-center gap-3 p-3">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-primary/35 bg-primary/12 text-cyan">
+              <Users className="h-5 w-5" strokeWidth={1.8} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-semibold">{g.name}</span>
+              <span className="block truncate text-[11px] text-muted-foreground">
+                {g.description ?? `${g.member_count ?? 0} members`}
+              </span>
+            </span>
+            <button
+              type="button"
+              onClick={() => void toggle(g.id, isMember)}
+              className={
+                isMember
+                  ? "flex shrink-0 items-center gap-1 rounded-lg border border-border-strong bg-surface-2 px-3 py-1.5 text-[11px] font-semibold text-secondary-foreground"
+                  : "shrink-0 rounded-lg bg-primary px-3.5 py-1.5 text-[11px] font-semibold text-primary-foreground"
+              }
+            >
+              {isMember ? (
+                <>
+                  <Check className="h-3 w-3" /> Joined
+                </>
+              ) : (
+                "Join"
+              )}
+            </button>
+          </div>
+        );
+      })}
+    </div>
   );
 }

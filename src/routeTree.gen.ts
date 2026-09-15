@@ -19,6 +19,7 @@ import { Route as AuthenticatedAiRouteImport } from './routes/_authenticated/ai'
 import { Route as AuthenticatedBibleRouteImport } from './routes/_authenticated/bible'
 import { Route as AuthenticatedChurchRouteImport } from './routes/_authenticated/church'
 import { Route as AuthenticatedCommunityRouteImport } from './routes/_authenticated/community'
+import { Route as AuthenticatedCreateRouteImport } from './routes/_authenticated/create'
 import { Route as AuthenticatedDevotionalsRouteImport } from './routes/_authenticated/devotionals'
 import { Route as AuthenticatedEventsRouteImport } from './routes/_authenticated/events'
 import { Route as AuthenticatedExploreRouteImport } from './routes/_authenticated/explore'
@@ -85,6 +86,11 @@ const AuthenticatedChurchRoute = AuthenticatedChurchRouteImport.update({
 const AuthenticatedCommunityRoute = AuthenticatedCommunityRouteImport.update({
   id: '/community',
   path: '/community',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedCreateRoute = AuthenticatedCreateRouteImport.update({
+  id: '/create',
+  path: '/create',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedDevotionalsRoute =
@@ -194,6 +200,7 @@ export interface FileRoutesByFullPath {
   '/bible': typeof AuthenticatedBibleRoute
   '/church': typeof AuthenticatedChurchRoute
   '/community': typeof AuthenticatedCommunityRoute
+  '/create': typeof AuthenticatedCreateRoute
   '/devotionals': typeof AuthenticatedDevotionalsRoute
   '/events': typeof AuthenticatedEventsRoute
   '/explore': typeof AuthenticatedExploreRoute
@@ -223,6 +230,7 @@ export interface FileRoutesByTo {
   '/bible': typeof AuthenticatedBibleRoute
   '/church': typeof AuthenticatedChurchRoute
   '/community': typeof AuthenticatedCommunityRoute
+  '/create': typeof AuthenticatedCreateRoute
   '/devotionals': typeof AuthenticatedDevotionalsRoute
   '/events': typeof AuthenticatedEventsRoute
   '/explore': typeof AuthenticatedExploreRoute
@@ -254,6 +262,7 @@ export interface FileRoutesById {
   '/_authenticated/bible': typeof AuthenticatedBibleRoute
   '/_authenticated/church': typeof AuthenticatedChurchRoute
   '/_authenticated/community': typeof AuthenticatedCommunityRoute
+  '/_authenticated/create': typeof AuthenticatedCreateRoute
   '/_authenticated/devotionals': typeof AuthenticatedDevotionalsRoute
   '/_authenticated/events': typeof AuthenticatedEventsRoute
   '/_authenticated/explore': typeof AuthenticatedExploreRoute
@@ -285,6 +294,7 @@ export interface FileRouteTypes {
     | '/bible'
     | '/church'
     | '/community'
+    | '/create'
     | '/devotionals'
     | '/events'
     | '/explore'
@@ -314,6 +324,7 @@ export interface FileRouteTypes {
     | '/bible'
     | '/church'
     | '/community'
+    | '/create'
     | '/devotionals'
     | '/events'
     | '/explore'
@@ -344,6 +355,7 @@ export interface FileRouteTypes {
     | '/_authenticated/bible'
     | '/_authenticated/church'
     | '/_authenticated/community'
+    | '/_authenticated/create'
     | '/_authenticated/devotionals'
     | '/_authenticated/events'
     | '/_authenticated/explore'
@@ -442,6 +454,13 @@ declare module '@tanstack/react-router' {
       path: '/community'
       fullPath: '/community'
       preLoaderRoute: typeof AuthenticatedCommunityRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/create': {
+      id: '/_authenticated/create'
+      path: '/create'
+      fullPath: '/create'
+      preLoaderRoute: typeof AuthenticatedCreateRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/devotionals': {
@@ -579,6 +598,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedBibleRoute: typeof AuthenticatedBibleRoute
   AuthenticatedChurchRoute: typeof AuthenticatedChurchRoute
   AuthenticatedCommunityRoute: typeof AuthenticatedCommunityRoute
+  AuthenticatedCreateRoute: typeof AuthenticatedCreateRoute
   AuthenticatedDevotionalsRoute: typeof AuthenticatedDevotionalsRoute
   AuthenticatedEventsRoute: typeof AuthenticatedEventsRoute
   AuthenticatedExploreRoute: typeof AuthenticatedExploreRoute
@@ -605,6 +625,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBibleRoute: AuthenticatedBibleRoute,
   AuthenticatedChurchRoute: AuthenticatedChurchRoute,
   AuthenticatedCommunityRoute: AuthenticatedCommunityRoute,
+  AuthenticatedCreateRoute: AuthenticatedCreateRoute,
   AuthenticatedDevotionalsRoute: AuthenticatedDevotionalsRoute,
   AuthenticatedEventsRoute: AuthenticatedEventsRoute,
   AuthenticatedExploreRoute: AuthenticatedExploreRoute,

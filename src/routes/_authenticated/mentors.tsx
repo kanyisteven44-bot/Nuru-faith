@@ -149,12 +149,12 @@ function MentorsScreen() {
                     maxLength={500}
                     aria-label="Message to mentor"
                     placeholder="Share a little about where you are…"
-                    className="w-full rounded-2xl border border-input bg-surface-2 p-4 text-sm outline-none focus:border-primary"
+                    className="w-full rounded-lg border border-input bg-surface-2 p-4 text-sm outline-none focus:border-cyan"
                   />
                   <div className="flex gap-2">
                     <button
                       onClick={() => setActive(null)}
-                      className="min-h-11 rounded-full border border-border px-4 text-sm"
+                      className="min-h-11 rounded-lg border border-border-strong px-4 text-sm"
                     >
                       Cancel
                     </button>

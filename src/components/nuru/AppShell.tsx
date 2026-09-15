@@ -1,16 +1,13 @@
-import { useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { Compass, Home, Plus, User, Users } from "lucide-react";
+import { BookOpen, CalendarDays, Home, User, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/hooks/useAuth";
-import { fetchMyRoles } from "@/services/content";
-import { CreateSheet } from "./CreateSheet";
 
 const NAV = [
   { to: "/home", label: "Home", icon: Home },
-  { to: "/explore", label: "Explore", icon: Compass },
   { to: "/community", label: "Community", icon: Users },
+  { to: "/bible", label: "Bible", icon: BookOpen },
+  { to: "/events", label: "Events", icon: CalendarDays },
   { to: "/profile", label: "Profile", icon: User },
 ] as const;
 
@@ -26,16 +23,7 @@ export function AppShell({
   flush?: boolean;
 }) {
   const maxWidth = wide === "xl" ? "max-w-7xl" : wide ? "max-w-5xl" : "max-w-xl";
-  const [createOpen, setCreateOpen] = useState(false);
-  const { userId } = useAuth();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-
-  const { data: roles = [] } = useQuery({
-    queryKey: ["roles", userId],
-    queryFn: () => fetchMyRoles(userId!),
-    enabled: !!userId,
-  });
-  const canPublishEvents = roles.some((r) => r.role === "church_admin" || r.role === "super_admin");
 
   return (
     <div className={cn("relative bg-background", flush ? "h-dvh overflow-hidden" : "min-h-dvh")}>
@@ -59,31 +47,11 @@ export function AppShell({
             maxWidth,
           )}
         >
-          {NAV.slice(0, 2).map((item) => (
-            <NavItem key={item.to} {...item} active={pathname.startsWith(item.to)} />
-          ))}
-          <li className="flex justify-center">
-            <button
-              type="button"
-              onClick={() => setCreateOpen(true)}
-              aria-label="Create"
-              className="-mt-7 flex h-14 w-14 items-center justify-center rounded-xl nuru-gradient-bg nuru-glow ring-4 ring-background transition-transform active:scale-95"
-            >
-              <Plus className="h-6 w-6 text-primary-foreground" />
-            </button>
-          </li>
-          {NAV.slice(2).map((item) => (
+          {NAV.map((item) => (
             <NavItem key={item.to} {...item} active={pathname.startsWith(item.to)} />
           ))}
         </ul>
       </nav>
-
-      <CreateSheet
-        open={createOpen}
-        onClose={() => setCreateOpen(false)}
-        userId={userId}
-        canPublishEvents={canPublishEvents}
-      />
     </div>
   );
 }
@@ -105,7 +73,7 @@ function NavItem({
         to={to}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl text-[10px] font-semibold transition-colors",
+          "flex min-h-12 flex-col items-center justify-center gap-1 rounded-lg text-[10px] font-semibold transition-colors",
           active ? "text-primary" : "text-muted-foreground hover:text-secondary-foreground",
         )}
       >
@@ -134,7 +102,7 @@ export function ScreenHeader({
   right?: ReactNode;
 }) {
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-border bg-background/80 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-xl">
+    <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-border-strong bg-background/92 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] shadow-[0_8px_24px_-20px_var(--brand-cyan)] backdrop-blur-xl">
       <div className="min-w-0">
         <h1 className="truncate font-display text-xl font-semibold tracking-tight">{title}</h1>
         {subtitle && <p className="truncate text-xs text-muted-foreground">{subtitle}</p>}

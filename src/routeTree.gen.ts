@@ -13,17 +13,22 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAiRouteImport } from './routes/_authenticated/ai'
 import { Route as AuthenticatedBibleRouteImport } from './routes/_authenticated/bible'
 import { Route as AuthenticatedChurchRouteImport } from './routes/_authenticated/church'
 import { Route as AuthenticatedCommunityRouteImport } from './routes/_authenticated/community'
+import { Route as AuthenticatedCreateRouteImport } from './routes/_authenticated/create'
+import { Route as AuthenticatedDevotionalsRouteImport } from './routes/_authenticated/devotionals'
 import { Route as AuthenticatedEventsRouteImport } from './routes/_authenticated/events'
 import { Route as AuthenticatedExploreRouteImport } from './routes/_authenticated/explore'
+import { Route as AuthenticatedGroupsRouteImport } from './routes/_authenticated/groups'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
 import { Route as AuthenticatedHubRouteImport } from './routes/_authenticated/hub'
 import { Route as AuthenticatedLearnRouteImport } from './routes/_authenticated/learn'
 import { Route as AuthenticatedMentorsRouteImport } from './routes/_authenticated/mentors'
+import { Route as AuthenticatedMessagesRouteImport } from './routes/_authenticated/messages'
 import { Route as AuthenticatedMusicRouteImport } from './routes/_authenticated/music'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
@@ -31,6 +36,7 @@ import { Route as AuthenticatedPodcastsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedReelsRouteImport } from './routes/_authenticated/reels'
 import { Route as AuthenticatedServeRouteImport } from './routes/_authenticated/serve'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedSeriesIndexRouteImport } from './routes/_authenticated/series.index'
 import { Route as AuthenticatedDiscoveryKindIdRouteImport } from './routes/_authenticated/discovery.$kind.$id'
 import { Route as AuthenticatedSeriesSlugIndexRouteImport } from './routes/_authenticated/series.$slug.index'
@@ -53,6 +59,11 @@ const AuthRoute = AuthRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WelcomeRoute = WelcomeRouteImport.update({
+  id: '/welcome',
+  path: '/welcome',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
@@ -80,6 +91,17 @@ const AuthenticatedCommunityRoute = AuthenticatedCommunityRouteImport.update({
   path: '/community',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCreateRoute = AuthenticatedCreateRouteImport.update({
+  id: '/create',
+  path: '/create',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDevotionalsRoute =
+  AuthenticatedDevotionalsRouteImport.update({
+    id: '/devotionals',
+    path: '/devotionals',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedEventsRoute = AuthenticatedEventsRouteImport.update({
   id: '/events',
   path: '/events',
@@ -88,6 +110,11 @@ const AuthenticatedEventsRoute = AuthenticatedEventsRouteImport.update({
 const AuthenticatedExploreRoute = AuthenticatedExploreRouteImport.update({
   id: '/explore',
   path: '/explore',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedGroupsRoute = AuthenticatedGroupsRouteImport.update({
+  id: '/groups',
+  path: '/groups',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedHomeRoute = AuthenticatedHomeRouteImport.update({
@@ -108,6 +135,11 @@ const AuthenticatedLearnRoute = AuthenticatedLearnRouteImport.update({
 const AuthenticatedMentorsRoute = AuthenticatedMentorsRouteImport.update({
   id: '/mentors',
   path: '/mentors',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMessagesRoute = AuthenticatedMessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedMusicRoute = AuthenticatedMusicRouteImport.update({
@@ -146,6 +178,11 @@ const AuthenticatedServeRoute = AuthenticatedServeRouteImport.update({
   path: '/serve',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedSeriesIndexRoute =
   AuthenticatedSeriesIndexRouteImport.update({
     id: '/series/',
@@ -175,17 +212,22 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/welcome': typeof WelcomeRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/ai': typeof AuthenticatedAiRoute
   '/bible': typeof AuthenticatedBibleRoute
   '/church': typeof AuthenticatedChurchRoute
   '/community': typeof AuthenticatedCommunityRoute
+  '/create': typeof AuthenticatedCreateRoute
+  '/devotionals': typeof AuthenticatedDevotionalsRoute
   '/events': typeof AuthenticatedEventsRoute
   '/explore': typeof AuthenticatedExploreRoute
+  '/groups': typeof AuthenticatedGroupsRoute
   '/home': typeof AuthenticatedHomeRoute
   '/hub': typeof AuthenticatedHubRoute
   '/learn': typeof AuthenticatedLearnRoute
   '/mentors': typeof AuthenticatedMentorsRoute
+  '/messages': typeof AuthenticatedMessagesRoute
   '/music': typeof AuthenticatedMusicRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
@@ -193,6 +235,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof AuthenticatedProfileRoute
   '/reels': typeof AuthenticatedReelsRoute
   '/serve': typeof AuthenticatedServeRoute
+  '/settings': typeof AuthenticatedSettingsRoute
   '/series/': typeof AuthenticatedSeriesIndexRoute
   '/discovery/$kind/$id': typeof AuthenticatedDiscoveryKindIdRoute
   '/series/$slug/$position': typeof AuthenticatedSeriesSlugPositionRoute
@@ -202,17 +245,22 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/welcome': typeof WelcomeRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/ai': typeof AuthenticatedAiRoute
   '/bible': typeof AuthenticatedBibleRoute
   '/church': typeof AuthenticatedChurchRoute
   '/community': typeof AuthenticatedCommunityRoute
+  '/create': typeof AuthenticatedCreateRoute
+  '/devotionals': typeof AuthenticatedDevotionalsRoute
   '/events': typeof AuthenticatedEventsRoute
   '/explore': typeof AuthenticatedExploreRoute
+  '/groups': typeof AuthenticatedGroupsRoute
   '/home': typeof AuthenticatedHomeRoute
   '/hub': typeof AuthenticatedHubRoute
   '/learn': typeof AuthenticatedLearnRoute
   '/mentors': typeof AuthenticatedMentorsRoute
+  '/messages': typeof AuthenticatedMessagesRoute
   '/music': typeof AuthenticatedMusicRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
@@ -220,6 +268,7 @@ export interface FileRoutesByTo {
   '/profile': typeof AuthenticatedProfileRoute
   '/reels': typeof AuthenticatedReelsRoute
   '/serve': typeof AuthenticatedServeRoute
+  '/settings': typeof AuthenticatedSettingsRoute
   '/series': typeof AuthenticatedSeriesIndexRoute
   '/discovery/$kind/$id': typeof AuthenticatedDiscoveryKindIdRoute
   '/series/$slug/$position': typeof AuthenticatedSeriesSlugPositionRoute
@@ -231,17 +280,22 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/welcome': typeof WelcomeRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/ai': typeof AuthenticatedAiRoute
   '/_authenticated/bible': typeof AuthenticatedBibleRoute
   '/_authenticated/church': typeof AuthenticatedChurchRoute
   '/_authenticated/community': typeof AuthenticatedCommunityRoute
+  '/_authenticated/create': typeof AuthenticatedCreateRoute
+  '/_authenticated/devotionals': typeof AuthenticatedDevotionalsRoute
   '/_authenticated/events': typeof AuthenticatedEventsRoute
   '/_authenticated/explore': typeof AuthenticatedExploreRoute
+  '/_authenticated/groups': typeof AuthenticatedGroupsRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/hub': typeof AuthenticatedHubRoute
   '/_authenticated/learn': typeof AuthenticatedLearnRoute
   '/_authenticated/mentors': typeof AuthenticatedMentorsRoute
+  '/_authenticated/messages': typeof AuthenticatedMessagesRoute
   '/_authenticated/music': typeof AuthenticatedMusicRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
@@ -249,6 +303,7 @@ export interface FileRoutesById {
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/reels': typeof AuthenticatedReelsRoute
   '/_authenticated/serve': typeof AuthenticatedServeRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/series/': typeof AuthenticatedSeriesIndexRoute
   '/_authenticated/discovery/$kind/$id': typeof AuthenticatedDiscoveryKindIdRoute
   '/_authenticated/series/$slug/$position': typeof AuthenticatedSeriesSlugPositionRoute
@@ -260,17 +315,22 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/reset-password'
+    | '/welcome'
     | '/admin'
     | '/ai'
     | '/bible'
     | '/church'
     | '/community'
+    | '/create'
+    | '/devotionals'
     | '/events'
     | '/explore'
+    | '/groups'
     | '/home'
     | '/hub'
     | '/learn'
     | '/mentors'
+    | '/messages'
     | '/music'
     | '/notifications'
     | '/onboarding'
@@ -278,6 +338,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/reels'
     | '/serve'
+    | '/settings'
     | '/series/'
     | '/discovery/$kind/$id'
     | '/series/$slug/$position'
@@ -287,17 +348,22 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/reset-password'
+    | '/welcome'
     | '/admin'
     | '/ai'
     | '/bible'
     | '/church'
     | '/community'
+    | '/create'
+    | '/devotionals'
     | '/events'
     | '/explore'
+    | '/groups'
     | '/home'
     | '/hub'
     | '/learn'
     | '/mentors'
+    | '/messages'
     | '/music'
     | '/notifications'
     | '/onboarding'
@@ -305,6 +371,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/reels'
     | '/serve'
+    | '/settings'
     | '/series'
     | '/discovery/$kind/$id'
     | '/series/$slug/$position'
@@ -315,17 +382,22 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/reset-password'
+    | '/welcome'
     | '/_authenticated/admin'
     | '/_authenticated/ai'
     | '/_authenticated/bible'
     | '/_authenticated/church'
     | '/_authenticated/community'
+    | '/_authenticated/create'
+    | '/_authenticated/devotionals'
     | '/_authenticated/events'
     | '/_authenticated/explore'
+    | '/_authenticated/groups'
     | '/_authenticated/home'
     | '/_authenticated/hub'
     | '/_authenticated/learn'
     | '/_authenticated/mentors'
+    | '/_authenticated/messages'
     | '/_authenticated/music'
     | '/_authenticated/notifications'
     | '/_authenticated/onboarding'
@@ -333,6 +405,7 @@ export interface FileRouteTypes {
     | '/_authenticated/profile'
     | '/_authenticated/reels'
     | '/_authenticated/serve'
+    | '/_authenticated/settings'
     | '/_authenticated/series/'
     | '/_authenticated/discovery/$kind/$id'
     | '/_authenticated/series/$slug/$position'
@@ -344,6 +417,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  WelcomeRoute: typeof WelcomeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -374,6 +448,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/welcome': {
+      id: '/welcome'
+      path: '/welcome'
+      fullPath: '/welcome'
+      preLoaderRoute: typeof WelcomeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/admin': {
@@ -411,6 +492,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCommunityRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/create': {
+      id: '/_authenticated/create'
+      path: '/create'
+      fullPath: '/create'
+      preLoaderRoute: typeof AuthenticatedCreateRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/devotionals': {
+      id: '/_authenticated/devotionals'
+      path: '/devotionals'
+      fullPath: '/devotionals'
+      preLoaderRoute: typeof AuthenticatedDevotionalsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/events': {
       id: '/_authenticated/events'
       path: '/events'
@@ -423,6 +518,13 @@ declare module '@tanstack/react-router' {
       path: '/explore'
       fullPath: '/explore'
       preLoaderRoute: typeof AuthenticatedExploreRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/groups': {
+      id: '/_authenticated/groups'
+      path: '/groups'
+      fullPath: '/groups'
+      preLoaderRoute: typeof AuthenticatedGroupsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/home': {
@@ -451,6 +553,13 @@ declare module '@tanstack/react-router' {
       path: '/mentors'
       fullPath: '/mentors'
       preLoaderRoute: typeof AuthenticatedMentorsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/messages': {
+      id: '/_authenticated/messages'
+      path: '/messages'
+      fullPath: '/messages'
+      preLoaderRoute: typeof AuthenticatedMessagesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/music': {
@@ -502,6 +611,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedServeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/series/': {
       id: '/_authenticated/series/'
       path: '/series'
@@ -539,12 +655,16 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedBibleRoute: typeof AuthenticatedBibleRoute
   AuthenticatedChurchRoute: typeof AuthenticatedChurchRoute
   AuthenticatedCommunityRoute: typeof AuthenticatedCommunityRoute
+  AuthenticatedCreateRoute: typeof AuthenticatedCreateRoute
+  AuthenticatedDevotionalsRoute: typeof AuthenticatedDevotionalsRoute
   AuthenticatedEventsRoute: typeof AuthenticatedEventsRoute
   AuthenticatedExploreRoute: typeof AuthenticatedExploreRoute
+  AuthenticatedGroupsRoute: typeof AuthenticatedGroupsRoute
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedHubRoute: typeof AuthenticatedHubRoute
   AuthenticatedLearnRoute: typeof AuthenticatedLearnRoute
   AuthenticatedMentorsRoute: typeof AuthenticatedMentorsRoute
+  AuthenticatedMessagesRoute: typeof AuthenticatedMessagesRoute
   AuthenticatedMusicRoute: typeof AuthenticatedMusicRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
@@ -552,6 +672,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedReelsRoute: typeof AuthenticatedReelsRoute
   AuthenticatedServeRoute: typeof AuthenticatedServeRoute
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedSeriesIndexRoute: typeof AuthenticatedSeriesIndexRoute
   AuthenticatedDiscoveryKindIdRoute: typeof AuthenticatedDiscoveryKindIdRoute
   AuthenticatedSeriesSlugPositionRoute: typeof AuthenticatedSeriesSlugPositionRoute
@@ -564,12 +685,16 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBibleRoute: AuthenticatedBibleRoute,
   AuthenticatedChurchRoute: AuthenticatedChurchRoute,
   AuthenticatedCommunityRoute: AuthenticatedCommunityRoute,
+  AuthenticatedCreateRoute: AuthenticatedCreateRoute,
+  AuthenticatedDevotionalsRoute: AuthenticatedDevotionalsRoute,
   AuthenticatedEventsRoute: AuthenticatedEventsRoute,
   AuthenticatedExploreRoute: AuthenticatedExploreRoute,
+  AuthenticatedGroupsRoute: AuthenticatedGroupsRoute,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedHubRoute: AuthenticatedHubRoute,
   AuthenticatedLearnRoute: AuthenticatedLearnRoute,
   AuthenticatedMentorsRoute: AuthenticatedMentorsRoute,
+  AuthenticatedMessagesRoute: AuthenticatedMessagesRoute,
   AuthenticatedMusicRoute: AuthenticatedMusicRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
@@ -577,6 +702,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedReelsRoute: AuthenticatedReelsRoute,
   AuthenticatedServeRoute: AuthenticatedServeRoute,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedSeriesIndexRoute: AuthenticatedSeriesIndexRoute,
   AuthenticatedDiscoveryKindIdRoute: AuthenticatedDiscoveryKindIdRoute,
   AuthenticatedSeriesSlugPositionRoute: AuthenticatedSeriesSlugPositionRoute,
@@ -591,6 +717,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  WelcomeRoute: WelcomeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

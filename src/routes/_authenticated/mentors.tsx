@@ -1,211 +1,142 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { BadgeCheck } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { BadgeCheck, ChevronRight, Search, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { resolveMedia } from "@/lib/media";
-import { timeAgo } from "@/lib/format";
 import { useAuth } from "@/hooks/useAuth";
-import { MENTOR_SPECIALTIES } from "@/constants/nuru";
-import { fetchMentors, fetchMyMentorshipRequests, requestMentorship } from "@/services/content";
-import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
 import {
-  CardSkeleton,
-  Chip,
-  EmptyState,
-  GradientButton,
-  PillTabs,
-  ScreenHero,
-  SectionHeader,
-} from "@/components/nuru/Primitives";
-import heroBg from "@/assets/walk-purpose.jpg";
+  fetchMentors,
+  fetchMyMentorshipRequests,
+  fetchProfile,
+  requestMentorship,
+} from "@/services/content";
+import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
+import { CardSkeleton, EmptyState, PillTabs } from "@/components/nuru/Primitives";
 
 export const Route = createFileRoute("/_authenticated/mentors")({
   head: () => ({
     meta: [
-      { title: "Mentorship — Nuru Faith" },
+      { title: "Mentors — Nuru Faith" },
       {
         name: "description",
-        content: "Connect with trusted Christian mentors for guidance and discipleship.",
+        content: "Connect with trusted Christian mentors from your church and beyond.",
       },
-      { property: "og:title", content: "Mentorship — Nuru Faith" },
-      { property: "og:description", content: "Trusted Christian mentors for your journey." },
     ],
   }),
   component: MentorsScreen,
 });
 
-const TABS = ["Find a mentor", "My requests"] as const;
+const TABS = ["All", "My Church", "By Topic"] as const;
 type Tab = (typeof TABS)[number];
 
 function MentorsScreen() {
   const { userId } = useAuth();
-  const queryClient = useQueryClient();
-  const [tab, setTab] = useState<Tab>("Find a mentor");
-  const [active, setActive] = useState<string | null>(null);
-  const [reason, setReason] = useState(MENTOR_SPECIALTIES[0] ?? "Faith growth");
-  const [message, setMessage] = useState("");
-  const [sending, setSending] = useState(false);
+  const [tab, setTab] = useState<Tab>("All");
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   const mentors = useQuery({ queryKey: ["mentors"], queryFn: fetchMentors });
+  const profile = useQuery({
+    queryKey: ["profile", userId],
+    queryFn: () => fetchProfile(userId!),
+    enabled: !!userId,
+  });
   const requests = useQuery({
-    queryKey: ["mentorship", userId],
+    queryKey: ["mentorship-requests", userId],
     queryFn: () => fetchMyMentorshipRequests(userId!),
     enabled: !!userId,
   });
 
-  async function send(mentorId: string) {
-    if (!userId || message.trim().length < 10) {
-      toast.error("Tell your mentor a little more (10+ characters)");
+  const requested = new Set((requests.data ?? []).map((r) => r.mentor_id));
+  const all = mentors.data ?? [];
+  const rows =
+    tab === "My Church" && profile.data?.church_id
+      ? all.filter((m) => m.church_id === profile.data?.church_id)
+      : all;
+
+  async function ask(mentorId: string) {
+    if (!userId) {
+      toast.error("Sign in to request mentorship");
       return;
     }
-    setSending(true);
+    setBusyId(mentorId);
     try {
       await requestMentorship({
         mentor_id: mentorId,
         requester_id: userId,
-        reason,
-        message: message.trim(),
+        reason: "Mentorship request from Nuru Faith",
+        message: "",
       });
-      await queryClient.invalidateQueries({ queryKey: ["mentorship", userId] });
-      setActive(null);
-      setMessage("");
-      toast.success("Request sent — you'll hear back soon");
+      await requests.refetch();
+      toast.success("Request sent");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not send your request");
+      toast.error(e instanceof Error ? e.message : "Couldn't send that request");
     } finally {
-      setSending(false);
+      setBusyId(null);
     }
   }
 
   return (
     <AppShell>
-      <ScreenHeader title="Mentorship" subtitle="Walk with someone further along" />
-      <ScreenHero image={heroBg} />
+      <ScreenHeader
+        title="Mentors"
+        right={
+          <span className="p-1 text-secondary-foreground">
+            <Search className="h-5 w-5" />
+          </span>
+        }
+      />
 
-      <div className="px-4 py-3">
+      <div className="px-4 pb-1">
         <PillTabs tabs={TABS} value={tab} onChange={setTab} />
       </div>
 
-      {tab === "Find a mentor" && (
-        <div className="space-y-3 px-4">
-          {mentors.isLoading && <CardSkeleton count={3} height="h-28" />}
-          {mentors.data?.length === 0 && (
-            <EmptyState title="No mentors yet" description="Churches are onboarding mentors." />
-          )}
-          {(mentors.data ?? []).map((m) => (
-            <article key={m.id} className="nuru-card p-4">
-              <div className="flex gap-3">
+      <div className="space-y-2 px-4 pt-2">
+        {mentors.isLoading && <CardSkeleton count={5} height="h-16" />}
+        {!mentors.isLoading && rows.length === 0 && (
+          <EmptyState
+            title="No mentors yet"
+            description="Verified mentors from your church will appear here."
+          />
+        )}
+        {rows.map((m) => {
+          const pending = requested.has(m.id);
+          return (
+            <div key={m.id} className="nuru-card flex items-center gap-3 p-3">
+              {m.photo_url ? (
                 <img
                   src={resolveMedia(m.photo_url)}
                   alt=""
-                  width={112}
-                  height={112}
-                  loading="lazy"
-                  className="h-14 w-14 shrink-0 rounded-full object-cover ring-1 ring-border-strong"
+                  className="h-12 w-12 shrink-0 rounded-full object-cover"
                 />
-                <div className="min-w-0 flex-1">
-                  <p className="flex items-center gap-1.5 text-sm font-semibold">
-                    {m.display_name} {m.verified && <BadgeCheck className="h-4 w-4 text-cyan" />}
-                  </p>
-                  <p className="text-xs text-muted-foreground">{m.role_title}</p>
-                  {m.bio && (
-                    <p className="mt-1 line-clamp-2 text-xs text-secondary-foreground">{m.bio}</p>
-                  )}
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {(m.specialties ?? []).slice(0, 3).map((s: string) => (
-                      <Chip key={s} tone="brand">
-                        {s}
-                      </Chip>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {active === m.id ? (
-                <div className="mt-3 space-y-2">
-                  <label
-                    className="block text-xs font-medium text-muted-foreground"
-                    htmlFor={`reason-${m.id}`}
-                  >
-                    What do you need help with?
-                  </label>
-                  <select
-                    id={`reason-${m.id}`}
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value)}
-                    className="input-nuru"
-                  >
-                    {MENTOR_SPECIALTIES.map((s) => (
-                      <option key={s} value={s}>
-                        {s}
-                      </option>
-                    ))}
-                  </select>
-                  <textarea
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    rows={3}
-                    maxLength={500}
-                    aria-label="Message to mentor"
-                    placeholder="Share a little about where you are…"
-                    className="w-full rounded-lg border border-input bg-surface-2 p-4 text-sm outline-none focus:border-cyan"
-                  />
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setActive(null)}
-                      className="min-h-11 rounded-lg border border-border-strong px-4 text-sm"
-                    >
-                      Cancel
-                    </button>
-                    <GradientButton
-                      className="flex-1"
-                      onClick={() => send(m.id)}
-                      disabled={sending}
-                    >
-                      Send request
-                    </GradientButton>
-                  </div>
-                </div>
               ) : (
-                <GradientButton className="mt-3 w-full" onClick={() => setActive(m.id)}>
-                  Request mentorship
-                </GradientButton>
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-border-strong bg-surface-2 text-cyan">
+                  <UserRound className="h-5 w-5" />
+                </span>
               )}
-            </article>
-          ))}
-        </div>
-      )}
-
-      {tab === "My requests" && (
-        <div className="space-y-2 px-4">
-          {requests.isLoading && <CardSkeleton count={2} height="h-20" />}
-          {requests.data?.length === 0 && (
-            <EmptyState
-              title="No requests yet"
-              description="Find a mentor and send your first request."
-            />
-          )}
-          {(requests.data ?? []).map((r) => (
-            <article key={r.id} className="nuru-card p-4">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-sm font-semibold">{r.mentors?.display_name ?? "Mentor"}</p>
-                <Chip tone={r.status === "accepted" ? "growth" : "muted"}>{r.status}</Chip>
-              </div>
-              <p className="text-xs text-muted-foreground">{r.reason}</p>
-              <p className="mt-2 text-sm text-secondary-foreground">{r.message}</p>
-              <p className="mt-2 text-[11px] text-muted-foreground">{timeAgo(r.created_at)}</p>
-            </article>
-          ))}
-        </div>
-      )}
-
-      <div className="px-4 pt-6">
-        <SectionHeader title="Safeguarding" />
-        <p className="text-xs leading-relaxed text-muted-foreground">
-          Mentors are verified by their churches. Conversations stay inside Nuru Faith, and you can
-          report or end a mentorship at any time.
-        </p>
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center gap-1.5">
+                  <span className="truncate text-sm font-semibold">{m.display_name}</span>
+                  {m.verified && (
+                    <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-cyan" aria-label="Verified" />
+                  )}
+                </span>
+                <span className="block truncate text-[11px] text-muted-foreground">
+                  {m.role_title ?? (m.specialties ?? []).slice(0, 2).join(" · ") ?? "Mentor"}
+                </span>
+              </span>
+              <button
+                type="button"
+                disabled={pending || busyId === m.id}
+                onClick={() => void ask(m.id)}
+                className="shrink-0 rounded-lg bg-primary px-3.5 py-1.5 text-[11px] font-semibold text-primary-foreground disabled:opacity-60"
+              >
+                {pending ? "Requested" : "Connect"}
+              </button>
+              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+            </div>
+          );
+        })}
       </div>
     </AppShell>
   );

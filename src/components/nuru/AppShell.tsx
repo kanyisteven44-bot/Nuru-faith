@@ -1,13 +1,17 @@
 import type { ReactNode } from "react";
-import { Link, useRouterState } from "@tanstack/react-router";
-import { BookOpen, CalendarDays, Home, User, Users } from "lucide-react";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowLeft, Bell, BookOpen, Calendar, Home, User, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
+import { fetchProfile } from "@/services/content";
+import { NuruMark } from "./Logo";
 
 const NAV = [
   { to: "/home", label: "Home", icon: Home },
   { to: "/community", label: "Community", icon: Users },
   { to: "/bible", label: "Bible", icon: BookOpen },
-  { to: "/events", label: "Events", icon: CalendarDays },
+  { to: "/events", label: "Events", icon: Calendar },
   { to: "/profile", label: "Profile", icon: User },
 ] as const;
 
@@ -15,43 +19,42 @@ export function AppShell({
   children,
   wide = false,
   flush = false,
+  hideNav = false,
 }: {
   children: ReactNode;
-  /** "xl" is the Home dashboard's three-column ecosystem layout; true is the 5xl default. */
   wide?: boolean | "xl";
   /** Full-bleed screens (Reels) manage their own height and skip the bottom padding. */
   flush?: boolean;
+  hideNav?: boolean;
 }) {
   const maxWidth = wide === "xl" ? "max-w-7xl" : wide ? "max-w-5xl" : "max-w-xl";
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   return (
     <div className={cn("relative bg-background", flush ? "h-dvh overflow-hidden" : "min-h-dvh")}>
-      {!flush && (
-        <div
-          aria-hidden="true"
-          className="pointer-events-none fixed inset-x-0 top-0 z-0 h-72 bg-[radial-gradient(70%_100%_at_50%_0%,color-mix(in_oklab,var(--primary)_16%,transparent),transparent_75%)]"
-        />
-      )}
-      <main className={cn("relative z-10 mx-auto w-full", flush ? "" : "pb-28", maxWidth)}>
+      <main
+        className={cn("relative z-10 mx-auto w-full", flush || hideNav ? "" : "pb-24", maxWidth)}
+      >
         {children}
       </main>
 
-      <nav
-        aria-label="Main"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-cyan/25 bg-[#001a3d]/95 shadow-[0_-10px_30px_-24px_var(--brand-cyan)] backdrop-blur-xl"
-      >
-        <ul
-          className={cn(
-            "mx-auto grid grid-cols-5 items-end px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1.5",
-            maxWidth,
-          )}
+      {!hideNav && (
+        <nav
+          aria-label="Main"
+          className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/95 backdrop-blur-xl"
         >
-          {NAV.map((item) => (
-            <NavItem key={item.to} {...item} active={pathname.startsWith(item.to)} />
-          ))}
-        </ul>
-      </nav>
+          <ul
+            className={cn(
+              "mx-auto grid grid-cols-5 px-1 pb-[max(0.4rem,env(safe-area-inset-bottom))] pt-2",
+              maxWidth,
+            )}
+          >
+            {NAV.map((item) => (
+              <NavItem key={item.to} {...item} active={pathname.startsWith(item.to)} />
+            ))}
+          </ul>
+        </nav>
+      )}
     </div>
   );
 }
@@ -73,41 +76,125 @@ function NavItem({
         to={to}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "flex min-h-12 flex-col items-center justify-center gap-1 rounded-md text-[10px] font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan",
-          active ? "text-primary" : "text-muted-foreground hover:text-secondary-foreground",
+          "flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl text-[10px] font-medium transition-colors",
+          active ? "text-cyan" : "text-muted-foreground hover:text-secondary-foreground",
         )}
       >
-        <span className="relative">
-          <Icon
-            className={cn("h-5 w-5", active && "drop-shadow-[0_0_10px_var(--primary)]")}
-            strokeWidth={active ? 2.4 : 1.8}
-          />
-          {active && (
-            <span className="absolute -bottom-1.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-primary" />
-          )}
-        </span>
+        <Icon
+          className={cn("h-5.5 w-5.5", active && "drop-shadow-[0_0_10px_var(--brand-cyan)]")}
+          strokeWidth={active ? 2.3 : 1.8}
+        />
         {label}
       </Link>
     </li>
   );
 }
 
+/**
+ * Home-style top bar: brand lockup on the left, notification bell and the
+ * signed-in person's avatar on the right.
+ */
+export function BrandBar() {
+  const { userId } = useAuth();
+  const { data: profile } = useQuery({
+    queryKey: ["profile", userId],
+    queryFn: () => fetchProfile(userId!),
+    enabled: !!userId,
+  });
+
+  return (
+    <header className="sticky top-0 z-30 flex items-center justify-between gap-3 bg-background/90 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-xl">
+      <span className="flex items-center gap-2">
+        <NuruMark className="h-7 w-7" />
+        <span className="font-display text-[17px] font-semibold">
+          Nuru <span className="text-cyan">Faith</span>
+        </span>
+      </span>
+      <div className="flex items-center gap-3">
+        <Link
+          to="/notifications"
+          aria-label="Notifications"
+          className="relative text-secondary-foreground transition-colors hover:text-foreground"
+        >
+          <Bell className="h-5.5 w-5.5" strokeWidth={1.8} />
+          <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-cyan" />
+        </Link>
+        <Link to="/profile" aria-label="Your profile">
+          <Avatar url={profile?.avatar_url ?? null} name={profile?.full_name ?? ""} size="sm" />
+        </Link>
+      </div>
+    </header>
+  );
+}
+
+/** Sub-screen header: optional back arrow, centered-left title, optional right slot. */
 export function ScreenHeader({
   title,
   subtitle,
   right,
+  back = false,
 }: {
   title: string;
   subtitle?: string;
   right?: ReactNode;
+  back?: boolean;
 }) {
+  const navigate = useNavigate();
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-border-strong bg-background/92 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] shadow-[0_8px_24px_-20px_var(--brand-cyan)] backdrop-blur-xl">
-      <div className="min-w-0">
-        <h1 className="truncate font-display text-xl font-semibold tracking-tight">{title}</h1>
+    <header className="sticky top-0 z-30 flex items-center gap-3 bg-background/90 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-xl">
+      {back && (
+        <button
+          type="button"
+          onClick={() => void navigate({ to: ".." })}
+          aria-label="Go back"
+          className="-ml-1 shrink-0 rounded-full p-1.5 text-secondary-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </button>
+      )}
+      <div className="min-w-0 flex-1">
+        <h1 className="truncate font-display text-[22px] font-semibold tracking-tight">{title}</h1>
         {subtitle && <p className="truncate text-xs text-muted-foreground">{subtitle}</p>}
       </div>
       {right && <div className="flex shrink-0 items-center gap-2">{right}</div>}
     </header>
+  );
+}
+
+const AVATAR_SIZES = {
+  sm: "h-8 w-8 text-[11px]",
+  md: "h-11 w-11 text-sm",
+  lg: "h-24 w-24 text-2xl",
+};
+
+export function Avatar({
+  url,
+  name,
+  size = "md",
+  className,
+}: {
+  url: string | null;
+  name: string;
+  size?: keyof typeof AVATAR_SIZES;
+  className?: string;
+}) {
+  const initials =
+    name
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((p) => p[0]?.toUpperCase())
+      .join("") || "N";
+
+  return (
+    <span
+      className={cn(
+        "inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-border-strong bg-surface-2 font-semibold text-cyan",
+        AVATAR_SIZES[size],
+        className,
+      )}
+    >
+      {url ? <img src={url} alt="" className="h-full w-full object-cover" /> : initials}
+    </span>
   );
 }

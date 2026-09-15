@@ -16,6 +16,7 @@ import { Chip } from "./Primitives";
 
 export type PostRow = {
   id: string;
+  author_id: string | null;
   kind: string;
   body: string | null;
   media_url: string | null;

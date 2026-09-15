@@ -86,7 +86,7 @@ function ExploreScreen() {
   }
   return (
     <AppShell>
-      <ScreenHeader title="Explore" subtitle="Find your next step in faith" />
+      <ScreenHeader title="Search" />
       <div className="space-y-3 px-4 py-4">
         <form
           className="relative"

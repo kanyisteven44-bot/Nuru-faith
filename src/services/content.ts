@@ -135,6 +135,16 @@ export async function createPost(input: {
   if (error) throw new Error(error.message);
 }
 
+/** Ids of the people this user follows — powers the Community "Following" tab. */
+export async function fetchMyFollowing(userId: string) {
+  const { data, error } = await supabase
+    .from("user_follows")
+    .select("following_id")
+    .eq("follower_id", userId);
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((r) => r.following_id);
+}
+
 export async function fetchMyPostLikes(userId: string) {
   const { data, error } = await supabase.from("post_likes").select("post_id").eq("user_id", userId);
   if (error) throw new Error(error.message);

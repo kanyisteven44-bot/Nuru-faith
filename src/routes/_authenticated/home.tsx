@@ -10,7 +10,9 @@ import {
   Clapperboard,
   GraduationCap,
   HandHeart,
+  Heart,
   LayoutGrid,
+  Network,
   Music2,
   Share2,
   ShieldCheck,
@@ -18,6 +20,9 @@ import {
   Sprout,
   Target,
   UsersRound,
+  Globe2,
+  Award,
+  Leaf,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { eventDate } from "@/lib/format";
@@ -609,7 +614,9 @@ function BrandPanel() {
   return (
     <div className="space-y-5">
       <div>
-        <NuruLogo />
+        <div className="origin-left scale-125">
+          <NuruLogo />
+        </div>
         <p className="mt-2 text-sm font-medium text-cyan">Connect · Grow · Live Your Faith</p>
       </div>
 
@@ -646,6 +653,77 @@ function BrandPanel() {
         </ul>
       </section>
     </div>
+  );
+}
+
+const IMPACT_STATS = [
+  { value: "250K+", label: "Young People", icon: UsersRound },
+  { value: "630+", label: "Churches", icon: Church },
+  { value: "27", label: "Dioceses", icon: Network },
+  { value: "1", label: "Kingdom Mission", icon: Globe2 },
+] as const;
+
+const GROW_PILLARS = [
+  {
+    title: "Faith",
+    body: "Deepen your relationship with God",
+    icon: ShieldCheck,
+    tone: "cyan" as const,
+  },
+  {
+    title: "Friendships",
+    body: "Find your people and build lasting connections",
+    icon: Heart,
+    tone: "brand" as const,
+  },
+  {
+    title: "Purpose",
+    body: "Develop skills and discover your calling",
+    icon: Award,
+    tone: "violet" as const,
+  },
+  {
+    title: "Impact",
+    body: "Make a difference in your community",
+    icon: Leaf,
+    tone: "growth" as const,
+  },
+] as const;
+
+function ImpactStats() {
+  return (
+    <section className="nuru-card grid grid-cols-4 divide-x divide-border px-2 py-3">
+      {IMPACT_STATS.map(({ value, label, icon: Icon }) => (
+        <div key={label} className="flex items-center justify-center gap-2 px-2">
+          <Icon className="h-7 w-7 shrink-0 text-cyan" strokeWidth={1.65} />
+          <span>
+            <strong className="block font-display text-lg text-cyan">{value}</strong>
+            <span className="block text-[10px] text-secondary-foreground">{label}</span>
+          </span>
+        </div>
+      ))}
+    </section>
+  );
+}
+
+function GrowPillars() {
+  return (
+    <section className="nuru-card p-3">
+      <h2 className="mb-3 text-center font-display text-sm font-semibold uppercase tracking-wide text-primary">
+        Grow · Connect · Lead · Impact
+      </h2>
+      <div className="grid grid-cols-4 gap-2">
+        {GROW_PILLARS.map(({ title, body, icon, tone }) => (
+          <div key={title} className="rounded-lg border border-border bg-surface-2/55 p-2.5">
+            <IconTile icon={icon} tone={tone} size="sm" />
+            <p className="mt-2 text-[10px] font-bold uppercase text-secondary-foreground">
+              {title}
+            </p>
+            <p className="mt-1 text-[9px] leading-snug text-muted-foreground">{body}</p>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -713,7 +791,7 @@ function HomeScreen() {
 
   return (
     <AppShell wide="xl">
-      <div className="mx-auto w-full max-w-xl">
+      <div className="mx-auto w-full max-w-xl lg:hidden">
         <header className="flex items-center justify-between px-4 pt-[max(1.25rem,env(safe-area-inset-top))] pb-2 lg:justify-end">
           {/* Desktop carries the brand in the left column, so the mark is mobile-only here. */}
           <span className="lg:hidden">
@@ -791,44 +869,65 @@ function HomeScreen() {
 
       {/* Desktop: the reference's three-column ecosystem — brand and core features on
           the left, the phone experience in the centre, content rails on the right. */}
-      <section className="hidden px-4 pt-10 lg:grid lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.3fr)_minmax(0,0.95fr)] lg:gap-7 lg:pb-10">
+      <section className="hidden px-5 pt-5 lg:grid lg:grid-cols-[300px_minmax(410px,1fr)_minmax(430px,1.1fr)] lg:gap-4 lg:pb-5">
         <BrandPanel />
 
-        <div className="space-y-7">
-          <TodaysLightSection
-            isLoading={verse.isLoading}
-            verseData={verse.data}
-            verseRef={verseOfTheDayRef()}
-          />
-          <QuickAccessSection />
-          <ContinueGrowingSection continueSeries={continueSeries} />
-          <ChallengeSection challenge={challenge} />
-          <UpcomingSection upcoming={upcoming} />
+        <div className="space-y-4">
+          <ImpactStats />
+          <div className="mx-auto max-w-[430px] rounded-[2rem] border-[6px] border-slate-900 bg-background p-3 shadow-2xl ring-1 ring-border-strong">
+            <header className="flex items-center justify-between pb-3">
+              <div>
+                <h1 className="font-display text-xl font-semibold">Shalom, {name}! 👋</h1>
+                <p className="text-xs text-secondary-foreground">
+                  You are loved. You are called. You are sent.
+                </p>
+              </div>
+              <Link to="/profile" aria-label="Your profile">
+                <Avatar src={profilePhoto} name={profile.data?.full_name} />
+              </Link>
+            </header>
+            <div className="space-y-4">
+              <TodaysLightSection
+                isLoading={verse.isLoading}
+                verseData={verse.data}
+                verseRef={verseOfTheDayRef()}
+              />
+              <QuickAccessSection />
+              <ChallengeSection challenge={challenge} />
+              <UpcomingSection upcoming={upcoming} />
+            </div>
+          </div>
         </div>
 
-        <div className="space-y-7">
-          <DevotionalsSection
-            isLoading={devotionals.isLoading}
-            devotionals={(devotionals.data ?? []).slice(0, 3)}
-          />
-          <CoursesSection
-            isLoading={courses.isLoading}
-            courses={(courses.data ?? []).slice(0, 3)}
-          />
-          <CommunitySection isLoading={groups.isLoading} groups={(groups.data ?? []).slice(0, 3)} />
-          <MentorsSection
-            isLoading={mentors.isLoading}
-            mentors={(mentors.data ?? []).slice(0, 3)}
-          />
-          <MusicMediaSection isLoading={media.isLoading} items={media.data ?? []} />
-          <DashboardCard
-            to="/hub"
-            icon={LayoutGrid}
-            tone="cyan"
-            title="Nuru Faith Hub"
-            body="News, resources, testimonies, jobs, scholarships and more"
-            meta={undefined}
-          />
+        <div className="space-y-4">
+          <GrowPillars />
+          <div className="grid grid-cols-2 gap-4">
+            <DevotionalsSection
+              isLoading={devotionals.isLoading}
+              devotionals={(devotionals.data ?? []).slice(0, 3)}
+            />
+            <CoursesSection
+              isLoading={courses.isLoading}
+              courses={(courses.data ?? []).slice(0, 3)}
+            />
+            <CommunitySection
+              isLoading={groups.isLoading}
+              groups={(groups.data ?? []).slice(0, 3)}
+            />
+            <MentorsSection
+              isLoading={mentors.isLoading}
+              mentors={(mentors.data ?? []).slice(0, 3)}
+            />
+            <DashboardCard
+              to="/hub"
+              icon={LayoutGrid}
+              tone="cyan"
+              title="News & announcements"
+              body="Church updates, opportunities and stories from the Nuru community"
+              meta="Open Nuru Hub"
+            />
+            <MusicMediaSection isLoading={media.isLoading} items={(media.data ?? []).slice(0, 4)} />
+          </div>
         </div>
       </section>
 

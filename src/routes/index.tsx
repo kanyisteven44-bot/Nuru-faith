@@ -1,20 +1,19 @@
-import { useEffect, useState } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { NuruLogo } from "@/components/nuru/Logo";
-import { BRAND_IDEA } from "@/constants/nuru";
+import { NuruMark } from "@/components/nuru/Logo";
 import hero from "@/assets/mountain-dawn.jpg";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Nuru Faith — Light for This Generation" },
+      { title: "Nuru Faith — Connect. Grow. Live Your Faith." },
       {
         name: "description",
         content:
           "A digital home for young people to know God, grow in faith, find real community, and live out their purpose.",
       },
-      { property: "og:title", content: "Nuru Faith — Light for This Generation" },
+      { property: "og:title", content: "Nuru Faith — Connect. Grow. Live Your Faith." },
       {
         property: "og:description",
         content: "Know God, grow in faith, find real community, and live out your purpose.",
@@ -24,15 +23,30 @@ export const Route = createFileRoute("/")({
   component: Splash,
 });
 
+const SPLASH_MS = 2200;
+
 function Splash() {
   const navigate = useNavigate();
-  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/home", replace: true });
-      else setChecking(false);
+    let done = false;
+    const go = (to: "/home" | "/welcome") => {
+      if (done) return;
+      done = true;
+      void navigate({ to, replace: true });
+    };
+
+    const timer = setTimeout(() => go("/welcome"), SPLASH_MS);
+    void supabase.auth.getSession().then(({ data }) => {
+      if (data.session) {
+        clearTimeout(timer);
+        go("/home");
+      }
     });
+    return () => {
+      done = true;
+      clearTimeout(timer);
+    };
   }, [navigate]);
 
   return (
@@ -42,45 +56,28 @@ function Splash() {
         alt=""
         width={1024}
         height={640}
-        className="absolute inset-0 h-full w-full object-cover opacity-45"
+        className="absolute inset-0 h-full w-full object-cover opacity-55"
       />
-      <div className="absolute inset-0 nuru-veil" />
+      <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/45 to-background" />
 
-      <div className="relative mx-auto flex min-h-dvh max-w-xl flex-col justify-between px-6 py-12">
-        <NuruLogo />
+      <div className="relative mx-auto flex min-h-dvh max-w-xl flex-col items-center justify-center px-8 text-center">
+        <NuruMark className="h-24 w-24" />
 
-        <div>
-          <p className="script text-3xl text-cyan">{BRAND_IDEA}</p>
-          <h1 className="mt-3 font-display text-4xl leading-tight font-bold">
-            Know God. Grow in faith.
-            <br />
-            <span className="nuru-gradient-text">Live your purpose.</span>
-          </h1>
-          <p className="mt-4 max-w-sm text-sm leading-relaxed text-secondary-foreground">
-            A digital home for young people — Scripture, devotionals, real community, mentorship,
-            worship music and events from churches near you.
-          </p>
-        </div>
+        <h1 className="mt-6 font-display text-[40px] leading-none font-bold tracking-tight">
+          Nuru <span className="text-cyan">Faith</span>
+        </h1>
+        <p className="mt-3 text-[13px] tracking-wide text-secondary-foreground">
+          Connect • Grow • Live Your Faith
+        </p>
 
-        <div className="space-y-3">
-          <Link
-            to="/auth"
-            search={{ mode: "signup" }}
-            className="flex min-h-12 w-full items-center justify-center rounded-lg bg-primary text-sm font-semibold text-primary-foreground nuru-glow"
-          >
-            Create your account
-          </Link>
-          <Link
-            to="/auth"
-            search={{ mode: "login" }}
-            className="flex min-h-12 w-full items-center justify-center rounded-lg border border-border bg-surface/70 text-sm font-medium text-secondary-foreground backdrop-blur"
-          >
-            {checking ? "Checking your session…" : "I already have an account"}
-          </Link>
-          <p className="pt-2 text-center text-[11px] text-muted-foreground">
-            Inspired by Christ. Built for this generation.
-          </p>
-        </div>
+        <p className="script mt-10 text-3xl leading-snug text-cyan/95">
+          Faith Today
+          <br />A Brighter Tomorrow
+        </p>
+
+        <p className="absolute inset-x-0 bottom-10 text-xs text-muted-foreground">
+          A generation for more.
+        </p>
       </div>
     </div>
   );

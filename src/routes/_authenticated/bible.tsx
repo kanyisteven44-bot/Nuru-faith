@@ -1,359 +1,400 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { BookOpen, Sparkles, Trash2 } from "lucide-react";
-import { toast } from "sonner";
-import { useAuth } from "@/hooks/useAuth";
-import { resolveMedia } from "@/lib/media";
-import { fetchVerseOfTheDay, verseOfTheDayRef } from "@/lib/bible";
-import { fetchDevotionals, fetchPlanDays, fetchReadingPlans } from "@/services/content";
-import { fetchSavedScriptures, fetchSeries, removeSavedScripture } from "@/services/series";
-import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
-import { ScriptureText } from "@/components/nuru/Scripture";
-import heroBg from "@/assets/bible-candle.jpg";
 import {
-  CardSkeleton,
-  Chip,
-  EmptyState,
-  IconTile,
-  PillTabs,
-  SectionHeader,
-} from "@/components/nuru/Primitives";
+  ArrowLeft,
+  Bookmark,
+  Highlighter,
+  Loader2,
+  Search,
+  Share2,
+  Sparkles,
+  SquarePen,
+  Trash2,
+} from "lucide-react";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
+import { fetchPassage, NEW_TESTAMENT, OLD_TESTAMENT, type BibleBook } from "@/lib/bible";
+import { BIBLE_TOPICS } from "@/lib/content-policy";
+import { fetchSavedScriptures, removeSavedScripture, saveScripture } from "@/services/series";
+import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
+import { CardSkeleton, EmptyState, PillTabs } from "@/components/nuru/Primitives";
 
 export const Route = createFileRoute("/_authenticated/bible")({
   head: () => ({
     meta: [
-      { title: "Bible & Devotionals — Nuru Faith" },
+      { title: "Bible — Nuru Faith" },
       {
         name: "description",
-        content: "Daily devotionals, reading plans and Scripture explained for young believers.",
+        content: "Read the Bible by book and chapter, browse topics and keep your saved verses.",
       },
-      { property: "og:title", content: "Bible & Devotionals — Nuru Faith" },
-      { property: "og:description", content: "Daily devotionals and reading plans." },
+      { property: "og:title", content: "Bible — Nuru Faith" },
+      { property: "og:description", content: "Read Scripture and save what speaks to you." },
     ],
   }),
   component: BibleScreen,
 });
 
-const TABS = ["Devotionals", "Series", "Reading plans", "Saved"] as const;
+const TABS = ["Books", "Topics", "My Notes"] as const;
 type Tab = (typeof TABS)[number];
 
 function BibleScreen() {
-  const { userId } = useAuth();
-  const qc = useQueryClient();
-  const [tab, setTab] = useState<Tab>("Devotionals");
-  const [openId, setOpenId] = useState<string | null>(null);
-  const [planId, setPlanId] = useState<string | null>(null);
+  const [tab, setTab] = useState<Tab>("Books");
+  const [reading, setReading] = useState<string | null>(null);
+  const [book, setBook] = useState<BibleBook | null>(null);
   const [query, setQuery] = useState("");
-  const [lookup, setLookup] = useState<string | null>(null);
 
-  const verse = useQuery({
-    queryKey: ["verse-of-the-day", verseOfTheDayRef()],
-    queryFn: fetchVerseOfTheDay,
-    staleTime: 1000 * 60 * 60,
-  });
-  const devotionals = useQuery({ queryKey: ["devotionals"], queryFn: fetchDevotionals });
-  const plans = useQuery({ queryKey: ["reading-plans"], queryFn: fetchReadingPlans });
-  const days = useQuery({
-    queryKey: ["plan-days", planId],
-    queryFn: () => fetchPlanDays(planId!),
-    enabled: !!planId,
-  });
-  const series = useQuery({
-    queryKey: ["series"],
-    queryFn: () => fetchSeries(),
-    enabled: tab === "Series",
-  });
-  const saved = useQuery({
-    queryKey: ["saved-scriptures", userId],
-    queryFn: () => fetchSavedScriptures(userId!),
-    enabled: !!userId && tab === "Saved",
-  });
+  if (reading) return <Reader reference={reading} onBack={() => setReading(null)} />;
+
+  if (book)
+    return (
+      <ChapterPicker
+        book={book}
+        onBack={() => setBook(null)}
+        onPick={(chapter) => setReading(`${book.name} ${chapter}`)}
+      />
+    );
+
+  const match = (b: BibleBook) => b.name.toLowerCase().includes(query.trim().toLowerCase());
 
   return (
     <AppShell>
-      <ScreenHeader title="Bible" subtitle="Scripture, made clear" />
+      <ScreenHeader title="Bible" />
 
-      {/* Verse of the day */}
-      <section className="px-4 pt-4">
-        <article className="nuru-card-hero relative overflow-hidden p-5">
-          <img
-            src={heroBg}
-            alt=""
-            loading="eager"
-            className="absolute inset-0 h-full w-full object-cover opacity-35"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/70 to-background/90" />
-          <div className="relative">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-cyan">
-              Verse of the day
-            </p>
-            <p className="mt-3 font-display text-[17px] font-semibold leading-snug">
-              {verse.data ? `"${verse.data.text}"` : "Loading today's verse…"}
-            </p>
-            <p className="mt-2 text-xs font-medium text-cyan">
-              {verse.data
-                ? `${verse.data.reference} · ${verse.data.translation}`
-                : verseOfTheDayRef()}
-            </p>
-          </div>
-        </article>
-      </section>
-
-      <div className="px-4 py-3">
-        <PillTabs tabs={TABS} value={tab} onChange={setTab} />
-      </div>
-
-      <section className="px-4">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            setLookup(query.trim());
-          }}
-          className="mb-4 flex items-center gap-2"
-        >
+      <div className="space-y-3 px-4 pb-1">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Look up a passage, e.g. John 1:1-5"
-            aria-label="Look up a Bible passage"
-            className="input-nuru flex-1"
+            placeholder="Search books, topics or verses…"
+            aria-label="Search the Bible"
+            className="input-nuru pl-11"
           />
+        </div>
+        <PillTabs tabs={TABS} value={tab} onChange={setTab} />
+      </div>
+
+      {tab === "Books" && (
+        <div className="px-4 pt-2">
+          <Testament title="Old Testament" books={OLD_TESTAMENT.filter(match)} onOpen={setBook} />
+          <Testament title="New Testament" books={NEW_TESTAMENT.filter(match)} onOpen={setBook} />
+        </div>
+      )}
+
+      {tab === "Topics" && (
+        <ul className="space-y-2 px-4 pt-2">
+          {BIBLE_TOPICS.filter((t) =>
+            `${t.title} ${t.reference}`.toLowerCase().includes(query.trim().toLowerCase()),
+          ).map((t) => (
+            <li key={t.id}>
+              <button
+                type="button"
+                onClick={() => setReading(t.reference)}
+                className="nuru-card flex w-full items-center gap-3 px-4 py-3 text-left"
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-semibold">{t.title}</span>
+                  <span className="block truncate text-[11px] text-cyan">{t.reference}</span>
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {tab === "My Notes" && <SavedVerses onOpen={setReading} />}
+    </AppShell>
+  );
+}
+
+function Testament({
+  title,
+  books,
+  onOpen,
+}: {
+  title: string;
+  books: BibleBook[];
+  onOpen: (b: BibleBook) => void;
+}) {
+  if (books.length === 0) return null;
+  return (
+    <section className="pb-5">
+      <h2 className="mb-2 font-display text-[15px] font-semibold">{title}</h2>
+      <ul className="space-y-2">
+        {books.map((b) => (
+          <li key={b.name}>
+            <button
+              type="button"
+              onClick={() => onOpen(b)}
+              className="nuru-card flex w-full items-center gap-3 px-3 py-2.5 text-left"
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-primary/35 bg-primary/12 text-[11px] font-bold text-cyan">
+                {b.name.slice(0, 2)}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-semibold">{b.name}</span>
+                <span className="block text-[11px] text-muted-foreground">
+                  {b.chapters} chapters
+                </span>
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function ChapterPicker({
+  book,
+  onBack,
+  onPick,
+}: {
+  book: BibleBook;
+  onBack: () => void;
+  onPick: (chapter: number) => void;
+}) {
+  return (
+    <AppShell>
+      <header className="sticky top-0 z-30 flex items-center gap-3 bg-background/90 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-xl">
+        <button
+          type="button"
+          onClick={onBack}
+          aria-label="Back to books"
+          className="-ml-1 rounded-full p-1.5 text-secondary-foreground"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </button>
+        <h1 className="font-display text-[22px] font-semibold tracking-tight">{book.name}</h1>
+      </header>
+      <div className="grid grid-cols-5 gap-2 px-4 pt-2">
+        {Array.from({ length: book.chapters }, (_, i) => i + 1).map((c) => (
           <button
-            type="submit"
-            className="min-h-12 shrink-0 rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground nuru-glow-sm"
+            key={c}
+            type="button"
+            onClick={() => onPick(c)}
+            className="nuru-card flex h-12 items-center justify-center text-sm font-semibold"
           >
-            Read
+            {c}
           </button>
-        </form>
-
-        {lookup && (
-          <article className="nuru-card mb-4 p-4">
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-cyan">
-              {lookup}
-            </p>
-            <ScriptureText reference={lookup} className="mt-1 text-sm text-secondary-foreground" />
-            <Link
-              to="/ai"
-              search={{
-                contextType: "verse",
-                contextLabel: lookup,
-                q: `Explain ${lookup} in context.`,
-              }}
-              className="mt-3 inline-flex min-h-10 items-center gap-1.5 rounded-full bg-surface-2 px-3 text-xs font-semibold text-cyan"
-            >
-              <Sparkles className="h-3.5 w-3.5" /> Ask Nuru AI about this
-            </Link>
-          </article>
-        )}
-
-        <Link to="/ai" className="nuru-card mb-4 flex items-center gap-3 p-3.5">
-          <IconTile icon={Sparkles} tone="cyan" size="lg" />
-          <span className="flex-1">
-            <span className="block text-sm font-semibold">Ask Nuru AI about a passage</span>
-            <span className="block text-xs text-muted-foreground">
-              Context, meaning and how it applies today
-            </span>
-          </span>
-        </Link>
-      </section>
-
-      {tab === "Devotionals" && (
-        <div className="space-y-3 px-4">
-          {devotionals.isLoading && <CardSkeleton count={3} height="h-32" />}
-          {devotionals.data?.length === 0 && (
-            <EmptyState
-              title="No devotionals yet"
-              description="New devotionals are published each morning."
-            />
-          )}
-          {(devotionals.data ?? []).map((d) => {
-            const open = openId === d.id;
-            return (
-              <article key={d.id} className="nuru-card overflow-hidden">
-                <img
-                  src={resolveMedia(d.cover_url)}
-                  alt=""
-                  width={1024}
-                  height={480}
-                  loading="lazy"
-                  className="h-36 w-full object-cover"
-                />
-                <div className="p-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-widest text-cyan">
-                    {d.scripture_ref}
-                  </p>
-                  <h3 className="mt-1 font-display text-base font-semibold">{d.title}</h3>
-                  {d.scripture_ref ? (
-                    <ScriptureText
-                      reference={d.scripture_ref}
-                      className="mt-1 text-sm text-secondary-foreground"
-                    />
-                  ) : (
-                    <p className="mt-1 text-sm italic text-secondary-foreground">
-                      "{d.scripture_text}"
-                    </p>
-                  )}
-                  {open && (
-                    <p className="mt-3 text-sm leading-relaxed text-secondary-foreground">
-                      {d.body}
-                    </p>
-                  )}
-                  {open && d.subtitle && (
-                    <p className="mt-3 rounded-2xl bg-surface-2 p-3 text-xs text-cyan">
-                      {d.subtitle}
-                    </p>
-                  )}
-                  <button
-                    onClick={() => setOpenId(open ? null : d.id)}
-                    className="mt-3 min-h-10 text-xs font-semibold text-cyan"
-                    aria-expanded={open}
-                  >
-                    {open ? "Show less" : "Read devotional"}
-                  </button>
-                </div>
-              </article>
-            );
-          })}
-        </div>
-      )}
-
-      {tab === "Series" && (
-        <div className="space-y-3 px-4">
-          <p className="text-xs text-muted-foreground">
-            Study one real-life question through connected passages — context, reflection, prayer
-            and one step to take.
-          </p>
-          {series.isLoading && <CardSkeleton count={3} height="h-28" />}
-          {series.data?.length === 0 && (
-            <EmptyState title="No series yet" description="Scripture Series are being prepared." />
-          )}
-          {(series.data ?? []).map((s) => (
-            <Link
-              key={s.id}
-              to="/series/$slug"
-              params={{ slug: s.slug }}
-              className="nuru-card flex gap-3 overflow-hidden active:opacity-90"
-            >
-              <img
-                src={resolveMedia(s.cover_image)}
-                alt=""
-                loading="lazy"
-                className="h-24 w-24 shrink-0 object-cover"
-              />
-              <div className="min-w-0 flex-1 py-3 pr-3">
-                <p className="text-[11px] font-semibold tracking-widest text-cyan uppercase">
-                  {s.category}
-                </p>
-                <p className="truncate text-sm font-semibold">{s.title}</p>
-                <p className="line-clamp-2 text-xs text-muted-foreground">{s.description}</p>
-                <p className="mt-1 text-[11px] text-muted-foreground">
-                  {s.session_count} sessions · {s.estimated_duration} min
-                </p>
-              </div>
-            </Link>
-          ))}
-          <Link to="/series" className="block py-2 text-center text-xs font-semibold text-cyan">
-            See all Scripture Series
-          </Link>
-        </div>
-      )}
-
-      {tab === "Saved" && (
-        <div className="space-y-3 px-4">
-          {!userId && (
-            <EmptyState
-              title="Sign in to save passages"
-              description="Your saved Scripture lives here."
-            />
-          )}
-          {saved.isLoading && <CardSkeleton count={3} height="h-20" />}
-          {userId && saved.data?.length === 0 && (
-            <EmptyState
-              title="Nothing saved yet"
-              description="Tap the bookmark on a passage in a Scripture Series to keep it here."
-            />
-          )}
-          {(saved.data ?? []).map((row) => (
-            <article key={row.id} className="nuru-card p-4">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-sm font-semibold text-cyan">{row.reference}</p>
-                <button
-                  aria-label={`Remove ${row.reference}`}
-                  onClick={() => {
-                    void removeSavedScripture(userId!, row.reference)
-                      .then(() => qc.invalidateQueries({ queryKey: ["saved-scriptures", userId] }))
-                      .catch(() => toast.error("Couldn't remove that"));
-                  }}
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-2 text-muted-foreground"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-              <ScriptureText
-                reference={row.reference}
-                className="mt-1 text-sm text-secondary-foreground"
-              />
-            </article>
-          ))}
-        </div>
-      )}
-
-      {tab === "Reading plans" && (
-        <div className="space-y-3 px-4">
-          {plans.isLoading && <CardSkeleton count={3} height="h-24" />}
-          {(plans.data ?? []).map((p) => {
-            const open = planId === p.id;
-            return (
-              <article key={p.id} className="nuru-card p-4">
-                <div className="flex items-center gap-3">
-                  <IconTile icon={BookOpen} tone="brand" />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold">{p.title}</p>
-                    <p className="line-clamp-1 text-xs text-muted-foreground">{p.description}</p>
-                  </div>
-                  <Chip tone="brand">{p.days} days</Chip>
-                </div>
-                <button
-                  onClick={() => setPlanId(open ? null : p.id)}
-                  aria-expanded={open}
-                  className="mt-3 min-h-10 text-xs font-semibold text-cyan"
-                >
-                  {open ? "Hide plan" : "View plan"}
-                </button>
-                {open && (
-                  <ol className="mt-2 space-y-2">
-                    {days.isLoading && <CardSkeleton count={3} height="h-12" />}
-                    {(days.data ?? []).map((d) => (
-                      <li key={d.id} className="rounded-2xl bg-surface-2 p-3">
-                        <p className="text-xs font-semibold text-cyan">Day {d.day_number}</p>
-                        <p className="text-sm font-medium">{d.scripture_ref}</p>
-                        {d.scripture_ref && (
-                          <ScriptureText
-                            reference={d.scripture_ref}
-                            className="mt-1 text-xs text-secondary-foreground"
-                            clamp
-                          />
-                        )}
-                        {d.reflection && (
-                          <p className="mt-1 text-xs text-muted-foreground">{d.reflection}</p>
-                        )}
-                      </li>
-                    ))}
-                  </ol>
-                )}
-              </article>
-            );
-          })}
-        </div>
-      )}
-
-      <div className="px-4 pt-6">
-        <SectionHeader title="Full Bible reader" action="Coming soon" />
-        <p className="text-xs text-muted-foreground">
-          Chapter-by-chapter reading with highlights and notes is on the way.
-        </p>
+        ))}
       </div>
     </AppShell>
+  );
+}
+
+function Reader({ reference, onBack }: { reference: string; onBack: () => void }) {
+  const { userId } = useAuth();
+  const qc = useQueryClient();
+  const [highlighted, setHighlighted] = useState<Set<number>>(new Set());
+
+  const passage = useQuery({
+    queryKey: ["passage", reference],
+    queryFn: () => fetchPassage(reference),
+  });
+
+  async function bookmark() {
+    if (!userId) {
+      toast.error("Sign in to save verses");
+      return;
+    }
+    try {
+      await saveScripture(userId, reference);
+      await qc.invalidateQueries({ queryKey: ["saved-scriptures", userId] });
+      toast.success("Saved to My Notes");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Couldn't save that");
+    }
+  }
+
+  function share() {
+    const text = `${passage.data?.reference ?? reference} — Nuru Faith`;
+    if (navigator.share) void navigator.share({ title: text, text }).catch(() => {});
+    else {
+      void navigator.clipboard?.writeText(text);
+      toast.success("Copied");
+    }
+  }
+
+  return (
+    <AppShell>
+      <header className="sticky top-0 z-30 flex items-center gap-3 bg-background/90 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-xl">
+        <button
+          type="button"
+          onClick={onBack}
+          aria-label="Back"
+          className="-ml-1 rounded-full p-1.5 text-secondary-foreground"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </button>
+        <h1 className="min-w-0 flex-1 truncate font-display text-[22px] font-semibold tracking-tight">
+          {passage.data?.reference ?? reference}
+        </h1>
+        <span className="shrink-0 rounded-lg border border-border-strong bg-surface-2 px-2.5 py-1 text-[11px] font-semibold text-secondary-foreground">
+          {passage.data?.translation ? "WEB" : "…"}
+        </span>
+      </header>
+
+      <div className="px-4 pb-28 pt-2">
+        {passage.isLoading && <CardSkeleton count={4} height="h-6" />}
+        {passage.isError && (
+          <EmptyState
+            title="Couldn't load that passage"
+            description="Check your connection and try again."
+          />
+        )}
+        {passage.data && (
+          <>
+            <ol className="space-y-3">
+              {passage.data.verses.map((v) => (
+                <li key={`${v.chapter}:${v.verse}`} className="flex gap-2.5">
+                  <span className="mt-0.5 shrink-0 text-[11px] font-bold text-cyan">{v.verse}</span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setHighlighted((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(v.verse)) next.delete(v.verse);
+                        else next.add(v.verse);
+                        return next;
+                      })
+                    }
+                    className={cn(
+                      "flex-1 rounded px-1 text-left text-[15px] leading-relaxed transition-colors",
+                      highlighted.has(v.verse)
+                        ? "bg-warning/20 text-foreground"
+                        : "text-secondary-foreground",
+                    )}
+                  >
+                    {v.text}
+                  </button>
+                </li>
+              ))}
+            </ol>
+            <p className="pt-5 text-[11px] text-muted-foreground">{passage.data.translation}</p>
+          </>
+        )}
+      </div>
+
+      <div className="fixed inset-x-0 bottom-20 z-30 mx-auto max-w-xl px-4">
+        <div className="flex items-center justify-around rounded-2xl border border-border-strong bg-surface/95 py-2 backdrop-blur-xl">
+          <ReaderAction
+            icon={Highlighter}
+            label="Highlight"
+            onClick={() => toast("Tap any verse to highlight it")}
+          />
+          <ReaderAction icon={Bookmark} label="Bookmark" onClick={() => void bookmark()} />
+          <ReaderAction
+            icon={SquarePen}
+            label="Notes"
+            to={{ to: "/ai" as const, search: { contextType: "verse", contextLabel: reference } }}
+          />
+          <ReaderAction icon={Share2} label="Share" onClick={share} />
+        </div>
+      </div>
+    </AppShell>
+  );
+}
+
+function ReaderAction({
+  icon: Icon,
+  label,
+  onClick,
+  to,
+}: {
+  icon: typeof Bookmark;
+  label: string;
+  onClick?: () => void;
+  to?: { to: "/ai"; search: { contextType: string; contextLabel: string } };
+}) {
+  const inner = (
+    <>
+      <Icon className="h-4.5 w-4.5" strokeWidth={1.8} />
+      <span className="text-[10px] font-medium">{label}</span>
+    </>
+  );
+  const cls =
+    "flex flex-1 flex-col items-center gap-1 text-secondary-foreground transition-colors hover:text-foreground";
+  if (to)
+    return (
+      <Link to={to.to} search={to.search} className={cls}>
+        {inner}
+      </Link>
+    );
+  return (
+    <button type="button" onClick={onClick} className={cls}>
+      {inner}
+    </button>
+  );
+}
+
+function SavedVerses({ onOpen }: { onOpen: (ref: string) => void }) {
+  const { userId } = useAuth();
+  const qc = useQueryClient();
+  const saved = useQuery({
+    queryKey: ["saved-scriptures", userId],
+    queryFn: () => fetchSavedScriptures(userId!),
+    enabled: !!userId,
+  });
+
+  async function remove(reference: string) {
+    if (!userId) return;
+    await removeSavedScripture(userId, reference);
+    await qc.invalidateQueries({ queryKey: ["saved-scriptures", userId] });
+  }
+
+  if (saved.isLoading)
+    return (
+      <div className="px-4 pt-2">
+        <CardSkeleton count={3} height="h-14" />
+      </div>
+    );
+
+  const rows = saved.data ?? [];
+  if (rows.length === 0)
+    return (
+      <div className="px-4 pt-2">
+        <EmptyState
+          title="No saved verses yet"
+          description="Open a chapter and tap Bookmark to keep a verse here."
+        />
+      </div>
+    );
+
+  return (
+    <ul className="space-y-2 px-4 pt-2">
+      {rows.map((s) => (
+        <li key={s.id} className="nuru-card flex items-center gap-2 px-4 py-3">
+          <button
+            type="button"
+            onClick={() => onOpen(s.reference)}
+            className="min-w-0 flex-1 text-left"
+          >
+            <span className="block truncate text-sm font-semibold text-cyan">{s.reference}</span>
+            <span className="block text-[11px] text-muted-foreground">
+              Saved {new Date(s.created_at).toLocaleDateString()}
+            </span>
+          </button>
+          <Link
+            to="/ai"
+            search={{ contextType: "verse", contextLabel: s.reference }}
+            aria-label={`Ask Nuru AI about ${s.reference}`}
+            className="shrink-0 rounded-full p-2 text-cyan"
+          >
+            <Sparkles className="h-4 w-4" />
+          </Link>
+          <button
+            type="button"
+            onClick={() => void remove(s.reference)}
+            aria-label={`Remove ${s.reference}`}
+            className="shrink-0 rounded-full p-2 text-destructive"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </li>
+      ))}
+    </ul>
   );
 }

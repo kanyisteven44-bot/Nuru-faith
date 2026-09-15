@@ -64,7 +64,7 @@ function Splash() {
         <header className="flex items-center justify-between gap-4 px-1 py-2">
           <NuruLogo />
           <p className="hidden font-display text-sm font-semibold uppercase tracking-[0.16em] text-primary md:block">
-            Grow · Connect · Lead · Impact
+            Young people · Real faith · Brighter tomorrows
           </p>
           <Link
             to="/auth"
@@ -97,9 +97,9 @@ function Splash() {
         <main className="mt-4 grid gap-4 lg:grid-cols-[0.82fr_1.2fr_1fr]">
           <section className="flex flex-col justify-between gap-5">
             <div className="nuru-card p-5 sm:p-6">
-              <p className="script text-3xl text-cyan">{BRAND_IDEA}</p>
+              <p className="script text-3xl text-cyan">Faith Today. A Brighter Tomorrow.</p>
               <h1 className="mt-3 font-display text-4xl font-bold leading-[1.05] sm:text-5xl">
-                A brighter generation <span className="nuru-gradient-text">for Christ.</span>
+                Real faith for a <span className="nuru-gradient-text">brighter generation.</span>
               </h1>
               <p className="mt-4 text-sm leading-relaxed text-secondary-foreground">
                 A digital faith community for young people to learn, connect, grow and make an
@@ -133,7 +133,9 @@ function Splash() {
                     [BookOpen, "Grow in Faith", "Bible, devotionals and teachings"],
                     [UsersRound, "Connect & Belong", "Churches, groups and community"],
                     [GraduationCap, "Learn & Be Equipped", "Courses and mentorship"],
-                    [Heart, "Serve & Make an Impact", "Volunteer and support others"],
+                    [Heart, "Serve & Impact", "Volunteer and be the hands and feet of Jesus"],
+                    [Sparkles, "Create & Share", "Testimonies, worship, reels and ideas"],
+                    [ShieldCheck, "Safe & Positive Space", "A moderated, Christ-centred community"],
                   ] as const
                 ).map(([Icon, title, body]) => (
                   <div
@@ -187,7 +189,7 @@ function Splash() {
                 search={{ mode: "signup" }}
                 className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-lg bg-primary px-4 text-xs font-semibold text-primary-foreground"
               >
-                Read & reflect <ArrowRight className="h-4 w-4" />
+                Read devotional <ArrowRight className="h-4 w-4" />
               </Link>
             </article>
             <h2 className="mb-3 mt-5 font-display text-sm font-semibold">Quick access</h2>
@@ -195,13 +197,13 @@ function Splash() {
               {(
                 [
                   [BookOpen, "Bible"],
-                  [Sparkles, "Nuru AI"],
-                  [Church, "Church"],
-                  [UsersRound, "Groups"],
+                  [Heart, "Devotionals"],
                   [GraduationCap, "Courses"],
+                  [UsersRound, "Groups"],
                   [CalendarDays, "Events"],
+                  [UsersRound, "Mentors"],
+                  [Heart, "Serve"],
                   [Music2, "Music"],
-                  [ShieldCheck, "Safe"],
                 ] as const
               ).map(([Icon, label], index) => (
                 <div

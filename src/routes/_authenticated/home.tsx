@@ -645,7 +645,7 @@ function BrandPanel() {
 }
 
 function HomeScreen() {
-  const { userId } = useAuth();
+  const { userId, user } = useAuth();
   const navigate = useNavigate();
 
   const profile = useQuery({
@@ -685,7 +685,7 @@ function HomeScreen() {
   }, [profile.data, navigate]);
 
   const unread = (notifications.data ?? []).filter((n) => !n.read).length;
-  const name = profile.data?.full_name?.split(" ")[0] ?? "friend";
+  const name = profile.data?.full_name?.split(" ")[0] ?? "friend";\n  const profilePhoto =\n    profile.data?.avatar_url ??\n    user?.user_metadata?.avatar_url ??\n    user?.user_metadata?.picture ??\n    null;
 
   const dayIndex = Math.floor(Date.now() / 86400000);
   const challenge = CHALLENGES[dayIndex % CHALLENGES.length]!;
@@ -723,7 +723,7 @@ function HomeScreen() {
               )}
             </Link>
             <Link to="/profile" aria-label="Your profile">
-              <Avatar src={profile.data?.avatar_url} name={profile.data?.full_name} />
+              <Avatar src={profilePhoto} name={profile.data?.full_name} />
             </Link>
           </div>
         </header>

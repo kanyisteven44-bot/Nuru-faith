@@ -1,67 +1,74 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import {
-  Bell,
   BookMarked,
-  Church,
-  GraduationCap,
-  LayoutDashboard,
-  LogOut,
+  Bookmark,
+  CalendarCheck,
+  ChevronRight,
+  CircleHelp,
+  Flame,
+  HandHeart,
+  Heart,
+  Loader2,
+  Settings,
   Sparkles,
-  UsersRound,
+  SquarePen,
+  Users,
 } from "lucide-react";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { INTERESTS } from "@/constants/nuru";
-import { cn } from "@/lib/utils";
 import {
-  fetchInterests,
+  fetchMyEventIds,
   fetchMyGroupIds,
-  fetchMyProgress,
-  fetchMyRoles,
+  fetchMySavedPosts,
   fetchProfile,
-  saveInterests,
   updateProfile,
 } from "@/services/content";
-import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
-import { Avatar } from "@/components/nuru/PostCard";
-import {
-  CardSkeleton,
-  Chip,
-  GhostButton,
-  GradientButton,
-  IconTile,
-  ScreenHero,
-  SectionHeader,
-} from "@/components/nuru/Primitives";
-import { FaithJourneyStrip } from "@/components/nuru/FaithJourney";
-import heroBg from "@/assets/walk-purpose.jpg";
+import { AppShell, Avatar, ScreenHeader } from "@/components/nuru/AppShell";
+import { CardSkeleton, ProgressBar } from "@/components/nuru/Primitives";
 
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
     meta: [
-      { title: "Your profile — Nuru Faith" },
-      {
-        name: "description",
-        content: "Your faith journey, saved content, groups and church on Nuru Faith.",
-      },
-      { property: "og:title", content: "Your profile — Nuru Faith" },
-      { property: "og:description", content: "Your faith journey on Nuru Faith." },
+      { title: "Profile — Nuru Faith" },
+      { name: "description", content: "Your Nuru Faith profile, badges and saved content." },
     ],
   }),
   component: ProfileScreen,
 });
 
+/** Faith-journey levels. Progress is driven by the profile's faith_streak. */
+const LEVEL_STEP = 250;
+
+const BADGES = [
+  {
+    icon: HandHeart,
+    label: "Prayer Life",
+    tint: "text-rose-300 bg-rose-500/15 border-rose-400/30",
+  },
+  {
+    icon: Heart,
+    label: "Kindness",
+    tint: "text-emerald-300 bg-emerald-500/15 border-emerald-400/30",
+  },
+  { icon: Users, label: "Community", tint: "text-sky-300 bg-sky-500/15 border-sky-400/30" },
+  {
+    icon: Flame,
+    label: "Bible Streak",
+    tint: "text-amber-300 bg-amber-500/15 border-amber-400/30",
+  },
+] as const;
+
 function ProfileScreen() {
   const { userId } = useAuth();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
+  const qc = useQueryClient();
   const [editing, setEditing] = useState(false);
-  const [fullName, setFullName] = useState("");
+  const [name, setName] = useState("");
   const [bio, setBio] = useState("");
-  const [interests, setInterests] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
   const profile = useQuery({
@@ -69,273 +76,205 @@ function ProfileScreen() {
     queryFn: () => fetchProfile(userId!),
     enabled: !!userId,
   });
-  const myInterests = useQuery({
-    queryKey: ["interests", userId],
-    queryFn: () => fetchInterests(userId!),
+  const saved = useQuery({
+    queryKey: ["saved-posts", userId],
+    queryFn: () => fetchMySavedPosts(userId!),
     enabled: !!userId,
   });
-  const progress = useQuery({
-    queryKey: ["progress", userId],
-    queryFn: () => fetchMyProgress(userId!),
-    enabled: !!userId,
-  });
-  const groups = useQuery({
-    queryKey: ["my-groups", userId],
+  const myGroups = useQuery({
+    queryKey: ["my-group-ids", userId],
     queryFn: () => fetchMyGroupIds(userId!),
     enabled: !!userId,
   });
-  const roles = useQuery({
-    queryKey: ["roles", userId],
-    queryFn: () => fetchMyRoles(userId!),
+  const myEvents = useQuery({
+    queryKey: ["my-events", userId],
+    queryFn: () => fetchMyEventIds(userId!),
     enabled: !!userId,
   });
 
-  useEffect(() => {
-    if (profile.data) {
-      setFullName(profile.data.full_name ?? "");
-      setBio(profile.data.bio ?? "");
-    }
-  }, [profile.data]);
-  useEffect(() => {
-    if (myInterests.data) setInterests(myInterests.data);
-  }, [myInterests.data]);
-
-  const isAdmin = (roles.data ?? []).some(
-    (r) => r.role === "church_admin" || r.role === "super_admin",
-  );
+  const streak = profile.data?.faith_streak ?? 0;
+  const level = Math.floor(streak / LEVEL_STEP) + 1;
+  const intoLevel = streak % LEVEL_STEP;
 
   async function save() {
     if (!userId) return;
     setSaving(true);
     try {
-      await updateProfile(userId, { full_name: fullName.trim() || null, bio: bio.trim() || null });
-      await saveInterests(userId, interests);
-      await queryClient.invalidateQueries({ queryKey: ["profile", userId] });
-      await queryClient.invalidateQueries({ queryKey: ["interests", userId] });
+      await updateProfile(userId, { full_name: name.trim() || null, bio: bio.trim() || null });
+      await qc.invalidateQueries({ queryKey: ["profile", userId] });
       setEditing(false);
       toast.success("Profile updated");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not save");
+      toast.error(e instanceof Error ? e.message : "Couldn't save your profile");
     } finally {
       setSaving(false);
     }
   }
 
   async function signOut() {
-    await queryClient.cancelQueries();
-    queryClient.clear();
+    await qc.cancelQueries();
+    qc.clear();
     await supabase.auth.signOut();
-    navigate({ to: "/auth", search: { mode: "login" as const }, replace: true });
+    void navigate({ to: "/auth", search: { mode: "login" as const }, replace: true });
   }
 
-  if (profile.isLoading) {
-    return (
-      <AppShell>
-        <div className="p-4">
-          <CardSkeleton count={4} height="h-24" />
-        </div>
-      </AppShell>
-    );
-  }
-
-  const p = profile.data;
+  const MENU = [
+    { icon: SquarePen, label: "My Posts", count: null, to: "/community" as const },
+    { icon: Bookmark, label: "Saved", count: (saved.data ?? []).length, to: "/community" as const },
+    {
+      icon: Users,
+      label: "My Groups",
+      count: (myGroups.data ?? []).length,
+      to: "/groups" as const,
+    },
+    {
+      icon: CalendarCheck,
+      label: "My Events",
+      count: (myEvents.data ?? []).length,
+      to: "/events" as const,
+    },
+    { icon: Settings, label: "Settings", count: null, to: "/settings" as const },
+    { icon: CircleHelp, label: "Help & Support", count: null, to: "/settings" as const },
+  ];
 
   return (
     <AppShell>
       <ScreenHeader
         title="Profile"
         right={
-          <Link
-            to="/notifications"
-            aria-label="Notifications"
-            className="rounded-full p-2.5 hover:bg-surface-2"
-          >
-            <Bell className="h-5 w-5" />
+          <Link to="/settings" aria-label="Settings" className="p-1 text-secondary-foreground">
+            <Settings className="h-5 w-5" />
           </Link>
         }
       />
-      <ScreenHero image={heroBg} />
 
-      <section className="flex items-center gap-4 px-4 py-5">
-        <Avatar src={p?.avatar_url} name={p?.full_name} size="lg" />
-        <div className="min-w-0 flex-1">
-          <h2 className="truncate font-display text-lg font-semibold">
-            {p?.full_name ?? "Nuru member"}
-          </h2>
-          {p?.username && <p className="text-xs text-muted-foreground">@{p.username}</p>}
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            <Chip tone="growth">{p?.faith_streak ?? 0} day streak</Chip>
-            {p?.denomination && <Chip>{p.denomination}</Chip>}
-            {p?.country && <Chip>{p.country}</Chip>}
-          </div>
+      {profile.isLoading ? (
+        <div className="px-4 pt-4">
+          <CardSkeleton count={3} height="h-20" />
         </div>
-      </section>
-
-      {p?.bio && !editing && <p className="px-4 pb-4 text-sm text-secondary-foreground">{p.bio}</p>}
-
-      <div className="px-4">
-        <FaithJourneyStrip streak={p?.faith_streak ?? 0} />
-      </div>
-
-      <div className="grid grid-cols-3 gap-2 px-4 pt-4">
-        <Stat label="Groups" value={groups.data?.length ?? 0} icon={UsersRound} />
-        <Stat label="Courses" value={progress.data?.length ?? 0} icon={GraduationCap} />
-        <Stat label="Saved" value={0} icon={BookMarked} />
-      </div>
-
-      <div className="flex gap-2 px-4 pt-4">
-        {editing ? (
-          <>
-            <GhostButton onClick={() => setEditing(false)}>Cancel</GhostButton>
-            <GradientButton className="flex-1" onClick={save} disabled={saving}>
-              {saving ? "Saving…" : "Save changes"}
-            </GradientButton>
-          </>
-        ) : (
-          <GhostButton className="flex-1" onClick={() => setEditing(true)}>
-            Edit profile
-          </GhostButton>
-        )}
-      </div>
-
-      {editing && (
-        <section className="space-y-3 px-4 pt-4">
-          <div>
-            <label
-              htmlFor="pf-name"
-              className="mb-1.5 block text-xs font-medium text-muted-foreground"
-            >
-              Full name
-            </label>
-            <input
-              id="pf-name"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              maxLength={100}
-              className="input-nuru"
+      ) : (
+        <div className="px-4 pt-2">
+          <section className="flex flex-col items-center text-center">
+            <Avatar
+              url={profile.data?.avatar_url ?? null}
+              name={profile.data?.full_name ?? ""}
+              size="lg"
             />
-          </div>
-          <div>
-            <label
-              htmlFor="pf-bio"
-              className="mb-1.5 block text-xs font-medium text-muted-foreground"
+            <h1 className="mt-3 font-display text-xl font-semibold">
+              {profile.data?.full_name ?? "Nuru member"}
+            </h1>
+            <p className="text-[12px] text-muted-foreground">
+              @{profile.data?.username ?? "member"}
+            </p>
+            {profile.data?.bio && (
+              <p className="mt-2 max-w-xs text-[13px] text-secondary-foreground">
+                {profile.data.bio}
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setName(profile.data?.full_name ?? "");
+                setBio(profile.data?.bio ?? "");
+                setEditing((v) => !v);
+              }}
+              className="mt-3 rounded-lg border border-border-strong bg-surface-2 px-4 py-1.5 text-[12px] font-semibold text-secondary-foreground"
             >
-              Bio
-            </label>
-            <textarea
-              id="pf-bio"
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
-              rows={3}
-              maxLength={280}
-              className="w-full rounded-lg border border-input bg-surface-2 p-4 text-sm outline-none focus:border-cyan"
-            />
-          </div>
-          <div>
-            <p className="mb-2 text-xs font-medium text-muted-foreground">Interests</p>
-            <div className="flex flex-wrap gap-2">
-              {INTERESTS.map((i) => {
-                const on = interests.includes(i);
-                return (
-                  <button
-                    key={i}
-                    type="button"
-                    aria-pressed={on}
-                    onClick={() =>
-                      setInterests((prev) => (on ? prev.filter((x) => x !== i) : [...prev, i]))
-                    }
+              {editing ? "Cancel" : "Edit profile"}
+            </button>
+          </section>
+
+          {editing && (
+            <section className="nuru-card mt-4 space-y-2 p-4">
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                maxLength={100}
+                aria-label="Full name"
+                placeholder="Full name"
+                className="input-nuru"
+              />
+              <textarea
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                maxLength={280}
+                rows={3}
+                aria-label="Bio"
+                placeholder="Say a little about your faith journey"
+                className="w-full resize-none rounded-xl border border-input bg-surface-2 px-4 py-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary"
+              />
+              <button
+                type="button"
+                onClick={() => void save()}
+                disabled={saving}
+                className="flex min-h-10 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-60"
+              >
+                {saving && <Loader2 className="h-4 w-4 animate-spin" />} Save
+              </button>
+            </section>
+          )}
+
+          <section className="nuru-card mt-5 p-4">
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-primary/35 bg-primary/12 text-cyan">
+                <Sparkles className="h-5 w-5" strokeWidth={1.8} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold">Growing Disciple</p>
+                <p className="text-[11px] text-muted-foreground">
+                  Level {level} · {LEVEL_STEP - intoLevel} to next level
+                </p>
+              </div>
+            </div>
+            <ProgressBar value={(intoLevel / LEVEL_STEP) * 100} className="mt-3" />
+          </section>
+
+          <section className="pt-6">
+            <h2 className="mb-3 font-display text-[15px] font-semibold">My Badges</h2>
+            <div className="grid grid-cols-4 gap-x-2 gap-y-3">
+              {BADGES.map(({ icon: Icon, label, tint }) => (
+                <div key={label} className="flex flex-col items-center gap-1.5 text-center">
+                  <span
                     className={cn(
-                      "min-h-10 rounded-lg border px-3.5 text-xs",
-                      on
-                        ? "border-transparent nuru-gradient-bg font-semibold text-primary-foreground"
-                        : "border-border bg-surface-2 text-secondary-foreground",
+                      "flex h-14 w-14 items-center justify-center rounded-2xl border",
+                      tint,
                     )}
                   >
-                    {i}
-                  </button>
-                );
-              })}
+                    <Icon className="h-6 w-6" strokeWidth={1.8} />
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">{label}</span>
+                </div>
+              ))}
             </div>
-          </div>
-        </section>
-      )}
+          </section>
 
-      <section className="px-4 pt-6">
-        <SectionHeader title="Your journey" />
-        <div className="space-y-2">
-          <RowLink
-            to="/church"
-            icon={Church}
-            label="My Church"
-            hint={p?.churches?.name ?? "Join a church community"}
-          />
-          <RowLink to="/mentors" icon={Sparkles} label="Mentorship" hint="Requests and mentors" />
-          <RowLink to="/learn" icon={GraduationCap} label="Learning" hint="Courses in progress" />
-          <RowLink
-            to="/hub"
-            icon={BookMarked}
-            label="Nuru Faith Hub"
-            hint="Everything in one place"
-          />
-          {isAdmin && (
-            <RowLink
-              to="/admin"
-              icon={LayoutDashboard}
-              label="Church admin"
-              hint="Manage your community"
-            />
-          )}
+          <section className="space-y-2 pt-6">
+            {MENU.map(({ icon: Icon, label, count, to }) => (
+              <Link key={label} to={to} className="nuru-card flex items-center gap-3 px-4 py-3.5">
+                <Icon className="h-4.5 w-4.5 shrink-0 text-cyan" strokeWidth={1.8} />
+                <span className="min-w-0 flex-1 truncate text-sm font-medium">{label}</span>
+                {count !== null && count > 0 && (
+                  <span className="shrink-0 text-[12px] text-muted-foreground">{count}</span>
+                )}
+                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+              </Link>
+            ))}
+            <Link to="/bible" className="nuru-card flex items-center gap-3 px-4 py-3.5">
+              <BookMarked className="h-4.5 w-4.5 shrink-0 text-cyan" strokeWidth={1.8} />
+              <span className="min-w-0 flex-1 truncate text-sm font-medium">Saved Scripture</span>
+              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+            </Link>
+          </section>
+
+          <button
+            type="button"
+            onClick={() => void signOut()}
+            className="mt-6 min-h-12 w-full rounded-xl border border-destructive/40 bg-destructive/10 text-sm font-semibold text-destructive"
+          >
+            Log Out
+          </button>
         </div>
-      </section>
-
-      <div className="px-4 py-8">
-        <button
-          onClick={signOut}
-          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-lg border border-destructive/40 text-sm font-medium text-destructive"
-        >
-          <LogOut className="h-4 w-4" /> Sign out
-        </button>
-      </div>
+      )}
     </AppShell>
-  );
-}
-
-function Stat({
-  label,
-  value,
-  icon: Icon,
-}: {
-  label: string;
-  value: number;
-  icon: typeof UsersRound;
-}) {
-  return (
-    <div className="nuru-card flex flex-col items-center gap-1 p-3">
-      <Icon className="h-4 w-4 text-cyan" />
-      <span className="font-display text-lg font-semibold">{value}</span>
-      <span className="text-[11px] text-muted-foreground">{label}</span>
-    </div>
-  );
-}
-
-function RowLink({
-  to,
-  icon: Icon,
-  label,
-  hint,
-}: {
-  to: string;
-  icon: typeof Church;
-  label: string;
-  hint: string;
-}) {
-  return (
-    <Link to={to} className="nuru-card flex min-h-16 items-center gap-3 p-3.5">
-      <IconTile icon={Icon} tone="brand" />
-      <span className="min-w-0 flex-1">
-        <span className="block text-sm font-semibold">{label}</span>
-        <span className="block truncate text-xs text-muted-foreground">{hint}</span>
-      </span>
-    </Link>
   );
 }

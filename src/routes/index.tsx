@@ -73,7 +73,7 @@ function Splash() {
           <Link
             to="/auth"
             search={{ mode: "login" }}
-            className="flex min-h-12 w-full items-center justify-center rounded-full border border-border bg-surface/70 text-sm font-medium text-secondary-foreground backdrop-blur"
+            className="flex min-h-12 w-full items-center justify-center rounded-lg border border-border bg-surface/70 text-sm font-medium text-secondary-foreground backdrop-blur"
           >
             {checking ? "Checking your session…" : "I already have an account"}
           </Link>

@@ -75,7 +75,7 @@ export function PillTabs<T extends string>({
             aria-selected={active}
             onClick={() => onChange(tab)}
             className={cn(
-              "min-h-9 shrink-0 rounded-full px-4 text-[13px] font-semibold transition-all",
+              "min-h-9 shrink-0 rounded-lg px-4 text-[13px] font-semibold transition-all",
               active
                 ? "bg-primary text-primary-foreground nuru-glow-sm"
                 : "border border-border bg-surface-2/60 text-muted-foreground hover:text-secondary-foreground",
@@ -99,7 +99,7 @@ export function GradientButton({
     <button
       {...props}
       className={cn(
-        "inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground nuru-glow-sm transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-50 disabled:shadow-none",
+        "inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground nuru-glow-sm transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-50 disabled:shadow-none",
         className,
       )}
     >
@@ -119,7 +119,7 @@ export function GhostButton({
     <button
       {...props}
       className={cn(
-        "inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-border-strong bg-surface-2 px-5 text-sm font-medium text-secondary-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50",
+        "inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-border-strong bg-surface-2 px-5 text-sm font-medium text-secondary-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50",
         className,
       )}
     >
@@ -129,11 +129,11 @@ export function GhostButton({
 }
 
 const ICON_TONES = {
-  brand: "text-cyan",
-  cyan: "text-cyan",
-  violet: "text-violet",
-  growth: "text-growth",
-  warning: "text-warning",
+  brand: "border-primary/45 bg-primary/24 text-cyan",
+  cyan: "border-cyan/40 bg-cyan/18 text-cyan",
+  violet: "border-violet/40 bg-violet/20 text-violet",
+  growth: "border-growth/40 bg-growth/18 text-growth",
+  warning: "border-warning/45 bg-warning/18 text-warning",
 } as const;
 
 /** Small rounded icon tile used across quick-access grids and list rows. */
@@ -151,8 +151,8 @@ export function IconTile({
   const box = size === "sm" ? "h-8 w-8" : size === "lg" ? "h-12 w-12" : "h-10 w-10";
   const glyph = size === "sm" ? "h-4 w-4" : size === "lg" ? "h-5.5 w-5.5" : "h-5 w-5";
   return (
-    <span className={cn("nuru-icon-tile", box, className)}>
-      <Icon className={cn(glyph, ICON_TONES[tone])} />
+    <span className={cn("nuru-icon-tile", ICON_TONES[tone], box, className)}>
+      <Icon className={glyph} />
     </span>
   );
 }

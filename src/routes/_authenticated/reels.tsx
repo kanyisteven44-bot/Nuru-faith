@@ -496,7 +496,7 @@ function EndOfFeed() {
         <Link
           to="/explore"
           search={{ q: "", kind: "all" }}
-          className="rounded-full nuru-gradient-bg px-4 py-2 text-xs font-semibold text-primary-foreground"
+          className="rounded-lg nuru-gradient-bg px-4 py-2 text-xs font-semibold text-primary-foreground"
         >
           Explore
         </Link>
@@ -561,7 +561,7 @@ function EmptyFeed({
       ) : (
         <Link
           to={copy.to}
-          className="rounded-full nuru-gradient-bg px-4 py-2 text-xs font-semibold text-primary-foreground"
+          className="rounded-lg nuru-gradient-bg px-4 py-2 text-xs font-semibold text-primary-foreground"
         >
           {copy.cta}
         </Link>

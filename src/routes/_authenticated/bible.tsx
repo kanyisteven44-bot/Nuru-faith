@@ -121,7 +121,7 @@ function BibleScreen() {
           />
           <button
             type="submit"
-            className="min-h-12 shrink-0 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground nuru-glow-sm"
+            className="min-h-12 shrink-0 rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground nuru-glow-sm"
           >
             Read
           </button>

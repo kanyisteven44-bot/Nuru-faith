@@ -119,7 +119,7 @@ function ChurchScreen() {
             </GhostButton>
             <Link
               to="/serve"
-              className="inline-flex min-h-11 flex-1 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground nuru-glow-sm"
+              className="inline-flex min-h-11 flex-1 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-primary-foreground nuru-glow-sm"
             >
               Serve here
             </Link>

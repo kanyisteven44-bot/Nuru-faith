@@ -69,14 +69,16 @@
 }
 
 :root {
-  --radius: 1.25rem;
+  /* The approved reference uses compact, structured panels rather than soft
+     oversized bubbles. Keep one radius scale across every screen. */
+  --radius: 0.75rem;
 
   /* deep midnight surfaces — near-black navy climbing to a lifted card */
-  --background: oklch(0.164 0.033 262);
-  --surface: oklch(0.202 0.038 260);
-  --surface-2: oklch(0.246 0.042 259);
+  --background: oklch(0.132 0.039 258);
+  --surface: oklch(0.174 0.047 258);
+  --surface-2: oklch(0.215 0.052 258);
   --foreground: oklch(0.99 0.004 250);
-  --card: oklch(0.204 0.039 260);
+  --card: oklch(0.177 0.049 258);
   --card-foreground: oklch(0.99 0.004 250);
   --popover: oklch(0.208 0.04 260);
   --popover-foreground: oklch(0.99 0.004 250);
@@ -101,8 +103,8 @@
   --destructive-foreground: oklch(0.99 0.004 250);
 
   /* thin electric-blue borders */
-  --border: oklch(0.7 0.13 254 / 24%);
-  --border-strong: oklch(0.72 0.15 254 / 38%);
+  --border: oklch(0.7 0.15 246 / 28%);
+  --border-strong: oklch(0.76 0.16 239 / 46%);
   --input: oklch(0.7 0.12 254 / 22%);
   --ring: oklch(0.66 0.19 264);
 
@@ -246,7 +248,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   background-color: color-mix(in oklab, var(--primary) 18%, var(--surface-2));
   border: 1px solid color-mix(in oklab, var(--primary) 24%, transparent);
   color: var(--brand-cyan);

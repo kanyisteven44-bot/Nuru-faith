@@ -212,7 +212,7 @@ export function PostCard({
             />
             <button
               type="submit"
-              className="min-h-11 shrink-0 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground nuru-glow-sm"
+              className="min-h-11 shrink-0 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground nuru-glow-sm"
             >
               Reply
             </button>

@@ -66,7 +66,7 @@ function Splash() {
           <Link
             to="/auth"
             search={{ mode: "signup" }}
-            className="flex min-h-12 w-full items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground nuru-glow"
+            className="flex min-h-12 w-full items-center justify-center rounded-lg bg-primary text-sm font-semibold text-primary-foreground nuru-glow"
           >
             Create your account
           </Link>

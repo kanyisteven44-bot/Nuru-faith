@@ -67,7 +67,7 @@ export function AppShell({
               type="button"
               onClick={() => setCreateOpen(true)}
               aria-label="Create"
-              className="-mt-7 flex h-14 w-14 items-center justify-center rounded-2xl nuru-gradient-bg nuru-glow ring-4 ring-background transition-transform active:scale-95"
+              className="-mt-7 flex h-14 w-14 items-center justify-center rounded-xl nuru-gradient-bg nuru-glow ring-4 ring-background transition-transform active:scale-95"
             >
               <Plus className="h-6 w-6 text-primary-foreground" />
             </button>

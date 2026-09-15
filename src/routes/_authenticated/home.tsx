@@ -57,12 +57,12 @@ export const Route = createFileRoute("/_authenticated/home")({
 });
 
 const QUICK = [
-  { to: "/reels", label: "Reels", icon: Clapperboard, tone: "violet" as const },
+  { to: "/reels", label: "Reels", icon: Clapperboard, tone: "brand" as const },
   { to: "/ai", label: "Nuru AI", icon: Sparkles, tone: "cyan" as const },
   { to: "/church", label: "My Church", icon: Church, tone: "brand" as const },
-  { to: "/hub", label: "Hub", icon: LayoutGrid, tone: "cyan" as const },
-  { to: "/community", label: "Groups", icon: UsersRound, tone: "brand" as const },
-  { to: "/mentors", label: "Mentors", icon: Sparkles, tone: "violet" as const },
+  { to: "/hub", label: "Hub", icon: LayoutGrid, tone: "warning" as const },
+  { to: "/community", label: "Groups", icon: UsersRound, tone: "violet" as const },
+  { to: "/mentors", label: "Mentors", icon: Sparkles, tone: "warning" as const },
   { to: "/events", label: "Events", icon: CalendarDays, tone: "brand" as const },
   { to: "/music", label: "Music", icon: Music2, tone: "growth" as const },
 ] as const;
@@ -149,7 +149,7 @@ function TodaysLightSection({
         <div className="mt-4 flex items-center gap-2">
           <Link
             to="/bible"
-            className="inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-full bg-primary px-4 text-xs font-semibold text-primary-foreground nuru-glow-sm"
+            className="inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary px-4 text-xs font-semibold text-primary-foreground nuru-glow-sm"
           >
             Read &amp; Reflect <ArrowRight className="h-3.5 w-3.5" />
           </Link>
@@ -240,7 +240,7 @@ function ChallengeSection({ challenge }: { challenge: { ref: string; prompt: str
         </div>
         <Link
           to="/bible"
-          className="shrink-0 rounded-full bg-primary px-3.5 py-2 text-[11px] font-semibold text-primary-foreground nuru-glow-sm"
+          className="shrink-0 rounded-lg bg-primary px-3.5 py-2 text-[11px] font-semibold text-primary-foreground nuru-glow-sm"
         >
           Accept
         </Link>
@@ -369,14 +369,19 @@ function QuickAccessSection() {
   return (
     <section>
       <SectionHeader title="Quick access" />
-      <nav aria-label="Quick access" className="grid grid-cols-4 gap-x-2 gap-y-4">
+      <nav aria-label="Quick access" className="grid grid-cols-4 gap-x-2 gap-y-3">
         {QUICK.map(({ to, label, icon: Icon, tone }) => (
           <Link
             key={to}
             to={to}
-            className="flex flex-col items-center gap-1.5 text-center transition-transform active:scale-95"
+            className="group flex min-w-0 flex-col items-center gap-1.5 rounded-lg border border-border bg-surface/65 px-1 py-2.5 text-center shadow-sm transition-all hover:border-border-strong hover:bg-surface-2 active:scale-95"
           >
-            <IconTile icon={Icon} tone={tone} size="lg" />
+            <IconTile
+              icon={Icon}
+              tone={tone}
+              size="lg"
+              className="transition-transform group-hover:-translate-y-0.5"
+            />
             <span className="text-[11px] font-medium text-secondary-foreground">{label}</span>
           </Link>
         ))}
@@ -688,8 +693,8 @@ function HomeScreen() {
   const name = profile.data?.full_name?.split(" ")[0] ?? "friend";
   const profilePhoto =
     profile.data?.avatar_url ??
-    user?.user_metadata?.avatar_url ??
-    user?.user_metadata?.picture ??
+    user?.user_metadata?.["avatar_url"] ??
+    user?.user_metadata?.["picture"] ??
     null;
 
   const dayIndex = Math.floor(Date.now() / 86400000);

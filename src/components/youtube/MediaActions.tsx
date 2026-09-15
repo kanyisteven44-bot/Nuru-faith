@@ -65,7 +65,7 @@ export function MediaActions({
       <Link
         to="/ai"
         search={{ contextType, contextId, contextLabel: title }}
-        className="inline-flex min-h-9 items-center gap-1.5 rounded-full nuru-gradient-bg px-3 text-xs font-semibold text-primary-foreground"
+        className="inline-flex min-h-9 items-center gap-1.5 rounded-lg nuru-gradient-bg px-3 text-xs font-semibold text-primary-foreground"
       >
         <Sparkles className="h-3.5 w-3.5" />
         Ask AI

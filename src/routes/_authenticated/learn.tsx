@@ -117,7 +117,7 @@ function LearnScreen() {
                           onClick={() =>
                             mark(c.id, isDone ? i : i + 1, total || (lessons.data?.length ?? 0))
                           }
-                          className="flex w-full items-center gap-3 rounded-2xl bg-surface-2 p-3 text-left"
+                          className="flex w-full items-center gap-3 rounded-lg border border-border bg-surface-2 p-3 text-left hover:border-border-strong"
                         >
                           {isDone ? (
                             <CheckCircle2 className="h-5 w-5 shrink-0 text-growth" />

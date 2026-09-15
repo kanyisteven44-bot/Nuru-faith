@@ -113,7 +113,7 @@ function ExploreScreen() {
             <button
               key={kind}
               aria-pressed={search.kind === kind}
-              className={`min-h-11 shrink-0 rounded-full border px-4 text-xs ${search.kind === kind ? "border-cyan bg-surface-2 text-cyan" : "border-border"}`}
+              className={`min-h-11 shrink-0 rounded-lg border px-4 text-xs ${search.kind === kind ? "border-cyan bg-primary/20 text-cyan" : "border-border bg-surface-2/60"}`}
               onClick={() => void navigate({ search: { ...search, kind } })}
             >
               {kind === "all" ? "All" : DISCOVERY_LABELS[kind]}
@@ -126,7 +126,7 @@ function ExploreScreen() {
             <div className="flex flex-wrap gap-2">
               {SUGGESTED_SEARCHES.map((q) => (
                 <button
-                  className="min-h-11 rounded-full bg-surface-2 px-3 text-xs"
+                  className="min-h-11 rounded-lg border border-border bg-surface-2 px-3 text-xs"
                   key={q}
                   onClick={() => remember(q)}
                 >

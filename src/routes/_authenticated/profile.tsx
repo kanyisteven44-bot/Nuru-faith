@@ -228,7 +228,7 @@ function ProfileScreen() {
               onChange={(e) => setBio(e.target.value)}
               rows={3}
               maxLength={280}
-              className="w-full rounded-2xl border border-input bg-surface-2 p-4 text-sm outline-none focus:border-primary"
+              className="w-full rounded-lg border border-input bg-surface-2 p-4 text-sm outline-none focus:border-cyan"
             />
           </div>
           <div>
@@ -245,7 +245,7 @@ function ProfileScreen() {
                       setInterests((prev) => (on ? prev.filter((x) => x !== i) : [...prev, i]))
                     }
                     className={cn(
-                      "min-h-10 rounded-full border px-3.5 text-xs",
+                      "min-h-10 rounded-lg border px-3.5 text-xs",
                       on
                         ? "border-transparent nuru-gradient-bg font-semibold text-primary-foreground"
                         : "border-border bg-surface-2 text-secondary-foreground",
@@ -291,7 +291,7 @@ function ProfileScreen() {
       <div className="px-4 py-8">
         <button
           onClick={signOut}
-          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full border border-destructive/40 text-sm font-medium text-destructive"
+          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-lg border border-destructive/40 text-sm font-medium text-destructive"
         >
           <LogOut className="h-4 w-4" /> Sign out
         </button>

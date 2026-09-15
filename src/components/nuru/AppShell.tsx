@@ -29,16 +29,7 @@ export function AppShell({
   hideNav?: boolean;
 }) {
   const maxWidth = wide === "xl" ? "max-w-7xl" : wide ? "max-w-5xl" : "max-w-xl";
-  const [createOpen, setCreateOpen] = useState(false);
-  const { userId } = useAuth();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-
-  const { data: roles = [] } = useQuery({
-    queryKey: ["roles", userId],
-    queryFn: () => fetchMyRoles(userId!),
-    enabled: !!userId,
-  });
-  const canPublishEvents = roles.some((r) => r.role === "church_admin" || r.role === "super_admin");
 
   return (
     <div className={cn("relative bg-background", flush ? "h-dvh overflow-hidden" : "min-h-dvh")}>

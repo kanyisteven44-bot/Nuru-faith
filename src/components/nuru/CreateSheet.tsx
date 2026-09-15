@@ -197,7 +197,7 @@ export function CreateSheet({
                   <button
                     type="button"
                     onClick={() => buildable && setMode(key as Mode)}
-                    className="flex min-h-14 w-full items-center gap-3 rounded-2xl bg-surface-2 px-4 py-3 text-left transition-colors hover:bg-accent disabled:opacity-60"
+                    className="flex min-h-14 w-full items-center gap-3 rounded-lg border border-border bg-surface-2 px-4 py-3 text-left transition-colors hover:border-border-strong hover:bg-accent disabled:opacity-60"
                     disabled={!buildable}
                   >
                     <span className="flex h-10 w-10 items-center justify-center rounded-xl nuru-gradient-bg">
@@ -230,7 +230,7 @@ export function CreateSheet({
                   ? "What would you like us to pray for?"
                   : "Share what's on your heart…"
               }
-              className="w-full rounded-2xl border border-input bg-surface-2 p-4 text-sm outline-none placeholder:text-muted-foreground focus:border-primary"
+              className="w-full rounded-lg border border-input bg-surface-2 p-4 text-sm outline-none placeholder:text-muted-foreground focus:border-cyan"
             />
             {(mode === "reflection" || mode === "reel") && (
               <input
@@ -366,7 +366,7 @@ export function CreateSheet({
             <div className="flex gap-2">
               <button
                 onClick={() => setMode("menu")}
-                className="min-h-11 rounded-full border border-border px-4 text-sm text-secondary-foreground"
+                className="min-h-11 rounded-lg border border-border-strong px-4 text-sm text-secondary-foreground"
               >
                 Back
               </button>

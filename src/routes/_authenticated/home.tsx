@@ -685,7 +685,12 @@ function HomeScreen() {
   }, [profile.data, navigate]);
 
   const unread = (notifications.data ?? []).filter((n) => !n.read).length;
-  const name = profile.data?.full_name?.split(" ")[0] ?? "friend";\n  const profilePhoto =\n    profile.data?.avatar_url ??\n    user?.user_metadata?.avatar_url ??\n    user?.user_metadata?.picture ??\n    null;
+  const name = profile.data?.full_name?.split(" ")[0] ?? "friend";
+  const profilePhoto =
+    profile.data?.avatar_url ??
+    user?.user_metadata?.avatar_url ??
+    user?.user_metadata?.picture ??
+    null;
 
   const dayIndex = Math.floor(Date.now() / 86400000);
   const challenge = CHALLENGES[dayIndex % CHALLENGES.length]!;

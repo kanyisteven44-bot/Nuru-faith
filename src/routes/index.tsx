@@ -3,20 +3,6 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { NuruMark } from "@/components/nuru/Logo";
 import hero from "@/assets/mountain-dawn.jpg";
-import {
-  ArrowRight,
-  BookOpen,
-  CalendarDays,
-  Church,
-  GraduationCap,
-  Heart,
-  Music2,
-  ShieldCheck,
-  Sparkles,
-  Star,
-  Trophy,
-  UsersRound,
-} from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -94,72 +80,5 @@ function Splash() {
         </p>
       </div>
     </div>
-  );
-}
-
-function PreviewPhone({ title, className }: { title: "Community" | "Events"; className: string }) {
-  const community = title === "Community";
-  return (
-    <aside
-      className={`${className} z-0 rounded-[1.8rem] border-[5px] border-slate-950 bg-background p-3 shadow-2xl ring-1 ring-border-strong`}
-      aria-label={`${title} preview`}
-    >
-      <div className="mx-auto mb-3 h-2 w-16 rounded-full bg-slate-950" />
-      <div className="flex items-center justify-between">
-        <strong className="font-display text-sm">{title}</strong>
-        <span className="text-cyan">⌕</span>
-      </div>
-      <div className="mt-3 flex gap-3 border-b border-border pb-2 text-[9px] text-muted-foreground">
-        <span className="text-cyan">{community ? "Feed" : "All"}</span>
-        <span>{community ? "Groups" : "Upcoming"}</span>
-        <span>{community ? "Friends" : "Nearby"}</span>
-      </div>
-      <div className="mt-3 space-y-3">
-        {community ? (
-          <>
-            <div className="nuru-card p-3">
-              <div className="flex items-center gap-2">
-                <span className="h-7 w-7 rounded-full bg-primary/30" />
-                <span className="text-[10px] font-semibold">Grace Wanjiru</span>
-              </div>
-              <p className="mt-2 text-[10px] leading-relaxed text-secondary-foreground">
-                Grateful for God's faithfulness in my life. He never fails.
-              </p>
-              <img src={hero} alt="" className="mt-2 h-28 w-full rounded-lg object-cover" />
-              <div className="mt-2 text-[9px] text-muted-foreground">♥ 128　♡ 24</div>
-            </div>
-            <div className="nuru-card p-3 text-[10px] leading-relaxed">
-              Nothing is impossible with God. Keep pushing! 🚀
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="nuru-card overflow-hidden">
-              <img src={hero} alt="" className="h-24 w-full object-cover" />
-              <div className="p-3">
-                <p className="text-[11px] font-bold uppercase">Nuru Youth Conference</p>
-                <p className="mt-1 text-[9px] text-muted-foreground">20–22 June · Nairobi</p>
-                <button className="mt-2 rounded-lg bg-primary px-3 py-1.5 text-[9px] font-semibold">
-                  Register
-                </button>
-              </div>
-            </div>
-            <div className="nuru-card p-3">
-              <p className="text-[11px] font-semibold">Worship & Prayer Night</p>
-              <p className="mt-1 text-[9px] text-muted-foreground">Friday · 8:00 PM · Online</p>
-              <button className="mt-2 rounded-lg bg-primary px-3 py-1.5 text-[9px] font-semibold">
-                Join
-              </button>
-            </div>
-          </>
-        )}
-      </div>
-      <div className="mt-4 grid grid-cols-4 border-t border-border pt-2 text-center text-[8px] text-muted-foreground">
-        <span>Home</span>
-        <span>Explore</span>
-        <span>Create</span>
-        <span>Profile</span>
-      </div>
-    </aside>
   );
 }

@@ -1,12 +1,11 @@
-import { useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Bell, BookOpen, Calendar, Home, User, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
-import { fetchMyRoles, fetchProfile } from "@/services/content";
+import { fetchProfile } from "@/services/content";
 import { NuruMark } from "./Logo";
-import { CreateSheet } from "./CreateSheet";
 
 const NAV = [
   { to: "/home", label: "Home", icon: Home },
@@ -56,13 +55,6 @@ export function AppShell({
           </ul>
         </nav>
       )}
-
-      <CreateSheet
-        open={createOpen}
-        onClose={() => setCreateOpen(false)}
-        userId={userId}
-        canPublishEvents={canPublishEvents}
-      />
     </div>
   );
 }

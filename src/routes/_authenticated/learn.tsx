@@ -1,144 +1,105 @@
 import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, Circle } from "lucide-react";
-import { toast } from "sonner";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { ChevronRight, GraduationCap, Search } from "lucide-react";
 import { resolveMedia } from "@/lib/media";
 import { useAuth } from "@/hooks/useAuth";
-import {
-  fetchCourseLessons,
-  fetchCourses,
-  fetchMyProgress,
-  upsertProgress,
-} from "@/services/content";
+import { fetchCourses, fetchMyProgress } from "@/services/content";
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
-import { CardSkeleton, Chip, EmptyState, ProgressBar } from "@/components/nuru/Primitives";
+import { CardSkeleton, EmptyState, PillTabs, ProgressBar } from "@/components/nuru/Primitives";
 
 export const Route = createFileRoute("/_authenticated/learn")({
   head: () => ({
     meta: [
-      { title: "Learn — Nuru Faith" },
+      { title: "Courses & Series — Nuru Faith" },
       {
         name: "description",
-        content: "Courses on Scripture, church life, baptism and Christian living.",
+        content: "Short Christian courses on discipleship, faith and life skills.",
       },
-      { property: "og:title", content: "Learn — Nuru Faith" },
-      { property: "og:description", content: "Courses on Scripture and Christian living." },
     ],
   }),
   component: LearnScreen,
 });
 
+const TABS = ["All", "Youth", "Discipleship", "Life Skills"] as const;
+type Tab = (typeof TABS)[number];
+
 function LearnScreen() {
   const { userId } = useAuth();
-  const queryClient = useQueryClient();
-  const [openCourse, setOpenCourse] = useState<string | null>(null);
+  const [tab, setTab] = useState<Tab>("All");
 
   const courses = useQuery({ queryKey: ["courses"], queryFn: fetchCourses });
   const progress = useQuery({
-    queryKey: ["progress", userId],
+    queryKey: ["course-progress", userId],
     queryFn: () => fetchMyProgress(userId!),
     enabled: !!userId,
   });
-  const lessons = useQuery({
-    queryKey: ["lessons", openCourse],
-    queryFn: () => fetchCourseLessons(openCourse!),
-    enabled: !!openCourse,
-  });
 
-  const done = (courseId: string) =>
-    progress.data?.find((p) => p.course_id === courseId)?.completed_lessons ?? 0;
-
-  async function mark(courseId: string, count: number, total: number) {
-    if (!userId) return;
-    try {
-      await upsertProgress(userId, courseId, count, total);
-      await queryClient.invalidateQueries({ queryKey: ["progress", userId] });
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not save progress");
-    }
-  }
+  const byCourse = new Map((progress.data ?? []).map((p) => [p.course_id, p] as const));
+  const rows = (courses.data ?? []).filter(
+    (c) => tab === "All" || (c.category ?? "").toLowerCase() === tab.toLowerCase(),
+  );
 
   return (
     <AppShell>
-      <ScreenHeader title="Learn" subtitle="Grow in understanding, step by step" />
+      <ScreenHeader
+        title="Courses & Series"
+        right={
+          <Link
+            to="/explore"
+            search={{ q: "", kind: "courses" }}
+            aria-label="Search courses"
+            className="p-1 text-secondary-foreground"
+          >
+            <Search className="h-5 w-5" />
+          </Link>
+        }
+      />
 
-      <div className="space-y-3 px-4 py-3">
-        {courses.isLoading && <CardSkeleton count={3} height="h-28" />}
-        {courses.data?.length === 0 && (
-          <EmptyState title="No courses yet" description="Teaching series are being prepared." />
+      <div className="px-4 pb-1">
+        <PillTabs tabs={TABS} value={tab} onChange={setTab} />
+      </div>
+
+      <div className="space-y-2 px-4 pt-2">
+        {courses.isLoading && <CardSkeleton count={4} height="h-20" />}
+        {!courses.isLoading && rows.length === 0 && (
+          <EmptyState
+            title="No courses here yet"
+            description="New teaching series are added regularly."
+          />
         )}
-        {(courses.data ?? []).map((c) => {
-          const open = openCourse === c.id;
-          const completed = done(c.id);
-          const total = c.lesson_count ?? 0;
-          const pct = total ? Math.round((completed / total) * 100) : 0;
+        {rows.map((c) => {
+          const done = byCourse.get(c.id)?.completed_lessons ?? 0;
+          const total = c.lesson_count || 0;
           return (
-            <article key={c.id} className="nuru-card overflow-hidden">
-              <div className="flex gap-3 p-3">
+            <Link
+              key={c.id}
+              to="/series"
+              className="nuru-card flex items-center gap-3 p-3"
+              aria-label={c.title}
+            >
+              {c.cover_url ? (
                 <img
                   src={resolveMedia(c.cover_url)}
                   alt=""
-                  width={160}
-                  height={160}
-                  loading="lazy"
-                  className="h-20 w-20 rounded-2xl object-cover"
+                  className="h-14 w-14 shrink-0 rounded-xl object-cover"
                 />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold">{c.title}</p>
-                  <p className="line-clamp-2 text-xs text-muted-foreground">{c.description}</p>
-                  <div className="mt-1.5 flex gap-1.5">
-                    <Chip tone="brand">{c.category}</Chip>
-                    <Chip>{total} lessons</Chip>
-                  </div>
-                </div>
-              </div>
-
-              <div className="px-3">
-                <ProgressBar value={pct} label={`${pct}% complete`} />
-              </div>
-
-              <button
-                onClick={() => setOpenCourse(open ? null : c.id)}
-                aria-expanded={open}
-                className="min-h-11 px-3 pb-3 pt-2 text-xs font-semibold text-cyan"
-              >
-                {open ? "Hide lessons" : completed > 0 ? "Continue course" : "Start course"}
-              </button>
-
-              {open && (
-                <ol className="space-y-2 border-t border-border/60 p-3">
-                  {lessons.isLoading && <CardSkeleton count={3} height="h-12" />}
-                  {(lessons.data ?? []).map((l, i) => {
-                    const isDone = i < completed;
-                    return (
-                      <li key={l.id}>
-                        <button
-                          onClick={() =>
-                            mark(c.id, isDone ? i : i + 1, total || (lessons.data?.length ?? 0))
-                          }
-                          className="flex w-full items-center gap-3 rounded-lg border border-border bg-surface-2 p-3 text-left hover:border-border-strong"
-                        >
-                          {isDone ? (
-                            <CheckCircle2 className="h-5 w-5 shrink-0 text-growth" />
-                          ) : (
-                            <Circle className="h-5 w-5 shrink-0 text-muted-foreground" />
-                          )}
-                          <span className="min-w-0 flex-1">
-                            <span className="block text-sm font-medium">{l.title}</span>
-                            {l.content && (
-                              <span className="block truncate text-xs text-muted-foreground">
-                                {l.content}
-                              </span>
-                            )}
-                          </span>
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ol>
+              ) : (
+                <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-primary/35 bg-primary/12 text-cyan">
+                  <GraduationCap className="h-6 w-6" strokeWidth={1.7} />
+                </span>
               )}
-            </article>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-semibold">{c.title}</span>
+                <span className="block truncate text-[11px] text-muted-foreground">
+                  {total ? `${total} Lessons` : "Series"}
+                </span>
+                {done > 0 && total > 0 && (
+                  <ProgressBar value={(done / total) * 100} className="mt-1.5" />
+                )}
+              </span>
+              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+            </Link>
           );
         })}
       </div>

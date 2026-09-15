@@ -1,38 +1,31 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { BadgeCheck, MapPin } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import {
+  BadgeCheck,
+  BarChart3,
+  CalendarPlus,
+  Megaphone,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 import { toast } from "sonner";
-import { resolveMedia } from "@/lib/media";
-import { eventDate } from "@/lib/format";
 import { useAuth } from "@/hooks/useAuth";
 import {
   fetchChurches,
   fetchEvents,
-  fetchMyChurchIds,
+  fetchGroups,
+  fetchMentors,
+  fetchMyRoles,
   fetchProfile,
-  joinChurch,
-  leaveChurch,
-  updateProfile,
 } from "@/services/content";
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
-import {
-  CardSkeleton,
-  Chip,
-  GhostButton,
-  GradientButton,
-  SectionHeader,
-} from "@/components/nuru/Primitives";
+import { CardSkeleton, EmptyState } from "@/components/nuru/Primitives";
 
 export const Route = createFileRoute("/_authenticated/church")({
   head: () => ({
     meta: [
-      { title: "My Church — Nuru Faith" },
-      {
-        name: "description",
-        content: "Your church home: announcements, services, liturgy and upcoming events.",
-      },
-      { property: "og:title", content: "My Church — Nuru Faith" },
-      { property: "og:description", content: "Your church home inside Nuru Faith." },
+      { title: "Church — Nuru Faith" },
+      { name: "description", content: "Your church on Nuru Faith: members, groups and events." },
     ],
   }),
   component: ChurchScreen,
@@ -40,158 +33,152 @@ export const Route = createFileRoute("/_authenticated/church")({
 
 function ChurchScreen() {
   const { userId } = useAuth();
-  const queryClient = useQueryClient();
+
   const profile = useQuery({
     queryKey: ["profile", userId],
     queryFn: () => fetchProfile(userId!),
     enabled: !!userId,
   });
   const churches = useQuery({ queryKey: ["churches"], queryFn: () => fetchChurches() });
-  const joined = useQuery({
-    queryKey: ["my-churches", userId],
-    queryFn: () => fetchMyChurchIds(userId!),
+  const groups = useQuery({ queryKey: ["groups"], queryFn: () => fetchGroups() });
+  const events = useQuery({ queryKey: ["events"], queryFn: fetchEvents });
+  const mentors = useQuery({ queryKey: ["mentors"], queryFn: fetchMentors });
+  const roles = useQuery({
+    queryKey: ["roles", userId],
+    queryFn: () => fetchMyRoles(userId!),
     enabled: !!userId,
   });
-  const events = useQuery({ queryKey: ["events"], queryFn: fetchEvents });
 
-  const home = profile.data?.churches ?? null;
-  const churchEvents = (events.data ?? [])
-    .filter((e) => home && e.church_id === home.id)
-    .slice(0, 4);
+  const churchId = profile.data?.church_id ?? null;
+  const church = (churches.data ?? []).find((c) => c.id === churchId) ?? null;
+  const isAdmin = (roles.data ?? []).some(
+    (r) => r.role === "super_admin" || (r.role === "church_admin" && r.church_id === churchId),
+  );
 
-  async function setHome(churchId: string) {
-    if (!userId) return;
-    try {
-      await updateProfile(userId, { church_id: churchId });
-      await joinChurch(userId, churchId);
-      await queryClient.invalidateQueries({ queryKey: ["profile", userId] });
-      await queryClient.invalidateQueries({ queryKey: ["my-churches", userId] });
-      toast.success("Church saved");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not join");
-    }
+  // Counts are derived from what this user is actually allowed to read.
+  const groupCount = (groups.data ?? []).filter((g) => g.church_id === churchId).length;
+  const eventCount = (events.data ?? []).filter((e) => e.church_id === churchId).length;
+  const mentorCount = (mentors.data ?? []).filter((m) => m.church_id === churchId).length;
+
+  if (profile.isLoading || churches.isLoading) {
+    return (
+      <AppShell>
+        <ScreenHeader title="Church Dashboard" />
+        <div className="px-4 pt-4">
+          <CardSkeleton count={3} height="h-20" />
+        </div>
+      </AppShell>
+    );
   }
 
-  async function leave(churchId: string) {
-    if (!userId) return;
-    await leaveChurch(userId, churchId);
-    await updateProfile(userId, { church_id: null });
-    await queryClient.invalidateQueries({ queryKey: ["profile", userId] });
-    await queryClient.invalidateQueries({ queryKey: ["my-churches", userId] });
-    toast.success("You've left this church");
+  if (!church) {
+    return (
+      <AppShell>
+        <ScreenHeader title="Church Dashboard" />
+        <div className="px-4 pt-4">
+          <EmptyState
+            title="You haven't joined a church yet"
+            description="Join a church to see its groups, events and announcements here."
+            action={
+              <Link
+                to="/explore"
+                search={{ q: "", kind: "churches" }}
+                className="inline-flex min-h-10 items-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground"
+              >
+                Find a church
+              </Link>
+            }
+          />
+        </div>
+      </AppShell>
+    );
   }
 
   return (
     <AppShell>
-      <ScreenHeader title="My Church" subtitle="Your local family" />
+      <ScreenHeader title="Church Dashboard" />
 
-      {profile.isLoading && (
-        <div className="p-4">
-          <CardSkeleton count={2} height="h-40" />
-        </div>
-      )}
-
-      {home ? (
-        <>
-          <article className="relative mx-4 mt-3 overflow-hidden rounded-3xl">
-            <img
-              src={resolveMedia(home.cover_url)}
-              alt=""
-              width={1024}
-              height={480}
-              className="h-44 w-full object-cover"
-            />
-            <div className="absolute inset-0 nuru-veil" />
-            <div className="absolute inset-x-0 bottom-0 p-4">
-              <h2 className="flex items-center gap-1.5 font-display text-lg font-semibold">
-                {home.name} {home.verified && <BadgeCheck className="h-4 w-4 text-cyan" />}
-              </h2>
-              <p className="flex items-center gap-1.5 text-xs text-secondary-foreground">
-                <MapPin className="h-3.5 w-3.5" />{" "}
-                {[home.denomination, home.city].filter(Boolean).join(" · ")}
-              </p>
-            </div>
-          </article>
-
-          <div className="flex gap-2 px-4 pt-3">
-            <GhostButton className="flex-1" onClick={() => leave(home.id)}>
-              Leave church
-            </GhostButton>
-            <Link
-              to="/serve"
-              className="inline-flex min-h-11 flex-1 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-primary-foreground nuru-glow-sm"
-            >
-              Serve here
-            </Link>
-          </div>
-
-          <section className="px-4 pt-6">
-            <SectionHeader title="Upcoming at your church" action="All events" to="/events" />
-            <div className="space-y-2">
-              {churchEvents.length === 0 && (
-                <p className="text-xs text-muted-foreground">
-                  No events posted yet — check back soon.
-                </p>
-              )}
-              {churchEvents.map((e) => (
-                <Link key={e.id} to="/events" className="nuru-card flex items-center gap-3 p-3">
-                  <img
-                    src={resolveMedia(e.cover_url)}
-                    alt=""
-                    width={128}
-                    height={128}
-                    loading="lazy"
-                    className="h-14 w-14 rounded-xl object-cover"
-                  />
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold">{e.title}</span>
-                    <span className="block truncate text-xs text-muted-foreground">
-                      {eventDate(e.starts_at)}
-                    </span>
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </section>
-
-          <section className="px-4 pt-6">
-            <SectionHeader title="Liturgy & teachings" action="Coming soon" />
-            <p className="text-xs text-muted-foreground">
-              Weekly liturgy, orders of service and sermon archives will appear here once your
-              church uploads them.
-            </p>
-          </section>
-        </>
-      ) : (
-        <section className="px-4 pt-3">
-          <SectionHeader title="Choose your church" />
-          <div className="space-y-2">
-            {churches.isLoading && <CardSkeleton count={4} height="h-20" />}
-            {(churches.data ?? []).map((c) => (
-              <div key={c.id} className="nuru-card flex items-center gap-3 p-4">
-                <img
-                  src={resolveMedia(c.logo_url ?? c.cover_url)}
-                  alt=""
-                  width={96}
-                  height={96}
-                  loading="lazy"
-                  className="h-12 w-12 rounded-xl object-cover"
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold">{c.name}</p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {[c.denomination, c.city].filter(Boolean).join(" · ")}
-                  </p>
-                  {c.verified && <Chip tone="growth">Verified</Chip>}
-                </div>
-                <GradientButton onClick={() => setHome(c.id)}>
-                  {(joined.data ?? []).includes(c.id) ? "Set as home" : "Join"}
-                </GradientButton>
-              </div>
-            ))}
-          </div>
+      <div className="px-4 pt-2">
+        <section className="text-center">
+          <h1 className="flex items-center justify-center gap-1.5 font-display text-lg font-semibold">
+            {church.name}
+            {church.verified && <BadgeCheck className="h-4 w-4 text-cyan" aria-label="Verified" />}
+          </h1>
+          <p className="text-[12px] text-muted-foreground">
+            {[church.city, church.country].filter(Boolean).join(", ") || "Nuru Faith church"}
+          </p>
         </section>
-      )}
+
+        <section className="mt-5 grid grid-cols-4 gap-2">
+          <Stat value={groupCount} label="Groups" />
+          <Stat value={eventCount} label="Events" />
+          <Stat value={mentorCount} label="Mentors" />
+          <Stat value={church.denomination ? 1 : 0} label="Campuses" />
+        </section>
+
+        <section className="space-y-2 pt-6">
+          <AdminAction icon={Users} label="Manage Members" allowed={isAdmin} to="/community" />
+          <AdminAction icon={CalendarPlus} label="Create Events" allowed={isAdmin} to="/events" />
+          <AdminAction
+            icon={Megaphone}
+            label="Share Announcements"
+            allowed={isAdmin}
+            to="/create"
+          />
+          <AdminAction icon={BarChart3} label="View Analytics" allowed={isAdmin} to={null} />
+        </section>
+
+        {!isAdmin && (
+          <p className="pt-4 text-center text-[11px] text-muted-foreground">
+            Management tools are available to your church's admins.
+          </p>
+        )}
+      </div>
     </AppShell>
+  );
+}
+
+function Stat({ value, label }: { value: number; label: string }) {
+  return (
+    <div className="nuru-card flex flex-col items-center px-2 py-3">
+      <span className="font-display text-lg font-bold text-cyan">{value}</span>
+      <span className="text-[10px] text-muted-foreground">{label}</span>
+    </div>
+  );
+}
+
+function AdminAction({
+  icon: Icon,
+  label,
+  allowed,
+  to,
+}: {
+  icon: LucideIcon;
+  label: string;
+  allowed: boolean;
+  to: "/community" | "/events" | "/create" | null;
+}) {
+  const inner = (
+    <>
+      <Icon className="h-4.5 w-4.5 shrink-0 text-cyan" strokeWidth={1.8} />
+      <span className="flex-1 text-sm font-medium">{label}</span>
+    </>
+  );
+  if (!allowed || !to)
+    return (
+      <button
+        type="button"
+        onClick={() =>
+          toast(allowed ? `${label} isn't available yet.` : "Church admin access required.")
+        }
+        className="nuru-card flex w-full items-center gap-3 px-4 py-3.5 text-left opacity-70"
+      >
+        {inner}
+      </button>
+    );
+  return (
+    <Link to={to} className="nuru-card flex items-center gap-3 px-4 py-3.5">
+      {inner}
+    </Link>
   );
 }

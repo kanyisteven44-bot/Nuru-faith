@@ -46,7 +46,7 @@ export const Route = createFileRoute("/_authenticated/music")({
   component: MusicScreen,
 });
 
-const TABS = ["For You", "Worship", "Playlists", "Artists", "My Church", "YouTube"] as const;
+const TABS = ["Music", "Podcasts", "Sermons", "Videos"] as const;
 type Tab = (typeof TABS)[number];
 
 type NowPlaying =
@@ -55,7 +55,7 @@ type NowPlaying =
 
 function MusicScreen() {
   const { userId } = useAuth();
-  const [tab, setTab] = useState<Tab>("For You");
+  const [tab, setTab] = useState<Tab>("Music");
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
   const [nowPlaying, setNowPlaying] = useState<NowPlaying | null>(null);
@@ -130,7 +130,7 @@ function MusicScreen() {
         />
       ) : (
         <>
-          {tab === "For You" && (
+          {tab === "Music" && (
             <>
               <MediaCategoryRail
                 title="Worship right now"
@@ -152,7 +152,7 @@ function MusicScreen() {
             </>
           )}
 
-          {tab === "Worship" && (
+          {tab === "Sermons" && (
             <>
               <MediaCategoryRail
                 title="Worship sets"
@@ -169,7 +169,7 @@ function MusicScreen() {
             </>
           )}
 
-          {tab === "Playlists" && (
+          {tab === "Podcasts" && (
             <section className="pt-3">
               <div className="px-4">
                 <SectionHeader title="Nuru playlists" />
@@ -236,7 +236,7 @@ function MusicScreen() {
             </section>
           )}
 
-          {tab === "Artists" && (
+          {tab === "Videos" && (
             <section className="px-4 pt-3">
               <SectionHeader title="Artists & channels" />
               {artists.isLoading && <CardSkeleton count={3} height="h-16" />}
@@ -286,7 +286,7 @@ function MusicScreen() {
             </section>
           )}
 
-          {tab === "My Church" && (
+          {tab === "Sermons" && (
             <section className="px-4 pt-3">
               <SectionHeader title="From your church" />
               {!churchId && (
@@ -331,7 +331,7 @@ function MusicScreen() {
             </section>
           )}
 
-          {tab === "YouTube" && (
+          {tab === "Videos" && (
             <section className="px-4 pt-3">
               <SectionHeader title="Search YouTube" />
               <p className="text-xs text-muted-foreground">

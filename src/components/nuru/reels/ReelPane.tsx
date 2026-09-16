@@ -6,7 +6,7 @@ import { compactNumber } from "@/lib/format";
 import type { Reel } from "@/services/reels";
 import { SOURCE_LABEL, type ImportedSource } from "@/lib/reelImport";
 import { YouTubePlayer } from "@/components/youtube/YouTubePlayer";
-import { ReelActions } from "./ReelActions";
+import { ReelInteractiveActions } from "./ReelInteractiveActions";
 import { ReelCaption } from "./ReelCaption";
 import { ReelFaithActions } from "./ReelFaithActions";
 import { ReelProgress } from "./ReelProgress";
@@ -127,12 +127,13 @@ export function ReelPane(props: ReelPaneProps) {
     const y = e.clientY - rect.top;
 
     if (tapTimer.current) {
-      // second tap → like, and never pause
+      // second tap → like, and never pause. External YouTube likes use the right-side action
+      // rail because their interaction record is keyed by YouTube video id, not a Reel UUID.
       window.clearTimeout(tapTimer.current);
       tapTimer.current = null;
       setBurst({ x, y, key: Date.now() });
       window.setTimeout(() => setBurst(null), 800);
-      if (!props.liked) props.onLike();
+      if (!isYouTubeEmbed && !props.liked) props.onLike();
       return;
     }
     tapTimer.current = window.setTimeout(() => {
@@ -314,11 +315,8 @@ export function ReelPane(props: ReelPaneProps) {
           </div>
 
           <div className="pb-1">
-            <ReelActions
-              avatarUrl={reel.creator_avatar_url}
-              creatorName={reel.creator_name}
-              likeCount={reel.like_count}
-              commentCount={reel.comment_count}
+            <ReelInteractiveActions
+              reel={reel}
               liked={props.liked}
               saved={props.saved}
               onProfile={props.onProfile}

@@ -2,10 +2,22 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { BookOpen, Bookmark, Hand, History, Plus, Send, Sparkles, Trash2 } from "lucide-react";
+import {
+  BookOpen,
+  Bookmark,
+  Hand,
+  History,
+  Mic,
+  Plus,
+  Send,
+  Sparkles,
+  Square,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { useVoiceInput } from "@/hooks/useVoiceInput";
 import { askNuruAi } from "@/lib/ai.functions";
 import { fetchProfile } from "@/services/content";
 import {
@@ -20,7 +32,7 @@ import {
 } from "@/services/ai";
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
 import { AiMarkdown } from "@/components/nuru/AiMarkdown";
-import { CardSkeleton, ComingSoon, IconTile } from "@/components/nuru/Primitives";
+import { CardSkeleton, IconTile } from "@/components/nuru/Primitives";
 import heroBg from "@/assets/mountain-dawn.jpg";
 
 type Search = {
@@ -81,6 +93,22 @@ function AiScreen() {
   const [showHistory, setShowHistory] = useState(false);
   const seeded = useRef(false);
   const endRef = useRef<HTMLDivElement | null>(null);
+  const voiceBaseRef = useRef("");
+
+  const voice = useVoiceInput((text, isFinal) => {
+    const base = voiceBaseRef.current;
+    setInput(base ? `${base} ${text}` : text);
+    if (isFinal) voiceBaseRef.current = base ? `${base} ${text}` : text;
+  });
+
+  function toggleVoice() {
+    if (voice.listening) {
+      voice.stop();
+      return;
+    }
+    voiceBaseRef.current = input.trim();
+    voice.start((message) => toast.error(message));
+  }
 
   const profile = useQuery({
     queryKey: ["profile", userId],
@@ -376,11 +404,31 @@ function AiScreen() {
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask about a verse, a doubt, a decision…"
+            placeholder={voice.listening ? "Listening…" : "Ask about a verse, a doubt, a decision…"}
             maxLength={2000}
             aria-label="Ask Nuru AI"
             className="min-h-11 flex-1 bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground"
           />
+          {voice.supported && (
+            <button
+              type="button"
+              onClick={toggleVoice}
+              aria-label={voice.listening ? "Stop voice input" : "Ask by voice"}
+              aria-pressed={voice.listening}
+              className={cn(
+                "flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition-colors",
+                voice.listening
+                  ? "bg-destructive text-destructive-foreground animate-pulse"
+                  : "bg-surface-2 text-secondary-foreground hover:text-foreground",
+              )}
+            >
+              {voice.listening ? (
+                <Square className="h-4 w-4" fill="currentColor" />
+              ) : (
+                <Mic className="h-4.5 w-4.5" />
+              )}
+            </button>
+          )}
           <button
             type="submit"
             disabled={busy || !input.trim()}
@@ -390,10 +438,6 @@ function AiScreen() {
             <Send className="h-4.5 w-4.5 text-primary-foreground" />
           </button>
         </form>
-      </div>
-
-      <div className="px-4 pb-24 pt-2 text-center">
-        <ComingSoon label="Voice answers coming soon" />
       </div>
     </AppShell>
   );

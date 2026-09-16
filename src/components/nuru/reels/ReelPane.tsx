@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ExternalLink, Heart, Pause, Play, Volume2, VolumeX } from "lucide-react";
+import { Clapperboard, ExternalLink, Heart, Pause, Play, Volume2, VolumeX } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { resolveMedia } from "@/lib/media";
 import { compactNumber } from "@/lib/format";
@@ -163,11 +163,14 @@ export function ReelPane(props: ReelPaneProps) {
           <YouTubePlayer
             videoId={reel.external_id!}
             title={reel.caption || reel.creator_name}
-            autoplay={active}
+            autoplay
+            loop
+            controls={false}
             muted={muted}
+            playing={active && !paused && !commentsOpen}
             className="h-full rounded-none"
           />
-        ) : (
+        ) : reel.poster_url ? (
           <img
             src={resolveMedia(reel.poster_url)}
             alt=""
@@ -176,6 +179,17 @@ export function ReelPane(props: ReelPaneProps) {
             loading={near ? "eager" : "lazy"}
             className="h-full w-full object-cover"
           />
+        ) : (
+          <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-gradient-to-b from-surface-2 via-surface to-background px-8 text-center">
+            <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/35 bg-primary/12 text-cyan">
+              <Clapperboard className="h-6 w-6" strokeWidth={1.7} />
+            </span>
+            <p className="text-sm font-semibold text-foreground">No video on this Reel yet</p>
+            <p className="max-w-[16rem] text-[12px] leading-relaxed text-muted-foreground">
+              This post has no uploaded video or YouTube source attached, so there is nothing to
+              play.
+            </p>
+          </div>
         )}
       </div>
 
@@ -248,6 +262,16 @@ export function ReelPane(props: ReelPaneProps) {
         </span>
       )}
 
+      {(hasVideo || isYouTubeEmbed) && muted && active && (
+        <button
+          type="button"
+          onClick={props.onToggleMuted}
+          className="absolute left-1/2 top-[18%] z-10 -translate-x-1/2 rounded-full bg-black/55 px-3.5 py-1.5 text-[11px] font-semibold text-white backdrop-blur-md"
+        >
+          Tap for sound
+        </button>
+      )}
+
       {burst && (
         <Heart
           key={burst.key}
@@ -257,7 +281,7 @@ export function ReelPane(props: ReelPaneProps) {
         />
       )}
 
-      {!isYouTubeEmbed && (
+      {(hasVideo || isYouTubeEmbed) && (
         <button
           type="button"
           onClick={props.onToggleMuted}

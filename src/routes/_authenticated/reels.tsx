@@ -25,6 +25,7 @@ import {
   type ReelFeed,
 } from "@/services/reels";
 import { addPrayerJournalEntry } from "@/services/ai";
+import { youtubeQuery } from "@/services/youtubeService";
 import { AppShell } from "@/components/nuru/AppShell";
 import { CardSkeleton } from "@/components/nuru/Primitives";
 import { ReelFeedTabs } from "@/components/nuru/reels/ReelFeedTabs";
@@ -156,6 +157,48 @@ function ReelsScreen() {
       lastPage.length === REELS_PAGE_SIZE ? allPages.length : undefined,
   });
 
+  /*
+   * Every Reel seeded in the database carries no video_url and no external_id,
+   * so the feed had nothing to play. Rather than invent content, fall back to
+   * short videos from the channels the project has already approved
+   * (approved_youtube_channels), played in YouTube's own IFrame. Trusted-channel
+   * filtering and safeSearch=strict are applied server-side by youtubeSearch.
+   */
+  const youtubeFallback = useQuery(
+    youtubeQuery({ query: "christian short encouragement", type: "video", maxResults: 10 }),
+  );
+
+  const youtubeReels = useMemo<Reel[]>(() => {
+    const videos = youtubeFallback.data?.videos ?? [];
+    return videos.map((v) => ({
+      id: `yt:${v.youtubeVideoId}`,
+      author_id: null,
+      creator_name: v.channelName,
+      creator_handle: v.channelName.replace(/\s+/g, "").toLowerCase(),
+      creator_avatar_url: null,
+      caption: v.title,
+      hashtags: null,
+      video_url: null,
+      poster_url: v.thumbnail || null,
+      audio_title: "Original audio",
+      scripture_ref: null,
+      topic: null,
+      is_bible_teaching: false,
+      church_id: null,
+      series_id: null,
+      like_count: 0,
+      comment_count: 0,
+      view_count: 0,
+      created_at: v.publishedAt || new Date().toISOString(),
+      source_type: "youtube",
+      rights_status: "external_embed",
+      external_id: v.youtubeVideoId,
+      external_url: `https://www.youtube.com/watch?v=${v.youtubeVideoId}`,
+      title: v.title,
+      churches: null,
+    }));
+  }, [youtubeFallback.data]);
+
   /* de-duplicate across pages and drop anything the person muted */
   const items = useMemo(() => {
     const seen = new Set<string>();
@@ -172,8 +215,15 @@ function ReelsScreen() {
         out.push(r);
       }
     }
+    // Database Reels with no playable source can't show video, so approved
+    // YouTube videos are appended to keep the feed watchable.
+    for (const r of youtubeReels) {
+      if (seen.has(r.id) || hidden.has(r.id)) continue;
+      seen.add(r.id);
+      out.push(r);
+    }
     return out;
-  }, [reels.data, feedback.data, hiddenIds, feed, linkedReel.data]);
+  }, [reels.data, feedback.data, hiddenIds, feed, linkedReel.data, youtubeReels]);
 
   /* auto-load the next page as the end approaches */
   useEffect(() => {

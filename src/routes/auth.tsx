@@ -151,18 +151,24 @@ function AuthPage() {
   async function google() {
     setBusy(true);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: `${window.location.origin}/home` },
+        options: {
+          redirectTo: `${window.location.origin}/auth-callback`,
+          queryParams: {
+            access_type: "offline",
+            prompt: "select_account",
+          },
+        },
       });
-      // On success the browser redirects to Google now; Supabase owns the
-      // session from here and hands control back at redirectTo.
-      if (error) {
-        toast.error(error.message || "Sign-in isn't available right now");
-        setBusy(false);
-      }
-    } catch {
-      toast.error("Sign-in isn't available right now");
+      if (error) throw error;
+      if (!data.url) throw new Error("Google sign-in could not be started");
+      // signInWithOAuth normally performs this redirect itself. Keeping this
+      // explicit makes the flow reliable if the Supabase client is configured
+      // with skipBrowserRedirect in a future release.
+      window.location.assign(data.url);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Sign-in isn't available right now");
       setBusy(false);
     }
   }

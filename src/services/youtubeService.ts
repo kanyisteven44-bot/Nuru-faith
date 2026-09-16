@@ -1,5 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import { youtubeSearch, youtubeLookup } from "@/lib/youtube.functions";
+import { youtubeReelsFeed } from "@/lib/youtubeReels.functions";
 import type {
   YouTubeSearchResult,
   YouTubeVideo,
@@ -24,9 +25,15 @@ export type YouTubeQuery = {
  */
 export function youtubeQuery(input: YouTubeQuery) {
   const enabled = Boolean(input.query?.trim() || input.channelId || input.playlistId);
+  const isReelsDiscovery =
+    input.type === "video" && input.query?.trim().toLowerCase() === "christian short encouragement";
+
   return queryOptions({
-    queryKey: ["youtube", input],
-    queryFn: () => youtubeSearch({ data: { ...input, query: input.query?.trim() } }),
+    queryKey: ["youtube", isReelsDiscovery ? "reels-pool-v2" : input],
+    queryFn: () =>
+      isReelsDiscovery
+        ? youtubeReelsFeed()
+        : youtubeSearch({ data: { ...input, query: input.query?.trim() } }),
     enabled,
     staleTime: 1000 * 60 * 30,
     gcTime: 1000 * 60 * 60,

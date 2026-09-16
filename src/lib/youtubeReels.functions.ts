@@ -67,7 +67,10 @@ async function fetchChannelFeed(channelId: string): Promise<YouTubeVideo[]> {
 }
 
 async function keepPlayableShorts(videos: YouTubeVideo[], key: string): Promise<YouTubeVideo[]> {
-  const details = new Map<string, { duration: number | null; embeddable: boolean; privacyStatus: string }>();
+  const details = new Map<
+    string,
+    { duration: number | null; embeddable: boolean; privacyStatus: string }
+  >();
 
   for (let i = 0; i < videos.length; i += 50) {
     const batch = videos.slice(i, i + 50);
@@ -99,11 +102,11 @@ async function keepPlayableShorts(videos: YouTubeVideo[], key: string): Promise<
       const detail = details.get(video.youtubeVideoId);
       return Boolean(
         detail &&
-          detail.embeddable &&
-          detail.privacyStatus === "public" &&
-          detail.duration != null &&
-          detail.duration > 0 &&
-          detail.duration <= 180,
+        detail.embeddable &&
+        detail.privacyStatus === "public" &&
+        detail.duration != null &&
+        detail.duration > 0 &&
+        detail.duration <= 180,
       );
     })
     .map((video) => ({
@@ -125,13 +128,22 @@ export const youtubeReelsFeed = createServerFn({ method: "POST" })
       .select("channel_id,channel_name,trust_level,is_verified")
       .eq("is_verified", true);
 
-    if (error) return { videos: [], playlists: [], channels: [], nextPageToken: null, error: "trust-unavailable" };
+    if (error)
+      return {
+        videos: [],
+        playlists: [],
+        channels: [],
+        nextPageToken: null,
+        error: "trust-unavailable",
+      };
 
     const channels = (approved ?? []).filter((channel) =>
       ["official", "verified", "trusted"].includes(channel.trust_level ?? ""),
     );
 
-    const pages = await Promise.all(channels.map((channel) => fetchChannelFeed(channel.channel_id)));
+    const pages = await Promise.all(
+      channels.map((channel) => fetchChannelFeed(channel.channel_id)),
+    );
     const byId = new Map<string, YouTubeVideo>();
     for (const page of pages) {
       for (const video of page) byId.set(video.youtubeVideoId, video);

@@ -114,12 +114,12 @@ export function ReelPane(props: ReelPaneProps) {
   useEffect(() => () => (tapTimer.current ? window.clearTimeout(tapTimer.current) : undefined), []);
 
   const togglePlay = useCallback(() => {
-    if (!hasVideo) return;
+    if (!hasVideo && !isYouTubeEmbed) return;
     setManualStart(true);
     setPaused((p) => !p);
     setShowIcon(true);
     window.setTimeout(() => setShowIcon(false), 700);
-  }, [hasVideo]);
+  }, [hasVideo, isYouTubeEmbed]);
 
   function handlePointerUp(e: React.PointerEvent<HTMLDivElement>) {
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
@@ -233,7 +233,7 @@ export function ReelPane(props: ReelPaneProps) {
         className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/80 via-black/40 to-transparent"
       />
 
-      {hasVideo && !autoplayAllowed && !manualStart && (
+      {(hasVideo || isYouTubeEmbed) && !autoplayAllowed && !manualStart && (
         <button
           type="button"
           onClick={() => setManualStart(true)}
@@ -249,7 +249,7 @@ export function ReelPane(props: ReelPaneProps) {
         </button>
       )}
 
-      {hasVideo && showIcon && (
+      {(hasVideo || isYouTubeEmbed) && showIcon && (
         <span
           aria-hidden="true"
           className="pointer-events-none absolute left-1/2 top-1/2 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm"

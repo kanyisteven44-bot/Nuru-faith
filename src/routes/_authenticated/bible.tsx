@@ -4,6 +4,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
   Bookmark,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Highlighter,
   Search,
   Share2,
@@ -19,6 +22,9 @@ import { BIBLE_TOPICS } from "@/lib/content-policy";
 import { fetchSavedScriptures, removeSavedScripture, saveScripture } from "@/services/series";
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
 import { CardSkeleton, EmptyState, PillTabs } from "@/components/nuru/Primitives";
+import { Sheet } from "@/components/nuru/reels/Sheet";
+
+const ALL_BOOKS: BibleBook[] = [...OLD_TESTAMENT, ...NEW_TESTAMENT];
 
 export const Route = createFileRoute("/_authenticated/bible")({
   head: () => ({
@@ -41,17 +47,35 @@ type Tab = (typeof TABS)[number];
 function BibleScreen() {
   const [tab, setTab] = useState<Tab>("Books");
   const [reading, setReading] = useState<string | null>(null);
+  const [context, setContext] = useState<{ book: BibleBook; chapter: number } | null>(null);
   const [book, setBook] = useState<BibleBook | null>(null);
   const [query, setQuery] = useState("");
 
-  if (reading) return <Reader reference={reading} onBack={() => setReading(null)} />;
+  if (reading)
+    return (
+      <Reader
+        reference={reading}
+        context={context}
+        onBack={() => {
+          setReading(null);
+          setContext(null);
+        }}
+        onNavigate={(b, chapter) => {
+          setContext({ book: b, chapter });
+          setReading(`${b.name} ${chapter}`);
+        }}
+      />
+    );
 
   if (book)
     return (
       <ChapterPicker
         book={book}
         onBack={() => setBook(null)}
-        onPick={(chapter) => setReading(`${book.name} ${chapter}`)}
+        onPick={(chapter) => {
+          setContext({ book, chapter });
+          setReading(`${book.name} ${chapter}`);
+        }}
       />
     );
 
@@ -184,15 +208,50 @@ function ChapterPicker({
   );
 }
 
-function Reader({ reference, onBack }: { reference: string; onBack: () => void }) {
+function Reader({
+  reference,
+  context,
+  onBack,
+  onNavigate,
+}: {
+  reference: string;
+  context: { book: BibleBook; chapter: number } | null;
+  onBack: () => void;
+  onNavigate: (book: BibleBook, chapter: number) => void;
+}) {
   const { userId } = useAuth();
   const qc = useQueryClient();
   const [highlighted, setHighlighted] = useState<Set<number>>(new Set());
+  const [bookSheetOpen, setBookSheetOpen] = useState(false);
+  const [chapterSheetOpen, setChapterSheetOpen] = useState(false);
 
   const passage = useQuery({
     queryKey: ["passage", reference],
     queryFn: () => fetchPassage(reference),
   });
+
+  const bookIndex = context ? ALL_BOOKS.findIndex((b) => b.name === context.book.name) : -1;
+  const canGoPrev = context ? !(bookIndex === 0 && context.chapter === 1) : false;
+  const canGoNext = context
+    ? !(bookIndex === ALL_BOOKS.length - 1 && context.chapter === context.book.chapters)
+    : false;
+
+  function goPrev() {
+    if (!context || !canGoPrev) return;
+    if (context.chapter > 1) onNavigate(context.book, context.chapter - 1);
+    else if (bookIndex > 0) {
+      const prevBook = ALL_BOOKS[bookIndex - 1];
+      if (prevBook) onNavigate(prevBook, prevBook.chapters);
+    }
+  }
+  function goNext() {
+    if (!context || !canGoNext) return;
+    if (context.chapter < context.book.chapters) onNavigate(context.book, context.chapter + 1);
+    else if (bookIndex < ALL_BOOKS.length - 1) {
+      const nextBook = ALL_BOOKS[bookIndex + 1];
+      if (nextBook) onNavigate(nextBook, 1);
+    }
+  }
 
   async function bookmark() {
     if (!userId) {
@@ -236,6 +295,45 @@ function Reader({ reference, onBack }: { reference: string; onBack: () => void }
         </span>
       </header>
 
+      {context && (
+        <div className="flex items-center justify-center gap-2 px-4 pb-1 pt-1">
+          <button
+            type="button"
+            onClick={goPrev}
+            disabled={!canGoPrev}
+            aria-label="Previous chapter"
+            className="rounded-full p-2 text-secondary-foreground disabled:opacity-30"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setBookSheetOpen(true)}
+            className="flex items-center gap-1 rounded-full border border-border-strong bg-surface-2 px-3 py-1.5 text-xs font-semibold"
+          >
+            {context.book.name}
+            <ChevronDown className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setChapterSheetOpen(true)}
+            className="flex items-center gap-1 rounded-full border border-border-strong bg-surface-2 px-3 py-1.5 text-xs font-semibold"
+          >
+            {context.chapter}
+            <ChevronDown className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={goNext}
+            disabled={!canGoNext}
+            aria-label="Next chapter"
+            className="rounded-full p-2 text-secondary-foreground disabled:opacity-30"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
+        </div>
+      )}
+
       <div className="px-4 pb-28 pt-2">
         {passage.isLoading && <CardSkeleton count={4} height="h-6" />}
         {passage.isError && (
@@ -245,11 +343,13 @@ function Reader({ reference, onBack }: { reference: string; onBack: () => void }
           />
         )}
         {passage.data && (
-          <>
-            <ol className="space-y-3">
+          <div className="rounded-3xl bg-[#f8f2e2] p-5 text-[#2a2314] shadow-lg shadow-black/20">
+            <ol className="space-y-3.5">
               {passage.data.verses.map((v) => (
                 <li key={`${v.chapter}:${v.verse}`} className="flex gap-2.5">
-                  <span className="mt-0.5 shrink-0 text-[11px] font-bold text-cyan">{v.verse}</span>
+                  <span className="mt-0.5 shrink-0 text-[11px] font-bold text-amber-700">
+                    {v.verse}
+                  </span>
                   <button
                     type="button"
                     onClick={() =>
@@ -261,10 +361,8 @@ function Reader({ reference, onBack }: { reference: string; onBack: () => void }
                       })
                     }
                     className={cn(
-                      "flex-1 rounded px-1 text-left text-[15px] leading-relaxed transition-colors",
-                      highlighted.has(v.verse)
-                        ? "bg-warning/20 text-foreground"
-                        : "text-secondary-foreground",
+                      "flex-1 rounded px-1 text-left font-serif text-[15px] leading-relaxed transition-colors",
+                      highlighted.has(v.verse) ? "bg-amber-300/50" : "hover:bg-black/[0.03]",
                     )}
                   >
                     {v.text}
@@ -272,13 +370,13 @@ function Reader({ reference, onBack }: { reference: string; onBack: () => void }
                 </li>
               ))}
             </ol>
-            <p className="pt-5 text-[11px] text-muted-foreground">{passage.data.translation}</p>
-          </>
+            <p className="pt-5 text-[11px] text-[#8a7a52]">{passage.data.translation}</p>
+          </div>
         )}
       </div>
 
       <div className="fixed inset-x-0 bottom-20 z-30 mx-auto max-w-xl px-4">
-        <div className="flex items-center justify-around rounded-2xl border border-border-strong bg-surface/95 py-2 backdrop-blur-xl">
+        <div className="flex items-center justify-around rounded-2xl border border-black/10 bg-[#f8f2e2] py-2 shadow-lg shadow-black/20 backdrop-blur-xl">
           <ReaderAction
             icon={Highlighter}
             label="Highlight"
@@ -293,6 +391,56 @@ function Reader({ reference, onBack }: { reference: string; onBack: () => void }
           <ReaderAction icon={Share2} label="Share" onClick={share} />
         </div>
       </div>
+
+      {bookSheetOpen && (
+        <Sheet title="Choose a book" onClose={() => setBookSheetOpen(false)} label="Choose a book">
+          <div className="px-4 pb-4">
+            <Testament
+              title="Old Testament"
+              books={OLD_TESTAMENT}
+              onOpen={(b) => {
+                onNavigate(b, 1);
+                setBookSheetOpen(false);
+              }}
+            />
+            <Testament
+              title="New Testament"
+              books={NEW_TESTAMENT}
+              onOpen={(b) => {
+                onNavigate(b, 1);
+                setBookSheetOpen(false);
+              }}
+            />
+          </div>
+        </Sheet>
+      )}
+
+      {chapterSheetOpen && context && (
+        <Sheet
+          title={`${context.book.name} — choose a chapter`}
+          onClose={() => setChapterSheetOpen(false)}
+          label="Choose a chapter"
+        >
+          <div className="grid grid-cols-5 gap-2 px-4 pb-4">
+            {Array.from({ length: context.book.chapters }, (_, i) => i + 1).map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => {
+                  onNavigate(context.book, c);
+                  setChapterSheetOpen(false);
+                }}
+                className={cn(
+                  "nuru-card flex h-12 items-center justify-center text-sm font-semibold",
+                  c === context.chapter && "border-primary text-cyan",
+                )}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+        </Sheet>
+      )}
     </AppShell>
   );
 }
@@ -315,7 +463,7 @@ function ReaderAction({
     </>
   );
   const cls =
-    "flex flex-1 flex-col items-center gap-1 text-secondary-foreground transition-colors hover:text-foreground";
+    "flex flex-1 flex-col items-center gap-1 text-[#5a4d2f] transition-colors hover:text-[#2a2314]";
   if (to)
     return (
       <Link to={to.to} search={to.search} className={cls}>

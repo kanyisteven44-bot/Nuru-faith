@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { playOpeningChime } from "@/lib/chime";
-import { NuruMark } from "./Logo";
+import { NuruGlyph } from "./Logo";
 
 const SESSION_KEY = "nuru-splash-shown";
 /** Earliest the hold phase can end — long enough for the beam + logo reveal to read as intentional. */
@@ -116,18 +116,18 @@ export function SplashScreen() {
     >
       {reducedMotion ? (
         <div className="flex h-full items-center justify-center">
-          <NuruMark className="h-14 w-14" />
+          <NuruGlyph className="h-20 w-20" />
         </div>
       ) : (
         <>
           <div className="splash-beam" />
           <div
             className={cn(
-              "flex h-full flex-col items-center justify-center gap-3 transition-opacity duration-150",
+              "flex h-full flex-col items-center justify-center gap-4 transition-opacity duration-150",
               stage === "exiting" && "opacity-0",
             )}
           >
-            <NuruMark className="splash-logo-reveal h-14 w-14" />
+            <NuruGlyph className="splash-logo-reveal h-20 w-20" />
             <span className="splash-word-reveal font-display text-xs font-bold tracking-[0.28em] text-white">
               NURU FAITH
             </span>

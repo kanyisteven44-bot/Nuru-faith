@@ -42,49 +42,49 @@ const QUICK_ACCESS = [
     to: "/bible",
     label: "Bible",
     icon: BookOpen,
-    tint: "text-blue-300 bg-blue-500/15 border-blue-400/30",
+    tint: "bg-gradient-to-br from-blue-500 to-indigo-600",
   },
   {
     to: "/devotionals",
     label: "Devotionals",
     icon: Sunrise,
-    tint: "text-emerald-300 bg-emerald-500/15 border-emerald-400/30",
+    tint: "bg-gradient-to-br from-emerald-400 to-green-600",
   },
   {
     to: "/learn",
     label: "Courses",
     icon: GraduationCap,
-    tint: "text-orange-300 bg-orange-500/15 border-orange-400/30",
+    tint: "bg-gradient-to-br from-orange-400 to-amber-600",
   },
   {
     to: "/community",
     label: "Community",
     icon: UsersRound,
-    tint: "text-sky-300 bg-sky-500/15 border-sky-400/30",
+    tint: "bg-gradient-to-br from-sky-400 to-blue-600",
   },
   {
     to: "/events",
     label: "Events",
     icon: CalendarDays,
-    tint: "text-rose-300 bg-rose-500/15 border-rose-400/30",
+    tint: "bg-gradient-to-br from-rose-400 to-red-600",
   },
   {
     to: "/mentors",
     label: "Mentors",
     icon: HandHeart,
-    tint: "text-violet-300 bg-violet-500/15 border-violet-400/30",
+    tint: "bg-gradient-to-br from-violet-400 to-purple-600",
   },
   {
     to: "/serve",
     label: "Serve",
     icon: Sparkles,
-    tint: "text-teal-300 bg-teal-500/15 border-teal-400/30",
+    tint: "bg-gradient-to-br from-teal-300 to-emerald-600",
   },
   {
     to: "/music",
     label: "Music",
     icon: Music2,
-    tint: "text-amber-300 bg-amber-500/15 border-amber-400/30",
+    tint: "bg-gradient-to-br from-amber-300 to-yellow-600",
   },
 ] as const;
 
@@ -128,35 +128,23 @@ function HomeScreen() {
       <BrandBar />
 
       <div className="space-y-6 px-4 pt-2">
-        {/* Greeting + verse of the day */}
+        {/* Greeting */}
         <section>
           <h1 className="font-display text-[26px] font-bold tracking-tight">
             Shalom, {firstName}! <span className="align-middle">👋</span>
           </h1>
-          {verse.isLoading ? (
-            <div className="mt-3 h-12 animate-pulse rounded-lg bg-surface-2/70" />
-          ) : (
-            <blockquote className="mt-2">
-              <p className="text-[15px] leading-relaxed text-secondary-foreground italic">
-                “{verse.data?.text ?? "I can do all things through Christ who strengthens me."}”
-              </p>
-              <cite className="mt-1 block text-xs font-medium text-cyan not-italic">
-                {verse.data?.reference ?? verseOfTheDayRef()} (NIV)
-              </cite>
-            </blockquote>
-          )}
         </section>
 
         {/* Today's Light */}
         <section>
           <div className="nuru-card relative overflow-hidden">
-            <div className="relative h-40 w-full">
+            <div className="relative h-56 w-full">
               <img
                 src={devotional?.cover_url ? resolveMedia(devotional.cover_url) : verseBg}
                 alt=""
                 className="h-full w-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-card via-card/55 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/25" />
               <div className="absolute inset-x-0 top-0 flex items-center justify-between p-3.5">
                 <span className="font-display text-base font-semibold drop-shadow">
                   Today's Light
@@ -165,11 +153,22 @@ function HomeScreen() {
                   {today.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
                 </span>
               </div>
-              {devotional?.title && (
-                <p className="absolute inset-x-0 bottom-0 line-clamp-2 px-3.5 pb-3 text-sm font-medium">
-                  {devotional.title}
-                </p>
-              )}
+              <div className="absolute inset-x-0 bottom-0 px-3.5 pb-3">
+                {verse.isLoading ? (
+                  <div className="h-10 animate-pulse rounded-lg bg-white/10" />
+                ) : (
+                  <blockquote>
+                    <p className="line-clamp-3 text-[15px] leading-relaxed font-medium text-white italic drop-shadow-[0_2px_6px_rgba(0,0,0,0.85)]">
+                      “
+                      {verse.data?.text ?? "I can do all things through Christ who strengthens me."}
+                      ”
+                    </p>
+                    <cite className="mt-1 block text-[11px] font-semibold text-cyan not-italic drop-shadow-[0_2px_6px_rgba(0,0,0,0.85)]">
+                      {verse.data?.reference ?? verseOfTheDayRef()} (NIV)
+                    </cite>
+                  </blockquote>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-3 gap-2 p-3">
@@ -215,11 +214,11 @@ function HomeScreen() {
               <Link key={to} to={to} className="flex flex-col items-center gap-2 text-center">
                 <span
                   className={cn(
-                    "flex h-14 w-14 items-center justify-center rounded-2xl border",
+                    "flex h-14 w-14 items-center justify-center rounded-2xl text-white shadow-lg shadow-black/30",
                     tint,
                   )}
                 >
-                  <Icon className="h-6 w-6" strokeWidth={1.8} />
+                  <Icon className="h-6 w-6" strokeWidth={2} />
                 </span>
                 <span className="text-[11px] font-medium text-secondary-foreground">{label}</span>
               </Link>

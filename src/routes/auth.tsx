@@ -3,6 +3,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { z } from "zod";
 import { ArrowLeft, Loader2, Mail, Phone } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { NuruMark } from "@/components/nuru/Logo";
 
@@ -147,14 +148,53 @@ function AuthPage() {
           </p>
         </div>
 
-        <div className="pt-10 text-center">
+        {mode !== "forgot" && (
+          <div
+            role="tablist"
+            aria-label="Sign in or create an account"
+            className="mt-9 flex gap-1 rounded-2xl border border-border bg-surface-2/70 p-1"
+          >
+            {(
+              [
+                { value: "login", label: "Sign In" },
+                { value: "signup", label: "Sign Up" },
+              ] as const
+            ).map((tab) => (
+              <Link
+                key={tab.value}
+                to="/auth"
+                search={{ mode: tab.value }}
+                role="tab"
+                aria-selected={mode === tab.value}
+                replace
+                onClick={() => setShowEmailForm(false)}
+                className={cn(
+                  "flex-1 rounded-xl py-2.5 text-center text-sm font-semibold transition-colors",
+                  mode === tab.value
+                    ? "bg-primary text-primary-foreground nuru-glow-sm"
+                    : "text-secondary-foreground hover:text-foreground",
+                )}
+              >
+                {tab.label}
+              </Link>
+            ))}
+          </div>
+        )}
+
+        <div className="pt-7 text-center">
           <h2 className="font-display text-xl font-semibold">
-            {mode === "forgot" ? "Reset your password" : signup ? "Create an account" : "Sign in"}
+            {mode === "forgot"
+              ? "Reset your password"
+              : signup
+                ? "Create an account"
+                : "Welcome back"}
           </h2>
           <p className="mt-1 text-[13px] text-muted-foreground">
             {mode === "forgot"
               ? "We'll email you a link to set a new password."
-              : "Continue your faith journey"}
+              : signup
+                ? "Start your faith journey"
+                : "Continue your faith journey"}
           </p>
         </div>
 
@@ -255,20 +295,6 @@ function AuthPage() {
             >
               <Phone className="h-4.5 w-4.5 text-cyan" /> Continue with Phone
             </button>
-
-            <div className="flex items-center gap-3 py-2">
-              <span className="h-px flex-1 bg-border" />
-              <span className="text-[11px] text-muted-foreground">or</span>
-              <span className="h-px flex-1 bg-border" />
-            </div>
-
-            <Link
-              to="/auth"
-              search={{ mode: signup ? "login" : "signup" }}
-              className="block text-center text-sm font-semibold text-cyan hover:underline"
-            >
-              {signup ? "I already have an account" : "Create an account"}
-            </Link>
           </div>
         )}
 

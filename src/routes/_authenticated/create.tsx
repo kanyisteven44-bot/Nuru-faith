@@ -118,7 +118,11 @@ function CreateScreen() {
 
       <div className="px-4 pt-2">
         <div className="flex items-center gap-3">
-          <Avatar url={profile.data?.avatar_url ?? null} name={profile.data?.full_name ?? ""} />
+          <Avatar
+            url={profile.data?.avatar_url ?? null}
+            name={profile.data?.full_name ?? ""}
+            seed={userId}
+          />
           <span>
             <span className="block text-sm font-semibold">
               {profile.data?.full_name ?? "Nuru member"}

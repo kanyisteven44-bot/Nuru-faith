@@ -5,6 +5,7 @@ import { ArrowLeft, Bell, BookOpen, Calendar, Home, User, Users } from "lucide-r
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchProfile } from "@/services/content";
+import { generatedAvatar } from "@/lib/avatar";
 import { NuruMark } from "./Logo";
 
 const NAV = [
@@ -120,7 +121,12 @@ export function BrandBar() {
           <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-cyan" />
         </Link>
         <Link to="/profile" aria-label="Your profile">
-          <Avatar url={profile?.avatar_url ?? null} name={profile?.full_name ?? ""} size="sm" />
+          <Avatar
+            url={profile?.avatar_url ?? null}
+            name={profile?.full_name ?? ""}
+            seed={userId}
+            size="sm"
+          />
         </Link>
       </div>
     </header>
@@ -170,31 +176,27 @@ const AVATAR_SIZES = {
 export function Avatar({
   url,
   name,
+  seed,
   size = "md",
   className,
 }: {
   url: string | null;
   name: string;
+  /** Stable per-person value (user id) so the generated avatar never shifts. */
+  seed?: string | null;
   size?: keyof typeof AVATAR_SIZES;
   className?: string;
 }) {
-  const initials =
-    name
-      .split(" ")
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((p) => p[0]?.toUpperCase())
-      .join("") || "N";
-
+  const src = url || generatedAvatar(seed || name, name);
   return (
     <span
       className={cn(
-        "inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-border-strong bg-surface-2 font-semibold text-cyan",
+        "inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-border-strong",
         AVATAR_SIZES[size],
         className,
       )}
     >
-      {url ? <img src={url} alt="" className="h-full w-full object-cover" /> : initials}
+      <img src={src} alt="" className="h-full w-full object-cover" />
     </span>
   );
 }

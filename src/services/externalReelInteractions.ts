@@ -9,25 +9,28 @@ export type ExternalReelComment = {
 };
 
 export async function fetchExternalReelState(userId: string, externalReelId: string) {
-  const [{ data: likes, error: likeError }, { data: saves, error: saveError }, { count, error: countError }] =
-    await Promise.all([
-      supabase
-        .from("external_reel_likes")
-        .select("external_reel_id")
-        .eq("user_id", userId)
-        .eq("external_reel_id", externalReelId)
-        .maybeSingle(),
-      supabase
-        .from("external_reel_saves")
-        .select("external_reel_id")
-        .eq("user_id", userId)
-        .eq("external_reel_id", externalReelId)
-        .maybeSingle(),
-      supabase
-        .from("external_reel_comments")
-        .select("id", { count: "exact", head: true })
-        .eq("external_reel_id", externalReelId),
-    ]);
+  const [
+    { data: likes, error: likeError },
+    { data: saves, error: saveError },
+    { count, error: countError },
+  ] = await Promise.all([
+    supabase
+      .from("external_reel_likes")
+      .select("external_reel_id")
+      .eq("user_id", userId)
+      .eq("external_reel_id", externalReelId)
+      .maybeSingle(),
+    supabase
+      .from("external_reel_saves")
+      .select("external_reel_id")
+      .eq("user_id", userId)
+      .eq("external_reel_id", externalReelId)
+      .maybeSingle(),
+    supabase
+      .from("external_reel_comments")
+      .select("id", { count: "exact", head: true })
+      .eq("external_reel_id", externalReelId),
+  ]);
 
   if (likeError) throw new Error(likeError.message);
   if (saveError) throw new Error(saveError.message);

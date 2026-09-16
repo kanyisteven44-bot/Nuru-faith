@@ -525,6 +525,66 @@ export type Database = {
           },
         ];
       };
+      external_reel_comments: {
+        Row: {
+          content: string;
+          created_at: string;
+          external_reel_id: string;
+          id: string;
+          user_id: string;
+        };
+        Insert: {
+          content: string;
+          created_at?: string;
+          external_reel_id: string;
+          id?: string;
+          user_id: string;
+        };
+        Update: {
+          content?: string;
+          created_at?: string;
+          external_reel_id?: string;
+          id?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      external_reel_likes: {
+        Row: {
+          created_at: string;
+          external_reel_id: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          external_reel_id: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          external_reel_id?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      external_reel_saves: {
+        Row: {
+          created_at: string;
+          external_reel_id: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          external_reel_id: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          external_reel_id?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       group_members: {
         Row: {
           created_at: string;

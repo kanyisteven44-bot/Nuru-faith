@@ -75,7 +75,11 @@ export function ReelInteractiveActions({
     const url = reel.external_url ?? `https://www.youtube.com/watch?v=${externalId}`;
     try {
       if (navigator.share) {
-        await navigator.share({ title: reel.title ?? "Nuru Faith Reel", text: reel.caption ?? "", url });
+        await navigator.share({
+          title: reel.title ?? "Nuru Faith Reel",
+          text: reel.caption ?? "",
+          url,
+        });
       } else {
         await navigator.clipboard.writeText(url);
         toast.success("Link copied");
@@ -188,7 +192,12 @@ function ExternalCommentsSheet({
               {comments.data?.length ?? 0} on this Reel
             </p>
           </div>
-          <button type="button" onClick={onClose} className="rounded-full p-2" aria-label="Close comments">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-full p-2"
+            aria-label="Close comments"
+          >
             <X className="h-5 w-5" />
           </button>
         </header>
@@ -198,7 +207,9 @@ function ExternalCommentsSheet({
           {!comments.isLoading && (comments.data?.length ?? 0) === 0 && (
             <div className="py-8 text-center">
               <p className="font-semibold">No comments yet</p>
-              <p className="mt-1 text-sm text-muted-foreground">Be the first to join the conversation.</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Be the first to join the conversation.
+              </p>
             </div>
           )}
           {(comments.data ?? []).map((comment) => (
@@ -222,7 +233,9 @@ function ExternalCommentsSheet({
                     </button>
                   )}
                 </div>
-                <p className="mt-0.5 break-words text-sm text-secondary-foreground">{comment.content}</p>
+                <p className="mt-0.5 break-words text-sm text-secondary-foreground">
+                  {comment.content}
+                </p>
               </div>
             </article>
           ))}

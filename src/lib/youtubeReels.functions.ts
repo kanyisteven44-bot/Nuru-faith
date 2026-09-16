@@ -3,8 +3,12 @@ import type { YouTubeSearchResult, YouTubeVideo } from "./youtube.functions";
 
 const YOUTUBE_API = "https://www.googleapis.com/youtube/v3";
 const DISCOVERY_QUERY = "christian shorts bible jesus prayer worship gospel faith";
-const SEARCH_PAGES = 4;
+const SEARCH_PAGES = 24;
 const PAGE_SIZE = 50;
+const CACHE_MS = 1000 * 60 * 30;
+
+let cachedFeed: YouTubeSearchResult | null = null;
+let cachedAt = 0;
 
 function parseDurationSeconds(iso?: string): number | null {
   if (!iso) return null;
@@ -144,18 +148,12 @@ async function keepPlayableShorts(videos: YouTubeVideo[], key: string): Promise<
     }));
 }
 
-/**
- * Public metadata discovery for the authenticated Reels screen.
- * The API key never leaves the server and playback still happens through
- * YouTube's official iframe player. This function intentionally has no Supabase
- * auth middleware because the client-side server-function request was being
- * rejected before discovery ran, leaving only the two seeded database Reels.
- */
 export const youtubeReelsFeed = createServerFn({ method: "POST" }).handler(
   async (): Promise<YouTubeSearchResult> => {
+    if (cachedFeed && Date.now() - cachedAt < CACHE_MS) return cachedFeed;
+
     const key = process.env["YOUTUBE_API_KEY"];
     if (!key) {
-      console.error("[youtube-reels] YOUTUBE_API_KEY is not configured");
       return {
         videos: [],
         playlists: [],
@@ -177,15 +175,17 @@ export const youtubeReelsFeed = createServerFn({ method: "POST" }).handler(
       }
 
       const videos = await keepPlayableShorts([...byId.values()], key);
-      console.info(`[youtube-reels] discovered=${byId.size} playable=${videos.length}`);
-
-      return {
+      const result: YouTubeSearchResult = {
         videos,
         playlists: [],
         channels: [],
         nextPageToken: pageToken ?? null,
         error: null,
       };
+      cachedFeed = result;
+      cachedAt = Date.now();
+      console.info(`[youtube-reels] discovered=${byId.size} playable=${videos.length}`);
+      return result;
     } catch (error) {
       return {
         videos: [],

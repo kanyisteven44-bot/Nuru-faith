@@ -3,21 +3,9 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { YouTubeSearchResult, YouTubeVideo } from "./youtube.functions";
 
 const YOUTUBE_API = "https://www.googleapis.com/youtube/v3";
-const RSS_BASE = "https://www.youtube.com/feeds/videos.xml?channel_id=";
-
-function decodeXml(value: string): string {
-  return value
-    .replaceAll("&amp;", "&")
-    .replaceAll("&quot;", '"')
-    .replaceAll("&#39;", "'")
-    .replaceAll("&lt;", "<")
-    .replaceAll("&gt;", ">");
-}
-
-function tag(entry: string, name: string): string {
-  const match = entry.match(new RegExp(`<${name}[^>]*>([\\s\\S]*?)<\\/${name}>`, "i"));
-  return match ? decodeXml(match[1]!.replace(/<!\[CDATA\[|\]\]>/g, "").trim()) : "";
-}
+const DISCOVERY_QUERY = "christian|bible|jesus|prayer|worship|testimony|gospel|faith";
+const SEARCH_PAGES = 4;
+const PAGE_SIZE = 50;
 
 function parseDurationSeconds(iso?: string): number | null {
   if (!iso) return null;
@@ -38,39 +26,65 @@ function formatDuration(seconds: number | null): string | null {
   return `${minutes}:${String(rest).padStart(2, "0")}`;
 }
 
-async function fetchChannelFeed(channelId: string): Promise<YouTubeVideo[]> {
-  const response = await fetch(`${RSS_BASE}${encodeURIComponent(channelId)}`, {
-    headers: { "user-agent": "NuruFaith/1.0" },
-  });
-  if (!response.ok) return [];
-  const xml = await response.text();
-  const entries = xml.match(/<entry>[\s\S]*?<\/entry>/g) ?? [];
+async function searchPage(key: string, pageToken?: string): Promise<{ videos: YouTubeVideo[]; nextPageToken: string | null }> {
+  const url = new URL(`${YOUTUBE_API}/search`);
+  url.searchParams.set("part", "snippet");
+  url.searchParams.set("q", DISCOVERY_QUERY);
+  url.searchParams.set("type", "video");
+  url.searchParams.set("maxResults", String(PAGE_SIZE));
+  url.searchParams.set("safeSearch", "strict");
+  url.searchParams.set("videoEmbeddable", "true");
+  url.searchParams.set("videoDuration", "short");
+  url.searchParams.set("order", "relevance");
+  url.searchParams.set("key", key);
+  if (pageToken) url.searchParams.set("pageToken", pageToken);
 
-  return entries
-    .map((entry): YouTubeVideo | null => {
-      const youtubeVideoId = tag(entry, "yt:videoId");
-      if (!youtubeVideoId) return null;
-      const channelName = tag(entry, "name") || tag(entry, "author");
+  const response = await fetch(url.toString());
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    console.error(`[youtube-reels] search ${response.status} ${body.slice(0, 400)}`);
+    throw new Error(response.status === 403 ? "quota" : "unavailable");
+  }
+
+  const json = (await response.json()) as {
+    nextPageToken?: string;
+    items?: Array<{
+      id?: { videoId?: string };
+      snippet?: {
+        title?: string;
+        description?: string;
+        channelId?: string;
+        channelTitle?: string;
+        publishedAt?: string;
+        thumbnails?: { high?: { url?: string }; medium?: { url?: string }; default?: { url?: string } };
+      };
+    }>;
+  };
+
+  const videos: YouTubeVideo[] = (json.items ?? [])
+    .map((item): YouTubeVideo | null => {
+      const id = item.id?.videoId;
+      if (!id) return null;
+      const s = item.snippet;
       return {
-        youtubeVideoId,
-        title: tag(entry, "title"),
-        description: "",
-        thumbnail: `https://i.ytimg.com/vi/${youtubeVideoId}/hqdefault.jpg`,
-        channelId,
-        channelName,
-        publishedAt: tag(entry, "published"),
+        youtubeVideoId: id,
+        title: s?.title ?? "",
+        description: s?.description ?? "",
+        thumbnail: s?.thumbnails?.high?.url ?? s?.thumbnails?.medium?.url ?? s?.thumbnails?.default?.url ?? `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
+        channelId: s?.channelId ?? "",
+        channelName: s?.channelTitle ?? "YouTube",
+        publishedAt: s?.publishedAt ?? "",
         duration: null,
         source: "youtube",
       };
     })
     .filter((video): video is YouTubeVideo => video !== null);
+
+  return { videos, nextPageToken: json.nextPageToken ?? null };
 }
 
 async function keepPlayableShorts(videos: YouTubeVideo[], key: string): Promise<YouTubeVideo[]> {
-  const details = new Map<
-    string,
-    { duration: number | null; embeddable: boolean; privacyStatus: string }
-  >();
+  const details = new Map<string, { duration: number | null; embeddable: boolean; privacyStatus: string }>();
 
   for (let i = 0; i < videos.length; i += 50) {
     const batch = videos.slice(i, i + 50);
@@ -100,67 +114,48 @@ async function keepPlayableShorts(videos: YouTubeVideo[], key: string): Promise<
   return videos
     .filter((video) => {
       const detail = details.get(video.youtubeVideoId);
-      return Boolean(
-        detail &&
-        detail.embeddable &&
-        detail.privacyStatus === "public" &&
-        detail.duration != null &&
-        detail.duration > 0 &&
-        detail.duration <= 180,
-      );
+      return Boolean(detail && detail.embeddable && detail.privacyStatus === "public" && detail.duration != null && detail.duration > 0 && detail.duration <= 180);
     })
-    .map((video) => ({
-      ...video,
-      duration: formatDuration(details.get(video.youtubeVideoId)?.duration ?? null),
-    }));
+    .map((video) => ({ ...video, duration: formatDuration(details.get(video.youtubeVideoId)?.duration ?? null) }));
 }
 
-/**
- * Build a large Reels pool from every approved YouTube channel.
- * Channel RSS feeds are quota-free; the Data API is only used in cheap batched
- * videos.list calls to verify that each candidate is public, embeddable and <=3 minutes.
- */
 export const youtubeReelsFeed = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<YouTubeSearchResult> => {
-    const { data: approved, error } = await context.supabase
-      .from("approved_youtube_channels")
-      .select("channel_id,channel_name,trust_level,is_verified")
-      .eq("is_verified", true);
+  .handler(async (): Promise<YouTubeSearchResult> => {
+    const key = process.env["YOUTUBE_API_KEY"];
+    if (!key) {
+      console.error("[youtube-reels] YOUTUBE_API_KEY is not configured");
+      return { videos: [], playlists: [], channels: [], nextPageToken: null, error: "not-configured" };
+    }
 
-    if (error)
+    try {
+      const byId = new Map<string, YouTubeVideo>();
+      let pageToken: string | undefined;
+
+      for (let page = 0; page < SEARCH_PAGES; page += 1) {
+        const result = await searchPage(key, pageToken);
+        for (const video of result.videos) byId.set(video.youtubeVideoId, video);
+        if (!result.nextPageToken) break;
+        pageToken = result.nextPageToken;
+      }
+
+      const videos = await keepPlayableShorts([...byId.values()], key);
+      console.info(`[youtube-reels] discovered=${byId.size} playable=${videos.length}`);
+
+      return {
+        videos,
+        playlists: [],
+        channels: [],
+        nextPageToken: pageToken ?? null,
+        error: null,
+      };
+    } catch (err) {
       return {
         videos: [],
         playlists: [],
         channels: [],
         nextPageToken: null,
-        error: "trust-unavailable",
+        error: err instanceof Error ? err.message : "unavailable",
       };
-
-    const channels = (approved ?? []).filter((channel) =>
-      ["official", "verified", "trusted"].includes(channel.trust_level ?? ""),
-    );
-
-    const pages = await Promise.all(
-      channels.map((channel) => fetchChannelFeed(channel.channel_id)),
-    );
-    const byId = new Map<string, YouTubeVideo>();
-    for (const page of pages) {
-      for (const video of page) byId.set(video.youtubeVideoId, video);
     }
-
-    let videos = [...byId.values()];
-    const key = process.env["YOUTUBE_API_KEY"];
-    if (key) videos = await keepPlayableShorts(videos, key);
-    else videos = videos.filter((video) => /#shorts?\b|\bshorts?\b/i.test(video.title));
-
-    videos.sort((a, b) => (b.publishedAt || "").localeCompare(a.publishedAt || ""));
-
-    return {
-      videos,
-      playlists: [],
-      channels: [],
-      nextPageToken: null,
-      error: null,
-    };
   });

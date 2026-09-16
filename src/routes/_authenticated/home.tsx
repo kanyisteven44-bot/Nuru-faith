@@ -11,9 +11,6 @@ import {
   Sparkles,
   Sunrise,
   UsersRound,
-  Globe2,
-  Award,
-  Leaf,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";

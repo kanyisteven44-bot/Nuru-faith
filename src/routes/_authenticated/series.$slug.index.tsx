@@ -5,7 +5,6 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { resolveMedia } from "@/lib/media";
 import {
-  completeSession,
   fetchMyCompletedSessions,
   fetchMyProgress,
   fetchSeriesBySlug,

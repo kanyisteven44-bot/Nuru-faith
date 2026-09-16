@@ -5,7 +5,6 @@ import {
   ArrowLeft,
   Bookmark,
   Highlighter,
-  Loader2,
   Search,
   Share2,
   Sparkles,

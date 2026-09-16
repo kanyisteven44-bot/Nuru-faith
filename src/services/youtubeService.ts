@@ -21,7 +21,8 @@ export type YouTubeQuery = {
 
 /**
  * React Query options for YouTube metadata.
- * Cached hard (30 min) so scrolling/rerenders never re-spend API quota.
+ * Reels discovery refreshes more frequently than the normal media rails so a
+ * newly deployed discovery strategy is not hidden behind a long client cache.
  */
 export function youtubeQuery(input: YouTubeQuery) {
   const enabled = Boolean(input.query?.trim() || input.channelId || input.playlistId);
@@ -29,15 +30,15 @@ export function youtubeQuery(input: YouTubeQuery) {
     input.type === "video" && input.query?.trim().toLowerCase() === "christian short encouragement";
 
   return queryOptions({
-    queryKey: ["youtube", isReelsDiscovery ? "reels-pool-v2" : input],
+    queryKey: ["youtube", isReelsDiscovery ? "reels-pool-v5" : input],
     queryFn: () =>
       isReelsDiscovery
         ? youtubeReelsFeed()
         : youtubeSearch({ data: { ...input, query: input.query?.trim() } }),
     enabled,
-    staleTime: 1000 * 60 * 30,
+    staleTime: isReelsDiscovery ? 1000 * 60 * 5 : 1000 * 60 * 30,
     gcTime: 1000 * 60 * 60,
-    retry: 1,
+    retry: isReelsDiscovery ? 0 : 1,
   });
 }
 

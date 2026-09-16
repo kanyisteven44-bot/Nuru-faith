@@ -17,7 +17,8 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
-import { fetchPassage, NEW_TESTAMENT, OLD_TESTAMENT, type BibleBook } from "@/lib/bible";
+import { NEW_TESTAMENT, OLD_TESTAMENT, type BibleBook } from "@/lib/bible";
+import { fetchKjvPassage } from "@/lib/kjvBible";
 import { BIBLE_TOPICS } from "@/lib/content-policy";
 import { fetchSavedScriptures, removeSavedScripture, saveScripture } from "@/services/series";
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
@@ -32,7 +33,8 @@ export const Route = createFileRoute("/_authenticated/bible")({
       { title: "Bible — Nuru Faith" },
       {
         name: "description",
-        content: "Read the Bible by book and chapter, browse topics and keep your saved verses.",
+        content:
+          "Read the King James Version Bible by book and chapter, browse topics and keep your saved verses.",
       },
       { property: "og:title", content: "Bible — Nuru Faith" },
       { property: "og:description", content: "Read Scripture and save what speaks to you." },
@@ -43,27 +45,21 @@ export const Route = createFileRoute("/_authenticated/bible")({
 
 const TABS = ["Books", "Topics", "My Notes"] as const;
 type Tab = (typeof TABS)[number];
+type ReaderTarget = { book: BibleBook; chapter: number };
 
 function BibleScreen() {
   const [tab, setTab] = useState<Tab>("Books");
-  const [reading, setReading] = useState<string | null>(null);
-  const [context, setContext] = useState<{ book: BibleBook; chapter: number } | null>(null);
+  const [reader, setReader] = useState<ReaderTarget | null>(null);
   const [book, setBook] = useState<BibleBook | null>(null);
   const [query, setQuery] = useState("");
 
-  if (reading)
+  if (reader)
     return (
       <Reader
-        reference={reading}
-        context={context}
-        onBack={() => {
-          setReading(null);
-          setContext(null);
-        }}
-        onNavigate={(b, chapter) => {
-          setContext({ book: b, chapter });
-          setReading(`${b.name} ${chapter}`);
-        }}
+        book={reader.book}
+        chapter={reader.chapter}
+        onBack={() => setReader(null)}
+        onNavigate={(b, chapter) => setReader({ book: b, chapter })}
       />
     );
 
@@ -72,10 +68,7 @@ function BibleScreen() {
       <ChapterPicker
         book={book}
         onBack={() => setBook(null)}
-        onPick={(chapter) => {
-          setContext({ book, chapter });
-          setReading(`${book.name} ${chapter}`);
-        }}
+        onPick={(chapter) => setReader({ book, chapter })}
       />
     );
 
@@ -114,7 +107,7 @@ function BibleScreen() {
             <li key={t.id}>
               <button
                 type="button"
-                onClick={() => setReading(t.reference)}
+                onClick={() => openTopicReference(t.reference, setReader)}
                 className="nuru-card flex w-full items-center gap-3 px-4 py-3 text-left"
               >
                 <span className="min-w-0 flex-1">
@@ -127,9 +120,20 @@ function BibleScreen() {
         </ul>
       )}
 
-      {tab === "My Notes" && <SavedVerses onOpen={setReading} />}
+      {tab === "My Notes" && (
+        <SavedVerses onOpen={(reference) => openTopicReference(reference, setReader)} />
+      )}
     </AppShell>
   );
+}
+
+function openTopicReference(reference: string, setReader: (target: ReaderTarget) => void) {
+  const match = reference.match(/^(.+?)\s+(\d+)/);
+  if (!match) return;
+  const name = match[1]?.trim();
+  const chapter = Number(match[2]);
+  const book = ALL_BOOKS.find((b) => b.name.toLowerCase() === name?.toLowerCase());
+  if (book && chapter >= 1 && chapter <= book.chapters) setReader({ book, chapter });
 }
 
 function Testament({
@@ -209,16 +213,17 @@ function ChapterPicker({
 }
 
 function Reader({
-  reference,
-  context,
+  book,
+  chapter,
   onBack,
   onNavigate,
 }: {
-  reference: string;
-  context: { book: BibleBook; chapter: number } | null;
+  book: BibleBook;
+  chapter: number;
   onBack: () => void;
   onNavigate: (book: BibleBook, chapter: number) => void;
 }) {
+  const reference = `${book.name} ${chapter}`;
   const { userId } = useAuth();
   const qc = useQueryClient();
   const [highlighted, setHighlighted] = useState<Set<number>>(new Set());
@@ -226,27 +231,25 @@ function Reader({
   const [chapterSheetOpen, setChapterSheetOpen] = useState(false);
 
   const passage = useQuery({
-    queryKey: ["passage", reference],
-    queryFn: () => fetchPassage(reference),
+    queryKey: ["kjv-passage", reference],
+    queryFn: () => fetchKjvPassage(reference),
   });
 
-  const bookIndex = context ? ALL_BOOKS.findIndex((b) => b.name === context.book.name) : -1;
-  const canGoPrev = context ? !(bookIndex === 0 && context.chapter === 1) : false;
-  const canGoNext = context
-    ? !(bookIndex === ALL_BOOKS.length - 1 && context.chapter === context.book.chapters)
-    : false;
+  const bookIndex = ALL_BOOKS.findIndex((b) => b.name === book.name);
+  const canGoPrev = !(bookIndex === 0 && chapter === 1);
+  const canGoNext = !(bookIndex === ALL_BOOKS.length - 1 && chapter === book.chapters);
 
   function goPrev() {
-    if (!context || !canGoPrev) return;
-    if (context.chapter > 1) onNavigate(context.book, context.chapter - 1);
+    if (!canGoPrev) return;
+    if (chapter > 1) onNavigate(book, chapter - 1);
     else if (bookIndex > 0) {
       const prevBook = ALL_BOOKS[bookIndex - 1];
       if (prevBook) onNavigate(prevBook, prevBook.chapters);
     }
   }
   function goNext() {
-    if (!context || !canGoNext) return;
-    if (context.chapter < context.book.chapters) onNavigate(context.book, context.chapter + 1);
+    if (!canGoNext) return;
+    if (chapter < book.chapters) onNavigate(book, chapter + 1);
     else if (bookIndex < ALL_BOOKS.length - 1) {
       const nextBook = ALL_BOOKS[bookIndex + 1];
       if (nextBook) onNavigate(nextBook, 1);
@@ -291,48 +294,46 @@ function Reader({
           {passage.data?.reference ?? reference}
         </h1>
         <span className="shrink-0 rounded-lg border border-border-strong bg-surface-2 px-2.5 py-1 text-[11px] font-semibold text-secondary-foreground">
-          {passage.data?.translation ? "WEB" : "…"}
+          {passage.data?.translationId ?? "…"}
         </span>
       </header>
 
-      {context && (
-        <div className="flex items-center justify-center gap-2 px-4 pb-1 pt-1">
-          <button
-            type="button"
-            onClick={goPrev}
-            disabled={!canGoPrev}
-            aria-label="Previous chapter"
-            className="rounded-full p-2 text-secondary-foreground disabled:opacity-30"
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setBookSheetOpen(true)}
-            className="flex items-center gap-1 rounded-full border border-border-strong bg-surface-2 px-3 py-1.5 text-xs font-semibold"
-          >
-            {context.book.name}
-            <ChevronDown className="h-3.5 w-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setChapterSheetOpen(true)}
-            className="flex items-center gap-1 rounded-full border border-border-strong bg-surface-2 px-3 py-1.5 text-xs font-semibold"
-          >
-            {context.chapter}
-            <ChevronDown className="h-3.5 w-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={goNext}
-            disabled={!canGoNext}
-            aria-label="Next chapter"
-            className="rounded-full p-2 text-secondary-foreground disabled:opacity-30"
-          >
-            <ChevronRight className="h-5 w-5" />
-          </button>
-        </div>
-      )}
+      <div className="flex items-center justify-center gap-2 px-4 pb-1 pt-1">
+        <button
+          type="button"
+          onClick={goPrev}
+          disabled={!canGoPrev}
+          aria-label="Previous chapter"
+          className="rounded-full p-2 text-secondary-foreground disabled:opacity-30"
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </button>
+        <button
+          type="button"
+          onClick={() => setBookSheetOpen(true)}
+          className="flex items-center gap-1 rounded-full border border-border-strong bg-surface-2 px-3 py-1.5 text-xs font-semibold"
+        >
+          {book.name}
+          <ChevronDown className="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          onClick={() => setChapterSheetOpen(true)}
+          className="flex items-center gap-1 rounded-full border border-border-strong bg-surface-2 px-3 py-1.5 text-xs font-semibold"
+        >
+          {chapter}
+          <ChevronDown className="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          onClick={goNext}
+          disabled={!canGoNext}
+          aria-label="Next chapter"
+          className="rounded-full p-2 text-secondary-foreground disabled:opacity-30"
+        >
+          <ChevronRight className="h-5 w-5" />
+        </button>
+      </div>
 
       <div className="px-4 pb-28 pt-2">
         {passage.isLoading && <CardSkeleton count={4} height="h-6" />}
@@ -415,24 +416,24 @@ function Reader({
         </Sheet>
       )}
 
-      {chapterSheetOpen && context && (
+      {chapterSheetOpen && (
         <Sheet
-          title={`${context.book.name} — choose a chapter`}
+          title={`${book.name} — choose a chapter`}
           onClose={() => setChapterSheetOpen(false)}
           label="Choose a chapter"
         >
           <div className="grid grid-cols-5 gap-2 px-4 pb-4">
-            {Array.from({ length: context.book.chapters }, (_, i) => i + 1).map((c) => (
+            {Array.from({ length: book.chapters }, (_, i) => i + 1).map((c) => (
               <button
                 key={c}
                 type="button"
                 onClick={() => {
-                  onNavigate(context.book, c);
+                  onNavigate(book, c);
                   setChapterSheetOpen(false);
                 }}
                 className={cn(
                   "nuru-card flex h-12 items-center justify-center text-sm font-semibold",
-                  c === context.chapter && "border-primary text-cyan",
+                  c === chapter && "border-primary text-cyan",
                 )}
               >
                 {c}

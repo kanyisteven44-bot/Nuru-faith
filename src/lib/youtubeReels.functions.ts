@@ -49,6 +49,7 @@ async function searchPage(
   url.searchParams.set("maxResults", String(PAGE_SIZE));
   url.searchParams.set("safeSearch", "strict");
   url.searchParams.set("videoEmbeddable", "true");
+  url.searchParams.set("videoSyndicated", "true");
   url.searchParams.set("videoDuration", "short");
   url.searchParams.set("order", "relevance");
   url.searchParams.set("key", key);
@@ -169,7 +170,7 @@ async function keepPlayableShorts(videos: YouTubeVideo[], key: string): Promise<
     }));
 }
 
-export const youtubeReelsFeed = createServerFn({ method: "POST" }).handler(
+export const youtubeReelsFeed = createServerFn({ method: "GET" }).handler(
   async (): Promise<YouTubeSearchResult> => {
     if (cachedFeed && Date.now() - cachedAt < CACHE_MS) return cachedFeed;
 

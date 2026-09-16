@@ -6,6 +6,7 @@ import {
   CalendarDays,
   GraduationCap,
   HandHeart,
+  Clapperboard,
   Music2,
   Share2,
   Sparkles,
@@ -85,6 +86,12 @@ const QUICK_ACCESS = [
     label: "Music",
     icon: Music2,
     tint: "bg-gradient-to-br from-amber-300 to-yellow-600",
+  },
+  {
+    to: "/reels",
+    label: "Reels",
+    icon: Clapperboard,
+    tint: "bg-gradient-to-br from-fuchsia-400 to-pink-600",
   },
 ] as const;
 
@@ -209,18 +216,18 @@ function HomeScreen() {
         {/* Quick Access */}
         <section>
           <h2 className="mb-3 font-display text-[15px] font-semibold">Quick Access</h2>
-          <div className="grid grid-cols-4 gap-x-2 gap-y-4">
+          <div className="grid grid-cols-3 gap-x-3 gap-y-4">
             {QUICK_ACCESS.map(({ to, label, icon: Icon, tint }) => (
               <Link key={to} to={to} className="flex flex-col items-center gap-2 text-center">
                 <span
                   className={cn(
-                    "flex h-14 w-14 items-center justify-center rounded-2xl text-white shadow-lg shadow-black/30",
+                    "flex h-16 w-16 items-center justify-center rounded-2xl text-white shadow-lg shadow-black/30",
                     tint,
                   )}
                 >
-                  <Icon className="h-6 w-6" strokeWidth={2} />
+                  <Icon className="h-7 w-7" strokeWidth={2} />
                 </span>
-                <span className="text-[11px] font-medium text-secondary-foreground">{label}</span>
+                <span className="text-[12px] font-medium text-secondary-foreground">{label}</span>
               </Link>
             ))}
           </div>

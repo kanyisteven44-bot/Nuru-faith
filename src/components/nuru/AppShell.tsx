@@ -1,19 +1,17 @@
 import type { ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Bell, BookOpen, Clapperboard, Home, User, Users } from "lucide-react";
+import { ArrowLeft, Bell, BookOpen, Calendar, Home, User, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchProfile } from "@/services/content";
 import { NuruMark } from "./Logo";
 
-// Matches the Reels screen in the design: Reels sits in the middle. Events
-// stays one tap away in Home's Quick Access grid.
 const NAV = [
   { to: "/home", label: "Home", icon: Home },
   { to: "/community", label: "Community", icon: Users },
-  { to: "/reels", label: "Reels", icon: Clapperboard },
   { to: "/bible", label: "Bible", icon: BookOpen },
+  { to: "/events", label: "Events", icon: Calendar },
   { to: "/profile", label: "Profile", icon: User },
 ] as const;
 

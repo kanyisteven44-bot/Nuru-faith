@@ -198,17 +198,35 @@ function ChapterPicker({
       </header>
       <div className="grid grid-cols-5 gap-2 px-4 pt-2">
         {Array.from({ length: book.chapters }, (_, i) => i + 1).map((c) => (
-          <button
-            key={c}
-            type="button"
-            onClick={() => onPick(c)}
-            className="nuru-card flex h-12 items-center justify-center text-sm font-semibold"
-          >
-            {c}
-          </button>
+          <ChapterTile key={c} label={c} onClick={() => onPick(c)} />
         ))}
       </div>
     </AppShell>
+  );
+}
+
+function ChapterTile({
+  label,
+  onClick,
+  active = false,
+}: {
+  label: number;
+  onClick: () => void;
+  active?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "flex h-12 items-center justify-center rounded-xl border text-sm font-bold transition-colors",
+        active
+          ? "border-transparent bg-[#f4c453] text-[#2a2314] shadow-[0_4px_14px_-6px_rgba(244,196,83,0.7)]"
+          : "border-black/[0.08] bg-[#f8f2e2] text-[#2a2314] hover:bg-[#f2e9d1]",
+      )}
+    >
+      {label}
+    </button>
   );
 }
 
@@ -424,20 +442,15 @@ function Reader({
         >
           <div className="grid grid-cols-5 gap-2 px-4 pb-4">
             {Array.from({ length: book.chapters }, (_, i) => i + 1).map((c) => (
-              <button
+              <ChapterTile
                 key={c}
-                type="button"
+                label={c}
+                active={c === chapter}
                 onClick={() => {
                   onNavigate(book, c);
                   setChapterSheetOpen(false);
                 }}
-                className={cn(
-                  "nuru-card flex h-12 items-center justify-center text-sm font-semibold",
-                  c === chapter && "border-primary text-cyan",
-                )}
-              >
-                {c}
-              </button>
+              />
             ))}
           </div>
         </Sheet>

@@ -347,3 +347,119 @@ a {
     white-space: nowrap;
   }
 }
+
+/* App-open splash: a beam of light sweeps across the dark, reveals the mark,
+   then flashes and expands into the real interface. See SplashScreen.tsx. */
+@keyframes splash-beam {
+  0% {
+    translate: -30% 0;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    translate: 230% 0;
+    opacity: 0;
+  }
+}
+
+@utility splash-beam {
+  position: absolute;
+  top: -50%;
+  left: -55%;
+  width: 55%;
+  height: 200%;
+  rotate: 18deg;
+  filter: blur(7px);
+  background: linear-gradient(
+    100deg,
+    transparent,
+    color-mix(in oklab, white 92%, transparent),
+    color-mix(in oklab, var(--brand-cyan) 70%, transparent),
+    transparent
+  );
+  animation: splash-beam 900ms cubic-bezier(0.3, 0, 0.2, 1) both;
+}
+
+@keyframes splash-logo-reveal {
+  0% {
+    opacity: 0;
+    transform: scale(0.72);
+    filter: drop-shadow(0 0 0 transparent);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: drop-shadow(0 0 18px color-mix(in oklab, var(--brand-cyan) 55%, transparent));
+  }
+}
+
+@utility splash-logo-reveal {
+  animation: splash-logo-reveal 620ms cubic-bezier(0.2, 0.8, 0.2, 1) 520ms both;
+}
+
+@keyframes splash-word-reveal {
+  from {
+    opacity: 0;
+    translate: 0 8px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@utility splash-word-reveal {
+  animation: splash-word-reveal 460ms ease-out 900ms both;
+}
+
+@keyframes splash-flash {
+  0% {
+    scale: 1;
+    opacity: 0;
+  }
+  22% {
+    opacity: 1;
+  }
+  100% {
+    scale: 46;
+    opacity: 1;
+  }
+}
+
+@utility splash-flash {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  scale: 1;
+  opacity: 0;
+  background: radial-gradient(circle, #ffffff 0%, var(--brand-cyan) 45%, var(--background) 72%);
+}
+
+/* Applied only once the JS state machine decides to exit — the hold phase
+   before it can last anywhere from ~1.7s to ~3.6s (it waits for auth to
+   resolve), so this can't be a fixed on-mount keyframe. */
+@utility splash-flash-play {
+  animation: splash-flash 480ms cubic-bezier(0.3, 0, 0.15, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splash-beam,
+  .splash-logo-reveal,
+  .splash-word-reveal,
+  .splash-flash-play {
+    animation: none !important;
+  }
+}

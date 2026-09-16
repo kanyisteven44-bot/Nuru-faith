@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { OfflineNotice } from "@/components/nuru/OfflineNotice";
+import { SplashScreen } from "@/components/nuru/SplashScreen";
 import { supabase } from "@/integrations/supabase/client";
 
 function NotFoundComponent() {
@@ -148,6 +149,7 @@ function RootComponent() {
       <Outlet />
       <Toaster position="top-center" />
       <OfflineNotice />
+      <SplashScreen />
     </QueryClientProvider>
   );
 }

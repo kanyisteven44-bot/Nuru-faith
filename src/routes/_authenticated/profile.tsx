@@ -158,6 +158,7 @@ function ProfileScreen() {
             <Avatar
               url={profile.data?.avatar_url ?? null}
               name={profile.data?.full_name ?? ""}
+              seed={userId}
               size="lg"
             />
             <h1 className="mt-3 font-display text-xl font-semibold">

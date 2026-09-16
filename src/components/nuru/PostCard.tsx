@@ -4,6 +4,7 @@ import { Bookmark, Flag, Heart, MessageCircle, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { resolveMedia } from "@/lib/media";
+import { generatedAvatar } from "@/lib/avatar";
 import { compactNumber, initials, timeAgo } from "@/lib/format";
 import {
   addComment,
@@ -80,7 +81,7 @@ export function PostCard({
   return (
     <article className="border-b border-border pb-4 last:border-b-0">
       <div className="flex items-center gap-3 px-1 pb-3">
-        <Avatar src={avatar} name={name} />
+        <Avatar src={avatar} name={name} seed={post.author_id} />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold">{name}</p>
           <p className="truncate text-[11px] text-muted-foreground">
@@ -187,8 +188,18 @@ export function PostCard({
             )}
             {comments.map((c) => (
               <li key={c.id} className="flex gap-2">
-                <Avatar name="Nuru member" size="sm" />
-                <p className="text-sm text-secondary-foreground">{c.body}</p>
+                <Avatar
+                  src={c.author_avatar_url}
+                  name={c.author_name ?? "Nuru member"}
+                  seed={c.author_id}
+                  size="sm"
+                />
+                <p className="min-w-0 flex-1 text-sm text-secondary-foreground">
+                  <span className="mr-1.5 font-semibold text-foreground">
+                    {c.author_name ?? "Nuru member"}
+                  </span>
+                  {c.body}
+                </p>
               </li>
             ))}
           </ul>
@@ -227,10 +238,13 @@ export function PostCard({
 export function Avatar({
   src,
   name,
+  seed,
   size = "md",
 }: {
   src?: string | null | undefined;
   name?: string | null | undefined;
+  /** Stable per-person value (author id) so the generated avatar never shifts. */
+  seed?: string | null | undefined;
   size?: "sm" | "md" | "lg" | undefined;
 }) {
   const dim =
@@ -250,15 +264,12 @@ export function Avatar({
     );
   }
   return (
-    <span
-      aria-hidden="true"
-      className={cn(
-        "flex shrink-0 items-center justify-center rounded-full nuru-gradient-bg font-semibold text-primary-foreground",
-        dim,
-      )}
-    >
-      {initials(name)}
-    </span>
+    <img
+      src={generatedAvatar(seed || name || "nuru", name || "Nuru member")}
+      alt=""
+      loading="lazy"
+      className={cn("shrink-0 rounded-full object-cover ring-1 ring-border-strong", dim)}
+    />
   );
 }
 

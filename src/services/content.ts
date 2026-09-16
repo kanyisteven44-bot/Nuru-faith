@@ -115,14 +115,36 @@ export async function leaveGroup(userId: string, groupId: string) {
 
 /* ---------- community ---------- */
 
-export const fetchPosts = async (limit = 20) =>
-  unwrap(
+type JoinedProfile = {
+  full_name: string | null;
+  username: string | null;
+  avatar_url: string | null;
+};
+
+/**
+ * PostgREST returns the joined row nested under `profiles`, but PostCard reads
+ * flat author_* fields. Without this mapping every post rendered as
+ * "Nuru member" with no handle or avatar.
+ */
+function authorFields(profiles: unknown) {
+  const joined = (Array.isArray(profiles) ? profiles[0] : profiles) as JoinedProfile | null;
+  return {
+    author_name: joined?.full_name ?? null,
+    author_handle: joined?.username ?? null,
+    author_avatar_url: joined?.avatar_url ?? null,
+  };
+}
+
+export const fetchPosts = async (limit = 20) => {
+  const rows = unwrap(
     await supabase
       .from("posts")
       .select("*, profiles(full_name, username, avatar_url)")
       .order("created_at", { ascending: false })
       .limit(limit),
   );
+  return rows.map((row) => ({ ...row, ...authorFields(row.profiles) }));
+};
 
 export async function createPost(input: {
   author_id: string;
@@ -192,14 +214,16 @@ export async function fetchMySavedPosts(userId: string) {
   return (data ?? []).map((r) => r.post_id);
 }
 
-export const fetchComments = async (postId: string) =>
-  unwrap(
+export const fetchComments = async (postId: string) => {
+  const rows = unwrap(
     await supabase
       .from("post_comments")
       .select("*, profiles(full_name, username, avatar_url)")
       .eq("post_id", postId)
       .order("created_at", { ascending: true }),
   );
+  return rows.map((row) => ({ ...row, ...authorFields(row.profiles) }));
+};
 
 export async function addComment(postId: string, authorId: string, body: string) {
   const { error } = await supabase

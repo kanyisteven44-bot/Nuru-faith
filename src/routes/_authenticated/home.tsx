@@ -3,14 +3,14 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
   BookOpen,
-  CalendarDays,
+  Church,
+  Clapperboard,
   GraduationCap,
   HandHeart,
   Music2,
   Share2,
   Sparkles,
   Sunrise,
-  UsersRound,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -39,14 +39,38 @@ export const Route = createFileRoute("/_authenticated/home")({
 
 const QUICK_ACCESS = [
   {
+    to: "/reels",
+    label: "Reels",
+    icon: Clapperboard,
+    tint: "bg-gradient-to-br from-fuchsia-400 to-pink-600",
+  },
+  {
+    to: "/ai",
+    label: "Nuru AI",
+    icon: Sparkles,
+    tint: "bg-gradient-to-br from-cyan-300 to-blue-600",
+  },
+  {
+    to: "/church",
+    label: "My Church",
+    icon: Church,
+    tint: "bg-gradient-to-br from-indigo-400 to-violet-600",
+  },
+  {
     to: "/bible",
     label: "Bible",
     icon: BookOpen,
     tint: "bg-gradient-to-br from-blue-500 to-indigo-600",
   },
   {
+    to: "/music",
+    label: "Music",
+    icon: Music2,
+    tint: "bg-gradient-to-br from-amber-300 to-yellow-600",
+  },
+  {
     to: "/devotionals",
-    label: "Devotionals",
+    label: "Devotions",
     icon: Sunrise,
     tint: "bg-gradient-to-br from-emerald-400 to-green-600",
   },
@@ -57,34 +81,10 @@ const QUICK_ACCESS = [
     tint: "bg-gradient-to-br from-orange-400 to-amber-600",
   },
   {
-    to: "/community",
-    label: "Community",
-    icon: UsersRound,
-    tint: "bg-gradient-to-br from-sky-400 to-blue-600",
-  },
-  {
-    to: "/events",
-    label: "Events",
-    icon: CalendarDays,
-    tint: "bg-gradient-to-br from-rose-400 to-red-600",
-  },
-  {
     to: "/mentors",
     label: "Mentors",
     icon: HandHeart,
-    tint: "bg-gradient-to-br from-violet-400 to-purple-600",
-  },
-  {
-    to: "/serve",
-    label: "Serve",
-    icon: Sparkles,
-    tint: "bg-gradient-to-br from-teal-300 to-emerald-600",
-  },
-  {
-    to: "/music",
-    label: "Music",
-    icon: Music2,
-    tint: "bg-gradient-to-br from-amber-300 to-yellow-600",
+    tint: "bg-gradient-to-br from-rose-400 to-red-600",
   },
 ] as const;
 
@@ -211,7 +211,12 @@ function HomeScreen() {
           <h2 className="mb-3 font-display text-[15px] font-semibold">Quick Access</h2>
           <div className="grid grid-cols-4 gap-x-2 gap-y-4">
             {QUICK_ACCESS.map(({ to, label, icon: Icon, tint }) => (
-              <Link key={to} to={to} className="flex flex-col items-center gap-2 text-center">
+              <Link
+                key={to}
+                to={to}
+                {...(to === "/ai" ? { search: {} } : {})}
+                className="flex flex-col items-center gap-2 text-center"
+              >
                 <span
                   className={cn(
                     "flex h-14 w-14 items-center justify-center rounded-2xl text-white shadow-lg shadow-black/30",

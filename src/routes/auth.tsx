@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { z } from "zod";
-import { ArrowLeft, Loader2, Mail, Phone } from "lucide-react";
+import { Loader2, Lock, Mail, Phone, User as UserIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { NuruMark } from "@/components/nuru/Logo";
 
@@ -32,16 +33,22 @@ const credentials = z.object({
   password: z.string().min(8, "Use at least 8 characters").max(72),
 });
 
+type Method = "email" | "phone";
+
 function AuthPage() {
   const { mode } = Route.useSearch();
   const navigate = useNavigate();
+  const signup = mode === "signup";
+
+  const [method, setMethod] = useState<Method>("email");
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [otp, setOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
-  /** The design leads with providers; the email form opens on demand. */
-  const [showEmailForm, setShowEmailForm] = useState(false);
 
   useEffect(() => {
     void supabase.auth.getSession().then(({ data }) => {
@@ -49,11 +56,7 @@ function AuthPage() {
     });
   }, [navigate]);
 
-  useEffect(() => {
-    if (mode === "forgot") setShowEmailForm(true);
-  }, [mode]);
-
-  async function submit(e: React.FormEvent) {
+  async function submitEmail(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     try {
@@ -72,7 +75,8 @@ function AuthPage() {
       const parsed = credentials.safeParse({ email, password });
       if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? "Check your details");
 
-      if (mode === "signup") {
+      if (signup) {
+        if (!fullName.trim()) throw new Error("Enter your full name");
         const { data, error } = await supabase.auth.signUp({
           email: parsed.data.email,
           password: parsed.data.password,
@@ -103,14 +107,55 @@ function AuthPage() {
     }
   }
 
-  async function social(provider: "google") {
+  async function sendCode(e: React.FormEvent) {
+    e.preventDefault();
+    const value = phone.trim();
+    if (!/^\+[1-9]\d{7,14}$/.test(value)) {
+      toast.error("Enter your number in international format, e.g. +254712345678");
+      return;
+    }
+    setBusy(true);
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        phone: value,
+        options: signup ? { data: { full_name: fullName.trim() } } : {},
+      });
+      if (error) throw error;
+      setOtpSent(true);
+      toast.success("Code sent by SMS");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't send the code");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function verifyCode(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        phone: phone.trim(),
+        token: otp.trim(),
+        type: "sms",
+      });
+      if (error) throw error;
+      void navigate({ to: signup ? "/onboarding" : "/home" });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "That code didn't work");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function google() {
     setBusy(true);
     try {
       const { error } = await supabase.auth.signInWithOAuth({
-        provider,
+        provider: "google",
         options: { redirectTo: `${window.location.origin}/home` },
       });
-      // On success the browser redirects to the provider now; Supabase owns the
+      // On success the browser redirects to Google now; Supabase owns the
       // session from here and hands control back at redirectTo.
       if (error) {
         toast.error(error.message || "Sign-in isn't available right now");
@@ -122,44 +167,74 @@ function AuthPage() {
     }
   }
 
-  const signup = mode === "signup";
-
   return (
     <div className="relative min-h-dvh bg-background">
       <div className="relative mx-auto flex min-h-dvh w-full max-w-md flex-col px-7 pb-10 pt-[max(2rem,env(safe-area-inset-top))]">
-        {showEmailForm && mode !== "forgot" && (
-          <button
-            type="button"
-            onClick={() => setShowEmailForm(false)}
-            className="-ml-2 mb-2 flex w-fit items-center gap-1.5 rounded-full p-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4" /> Back
-          </button>
-        )}
-
-        <div className="flex flex-col items-center pt-6 text-center">
-          <NuruMark className="h-20 w-20" />
-          <h1 className="mt-5 font-display text-[30px] leading-none font-bold tracking-tight">
+        <div className="flex flex-col items-center pt-4 text-center">
+          <NuruMark className="h-16 w-16" />
+          <h1 className="mt-4 font-display text-[26px] leading-none font-bold tracking-tight">
             Nuru <span className="text-cyan">Faith</span>
           </h1>
-          <p className="mt-2.5 text-[12px] tracking-wide text-secondary-foreground">
+          <p className="mt-2 text-[12px] tracking-wide text-secondary-foreground">
             Connect • Grow • Live Your Faith
           </p>
         </div>
 
-        <div className="pt-10 text-center">
-          <h2 className="font-display text-xl font-semibold">
-            {mode === "forgot" ? "Reset your password" : signup ? "Create an account" : "Sign in"}
+        {mode !== "forgot" && (
+          <div
+            role="tablist"
+            aria-label="Sign in or create an account"
+            className="mt-7 flex gap-1 rounded-2xl border border-border bg-surface-2/70 p-1"
+          >
+            {(
+              [
+                { value: "login", label: "Sign In" },
+                { value: "signup", label: "Sign Up" },
+              ] as const
+            ).map((tab) => (
+              <Link
+                key={tab.value}
+                to="/auth"
+                search={{ mode: tab.value }}
+                role="tab"
+                aria-selected={mode === tab.value}
+                replace
+                onClick={() => {
+                  setOtpSent(false);
+                  setSent(false);
+                }}
+                className={cn(
+                  "flex-1 rounded-xl py-2.5 text-center text-sm font-semibold transition-colors",
+                  mode === tab.value
+                    ? "bg-primary text-primary-foreground nuru-glow-sm"
+                    : "text-secondary-foreground hover:text-foreground",
+                )}
+              >
+                {tab.label}
+              </Link>
+            ))}
+          </div>
+        )}
+
+        <div className="pt-5 text-center">
+          <h2 className="font-display text-lg font-semibold">
+            {mode === "forgot"
+              ? "Reset your password"
+              : signup
+                ? "Create an account"
+                : "Welcome back"}
           </h2>
           <p className="mt-1 text-[13px] text-muted-foreground">
             {mode === "forgot"
               ? "We'll email you a link to set a new password."
-              : "Continue your faith journey"}
+              : signup
+                ? "Start your faith journey"
+                : "Continue your faith journey"}
           </p>
         </div>
 
         {sent ? (
-          <div className="nuru-card mt-8 space-y-3 p-5 text-sm text-secondary-foreground">
+          <div className="nuru-card mt-6 space-y-3 p-5 text-sm text-secondary-foreground">
             <p className="font-display text-base font-semibold text-foreground">Check your email</p>
             <p>
               We sent a link to <span className="text-cyan">{email}</span>. Open it on this device
@@ -170,115 +245,240 @@ function AuthPage() {
               className="text-cyan hover:underline"
               onClick={() => {
                 setSent(false);
-                setShowEmailForm(false);
                 void navigate({ to: "/auth", search: { mode: "login" } });
               }}
             >
               Back to sign in
             </button>
           </div>
-        ) : showEmailForm ? (
-          <form onSubmit={submit} className="mt-8 space-y-3">
-            {signup && (
+        ) : mode === "forgot" ? (
+          <form onSubmit={submitEmail} className="mt-6 space-y-3">
+            <Field icon={Mail} label="Email address">
               <input
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                autoComplete="name"
-                maxLength={100}
-                className="input-nuru"
-                placeholder="Full name"
-                aria-label="Full name"
-              />
-            )}
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email"
-              required
-              className="input-nuru"
-              placeholder="you@email.com"
-              aria-label="Email"
-            />
-            {mode !== "forgot" && (
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete={signup ? "new-password" : "current-password"}
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
                 required
-                minLength={8}
-                className="input-nuru"
-                placeholder="Password"
-                aria-label="Password"
+                placeholder="you@email.com"
+                className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
               />
-            )}
-            <button
-              type="submit"
-              disabled={busy}
-              className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-primary-foreground nuru-glow-sm disabled:opacity-60"
+            </Field>
+            <SubmitButton busy={busy}>Send reset link</SubmitButton>
+            <Link
+              to="/auth"
+              search={{ mode: "login" }}
+              className="block pt-1 text-center text-[13px] text-cyan hover:underline"
             >
-              {busy && <Loader2 className="h-4 w-4 animate-spin" />}
-              {mode === "forgot" ? "Send reset link" : signup ? "Create account" : "Sign in"}
-            </button>
-            {mode === "login" && (
-              <Link
-                to="/auth"
-                search={{ mode: "forgot" }}
-                className="block pt-1 text-center text-[13px] text-cyan hover:underline"
-              >
-                Forgot password?
-              </Link>
-            )}
+              Back to sign in
+            </Link>
           </form>
         ) : (
-          <div className="mt-8 space-y-3">
+          <>
             <button
               type="button"
               disabled={busy}
-              onClick={() => void social("google")}
-              className="flex min-h-12 w-full items-center justify-center gap-3 rounded-xl bg-white text-sm font-semibold text-slate-900 transition-opacity hover:opacity-95 disabled:opacity-60"
+              onClick={() => void google()}
+              className="mt-6 flex min-h-12 w-full items-center justify-center gap-3 rounded-xl bg-white text-sm font-semibold text-slate-900 transition-opacity hover:opacity-95 disabled:opacity-60"
             >
               <GoogleGlyph /> Continue with Google
             </button>
-            <button
-              type="button"
-              onClick={() => setShowEmailForm(true)}
-              className="flex min-h-12 w-full items-center justify-center gap-3 rounded-xl border border-border-strong bg-surface-2 text-sm font-medium text-secondary-foreground transition-colors hover:text-foreground"
-            >
-              <Mail className="h-4.5 w-4.5 text-cyan" /> Continue with Email
-            </button>
-            <button
-              type="button"
-              onClick={() => toast("Phone sign-in isn't switched on yet — use email or Google.")}
-              className="flex min-h-12 w-full items-center justify-center gap-3 rounded-xl border border-border-strong bg-surface-2 text-sm font-medium text-secondary-foreground transition-colors hover:text-foreground"
-            >
-              <Phone className="h-4.5 w-4.5 text-cyan" /> Continue with Phone
-            </button>
 
-            <div className="flex items-center gap-3 py-2">
+            <div className="flex items-center gap-3 py-4">
               <span className="h-px flex-1 bg-border" />
-              <span className="text-[11px] text-muted-foreground">or</span>
+              <span className="text-[11px] text-muted-foreground">
+                or {signup ? "sign up" : "sign in"} with
+              </span>
               <span className="h-px flex-1 bg-border" />
             </div>
 
-            <Link
-              to="/auth"
-              search={{ mode: signup ? "login" : "signup" }}
-              className="block text-center text-sm font-semibold text-cyan hover:underline"
-            >
-              {signup ? "I already have an account" : "Create an account"}
-            </Link>
-          </div>
+            <div className="flex gap-1 rounded-xl border border-border bg-surface-2/70 p-1">
+              {(
+                [
+                  { value: "email", label: "Email", icon: Mail },
+                  { value: "phone", label: "Phone", icon: Phone },
+                ] as const
+              ).map((m) => (
+                <button
+                  key={m.value}
+                  type="button"
+                  onClick={() => setMethod(m.value)}
+                  className={cn(
+                    "flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-[13px] font-semibold transition-colors",
+                    method === m.value
+                      ? "bg-surface text-foreground"
+                      : "text-muted-foreground hover:text-secondary-foreground",
+                  )}
+                >
+                  <m.icon className="h-4 w-4 text-cyan" /> {m.label}
+                </button>
+              ))}
+            </div>
+
+            {method === "email" ? (
+              <form onSubmit={submitEmail} className="mt-4 space-y-3">
+                {signup && (
+                  <Field icon={UserIcon} label="Full name">
+                    <input
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      autoComplete="name"
+                      required
+                      maxLength={100}
+                      placeholder="Stephen Kanyi"
+                      className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                    />
+                  </Field>
+                )}
+                <Field icon={Mail} label="Email address">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    autoComplete="email"
+                    required
+                    placeholder="you@email.com"
+                    className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                  />
+                </Field>
+                <Field
+                  icon={Lock}
+                  label="Password"
+                  hint={signup ? "At least 8 characters" : undefined}
+                >
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    autoComplete={signup ? "new-password" : "current-password"}
+                    required
+                    minLength={8}
+                    placeholder="••••••••"
+                    className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                  />
+                </Field>
+
+                <SubmitButton busy={busy}>{signup ? "Create account" : "Sign In"}</SubmitButton>
+
+                {!signup && (
+                  <Link
+                    to="/auth"
+                    search={{ mode: "forgot" }}
+                    className="block pt-1 text-center text-[13px] text-cyan hover:underline"
+                  >
+                    Forgot password?
+                  </Link>
+                )}
+              </form>
+            ) : (
+              <form onSubmit={otpSent ? verifyCode : sendCode} className="mt-4 space-y-3">
+                {signup && !otpSent && (
+                  <Field icon={UserIcon} label="Full name">
+                    <input
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      autoComplete="name"
+                      required
+                      maxLength={100}
+                      placeholder="Stephen Kanyi"
+                      className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                    />
+                  </Field>
+                )}
+                <Field icon={Phone} label="Phone number" hint="Include your country code">
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    autoComplete="tel"
+                    required
+                    disabled={otpSent}
+                    placeholder="+254712345678"
+                    className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground disabled:opacity-60"
+                  />
+                </Field>
+
+                {otpSent && (
+                  <Field icon={Lock} label="Verification code" hint="6-digit code sent by SMS">
+                    <input
+                      inputMode="numeric"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value)}
+                      autoComplete="one-time-code"
+                      required
+                      maxLength={8}
+                      placeholder="123456"
+                      className="w-full bg-transparent text-sm tracking-[0.3em] outline-none placeholder:tracking-normal placeholder:text-muted-foreground"
+                    />
+                  </Field>
+                )}
+
+                <SubmitButton busy={busy}>
+                  {otpSent ? "Verify & continue" : "Send code"}
+                </SubmitButton>
+
+                {otpSent && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOtpSent(false);
+                      setOtp("");
+                    }}
+                    className="block w-full pt-1 text-center text-[13px] text-cyan hover:underline"
+                  >
+                    Use a different number
+                  </button>
+                )}
+              </form>
+            )}
+          </>
         )}
 
-        <p className="mt-auto pt-10 text-center text-[11px] leading-relaxed text-muted-foreground">
+        <p className="mt-auto pt-8 text-center text-[11px] leading-relaxed text-muted-foreground">
           By continuing, you agree to our Terms and
           <br />
           Privacy Policy.
         </p>
       </div>
     </div>
+  );
+}
+
+function Field({
+  icon: Icon,
+  label,
+  hint,
+  children,
+}: {
+  icon: typeof Mail;
+  label: string;
+  hint?: string | undefined;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-[12px] font-medium text-secondary-foreground">
+        {label}
+      </span>
+      <span className="flex min-h-12 items-center gap-2.5 rounded-xl border border-input bg-surface-2 px-3.5 focus-within:border-primary">
+        <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+        {children}
+      </span>
+      {hint && <span className="mt-1 block text-[11px] text-muted-foreground">{hint}</span>}
+    </label>
+  );
+}
+
+function SubmitButton({ busy, children }: { busy: boolean; children: React.ReactNode }) {
+  return (
+    <button
+      type="submit"
+      disabled={busy}
+      className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-primary-foreground nuru-glow-sm transition-opacity disabled:opacity-60"
+    >
+      {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+      {children}
+    </button>
   );
 }
 

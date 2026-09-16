@@ -1,19 +1,18 @@
 import type { ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Bell, BookOpen, Clapperboard, Home, User, Users } from "lucide-react";
+import { ArrowLeft, Bell, BookOpen, Calendar, Home, User, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchProfile } from "@/services/content";
+import { generatedAvatar } from "@/lib/avatar";
 import { NuruMark } from "./Logo";
 
-// Matches the Reels screen in the design: Reels sits in the middle. Events
-// stays one tap away in Home's Quick Access grid.
 const NAV = [
   { to: "/home", label: "Home", icon: Home },
   { to: "/community", label: "Community", icon: Users },
-  { to: "/reels", label: "Reels", icon: Clapperboard },
   { to: "/bible", label: "Bible", icon: BookOpen },
+  { to: "/events", label: "Events", icon: Calendar },
   { to: "/profile", label: "Profile", icon: User },
 ] as const;
 
@@ -122,7 +121,12 @@ export function BrandBar() {
           <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-cyan" />
         </Link>
         <Link to="/profile" aria-label="Your profile">
-          <Avatar url={profile?.avatar_url ?? null} name={profile?.full_name ?? ""} size="sm" />
+          <Avatar
+            url={profile?.avatar_url ?? null}
+            name={profile?.full_name ?? ""}
+            seed={userId}
+            size="sm"
+          />
         </Link>
       </div>
     </header>
@@ -172,31 +176,27 @@ const AVATAR_SIZES = {
 export function Avatar({
   url,
   name,
+  seed,
   size = "md",
   className,
 }: {
   url: string | null;
   name: string;
+  /** Stable per-person value (user id) so the generated avatar never shifts. */
+  seed?: string | null;
   size?: keyof typeof AVATAR_SIZES;
   className?: string;
 }) {
-  const initials =
-    name
-      .split(" ")
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((p) => p[0]?.toUpperCase())
-      .join("") || "N";
-
+  const src = url || generatedAvatar(seed || name, name);
   return (
     <span
       className={cn(
-        "inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-border-strong bg-surface-2 font-semibold text-cyan",
+        "inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-border-strong",
         AVATAR_SIZES[size],
         className,
       )}
     >
-      {url ? <img src={url} alt="" className="h-full w-full object-cover" /> : initials}
+      <img src={src} alt="" className="h-full w-full object-cover" />
     </span>
   );
 }

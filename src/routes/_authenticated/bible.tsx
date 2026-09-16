@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { NEW_TESTAMENT, OLD_TESTAMENT, type BibleBook } from "@/lib/bible";
 import { fetchKjvPassage } from "@/lib/kjvBible";
+import { fetchNivPassage } from "@/lib/apiBible.functions";
 import { BIBLE_TOPICS } from "@/lib/content-policy";
 import { fetchSavedScriptures, removeSavedScripture, saveScripture } from "@/services/series";
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
@@ -136,6 +137,19 @@ function openTopicReference(reference: string, setReader: (target: ReaderTarget)
   if (book && chapter >= 1 && chapter <= book.chapters) setReader({ book, chapter });
 }
 
+/**
+ * Prefers real NIV text (requires BIBLE_API_KEY / an API.Bible account with
+ * NIV enabled). Falls back to the free, public-domain KJV source when NIV
+ * isn't configured or the request fails for any reason.
+ */
+async function fetchScripturePassage(reference: string) {
+  try {
+    return await fetchNivPassage({ data: { reference } });
+  } catch {
+    return fetchKjvPassage(reference);
+  }
+}
+
 function Testament({
   title,
   books,
@@ -249,8 +263,8 @@ function Reader({
   const [chapterSheetOpen, setChapterSheetOpen] = useState(false);
 
   const passage = useQuery({
-    queryKey: ["kjv-passage", reference],
-    queryFn: () => fetchKjvPassage(reference),
+    queryKey: ["scripture-passage", reference],
+    queryFn: () => fetchScripturePassage(reference),
   });
 
   const bookIndex = ALL_BOOKS.findIndex((b) => b.name === book.name);

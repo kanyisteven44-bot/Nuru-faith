@@ -2,8 +2,16 @@ import { createServerFn } from "@tanstack/react-start";
 import type { YouTubeSearchResult, YouTubeVideo } from "./youtube.functions";
 
 const YOUTUBE_API = "https://www.googleapis.com/youtube/v3";
-const DISCOVERY_QUERY = "christian shorts bible jesus prayer worship gospel faith";
-const SEARCH_PAGES = 24;
+const DISCOVERY_QUERIES = [
+  "christian shorts bible jesus faith",
+  "bible verse shorts scripture christian",
+  "christian prayer shorts jesus",
+  "christian testimony shorts faith",
+  "christian motivation encouragement shorts",
+  "gospel worship christian shorts",
+  "christian youth faith shorts",
+];
+const PAGES_PER_QUERY = 4;
 const PAGE_SIZE = 50;
 const CACHE_MS = 1000 * 60 * 30;
 
@@ -31,11 +39,12 @@ function formatDuration(seconds: number | null): string | null {
 
 async function searchPage(
   key: string,
+  query: string,
   pageToken?: string,
 ): Promise<{ videos: YouTubeVideo[]; nextPageToken: string | null }> {
   const url = new URL(`${YOUTUBE_API}/search`);
   url.searchParams.set("part", "snippet");
-  url.searchParams.set("q", DISCOVERY_QUERY);
+  url.searchParams.set("q", query);
   url.searchParams.set("type", "video");
   url.searchParams.set("maxResults", String(PAGE_SIZE));
   url.searchParams.set("safeSearch", "strict");
@@ -95,6 +104,18 @@ async function searchPage(
     .filter((video): video is YouTubeVideo => video !== null);
 
   return { videos, nextPageToken: json.nextPageToken ?? null };
+}
+
+async function searchTopic(key: string, query: string): Promise<YouTubeVideo[]> {
+  const videos: YouTubeVideo[] = [];
+  let pageToken: string | undefined;
+  for (let page = 0; page < PAGES_PER_QUERY; page += 1) {
+    const result = await searchPage(key, query, pageToken);
+    videos.push(...result.videos);
+    if (!result.nextPageToken) break;
+    pageToken = result.nextPageToken;
+  }
+  return videos;
 }
 
 async function keepPlayableShorts(videos: YouTubeVideo[], key: string): Promise<YouTubeVideo[]> {
@@ -164,22 +185,22 @@ export const youtubeReelsFeed = createServerFn({ method: "POST" }).handler(
     }
 
     try {
+      const topicResults = await Promise.all(
+        DISCOVERY_QUERIES.map((query) => searchTopic(key, query)),
+      );
       const byId = new Map<string, YouTubeVideo>();
-      let pageToken: string | undefined;
-
-      for (let page = 0; page < SEARCH_PAGES; page += 1) {
-        const result = await searchPage(key, pageToken);
-        for (const video of result.videos) byId.set(video.youtubeVideoId, video);
-        if (!result.nextPageToken) break;
-        pageToken = result.nextPageToken;
+      for (const topic of topicResults) {
+        for (const video of topic) byId.set(video.youtubeVideoId, video);
       }
 
       const videos = await keepPlayableShorts([...byId.values()], key);
+      videos.sort((a, b) => (b.publishedAt || "").localeCompare(a.publishedAt || ""));
+
       const result: YouTubeSearchResult = {
         videos,
         playlists: [],
         channels: [],
-        nextPageToken: pageToken ?? null,
+        nextPageToken: videos.length > 0 ? "more" : null,
         error: null,
       };
       cachedFeed = result;

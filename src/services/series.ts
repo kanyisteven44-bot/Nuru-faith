@@ -251,3 +251,76 @@ export async function removeSavedScripture(userId: string, reference: string) {
     .eq("reference", reference);
   if (error) throw new Error(error.message);
 }
+
+/* ---------- verse highlights ---------- */
+
+export const HIGHLIGHT_COLORS = [
+  { key: "yellow", label: "Yellow", swatch: "#f4c453", bgClass: "bg-amber-300/50" },
+  { key: "green", label: "Green", swatch: "#86efac", bgClass: "bg-green-300/50" },
+  { key: "blue", label: "Blue", swatch: "#93c5fd", bgClass: "bg-blue-300/50" },
+  { key: "pink", label: "Pink", swatch: "#f9a8d4", bgClass: "bg-pink-300/50" },
+  { key: "purple", label: "Purple", swatch: "#d8b4fe", bgClass: "bg-purple-300/50" },
+] as const;
+export type HighlightColor = (typeof HIGHLIGHT_COLORS)[number]["key"];
+
+export type VerseHighlight = {
+  id: string;
+  reference: string;
+  verse: number;
+  verse_text: string;
+  color: HighlightColor;
+  created_at: string;
+};
+
+export async function fetchHighlights(
+  userId: string,
+  reference: string,
+): Promise<VerseHighlight[]> {
+  const { data, error } = await supabase
+    .from("verse_highlights")
+    .select("id, reference, verse, verse_text, color, created_at")
+    .eq("user_id", userId)
+    .eq("reference", reference);
+  if (error) throw new Error(error.message);
+  return (data ?? []) as VerseHighlight[];
+}
+
+export async function fetchAllHighlights(userId: string): Promise<VerseHighlight[]> {
+  const { data, error } = await supabase
+    .from("verse_highlights")
+    .select("id, reference, verse, verse_text, color, created_at")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as VerseHighlight[];
+}
+
+export async function setHighlight(input: {
+  userId: string;
+  reference: string;
+  verse: number;
+  verseText: string;
+  color: HighlightColor;
+}) {
+  const { error } = await supabase.from("verse_highlights").upsert(
+    {
+      user_id: input.userId,
+      reference: input.reference,
+      verse: input.verse,
+      verse_text: input.verseText,
+      color: input.color,
+    },
+    { onConflict: "user_id,reference,verse" },
+  );
+  if (error) throw new Error(error.message);
+}
+
+export async function removeHighlight(userId: string, reference: string, verse: number) {
+  const { error } = await supabase
+    .from("verse_highlights")
+    .delete()
+    .eq("user_id", userId)
+    .eq("reference", reference)
+    .eq("verse", verse);
+  if (error) throw new Error(error.message);
+}

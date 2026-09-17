@@ -1,4 +1,4 @@
-import { queryOptions } from "@tanstack/react-query";
+import { infiniteQueryOptions, queryOptions } from "@tanstack/react-query";
 import { youtubeSearch, youtubeLookup } from "@/lib/youtube.functions";
 import { youtubeReelsFeed } from "@/lib/youtubeReels.functions";
 import type {
@@ -20,25 +20,37 @@ export type YouTubeQuery = {
 };
 
 /**
- * React Query options for YouTube metadata.
- * Reels discovery refreshes more frequently than the normal media rails so a
- * newly deployed discovery strategy is not hidden behind a long client cache.
+ * Normal YouTube metadata query used by search/music/discovery screens.
+ * The Reels screen uses youtubeReelsInfiniteQuery so it never downloads an
+ * entire multi-thousand-video catalogue in one network request.
  */
 export function youtubeQuery(input: YouTubeQuery) {
   const enabled = Boolean(input.query?.trim() || input.channelId || input.playlistId);
-  const isReelsDiscovery =
+  const isLegacyReelsDiscovery =
     input.type === "video" && input.query?.trim().toLowerCase() === "christian short encouragement";
 
   return queryOptions({
-    queryKey: ["youtube", isReelsDiscovery ? "reels-pool-v6-hybrid" : input],
+    queryKey: ["youtube", isLegacyReelsDiscovery ? "reels-pool-v8-paged" : input],
     queryFn: () =>
-      isReelsDiscovery
-        ? youtubeReelsFeed()
+      isLegacyReelsDiscovery
+        ? youtubeReelsFeed({ data: { cursor: null } })
         : youtubeSearch({ data: { ...input, query: input.query?.trim() } }),
     enabled,
-    staleTime: isReelsDiscovery ? 1000 * 60 * 5 : 1000 * 60 * 30,
+    staleTime: isLegacyReelsDiscovery ? 1000 * 60 * 5 : 1000 * 60 * 30,
     gcTime: 1000 * 60 * 60,
-    retry: isReelsDiscovery ? 0 : 1,
+    retry: isLegacyReelsDiscovery ? 0 : 1,
+  });
+}
+
+export function youtubeReelsInfiniteQuery() {
+  return infiniteQueryOptions({
+    queryKey: ["youtube", "reels-pool-v8-paged-15k"],
+    initialPageParam: null as string | null,
+    queryFn: ({ pageParam }) => youtubeReelsFeed({ data: { cursor: pageParam } }),
+    getNextPageParam: (lastPage) => lastPage.nextPageToken ?? undefined,
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 60,
+    retry: 0,
   });
 }
 

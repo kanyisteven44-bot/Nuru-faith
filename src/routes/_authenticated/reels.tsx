@@ -25,8 +25,11 @@ import {
   type ReelFeed,
 } from "@/services/reels";
 import { addPrayerJournalEntry } from "@/services/ai";
-import { youtubeQuery } from "@/services/youtubeService";
-import { readWatchedExternalReelIds, rememberWatchedExternalReel } from "@/lib/reelWatchHistory";
+import { youtubeReelsInfiniteQuery } from "@/services/youtubeService";
+import {
+  readWatchedExternalReelIds,
+  rememberWatchedExternalReel,
+} from "@/lib/reelWatchHistory";
 import { AppShell } from "@/components/nuru/AppShell";
 import { CardSkeleton } from "@/components/nuru/Primitives";
 import { ReelFeedTabs } from "@/components/nuru/reels/ReelFeedTabs";
@@ -166,21 +169,29 @@ function ReelsScreen() {
   });
 
   /*
-   * Every Reel seeded in the database carries no video_url and no external_id,
-   * so the feed had nothing to play. Rather than invent content, fall back to
-   * short videos from the channels the project has already approved
-   * (approved_youtube_channels), played in YouTube's own IFrame. Trusted-channel
-   * filtering and safeSearch=strict are applied server-side by youtubeSearch.
+   * YouTube discovery is intentionally paged. The trusted catalogue is much
+   * larger than a phone should download or render at once, so only the next
+   * server page is requested when the viewer approaches the end of what is
+   * already buffered.
    */
-  const youtubeFallback = useQuery(
-    youtubeQuery({ query: "christian short encouragement", type: "video", maxResults: 10 }),
+  const youtubeFallback = useInfiniteQuery(youtubeReelsInfiniteQuery());
+
+  const loadedYoutubeVideos = useMemo(
+    () => (youtubeFallback.data?.pages ?? []).flatMap((page) => page.videos),
+    [youtubeFallback.data],
   );
 
+  const unseenYoutubeVideos = useMemo(() => {
+    const seen = new Set<string>();
+    return loadedYoutubeVideos.filter((video) => {
+      if (watchedExternalIds.has(video.youtubeVideoId) || seen.has(video.youtubeVideoId)) return false;
+      seen.add(video.youtubeVideoId);
+      return true;
+    });
+  }, [loadedYoutubeVideos, watchedExternalIds]);
+
   const youtubeReels = useMemo<Reel[]>(() => {
-    const videos = (youtubeFallback.data?.videos ?? [])
-      .filter((video) => !watchedExternalIds.has(video.youtubeVideoId))
-      .slice(0, youtubeVisibleCount);
-    return videos.map((v) => ({
+    return unseenYoutubeVideos.slice(0, youtubeVisibleCount).map((v) => ({
       id: `yt:${v.youtubeVideoId}`,
       author_id: null,
       creator_name: v.channelName,
@@ -207,16 +218,12 @@ function ReelsScreen() {
       title: v.title,
       churches: null,
     }));
-  }, [youtubeFallback.data, youtubeVisibleCount, watchedExternalIds]);
+  }, [unseenYoutubeVideos, youtubeVisibleCount]);
 
-  const youtubeTotal = useMemo(
-    () =>
-      (youtubeFallback.data?.videos ?? []).filter(
-        (video) => !watchedExternalIds.has(video.youtubeVideoId),
-      ).length,
-    [youtubeFallback.data, watchedExternalIds],
-  );
-  const hasMoreYouTube = feed === "For You" && youtubeVisibleCount < youtubeTotal;
+  const youtubeTotal = unseenYoutubeVideos.length;
+  const hasBufferedYouTube = youtubeVisibleCount < youtubeTotal;
+  const hasMoreYouTube =
+    feed === "For You" && (hasBufferedYouTube || youtubeFallback.hasNextPage === true);
 
   /* de-duplicate across pages and drop anything the person muted */
   const items = useMemo(() => {
@@ -246,7 +253,7 @@ function ReelsScreen() {
     return out;
   }, [reels.data, feedback.data, hiddenIds, feed, linkedReel.data, youtubeReels]);
 
-  /* auto-load the next page as the end approaches */
+  /* auto-load the next DB/YouTube page only as the viewer approaches the end */
   useEffect(() => {
     const node = sentinelRef.current;
     if (!node || (!reels.hasNextPage && !hasMoreYouTube)) return;
@@ -254,14 +261,38 @@ function ReelsScreen() {
       (entries) => {
         if (!entries.some((e) => e.isIntersecting)) return;
         if (reels.hasNextPage && !reels.isFetchingNextPage) void reels.fetchNextPage();
-        if (hasMoreYouTube)
-          setYoutubeVisibleCount((count) => Math.min(count + YOUTUBE_BATCH_SIZE, youtubeTotal));
+
+        if (feed === "For You") {
+          if (hasBufferedYouTube) {
+            setYoutubeVisibleCount((count) => Math.min(count + YOUTUBE_BATCH_SIZE, youtubeTotal));
+          } else if (youtubeFallback.hasNextPage && !youtubeFallback.isFetchingNextPage) {
+            void youtubeFallback.fetchNextPage();
+          }
+        }
       },
       { root: scrollerRef.current, rootMargin: "600px 0px" },
     );
     io.observe(node);
     return () => io.disconnect();
-  }, [reels, items.length, hasMoreYouTube, youtubeTotal]);
+  }, [
+    reels,
+    items.length,
+    feed,
+    hasMoreYouTube,
+    hasBufferedYouTube,
+    youtubeTotal,
+    youtubeFallback.hasNextPage,
+    youtubeFallback.isFetchingNextPage,
+    youtubeFallback.fetchNextPage,
+  ]);
+
+  /* Once a new YouTube page lands, make its first small batch available. */
+  useEffect(() => {
+    if (feed !== "For You" || youtubeFallback.isFetchingNextPage) return;
+    if (youtubeVisibleCount < youtubeTotal) {
+      setYoutubeVisibleCount((count) => Math.min(Math.max(count, YOUTUBE_BATCH_SIZE), youtubeTotal));
+    }
+  }, [feed, youtubeFallback.isFetchingNextPage, youtubeTotal, youtubeVisibleCount]);
 
   useEffect(() => {
     scrollerRef.current?.scrollTo({ top: 0 });
@@ -403,7 +434,10 @@ function ReelsScreen() {
 
   const likeSet = likes.data ?? [];
   const saveSet = saves.data ?? [];
-  const initialLoading = reels.isLoading || linkedReel.isLoading;
+  const initialLoading =
+    reels.isLoading || linkedReel.isLoading || (feed === "For You" && youtubeFallback.isLoading);
+  const feedError =
+    reels.isError || (feed === "For You" && youtubeFallback.isError && items.length === 0);
 
   return (
     <AppShell flush>
@@ -423,7 +457,14 @@ function ReelsScreen() {
         )}
 
         {!initialLoading && items.length === 0 && (
-          <EmptyFeed feed={feed} isError={reels.isError} onRetry={() => void reels.refetch()} />
+          <EmptyFeed
+            feed={feed}
+            isError={feedError}
+            onRetry={() => {
+              void reels.refetch();
+              if (feed === "For You") void youtubeFallback.refetch();
+            }}
+          />
         )}
 
         {items.length > 0 && (
@@ -509,17 +550,20 @@ function ReelsScreen() {
 
             <div ref={sentinelRef} aria-hidden="true" className="h-1" />
 
-            {reels.isFetchingNextPage && (
+            {(reels.isFetchingNextPage || youtubeFallback.isFetchingNextPage) && (
               <div className="flex snap-start items-center justify-center gap-2 py-4 text-xs text-white/70">
                 <Loader2 className="h-4 w-4 animate-spin" /> Loading more
               </div>
             )}
 
-            {reels.isError && !reels.isLoading && (
+            {(reels.isError || youtubeFallback.isFetchNextPageError) && !initialLoading && (
               <div className="flex snap-start flex-col items-center gap-2 py-6 text-center">
                 <p className="text-sm text-white/80">Couldn't load more.</p>
                 <button
-                  onClick={() => void reels.fetchNextPage()}
+                  onClick={() => {
+                    if (reels.isError) void reels.fetchNextPage();
+                    if (youtubeFallback.isFetchNextPageError) void youtubeFallback.fetchNextPage();
+                  }}
                   className="rounded-full bg-white/15 px-4 py-2 text-xs font-semibold text-white"
                 >
                   Retry
@@ -527,7 +571,10 @@ function ReelsScreen() {
               </div>
             )}
 
-            {!reels.hasNextPage && !reels.isFetchingNextPage && !hasMoreYouTube && <EndOfFeed />}
+            {!reels.hasNextPage &&
+              !reels.isFetchingNextPage &&
+              !youtubeFallback.isFetchingNextPage &&
+              !hasMoreYouTube && <EndOfFeed />}
           </div>
         )}
       </div>

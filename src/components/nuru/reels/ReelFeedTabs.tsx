@@ -12,33 +12,33 @@ export function ReelFeedTabs({
   onChange: (f: ReelFeed) => void;
 }) {
   return (
-    <div role="tablist" aria-label="Reel feeds" className="flex items-center justify-center gap-5">
-      {REEL_FEEDS.map((feed) => {
-        const active = feed === value;
-        return (
-          <button
-            key={feed}
-            type="button"
-            role="tab"
-            aria-selected={active}
-            onClick={() => onChange(feed)}
-            className={cn(
-              "relative min-h-9 text-[13px] transition-opacity",
-              active
-                ? "font-semibold text-white opacity-100"
-                : "font-medium text-white/70 opacity-80",
-            )}
-          >
-            {feed}
-            {active && (
-              <span
-                aria-hidden="true"
-                className="absolute -bottom-0.5 left-1/2 h-0.5 w-5 -translate-x-1/2 rounded-full bg-white"
-              />
-            )}
-          </button>
-        );
-      })}
+    <div className="nuru-gradient-bg rounded-full p-[3px] shadow-[0_4px_20px_-6px_rgba(126,108,255,0.6)]">
+      <div
+        role="tablist"
+        aria-label="Reel feeds"
+        className="flex items-center gap-1 rounded-full bg-[#051730] p-[3px]"
+      >
+        {REEL_FEEDS.map((feed) => {
+          const active = feed === value;
+          return (
+            <button
+              key={feed}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => onChange(feed)}
+              className={cn(
+                "min-h-9 rounded-full px-3.5 text-[12px] transition-colors",
+                active
+                  ? "nuru-gradient-bg font-bold text-[#05203f]"
+                  : "font-semibold text-white/65",
+              )}
+            >
+              {feed}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

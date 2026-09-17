@@ -2666,6 +2666,36 @@ export type Database = {
           },
         ];
       };
+      verse_highlights: {
+        Row: {
+          color: string;
+          created_at: string;
+          id: string;
+          reference: string;
+          user_id: string;
+          verse: number;
+          verse_text: string;
+        };
+        Insert: {
+          color?: string;
+          created_at?: string;
+          id?: string;
+          reference: string;
+          user_id: string;
+          verse: number;
+          verse_text: string;
+        };
+        Update: {
+          color?: string;
+          created_at?: string;
+          id?: string;
+          reference?: string;
+          user_id?: string;
+          verse?: number;
+          verse_text?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;

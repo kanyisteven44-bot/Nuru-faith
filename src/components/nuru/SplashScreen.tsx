@@ -127,7 +127,104 @@ export function SplashScreen() {
               stage === "exiting" && "opacity-0",
             )}
           >
-            <NuruGlyph className="splash-logo-reveal h-20 w-20" />
+            {/* The mark assembles from two pieces tumbling in from different
+                3D angles (arch on the Y axis, cross on the X axis) rather
+                than fading in as one flat unit, then flashes and catches a
+                light sheen the instant they lock together. */}
+            <div className="relative h-20 w-20 [perspective:700px]">
+              <div
+                aria-hidden="true"
+                className="splash-halo absolute -inset-3 rounded-full bg-[radial-gradient(circle,rgba(22,140,255,0.42),transparent_70%)]"
+              />
+              <div className="absolute inset-0 [transform-style:preserve-3d]">
+                <svg
+                  viewBox="0 0 64 64"
+                  className="splash-arch-tumble absolute inset-0 h-full w-full"
+                >
+                  <defs>
+                    <linearGradient
+                      id="nuru-arch-splash"
+                      x1="32"
+                      y1="6"
+                      x2="32"
+                      y2="58"
+                      gradientUnits="userSpaceOnUse"
+                    >
+                      <stop offset="0" stopColor="#7fe7ff" />
+                      <stop offset="1" stopColor="#168cff" />
+                    </linearGradient>
+                    <filter
+                      id="nuru-bloom-arch-splash"
+                      x="-60%"
+                      y="-60%"
+                      width="220%"
+                      height="220%"
+                    >
+                      <feGaussianBlur stdDeviation="2.2" result="blur" />
+                      <feMerge>
+                        <feMergeNode in="blur" />
+                        <feMergeNode in="SourceGraphic" />
+                      </feMerge>
+                    </filter>
+                  </defs>
+                  <path
+                    d="M17 52V29a15 15 0 0 1 30 0v23"
+                    fill="none"
+                    stroke="url(#nuru-arch-splash)"
+                    strokeWidth="4"
+                    strokeLinecap="round"
+                    filter="url(#nuru-bloom-arch-splash)"
+                  />
+                </svg>
+                <svg
+                  viewBox="0 0 64 64"
+                  className="splash-cross-tumble absolute inset-0 h-full w-full"
+                >
+                  <defs>
+                    <linearGradient
+                      id="nuru-cross-splash"
+                      x1="32"
+                      y1="16"
+                      x2="32"
+                      y2="48"
+                      gradientUnits="userSpaceOnUse"
+                    >
+                      <stop offset="0" stopColor="#ffffff" />
+                      <stop offset="1" stopColor="#8ad9ff" />
+                    </linearGradient>
+                    <filter
+                      id="nuru-bloom-cross-splash"
+                      x="-60%"
+                      y="-60%"
+                      width="220%"
+                      height="220%"
+                    >
+                      <feGaussianBlur stdDeviation="2.2" result="blur" />
+                      <feMerge>
+                        <feMergeNode in="blur" />
+                        <feMergeNode in="SourceGraphic" />
+                      </feMerge>
+                    </filter>
+                  </defs>
+                  <g
+                    stroke="url(#nuru-cross-splash)"
+                    strokeWidth="4.5"
+                    strokeLinecap="round"
+                    filter="url(#nuru-bloom-cross-splash)"
+                  >
+                    <line x1="32" y1="20" x2="32" y2="45" />
+                    <line x1="23" y1="31" x2="41" y2="31" />
+                  </g>
+                </svg>
+              </div>
+              <div
+                aria-hidden="true"
+                className="splash-converge-flash absolute -inset-1.5 rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.95),transparent_60%)]"
+              />
+              <div aria-hidden="true" className="absolute inset-0 overflow-hidden rounded-full">
+                <div className="splash-sheen absolute -inset-y-6 left-1/2 w-1/2 -translate-x-1/2 bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.85),transparent)]" />
+              </div>
+            </div>
             <span className="splash-word-reveal font-display text-xs font-bold tracking-[0.28em] text-white">
               NURU FAITH
             </span>

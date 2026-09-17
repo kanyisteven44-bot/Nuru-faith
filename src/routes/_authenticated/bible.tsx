@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
   Bookmark,
+  Check,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -13,6 +14,7 @@ import {
   Sparkles,
   SquarePen,
   Trash2,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -21,7 +23,17 @@ import { NEW_TESTAMENT, OLD_TESTAMENT, type BibleBook } from "@/lib/bible";
 import { fetchKjvPassage } from "@/lib/kjvBible";
 import { fetchNivPassage } from "@/lib/apiBible.functions";
 import { BIBLE_TOPICS } from "@/lib/content-policy";
-import { fetchSavedScriptures, removeSavedScripture, saveScripture } from "@/services/series";
+import {
+  fetchAllHighlights,
+  fetchHighlights,
+  fetchSavedScriptures,
+  HIGHLIGHT_COLORS,
+  removeHighlight,
+  removeSavedScripture,
+  saveScripture,
+  setHighlight,
+  type HighlightColor,
+} from "@/services/series";
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
 import { CardSkeleton, EmptyState, PillTabs } from "@/components/nuru/Primitives";
 import { Sheet } from "@/components/nuru/reels/Sheet";
@@ -44,7 +56,7 @@ export const Route = createFileRoute("/_authenticated/bible")({
   component: BibleScreen,
 });
 
-const TABS = ["Books", "Topics", "My Notes"] as const;
+const TABS = ["Books", "Topics", "Highlights", "My Notes"] as const;
 type Tab = (typeof TABS)[number];
 type ReaderTarget = { book: BibleBook; chapter: number };
 
@@ -119,6 +131,10 @@ function BibleScreen() {
             </li>
           ))}
         </ul>
+      )}
+
+      {tab === "Highlights" && (
+        <MyHighlights onOpen={(reference) => openTopicReference(reference, setReader)} />
       )}
 
       {tab === "My Notes" && (
@@ -258,14 +274,58 @@ function Reader({
   const reference = `${book.name} ${chapter}`;
   const { userId } = useAuth();
   const qc = useQueryClient();
-  const [highlighted, setHighlighted] = useState<Set<number>>(new Set());
   const [bookSheetOpen, setBookSheetOpen] = useState(false);
   const [chapterSheetOpen, setChapterSheetOpen] = useState(false);
+  const [colorPicker, setColorPicker] = useState<{ verse: number; text: string } | null>(null);
 
   const passage = useQuery({
     queryKey: ["scripture-passage", reference],
     queryFn: () => fetchScripturePassage(reference),
   });
+
+  const highlightsQuery = useQuery({
+    queryKey: ["verse-highlights", userId, reference],
+    queryFn: () => fetchHighlights(userId!, reference),
+    enabled: !!userId,
+  });
+  const highlightByVerse = new Map((highlightsQuery.data ?? []).map((h) => [h.verse, h.color]));
+
+  async function invalidateHighlights() {
+    await Promise.all([
+      qc.invalidateQueries({ queryKey: ["verse-highlights", userId, reference] }),
+      qc.invalidateQueries({ queryKey: ["all-highlights", userId] }),
+    ]);
+  }
+
+  async function pickColor(color: HighlightColor) {
+    if (!userId || !colorPicker) return;
+    try {
+      await setHighlight({
+        userId,
+        reference,
+        verse: colorPicker.verse,
+        verseText: colorPicker.text,
+        color,
+      });
+      await invalidateHighlights();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Couldn't save that highlight");
+    } finally {
+      setColorPicker(null);
+    }
+  }
+
+  async function clearHighlight() {
+    if (!userId || !colorPicker) return;
+    try {
+      await removeHighlight(userId, reference, colorPicker.verse);
+      await invalidateHighlights();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Couldn't remove that highlight");
+    } finally {
+      setColorPicker(null);
+    }
+  }
 
   const bookIndex = ALL_BOOKS.findIndex((b) => b.name === book.name);
   const canGoPrev = !(bookIndex === 0 && chapter === 1);
@@ -378,30 +438,33 @@ function Reader({
         {passage.data && (
           <div className="rounded-3xl bg-[#f8f2e2] p-5 text-[#2a2314] shadow-lg shadow-black/20">
             <ol className="space-y-3.5">
-              {passage.data.verses.map((v) => (
-                <li key={`${v.chapter}:${v.verse}`} className="flex gap-2.5">
-                  <span className="mt-0.5 shrink-0 text-[11px] font-bold text-amber-700">
-                    {v.verse}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setHighlighted((prev) => {
-                        const next = new Set(prev);
-                        if (next.has(v.verse)) next.delete(v.verse);
-                        else next.add(v.verse);
-                        return next;
-                      })
-                    }
-                    className={cn(
-                      "flex-1 rounded px-1 text-left font-serif text-[15px] leading-relaxed transition-colors",
-                      highlighted.has(v.verse) ? "bg-amber-300/50" : "hover:bg-black/[0.03]",
-                    )}
-                  >
-                    {v.text}
-                  </button>
-                </li>
-              ))}
+              {passage.data.verses.map((v) => {
+                const activeColor = highlightByVerse.get(v.verse);
+                const swatch = HIGHLIGHT_COLORS.find((c) => c.key === activeColor);
+                return (
+                  <li key={`${v.chapter}:${v.verse}`} className="flex gap-2.5">
+                    <span className="mt-0.5 shrink-0 text-[11px] font-bold text-amber-700">
+                      {v.verse}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!userId) {
+                          toast.error("Sign in to highlight verses");
+                          return;
+                        }
+                        setColorPicker({ verse: v.verse, text: v.text });
+                      }}
+                      className={cn(
+                        "flex-1 rounded px-1 text-left font-serif text-[15px] leading-relaxed transition-colors",
+                        swatch ? swatch.bgClass : "hover:bg-black/[0.03]",
+                      )}
+                    >
+                      {v.text}
+                    </button>
+                  </li>
+                );
+              })}
             </ol>
             <p className="pt-5 text-[11px] text-[#8a7a52]">{passage.data.translation}</p>
           </div>
@@ -413,7 +476,7 @@ function Reader({
           <ReaderAction
             icon={Highlighter}
             label="Highlight"
-            onClick={() => toast("Tap any verse to highlight it")}
+            onClick={() => toast("Tap any verse to pick a highlight colour")}
           />
           <ReaderAction icon={Bookmark} label="Bookmark" onClick={() => void bookmark()} />
           <ReaderAction
@@ -466,6 +529,46 @@ function Reader({
                 }}
               />
             ))}
+          </div>
+        </Sheet>
+      )}
+
+      {colorPicker && (
+        <Sheet
+          title={`Highlight verse ${colorPicker.verse}`}
+          onClose={() => setColorPicker(null)}
+          label="Choose a highlight colour"
+        >
+          <div className="space-y-4 px-4 pb-6">
+            <p className="line-clamp-2 font-serif text-sm text-secondary-foreground">
+              {colorPicker.text}
+            </p>
+            <div className="flex items-center justify-center gap-3">
+              {HIGHLIGHT_COLORS.map((c) => (
+                <button
+                  key={c.key}
+                  type="button"
+                  onClick={() => void pickColor(c.key)}
+                  aria-label={c.label}
+                  className="flex h-11 w-11 items-center justify-center rounded-full ring-2 ring-transparent transition-transform active:scale-95"
+                  style={{ backgroundColor: c.swatch }}
+                >
+                  {highlightByVerse.get(colorPicker.verse) === c.key && (
+                    <Check className="h-5 w-5 text-black/70" strokeWidth={2.5} />
+                  )}
+                </button>
+              ))}
+            </div>
+            {highlightByVerse.has(colorPicker.verse) && (
+              <button
+                type="button"
+                onClick={() => void clearHighlight()}
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-border-strong py-2.5 text-sm font-semibold text-destructive"
+              >
+                <X className="h-4 w-4" />
+                Remove highlight
+              </button>
+            )}
           </div>
         </Sheet>
       )}
@@ -570,6 +673,78 @@ function SavedVerses({ onOpen }: { onOpen: (ref: string) => void }) {
           </button>
         </li>
       ))}
+    </ul>
+  );
+}
+
+function MyHighlights({ onOpen }: { onOpen: (ref: string) => void }) {
+  const { userId } = useAuth();
+  const qc = useQueryClient();
+  const highlights = useQuery({
+    queryKey: ["all-highlights", userId],
+    queryFn: () => fetchAllHighlights(userId!),
+    enabled: !!userId,
+  });
+
+  async function remove(reference: string, verse: number) {
+    if (!userId) return;
+    await removeHighlight(userId, reference, verse);
+    await qc.invalidateQueries({ queryKey: ["all-highlights", userId] });
+    await qc.invalidateQueries({ queryKey: ["verse-highlights", userId, reference] });
+  }
+
+  if (highlights.isLoading)
+    return (
+      <div className="px-4 pt-2">
+        <CardSkeleton count={3} height="h-14" />
+      </div>
+    );
+
+  const rows = highlights.data ?? [];
+  if (rows.length === 0)
+    return (
+      <div className="px-4 pt-2">
+        <EmptyState
+          title="No highlights yet"
+          description="Open a chapter and tap a verse to highlight it in a colour of your choice."
+        />
+      </div>
+    );
+
+  return (
+    <ul className="space-y-2 px-4 pt-2">
+      {rows.map((h) => {
+        const swatch = HIGHLIGHT_COLORS.find((c) => c.key === h.color);
+        return (
+          <li key={h.id} className="nuru-card flex items-center gap-3 px-4 py-3">
+            <span
+              className="mt-0.5 h-3 w-3 shrink-0 rounded-full"
+              style={{ backgroundColor: swatch?.swatch ?? "#f4c453" }}
+              aria-hidden
+            />
+            <button
+              type="button"
+              onClick={() => onOpen(h.reference)}
+              className="min-w-0 flex-1 text-left"
+            >
+              <span className="block truncate text-sm font-semibold text-cyan">
+                {h.reference}:{h.verse}
+              </span>
+              <span className="block truncate text-[11px] text-muted-foreground">
+                {h.verse_text}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => void remove(h.reference, h.verse)}
+              aria-label={`Remove highlight on ${h.reference}:${h.verse}`}
+              className="shrink-0 rounded-full p-2 text-destructive"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </li>
+        );
+      })}
     </ul>
   );
 }

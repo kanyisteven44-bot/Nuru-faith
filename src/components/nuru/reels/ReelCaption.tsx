@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BookOpen, Music2 } from "lucide-react";
+import { BadgeCheck, BookOpen, Music2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { resolveMedia } from "@/lib/media";
 import type { Reel } from "@/services/reels";
@@ -34,11 +34,13 @@ export function ReelCaption({
           width={32}
           height={32}
           loading="lazy"
-          className="h-8 w-8 rounded-full object-cover"
+          className="h-8 w-8 rounded-full object-cover ring-2 ring-primary"
         />
-        <p className="min-w-0 truncate text-sm font-semibold drop-shadow">
-          {reel.creator_name}
-          {reel.churches?.verified && <span className="ml-1 text-cyan">✓</span>}
+        <p className="flex min-w-0 items-center gap-1 truncate text-sm font-semibold drop-shadow">
+          <span className="truncate">{reel.creator_name}</span>
+          {reel.churches?.verified && (
+            <BadgeCheck className="h-3.5 w-3.5 shrink-0 fill-cyan text-[#05203f]" />
+          )}
         </p>
         {canFollow && (
           <button
@@ -48,8 +50,10 @@ export function ReelCaption({
               isFollowing ? `Unfollow ${reel.creator_name}` : `Follow ${reel.creator_name}`
             }
             className={cn(
-              "shrink-0 rounded-full border px-3 py-1 text-[11px] font-semibold transition-transform duration-150 active:scale-95",
-              isFollowing ? "border-white/50 text-white/90" : "border-white bg-white/10 text-white",
+              "shrink-0 rounded-full px-3 py-1 text-[11px] font-semibold transition-transform duration-150 active:scale-95",
+              isFollowing
+                ? "border border-white/50 text-white/90"
+                : "nuru-gradient-bg text-primary-foreground",
             )}
           >
             {isFollowing ? "Following" : "Follow"}

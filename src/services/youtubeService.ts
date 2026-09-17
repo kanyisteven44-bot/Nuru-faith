@@ -30,7 +30,7 @@ export function youtubeQuery(input: YouTubeQuery) {
     input.type === "video" && input.query?.trim().toLowerCase() === "christian short encouragement";
 
   return queryOptions({
-    queryKey: ["youtube", isReelsDiscovery ? "reels-pool-v5" : input],
+    queryKey: ["youtube", isReelsDiscovery ? "reels-pool-v6-hybrid" : input],
     queryFn: () =>
       isReelsDiscovery
         ? youtubeReelsFeed()

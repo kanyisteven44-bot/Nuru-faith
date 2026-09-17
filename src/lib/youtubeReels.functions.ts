@@ -1,12 +1,19 @@
 import { createServerFn } from "@tanstack/react-start";
 import type { YouTubeSearchResult, YouTubeVideo } from "./youtube.functions";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { isChristianDiscoveryCandidate } from "./reelDiscoveryPolicy";
 
 const YOUTUBE_API = "https://www.googleapis.com/youtube/v3";
 const PAGE_SIZE = 50;
 const UPLOAD_PAGES_PER_CHANNEL = 4;
 const CACHE_MS = 1000 * 60 * 30;
+// Keep the server response large enough for a long session, but never send the
+// entire approved-channel catalogue to a phone in one request.
+const MAX_FEED_RESULTS = 300;
+const DISCOVERY_RESULTS = 50;
+const APPROVED_TO_DISCOVERY_RATIO = 4;
 
-const APPROVED_CHANNELS = [
+const FALLBACK_APPROVED_CHANNELS = [
   { id: "UCVfwlh9XpX2Y_tQfjeln9QA", name: "BibleProject" },
   { id: "UCIQqvZbHSwX0yKNVK1MyYjQ", name: "Elevation Church" },
   { id: "UCSYGkbzVd5-EzAMEpf3EaGg", name: "Hillsong Church" },
@@ -21,6 +28,8 @@ const APPROVED_CHANNELS = [
   { id: "UCn9mRGNo0CYj7nE6MepnWOQ", name: "Mercy Masika" },
   { id: "UCw5d9msTsAVx7DIk6vaFrfQ", name: "Kambua" },
 ] as const;
+
+type ApprovedChannel = { id: string; name: string };
 
 let cachedFeed: YouTubeSearchResult | null = null;
 let cachedAt = 0;
@@ -44,33 +53,133 @@ function formatDuration(seconds: number | null): string | null {
   return `${minutes}:${String(rest).padStart(2, "0")}`;
 }
 
-async function fetchUploadsPlaylists(key: string): Promise<Map<string, string>> {
-  const url = new URL(`${YOUTUBE_API}/channels`);
-  url.searchParams.set("part", "contentDetails");
-  url.searchParams.set("id", APPROVED_CHANNELS.map((channel) => channel.id).join(","));
-  url.searchParams.set("maxResults", String(APPROVED_CHANNELS.length));
+async function fetchUploadsPlaylists(
+  key: string,
+  approvedChannels: ApprovedChannel[],
+): Promise<Map<string, string>> {
+  const playlists = new Map<string, string>();
+  for (let index = 0; index < approvedChannels.length; index += 50) {
+    const batch = approvedChannels.slice(index, index + 50);
+    const url = new URL(`${YOUTUBE_API}/channels`);
+    url.searchParams.set("part", "contentDetails");
+    url.searchParams.set("id", batch.map((channel) => channel.id).join(","));
+    url.searchParams.set("maxResults", String(batch.length));
+    url.searchParams.set("key", key);
+
+    const response = await fetch(url.toString(), { cache: "no-store" });
+    if (!response.ok) {
+      const body = await response.text().catch(() => "");
+      console.error(`[youtube-reels] channels ${response.status} ${body.slice(0, 400)}`);
+      throw new Error(response.status === 403 || response.status === 429 ? "quota" : "unavailable");
+    }
+
+    const json = (await response.json()) as {
+      items?: Array<{
+        id?: string;
+        contentDetails?: { relatedPlaylists?: { uploads?: string } };
+      }>;
+    };
+    for (const item of json.items ?? []) {
+      const uploads = item.contentDetails?.relatedPlaylists?.uploads;
+      if (item.id && uploads) playlists.set(item.id, uploads);
+    }
+  }
+  return playlists;
+}
+
+async function fetchChristianDiscoveryVideos(key: string): Promise<YouTubeVideo[]> {
+  const url = new URL(`${YOUTUBE_API}/search`);
+  url.searchParams.set("part", "snippet");
+  url.searchParams.set(
+    "q",
+    "Christian shorts Bible Jesus prayer faith worship testimony encouragement",
+  );
+  url.searchParams.set("type", "video");
+  url.searchParams.set("maxResults", String(DISCOVERY_RESULTS));
+  url.searchParams.set("safeSearch", "strict");
+  url.searchParams.set("videoEmbeddable", "true");
+  url.searchParams.set("videoDuration", "short");
+  url.searchParams.set("relevanceLanguage", "en");
+  url.searchParams.set("regionCode", "KE");
+  url.searchParams.set("order", "relevance");
   url.searchParams.set("key", key);
 
   const response = await fetch(url.toString(), { cache: "no-store" });
   if (!response.ok) {
     const body = await response.text().catch(() => "");
-    console.error(`[youtube-reels] channels ${response.status} ${body.slice(0, 400)}`);
-    throw new Error(response.status === 403 || response.status === 429 ? "quota" : "unavailable");
+    console.warn(`[youtube-reels] discovery ${response.status} ${body.slice(0, 240)}`);
+    return [];
   }
 
   const json = (await response.json()) as {
     items?: Array<{
-      id?: string;
-      contentDetails?: { relatedPlaylists?: { uploads?: string } };
+      id?: { videoId?: string };
+      snippet?: {
+        title?: string;
+        description?: string;
+        channelId?: string;
+        channelTitle?: string;
+        publishedAt?: string;
+        thumbnails?: {
+          high?: { url?: string };
+          medium?: { url?: string };
+          default?: { url?: string };
+        };
+      };
     }>;
   };
 
-  const playlists = new Map<string, string>();
-  for (const item of json.items ?? []) {
-    const uploads = item.contentDetails?.relatedPlaylists?.uploads;
-    if (item.id && uploads) playlists.set(item.id, uploads);
+  return (json.items ?? [])
+    .filter((item) => {
+      const id = item.id?.videoId;
+      const snippet = item.snippet;
+      return Boolean(
+        id &&
+        snippet?.channelId &&
+        isChristianDiscoveryCandidate(snippet.title ?? "", snippet.description ?? ""),
+      );
+    })
+    .map((item) => {
+      const id = item.id!.videoId!;
+      const snippet = item.snippet!;
+      return {
+        youtubeVideoId: id,
+        title: snippet.title ?? "",
+        description: snippet.description ?? "",
+        thumbnail:
+          snippet.thumbnails?.high?.url ??
+          snippet.thumbnails?.medium?.url ??
+          snippet.thumbnails?.default?.url ??
+          `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
+        channelId: snippet.channelId ?? "",
+        channelName: snippet.channelTitle ?? "",
+        publishedAt: snippet.publishedAt ?? "",
+        duration: null,
+        source: "youtube" as const,
+      };
+    });
+}
+
+function mixFeed(approved: YouTubeVideo[], discovery: YouTubeVideo[]): YouTubeVideo[] {
+  const mixed: YouTubeVideo[] = [];
+  let approvedIndex = 0;
+  let discoveryIndex = 0;
+  while (
+    mixed.length < MAX_FEED_RESULTS &&
+    (approvedIndex < approved.length || discoveryIndex < discovery.length)
+  ) {
+    for (
+      let count = 0;
+      count < APPROVED_TO_DISCOVERY_RATIO && approvedIndex < approved.length;
+      count += 1
+    ) {
+      mixed.push(approved[approvedIndex++]!);
+      if (mixed.length === MAX_FEED_RESULTS) return mixed;
+    }
+    if (discoveryIndex < discovery.length) mixed.push(discovery[discoveryIndex++]!);
+    else if (approvedIndex >= approved.length) break;
   }
-  return playlists;
+  return mixed.slice(0, MAX_FEED_RESULTS);
 }
 
 async function fetchUploadVideos(
@@ -210,8 +319,9 @@ async function keepPlayableShorts(videos: YouTubeVideo[], key: string): Promise<
     }));
 }
 
-export const youtubeReelsFeed = createServerFn({ method: "GET" }).handler(
-  async (): Promise<YouTubeSearchResult> => {
+export const youtubeReelsFeed = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<YouTubeSearchResult> => {
     if (cachedFeed && Date.now() - cachedAt < CACHE_MS) return cachedFeed;
 
     const key = process.env["YOUTUBE_API_KEY"];
@@ -226,9 +336,21 @@ export const youtubeReelsFeed = createServerFn({ method: "GET" }).handler(
     }
 
     try {
-      const uploads = await fetchUploadsPlaylists(key);
+      const { data: trustedRows, error: trustedError } = await context.supabase
+        .from("approved_youtube_channels")
+        .select("channel_id,channel_name,trust_level")
+        .in("trust_level", ["official", "verified", "trusted"]);
+      const approvedChannels: ApprovedChannel[] =
+        !trustedError && trustedRows?.length
+          ? trustedRows.map((channel) => ({ id: channel.channel_id, name: channel.channel_name }))
+          : FALLBACK_APPROVED_CHANNELS.map((channel) => ({ ...channel }));
+
+      const [uploads, discoveryCandidates] = await Promise.all([
+        fetchUploadsPlaylists(key, approvedChannels),
+        fetchChristianDiscoveryVideos(key),
+      ]);
       const channelResults = await Promise.all(
-        APPROVED_CHANNELS.map((channel) => {
+        approvedChannels.map((channel) => {
           const playlistId = uploads.get(channel.id);
           return playlistId
             ? fetchUploadVideos(key, channel.id, channel.name, playlistId)
@@ -241,20 +363,30 @@ export const youtubeReelsFeed = createServerFn({ method: "GET" }).handler(
         for (const video of channelVideos) byId.set(video.youtubeVideoId, video);
       }
 
-      const videos = await keepPlayableShorts([...byId.values()], key);
-      videos.sort((a, b) => (b.publishedAt || "").localeCompare(a.publishedAt || ""));
+      const approvedIds = new Set(byId.keys());
+      const uniqueDiscovery = discoveryCandidates.filter(
+        (video) => !approvedIds.has(video.youtubeVideoId),
+      );
+      const [approvedVideos, discoveryVideos] = await Promise.all([
+        keepPlayableShorts([...byId.values()], key),
+        keepPlayableShorts(uniqueDiscovery, key),
+      ]);
+      approvedVideos.sort((a, b) => (b.publishedAt || "").localeCompare(a.publishedAt || ""));
+      discoveryVideos.sort((a, b) => (b.publishedAt || "").localeCompare(a.publishedAt || ""));
+
+      const feedVideos = mixFeed(approvedVideos, discoveryVideos);
 
       const result: YouTubeSearchResult = {
-        videos,
+        videos: feedVideos,
         playlists: [],
         channels: [],
-        nextPageToken: videos.length > 0 ? "approved-uploads" : null,
+        nextPageToken: feedVideos.length > 0 ? "hybrid-christian-feed" : null,
         error: null,
       };
       cachedFeed = result;
       cachedAt = Date.now();
       console.info(
-        `[youtube-reels] source=approved-uploads discovered=${byId.size} playable=${videos.length}`,
+        `[youtube-reels] source=hybrid approved_channels=${approvedChannels.length} approved_playable=${approvedVideos.length} discovery_playable=${discoveryVideos.length} returned=${feedVideos.length}`,
       );
       return result;
     } catch (error) {
@@ -267,5 +399,4 @@ export const youtubeReelsFeed = createServerFn({ method: "GET" }).handler(
         error: error instanceof Error ? error.message : "unavailable",
       };
     }
-  },
-);
+  });

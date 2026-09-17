@@ -13,10 +13,8 @@ const PAGE_CACHE_MS = 1000 * 60 * 60 * 6;
 const MAX_CACHED_PAGES = 160;
 
 /**
- * This order deliberately mixes Bible teaching, church content and worship so
- * a fresh feed does not start with several pages from one type of creator.
- * The database is the source of truth; this list is also the safe fallback and
- * provides a stable order for the opaque pagination cursor.
+ * Stable ordering mixes Bible teaching, church content and worship. The DB is
+ * the source of truth; this list is also the fallback when the DB is unavailable.
  */
 const FALLBACK_APPROVED_CHANNELS = [
   { id: "UCVfwlh9XpX2Y_tQfjeln9QA", name: "BibleProject" },
@@ -59,8 +57,14 @@ type FeedCursor = {
   exhausted: string[];
 };
 type PlayablePage = { videos: YouTubeVideo[]; nextPageToken: string | null };
-
 type CachedPage = { at: number; value: PlayablePage };
+
+type VideoDetail = {
+  duration: number | null;
+  embeddable: boolean;
+  privacyStatus: string;
+};
+
 const pageCache = new Map<string, CachedPage>();
 
 const feedInput = z.object({
@@ -76,26 +80,28 @@ function decodeCursor(raw?: string | null): FeedCursor {
   try {
     const parsed = JSON.parse(Buffer.from(raw, "base64url").toString("utf8")) as Partial<FeedCursor>;
     if (parsed.v !== 1) return initialCursor();
+
+    const tokens: Record<string, string> = {};
+    if (parsed.tokens && typeof parsed.tokens === "object") {
+      for (const [key, value] of Object.entries(parsed.tokens)) {
+        if (typeof value === "string") tokens[key] = value;
+      }
+    }
+
+    const pages: Record<string, number> = {};
+    if (parsed.pages && typeof parsed.pages === "object") {
+      for (const [key, value] of Object.entries(parsed.pages)) {
+        if (typeof value === "number" && Number.isFinite(value)) {
+          pages[key] = Math.max(0, Math.min(MAX_PAGES_PER_CHANNEL, value));
+        }
+      }
+    }
+
     return {
       v: 1,
       nextIndex: Number.isFinite(parsed.nextIndex) ? Math.max(0, Number(parsed.nextIndex)) : 0,
-      tokens:
-        parsed.tokens && typeof parsed.tokens === "object"
-          ? Object.fromEntries(
-              Object.entries(parsed.tokens).filter(
-                (entry): entry is [string, string] =>
-                  typeof entry[0] === "string" && typeof entry[1] === "string",
-              ),
-            )
-          : {},
-      pages:
-        parsed.pages && typeof parsed.pages === "object"
-          ? Object.fromEntries(
-              Object.entries(parsed.pages)
-                .filter(([, value]) => typeof value === "number" && Number.isFinite(value))
-                .map(([key, value]) => [key, Math.max(0, Math.min(MAX_PAGES_PER_CHANNEL, Number(value)))]),
-            )
-          : {},
+      tokens,
+      pages,
       exhausted: Array.isArray(parsed.exhausted)
         ? parsed.exhausted.filter((value): value is string => typeof value === "string")
         : [],
@@ -128,15 +134,15 @@ function formatDuration(seconds: number | null): string | null {
   return `${minutes}:${String(rest).padStart(2, "0")}`;
 }
 
-function uploadsPlaylistId(channelId: string) {
+function uploadsPlaylistId(channelId: string): string {
   return channelId.startsWith("UC") ? `UU${channelId.slice(2)}` : channelId;
 }
 
-function cacheKey(channelId: string, token?: string) {
+function cacheKey(channelId: string, token?: string): string {
   return `${channelId}:${token ?? "first"}`;
 }
 
-function putCachedPage(key: string, value: PlayablePage) {
+function putCachedPage(key: string, value: PlayablePage): void {
   pageCache.set(key, { at: Date.now(), value });
   while (pageCache.size > MAX_CACHED_PAGES) {
     const oldestKey = pageCache.keys().next().value as string | undefined;
@@ -150,8 +156,8 @@ async function fetchPlayableUploadPage(
   channel: ApprovedChannel,
   pageToken?: string,
 ): Promise<PlayablePage> {
-  const keyForCache = cacheKey(channel.id, pageToken);
-  const cached = pageCache.get(keyForCache);
+  const pageKey = cacheKey(channel.id, pageToken);
+  const cached = pageCache.get(pageKey);
   if (cached && Date.now() - cached.at < PAGE_CACHE_MS) return cached.value;
 
   const playlistUrl = new URL(`${YOUTUBE_API}/playlistItems`);
@@ -164,9 +170,7 @@ async function fetchPlayableUploadPage(
   const playlistResponse = await fetch(playlistUrl.toString(), { cache: "no-store" });
   if (!playlistResponse.ok) {
     const body = await playlistResponse.text().catch(() => "");
-    console.warn(
-      `[youtube-reels] playlist ${channel.id} ${playlistResponse.status} ${body.slice(0, 180)}`,
-    );
+    console.warn(`[youtube-reels] playlist ${channel.id} ${playlistResponse.status} ${body.slice(0, 180)}`);
     if (playlistResponse.status === 403 || playlistResponse.status === 429) throw new Error("quota");
     return { videos: [], nextPageToken: null };
   }
@@ -177,7 +181,6 @@ async function fetchPlayableUploadPage(
       contentDetails?: { videoId?: string };
       snippet?: {
         title?: string;
-        channelId?: string;
         channelTitle?: string;
         publishedAt?: string;
         thumbnails?: {
@@ -189,32 +192,34 @@ async function fetchPlayableUploadPage(
     }>;
   };
 
-  const candidates = (playlist.items ?? [])
-    .map((item) => {
-      const id = item.contentDetails?.videoId;
-      if (!id) return null;
-      const snippet = item.snippet;
-      return {
-        youtubeVideoId: id,
-        title: snippet?.title ?? "",
-        description: "",
-        thumbnail:
-          snippet?.thumbnails?.high?.url ??
-          snippet?.thumbnails?.medium?.url ??
-          snippet?.thumbnails?.default?.url ??
-          `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
-        channelId: channel.id,
-        channelName: snippet?.channelTitle ?? channel.name,
-        publishedAt: snippet?.publishedAt ?? "",
-        duration: null,
-        source: "youtube" as const,
-      } satisfies YouTubeVideo;
-    })
-    .filter((video): video is YouTubeVideo => video !== null);
+  const candidates: YouTubeVideo[] = [];
+  for (const item of playlist.items ?? []) {
+    const id = item.contentDetails?.videoId;
+    if (!id) continue;
+    const snippet = item.snippet;
+    candidates.push({
+      youtubeVideoId: id,
+      title: snippet?.title ?? "",
+      description: "",
+      thumbnail:
+        snippet?.thumbnails?.high?.url ??
+        snippet?.thumbnails?.medium?.url ??
+        snippet?.thumbnails?.default?.url ??
+        `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
+      channelId: channel.id,
+      channelName: snippet?.channelTitle ?? channel.name,
+      publishedAt: snippet?.publishedAt ?? "",
+      duration: null,
+      source: "youtube",
+    });
+  }
 
   if (candidates.length === 0) {
-    const value = { videos: [], nextPageToken: playlist.nextPageToken ?? null };
-    putCachedPage(keyForCache, value);
+    const value: PlayablePage = {
+      videos: [],
+      nextPageToken: playlist.nextPageToken ?? null,
+    };
+    putCachedPage(pageKey, value);
     return value;
   }
 
@@ -222,6 +227,7 @@ async function fetchPlayableUploadPage(
   detailsUrl.searchParams.set("part", "contentDetails,status");
   detailsUrl.searchParams.set("id", candidates.map((video) => video.youtubeVideoId).join(","));
   detailsUrl.searchParams.set("key", key);
+
   const detailsResponse = await fetch(detailsUrl.toString(), { cache: "no-store" });
   if (!detailsResponse.ok) {
     if (detailsResponse.status === 403 || detailsResponse.status === 429) throw new Error("quota");
@@ -235,43 +241,45 @@ async function fetchPlayableUploadPage(
       status?: { embeddable?: boolean; privacyStatus?: string };
     }>;
   };
-  const details = new Map(
-    (detailsJson.items ?? [])
-      .filter((item): item is NonNullable<typeof item> & { id: string } => !!item.id)
-      .map((item) => [
-        item.id,
-        {
-          duration: parseDurationSeconds(item.contentDetails?.duration),
-          embeddable: item.status?.embeddable === true,
-          privacyStatus: item.status?.privacyStatus ?? "",
-        },
-      ]),
-  );
 
-  const videos = candidates
-    .filter((video) => {
-      const detail = details.get(video.youtubeVideoId);
-      return Boolean(
-        detail &&
-          detail.embeddable &&
-          detail.privacyStatus === "public" &&
-          detail.duration != null &&
-          detail.duration > 0 &&
-          detail.duration <= 180,
-      );
-    })
-    .map((video) => ({
-      ...video,
-      duration: formatDuration(details.get(video.youtubeVideoId)?.duration ?? null),
-    }));
+  const details = new Map<string, VideoDetail>();
+  for (const item of detailsJson.items ?? []) {
+    if (!item.id) continue;
+    details.set(item.id, {
+      duration: parseDurationSeconds(item.contentDetails?.duration),
+      embeddable: item.status?.embeddable === true,
+      privacyStatus: item.status?.privacyStatus ?? "",
+    });
+  }
 
-  const value = { videos, nextPageToken: playlist.nextPageToken ?? null };
-  putCachedPage(keyForCache, value);
+  const videos: YouTubeVideo[] = [];
+  for (const video of candidates) {
+    const detail = details.get(video.youtubeVideoId);
+    if (
+      !detail ||
+      !detail.embeddable ||
+      detail.privacyStatus !== "public" ||
+      detail.duration == null ||
+      detail.duration <= 0 ||
+      detail.duration > 180
+    ) {
+      continue;
+    }
+    videos.push({ ...video, duration: formatDuration(detail.duration) });
+  }
+
+  const value: PlayablePage = {
+    videos,
+    nextPageToken: playlist.nextPageToken ?? null,
+  };
+  putCachedPage(pageKey, value);
   return value;
 }
 
 function orderedApprovedChannels(rows: ApprovedChannel[]): ApprovedChannel[] {
-  const priority = new Map(FALLBACK_APPROVED_CHANNELS.map((channel, index) => [channel.id, index]));
+  const priority = new Map<string, number>(
+    FALLBACK_APPROVED_CHANNELS.map((channel, index) => [channel.id, index]),
+  );
   return [...rows].sort((a, b) => {
     const aRank = priority.get(a.id) ?? 10_000;
     const bRank = priority.get(b.id) ?? 10_000;
@@ -288,6 +296,7 @@ function selectChannels(
   const selected: Array<{ channel: ApprovedChannel; index: number }> = [];
   let scanned = 0;
   let index = cursor.nextIndex % channels.length;
+
   while (scanned < channels.length && selected.length < CHANNELS_PER_REQUEST) {
     const channel = channels[index]!;
     const pages = cursor.pages[channel.id] ?? 0;
@@ -299,6 +308,7 @@ function selectChannels(
     index = (index + 1) % channels.length;
     scanned += 1;
   }
+
   return selected;
 }
 
@@ -308,7 +318,13 @@ export const youtubeReelsFeed = createServerFn({ method: "GET" })
   .handler(async ({ data, context }): Promise<YouTubeSearchResult> => {
     const key = process.env["YOUTUBE_API_KEY"];
     if (!key) {
-      return { videos: [], playlists: [], channels: [], nextPageToken: null, error: "not-configured" };
+      return {
+        videos: [],
+        playlists: [],
+        channels: [],
+        nextPageToken: null,
+        error: "not-configured",
+      };
     }
 
     try {
@@ -327,8 +343,9 @@ export const youtubeReelsFeed = createServerFn({ method: "GET" })
       if (approvedChannels.length === 0) {
         return { videos: [], playlists: [], channels: [], nextPageToken: null, error: null };
       }
+
       cursor.nextIndex %= approvedChannels.length;
-      const exhausted = new Set(cursor.exhausted);
+      const exhausted = new Set<string>(cursor.exhausted);
       const byId = new Map<string, YouTubeVideo>();
       let groups = 0;
 

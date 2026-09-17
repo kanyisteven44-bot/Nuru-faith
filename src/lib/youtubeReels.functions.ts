@@ -5,13 +5,14 @@ import { isChristianDiscoveryCandidate } from "./reelDiscoveryPolicy";
 
 const YOUTUBE_API = "https://www.googleapis.com/youtube/v3";
 const PAGE_SIZE = 50;
-const UPLOAD_PAGES_PER_CHANNEL = 4;
-const CACHE_MS = 1000 * 60 * 30;
-// Keep the server response large enough for a long session, but never send the
-// entire approved-channel catalogue to a phone in one request.
-const MAX_FEED_RESULTS = 300;
+// Deep-scan trusted upload playlists cheaply (playlistItems.list costs far less
+// quota than search.list). The client still reveals only a tiny batch at a time.
+const UPLOAD_PAGES_PER_CHANNEL = 40;
+const CACHE_MS = 1000 * 60 * 60 * 6;
+const MAX_FEED_RESULTS = 12_000;
 const DISCOVERY_RESULTS = 50;
 const APPROVED_TO_DISCOVERY_RATIO = 4;
+const DETAIL_BATCH_CONCURRENCY = 12;
 
 const FALLBACK_APPROVED_CHANNELS = [
   { id: "UCVfwlh9XpX2Y_tQfjeln9QA", name: "BibleProject" },
@@ -145,7 +146,9 @@ async function fetchChristianDiscoveryVideos(key: string): Promise<YouTubeVideo[
       return {
         youtubeVideoId: id,
         title: snippet.title ?? "",
-        description: snippet.description ?? "",
+        // Descriptions are useful for discovery filtering, but not for the Reel
+        // player. Dropping them keeps a 10k+ feed response materially smaller.
+        description: "",
         thumbnail:
           snippet.thumbnails?.high?.url ??
           snippet.thumbnails?.medium?.url ??
@@ -214,7 +217,6 @@ async function fetchUploadVideos(
         contentDetails?: { videoId?: string };
         snippet?: {
           title?: string;
-          description?: string;
           channelId?: string;
           channelTitle?: string;
           publishedAt?: string;
@@ -234,7 +236,7 @@ async function fetchUploadVideos(
       videos.push({
         youtubeVideoId: id,
         title: snippet?.title ?? "",
-        description: snippet?.description ?? "",
+        description: "",
         thumbnail:
           snippet?.thumbnails?.high?.url ??
           snippet?.thumbnails?.medium?.url ??
@@ -266,38 +268,44 @@ async function keepPlayableShorts(videos: YouTubeVideo[], key: string): Promise<
     batches.push(videos.slice(index, index + 50));
   }
 
-  const responses = await Promise.all(
-    batches.map(async (batch) => {
-      const url = new URL(`${YOUTUBE_API}/videos`);
-      url.searchParams.set("part", "contentDetails,status");
-      url.searchParams.set("id", batch.map((video) => video.youtubeVideoId).join(","));
-      url.searchParams.set("key", key);
-      const response = await fetch(url.toString(), { cache: "no-store" });
-      if (!response.ok)
-        return [] as Array<{
-          id?: string;
-          contentDetails?: { duration?: string };
-          status?: { embeddable?: boolean; privacyStatus?: string };
-        }>;
-      const json = (await response.json()) as {
-        items?: Array<{
-          id?: string;
-          contentDetails?: { duration?: string };
-          status?: { embeddable?: boolean; privacyStatus?: string };
-        }>;
-      };
-      return json.items ?? [];
-    }),
-  );
+  // Avoid creating hundreds of simultaneous outbound requests on a cold start.
+  // A small bounded pool is substantially friendlier to serverless runtimes and
+  // still validates thousands of candidate videos quickly.
+  for (let start = 0; start < batches.length; start += DETAIL_BATCH_CONCURRENCY) {
+    const window = batches.slice(start, start + DETAIL_BATCH_CONCURRENCY);
+    const responses = await Promise.all(
+      window.map(async (batch) => {
+        const url = new URL(`${YOUTUBE_API}/videos`);
+        url.searchParams.set("part", "contentDetails,status");
+        url.searchParams.set("id", batch.map((video) => video.youtubeVideoId).join(","));
+        url.searchParams.set("key", key);
+        const response = await fetch(url.toString(), { cache: "no-store" });
+        if (!response.ok)
+          return [] as Array<{
+            id?: string;
+            contentDetails?: { duration?: string };
+            status?: { embeddable?: boolean; privacyStatus?: string };
+          }>;
+        const json = (await response.json()) as {
+          items?: Array<{
+            id?: string;
+            contentDetails?: { duration?: string };
+            status?: { embeddable?: boolean; privacyStatus?: string };
+          }>;
+        };
+        return json.items ?? [];
+      }),
+    );
 
-  for (const items of responses) {
-    for (const item of items) {
-      if (!item.id) continue;
-      details.set(item.id, {
-        duration: parseDurationSeconds(item.contentDetails?.duration),
-        embeddable: item.status?.embeddable === true,
-        privacyStatus: item.status?.privacyStatus ?? "",
-      });
+    for (const items of responses) {
+      for (const item of items) {
+        if (!item.id) continue;
+        details.set(item.id, {
+          duration: parseDurationSeconds(item.contentDetails?.duration),
+          embeddable: item.status?.embeddable === true,
+          privacyStatus: item.status?.privacyStatus ?? "",
+        });
+      }
     }
   }
 
@@ -386,7 +394,7 @@ export const youtubeReelsFeed = createServerFn({ method: "GET" })
       cachedFeed = result;
       cachedAt = Date.now();
       console.info(
-        `[youtube-reels] source=hybrid approved_channels=${approvedChannels.length} approved_playable=${approvedVideos.length} discovery_playable=${discoveryVideos.length} returned=${feedVideos.length}`,
+        `[youtube-reels] source=hybrid approved_channels=${approvedChannels.length} candidates=${byId.size} approved_playable=${approvedVideos.length} discovery_playable=${discoveryVideos.length} returned=${feedVideos.length}`,
       );
       return result;
     } catch (error) {

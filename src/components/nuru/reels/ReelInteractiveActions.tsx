@@ -16,6 +16,7 @@ import { ReelActions } from "./ReelActions";
 
 export function ReelInteractiveActions({
   reel,
+  near,
   liked,
   saved,
   onProfile,
@@ -26,6 +27,7 @@ export function ReelInteractiveActions({
   onMore,
 }: {
   reel: Reel;
+  near: boolean;
   liked: boolean;
   saved: boolean;
   onProfile: () => void;
@@ -44,7 +46,9 @@ export function ReelInteractiveActions({
   const state = useQuery({
     queryKey: ["external-reel-state", userId, externalId],
     queryFn: () => fetchExternalReelState(userId!, externalId),
-    enabled: isExternal && !!userId,
+    // A long feed can contain hundreds of external videos. Only hydrate
+    // interaction state for the active Reel and its immediate neighbours.
+    enabled: isExternal && !!userId && near,
     staleTime: 30_000,
   });
 

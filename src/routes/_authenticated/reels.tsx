@@ -60,6 +60,7 @@ export const Route = createFileRoute("/_authenticated/reels")({
 
 const MUTED_KEY = "nuru_reels_muted";
 const DATA_SAVER_KEY = "nuru_data_saver";
+const YOUTUBE_BATCH_SIZE = 12;
 
 function readMuted() {
   if (typeof window === "undefined") return true;
@@ -88,6 +89,7 @@ function ReelsScreen() {
   const [muted, setMuted] = useState(true);
   const [dataSaver, setDataSaver] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [youtubeVisibleCount, setYoutubeVisibleCount] = useState(YOUTUBE_BATCH_SIZE);
   const [hiddenIds, setHiddenIds] = useState<string[]>([]);
   const [commentsFor, setCommentsFor] = useState<Reel | null>(null);
   const [readFor, setReadFor] = useState<Reel | null>(null);
@@ -169,7 +171,7 @@ function ReelsScreen() {
   );
 
   const youtubeReels = useMemo<Reel[]>(() => {
-    const videos = youtubeFallback.data?.videos ?? [];
+    const videos = (youtubeFallback.data?.videos ?? []).slice(0, youtubeVisibleCount);
     return videos.map((v) => ({
       id: `yt:${v.youtubeVideoId}`,
       author_id: null,
@@ -197,7 +199,10 @@ function ReelsScreen() {
       title: v.title,
       churches: null,
     }));
-  }, [youtubeFallback.data]);
+  }, [youtubeFallback.data, youtubeVisibleCount]);
+
+  const youtubeTotal = youtubeFallback.data?.videos.length ?? 0;
+  const hasMoreYouTube = feed === "For You" && youtubeVisibleCount < youtubeTotal;
 
   /* de-duplicate across pages and drop anything the person muted */
   const items = useMemo(() => {
@@ -215,12 +220,14 @@ function ReelsScreen() {
         out.push(r);
       }
     }
-    // Database Reels with no playable source can't show video, so approved
-    // YouTube videos are appended to keep the feed watchable.
-    for (const r of youtubeReels) {
-      if (seen.has(r.id) || hidden.has(r.id)) continue;
-      seen.add(r.id);
-      out.push(r);
+    // Discovery content belongs only in For You. Following and My Church must
+    // never be padded with unrelated videos just to avoid an empty state.
+    if (feed === "For You") {
+      for (const r of youtubeReels) {
+        if (seen.has(r.id) || hidden.has(r.id)) continue;
+        seen.add(r.id);
+        out.push(r);
+      }
     }
     return out;
   }, [reels.data, feedback.data, hiddenIds, feed, linkedReel.data, youtubeReels]);
@@ -228,27 +235,31 @@ function ReelsScreen() {
   /* auto-load the next page as the end approaches */
   useEffect(() => {
     const node = sentinelRef.current;
-    if (!node || !reels.hasNextPage) return;
+    if (!node || (!reels.hasNextPage && !hasMoreYouTube)) return;
     const io = new IntersectionObserver(
       (entries) => {
-        if (entries.some((e) => e.isIntersecting) && !reels.isFetchingNextPage)
-          void reels.fetchNextPage();
+        if (!entries.some((e) => e.isIntersecting)) return;
+        if (reels.hasNextPage && !reels.isFetchingNextPage) void reels.fetchNextPage();
+        if (hasMoreYouTube)
+          setYoutubeVisibleCount((count) => Math.min(count + YOUTUBE_BATCH_SIZE, youtubeTotal));
       },
       { root: scrollerRef.current, rootMargin: "600px 0px" },
     );
     io.observe(node);
     return () => io.disconnect();
-  }, [reels, items.length]);
+  }, [reels, items.length, hasMoreYouTube, youtubeTotal]);
 
   useEffect(() => {
     scrollerRef.current?.scrollTo({ top: 0 });
     setActiveIndex(0);
+    setYoutubeVisibleCount(YOUTUBE_BATCH_SIZE);
   }, [feed]);
 
   const onActive = useCallback((index: number) => setActiveIndex(index), []);
   const onView = useCallback(
     (reel: Reel) => {
-      if (userId) void recordReelView(userId, reel.id, 2, false);
+      if (userId && /^[0-9a-f-]{36}$/i.test(reel.id))
+        void recordReelView(userId, reel.id, 2, false);
     },
     [userId],
   );
@@ -495,7 +506,7 @@ function ReelsScreen() {
               </div>
             )}
 
-            {!reels.hasNextPage && !reels.isFetchingNextPage && <EndOfFeed />}
+            {!reels.hasNextPage && !reels.isFetchingNextPage && !hasMoreYouTube && <EndOfFeed />}
           </div>
         )}
       </div>

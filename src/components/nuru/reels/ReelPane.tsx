@@ -317,6 +317,7 @@ export function ReelPane(props: ReelPaneProps) {
           <div className="pb-1">
             <ReelInteractiveActions
               reel={reel}
+              near={near}
               liked={props.liked}
               saved={props.saved}
               onProfile={props.onProfile}

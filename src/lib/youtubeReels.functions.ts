@@ -5,6 +5,9 @@ const YOUTUBE_API = "https://www.googleapis.com/youtube/v3";
 const PAGE_SIZE = 50;
 const UPLOAD_PAGES_PER_CHANNEL = 4;
 const CACHE_MS = 1000 * 60 * 30;
+// Keep the server response large enough for a long session, but never send the
+// entire approved-channel catalogue to a phone in one request.
+const MAX_FEED_RESULTS = 300;
 
 const APPROVED_CHANNELS = [
   { id: "UCVfwlh9XpX2Y_tQfjeln9QA", name: "BibleProject" },
@@ -244,8 +247,10 @@ export const youtubeReelsFeed = createServerFn({ method: "GET" }).handler(
       const videos = await keepPlayableShorts([...byId.values()], key);
       videos.sort((a, b) => (b.publishedAt || "").localeCompare(a.publishedAt || ""));
 
+      const feedVideos = videos.slice(0, MAX_FEED_RESULTS);
+
       const result: YouTubeSearchResult = {
-        videos,
+        videos: feedVideos,
         playlists: [],
         channels: [],
         nextPageToken: videos.length > 0 ? "approved-uploads" : null,
@@ -254,7 +259,7 @@ export const youtubeReelsFeed = createServerFn({ method: "GET" }).handler(
       cachedFeed = result;
       cachedAt = Date.now();
       console.info(
-        `[youtube-reels] source=approved-uploads discovered=${byId.size} playable=${videos.length}`,
+        `[youtube-reels] source=approved-uploads discovered=${byId.size} playable=${videos.length} returned=${feedVideos.length}`,
       );
       return result;
     } catch (error) {

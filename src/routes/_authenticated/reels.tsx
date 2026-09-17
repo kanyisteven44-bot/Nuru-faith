@@ -26,6 +26,7 @@ import {
 } from "@/services/reels";
 import { addPrayerJournalEntry } from "@/services/ai";
 import { youtubeQuery } from "@/services/youtubeService";
+import { readWatchedExternalReelIds, rememberWatchedExternalReel } from "@/lib/reelWatchHistory";
 import { AppShell } from "@/components/nuru/AppShell";
 import { CardSkeleton } from "@/components/nuru/Primitives";
 import { ReelFeedTabs } from "@/components/nuru/reels/ReelFeedTabs";
@@ -90,6 +91,7 @@ function ReelsScreen() {
   const [dataSaver, setDataSaver] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const [youtubeVisibleCount, setYoutubeVisibleCount] = useState(YOUTUBE_BATCH_SIZE);
+  const [watchedExternalIds, setWatchedExternalIds] = useState<Set<string>>(new Set());
   const [hiddenIds, setHiddenIds] = useState<string[]>([]);
   const [commentsFor, setCommentsFor] = useState<Reel | null>(null);
   const [readFor, setReadFor] = useState<Reel | null>(null);
@@ -104,6 +106,10 @@ function ReelsScreen() {
     setMuted(readMuted());
     setDataSaver(dataSaverOn());
   }, []);
+
+  useEffect(() => {
+    setWatchedExternalIds(readWatchedExternalReelIds(userId));
+  }, [userId]);
 
   const interests = useQuery({
     queryKey: ["interests", userId],
@@ -171,7 +177,9 @@ function ReelsScreen() {
   );
 
   const youtubeReels = useMemo<Reel[]>(() => {
-    const videos = (youtubeFallback.data?.videos ?? []).slice(0, youtubeVisibleCount);
+    const videos = (youtubeFallback.data?.videos ?? [])
+      .filter((video) => !watchedExternalIds.has(video.youtubeVideoId))
+      .slice(0, youtubeVisibleCount);
     return videos.map((v) => ({
       id: `yt:${v.youtubeVideoId}`,
       author_id: null,
@@ -199,9 +207,15 @@ function ReelsScreen() {
       title: v.title,
       churches: null,
     }));
-  }, [youtubeFallback.data, youtubeVisibleCount]);
+  }, [youtubeFallback.data, youtubeVisibleCount, watchedExternalIds]);
 
-  const youtubeTotal = youtubeFallback.data?.videos.length ?? 0;
+  const youtubeTotal = useMemo(
+    () =>
+      (youtubeFallback.data?.videos ?? []).filter(
+        (video) => !watchedExternalIds.has(video.youtubeVideoId),
+      ).length,
+    [youtubeFallback.data, watchedExternalIds],
+  );
   const hasMoreYouTube = feed === "For You" && youtubeVisibleCount < youtubeTotal;
 
   /* de-duplicate across pages and drop anything the person muted */
@@ -258,8 +272,15 @@ function ReelsScreen() {
   const onActive = useCallback((index: number) => setActiveIndex(index), []);
   const onView = useCallback(
     (reel: Reel) => {
-      if (userId && /^[0-9a-f-]{36}$/i.test(reel.id))
-        void recordReelView(userId, reel.id, 2, false);
+      if (reel.external_id) {
+        // Persist for the next feed load without removing the Reel while it is
+        // actively playing. Removing it immediately would make the screen jump.
+        rememberWatchedExternalReel(userId, reel.external_id);
+        return;
+      }
+      if (userId && /^[0-9a-f-]{36}$/i.test(reel.id)) {
+        void recordReelView(userId, reel.id, 2, false).catch(() => undefined);
+      }
     },
     [userId],
   );

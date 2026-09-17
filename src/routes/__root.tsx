@@ -16,6 +16,12 @@ import { OfflineNotice } from "@/components/nuru/OfflineNotice";
 import { SplashScreen } from "@/components/nuru/SplashScreen";
 import { supabase } from "@/integrations/supabase/client";
 
+// Read directly (not through the `supabase` proxy, which throws if unset) so a
+// missing env var can never break page rendering — this link is a pure
+// speed optimization, never a requirement.
+const SUPABASE_URL: string | undefined =
+  import.meta.env["VITE_SUPABASE_URL"] || process.env["SUPABASE_URL"];
+
 function NotFoundComponent() {
   return (
     <div className="flex min-h-dvh items-center justify-center bg-background px-4">
@@ -101,6 +107,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      // Nearly every screen calls Supabase (data + media) as soon as it mounts;
+      // starting the connection while the JS bundle is still loading shaves
+      // real latency off the first request instead of starting it cold.
+      ...(SUPABASE_URL
+        ? [
+            { rel: "preconnect", href: SUPABASE_URL },
+            { rel: "dns-prefetch", href: SUPABASE_URL },
+          ]
+        : []),
       {
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Caveat:wght@500;600&display=swap",

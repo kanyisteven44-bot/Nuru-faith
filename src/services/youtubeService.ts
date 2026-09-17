@@ -30,7 +30,10 @@ export function youtubeQuery(input: YouTubeQuery) {
     input.type === "video" && input.query?.trim().toLowerCase() === "christian short encouragement";
 
   return queryOptions({
-    queryKey: ["youtube", isReelsDiscovery ? "reels-pool-v6-hybrid" : input],
+    // Version this key whenever the server-side Reel catalogue strategy changes.
+    // That prevents an old 300-item cache from surviving a deployment that can
+    // return thousands of items.
+    queryKey: ["youtube", isReelsDiscovery ? "reels-pool-v7-10k-daily" : input],
     queryFn: () =>
       isReelsDiscovery
         ? youtubeReelsFeed()

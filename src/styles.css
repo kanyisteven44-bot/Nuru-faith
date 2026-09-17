@@ -385,25 +385,103 @@ a {
   animation: splash-beam 900ms cubic-bezier(0.3, 0, 0.2, 1) both;
 }
 
-@keyframes splash-logo-reveal {
+/* The mark assembles from two independently tumbling pieces (arch + cross)
+   rather than fading in as one unit — each turns face-on in 3D space, catches
+   an overshoot/settle like something physically landing, then the whole mark
+   flashes and catches a light sheen the instant both pieces lock together. */
+@keyframes splash-halo {
   0% {
     opacity: 0;
-    transform: scale(0.72);
-    filter: drop-shadow(0 0 0 transparent);
-  }
-  60% {
-    opacity: 1;
-    transform: scale(1.04);
+    scale: 0.55;
   }
   100% {
-    opacity: 1;
-    transform: scale(1);
-    filter: drop-shadow(0 0 18px color-mix(in oklab, var(--brand-cyan) 55%, transparent));
+    opacity: 0.5;
+    scale: 1;
   }
 }
 
-@utility splash-logo-reveal {
-  animation: splash-logo-reveal 620ms cubic-bezier(0.2, 0.8, 0.2, 1) 520ms both;
+@utility splash-halo {
+  animation: splash-halo 400ms ease-out 120ms both;
+}
+
+@keyframes splash-arch-tumble {
+  0% {
+    opacity: 0;
+    transform: translate3d(-46px, 0, -90px) rotateY(-100deg);
+  }
+  55% {
+    opacity: 1;
+  }
+  75% {
+    transform: translate3d(4px, 0, 4px) rotateY(8deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotateY(0deg);
+  }
+}
+
+@utility splash-arch-tumble {
+  animation: splash-arch-tumble 500ms cubic-bezier(0.2, 0.7, 0.2, 1) 180ms both;
+}
+
+@keyframes splash-cross-tumble {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 34px, -70px) rotateX(85deg);
+  }
+  55% {
+    opacity: 1;
+  }
+  75% {
+    transform: translate3d(0, -3px, 3px) rotateX(-7deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotateX(0deg);
+  }
+}
+
+@utility splash-cross-tumble {
+  animation: splash-cross-tumble 500ms cubic-bezier(0.2, 0.7, 0.2, 1) 380ms both;
+}
+
+@keyframes splash-converge-flash {
+  0% {
+    opacity: 0;
+    scale: 0.6;
+  }
+  20% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+    scale: 1.8;
+  }
+}
+
+@utility splash-converge-flash {
+  animation: splash-converge-flash 350ms ease-out 880ms both;
+}
+
+@keyframes splash-sheen {
+  0% {
+    translate: -140% 0;
+    rotate: -18deg;
+    opacity: 0;
+  }
+  45% {
+    opacity: 0.9;
+  }
+  100% {
+    translate: 140% 0;
+    rotate: -18deg;
+    opacity: 0;
+  }
+}
+
+@utility splash-sheen {
+  animation: splash-sheen 400ms ease-out 880ms both;
 }
 
 @keyframes splash-word-reveal {
@@ -418,7 +496,7 @@ a {
 }
 
 @utility splash-word-reveal {
-  animation: splash-word-reveal 460ms ease-out 900ms both;
+  animation: splash-word-reveal 400ms ease-out 1050ms both;
 }
 
 @keyframes splash-flash {
@@ -457,7 +535,11 @@ a {
 
 @media (prefers-reduced-motion: reduce) {
   .splash-beam,
-  .splash-logo-reveal,
+  .splash-halo,
+  .splash-arch-tumble,
+  .splash-cross-tumble,
+  .splash-converge-flash,
+  .splash-sheen,
   .splash-word-reveal,
   .splash-flash-play {
     animation: none !important;

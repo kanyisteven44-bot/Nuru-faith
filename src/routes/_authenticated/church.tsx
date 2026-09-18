@@ -1,14 +1,20 @@
+import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
   BadgeCheck,
   BarChart3,
+  BookMarked,
   CalendarPlus,
+  ChevronRight,
+  GraduationCap,
   Megaphone,
   Users,
   type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
+import { resolveMedia } from "@/lib/media";
+import { eventDate } from "@/lib/format";
 import { useAuth } from "@/hooks/useAuth";
 import {
   fetchChurches,
@@ -19,20 +25,24 @@ import {
   fetchProfile,
 } from "@/services/content";
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
-import { CardSkeleton, EmptyState } from "@/components/nuru/Primitives";
+import { CardSkeleton, EmptyState, PillTabs } from "@/components/nuru/Primitives";
 
 export const Route = createFileRoute("/_authenticated/church")({
   head: () => ({
     meta: [
-      { title: "Church — Nuru Faith" },
+      { title: "My Church — Nuru Faith" },
       { name: "description", content: "Your church on Nuru Faith: members, groups and events." },
     ],
   }),
   component: ChurchScreen,
 });
 
+const TABS = ["About", "Services", "Leaders"] as const;
+type Tab = (typeof TABS)[number];
+
 function ChurchScreen() {
   const { userId } = useAuth();
+  const [tab, setTab] = useState<Tab>("About");
 
   const profile = useQuery({
     queryKey: ["profile", userId],
@@ -56,14 +66,17 @@ function ChurchScreen() {
   );
 
   // Counts are derived from what this user is actually allowed to read.
-  const groupCount = (groups.data ?? []).filter((g) => g.church_id === churchId).length;
-  const eventCount = (events.data ?? []).filter((e) => e.church_id === churchId).length;
-  const mentorCount = (mentors.data ?? []).filter((m) => m.church_id === churchId).length;
+  const churchGroups = (groups.data ?? []).filter((g) => g.church_id === churchId);
+  const churchEvents = (events.data ?? [])
+    .filter((e) => e.church_id === churchId)
+    .filter((e) => new Date(e.ends_at ?? e.starts_at).getTime() >= Date.now())
+    .sort((a, b) => +new Date(a.starts_at) - +new Date(b.starts_at));
+  const churchMentors = (mentors.data ?? []).filter((m) => m.church_id === churchId);
 
   if (profile.isLoading || churches.isLoading) {
     return (
       <AppShell>
-        <ScreenHeader title="Church Dashboard" />
+        <ScreenHeader title="My Church" />
         <div className="px-4 pt-4">
           <CardSkeleton count={3} height="h-20" />
         </div>
@@ -74,7 +87,7 @@ function ChurchScreen() {
   if (!church) {
     return (
       <AppShell>
-        <ScreenHeader title="Church Dashboard" />
+        <ScreenHeader title="My Church" />
         <div className="px-4 pt-4">
           <EmptyState
             title="You haven't joined a church yet"
@@ -96,42 +109,126 @@ function ChurchScreen() {
 
   return (
     <AppShell>
-      <ScreenHeader title="Church Dashboard" />
+      <ScreenHeader title="My Church" />
 
-      <div className="px-4 pt-2">
-        <section className="text-center">
-          <h1 className="flex items-center justify-center gap-1.5 font-display text-lg font-semibold">
-            {church.name}
-            {church.verified && <BadgeCheck className="h-4 w-4 text-cyan" aria-label="Verified" />}
-          </h1>
-          <p className="text-[12px] text-muted-foreground">
-            {[church.city, church.country].filter(Boolean).join(", ") || "Nuru Faith church"}
-          </p>
-        </section>
-
-        <section className="mt-5 grid grid-cols-4 gap-2">
-          <Stat value={groupCount} label="Groups" />
-          <Stat value={eventCount} label="Events" />
-          <Stat value={mentorCount} label="Mentors" />
-          <Stat value={church.denomination ? 1 : 0} label="Campuses" />
-        </section>
-
-        <section className="space-y-2 pt-6">
-          <AdminAction icon={Users} label="Manage Members" allowed={isAdmin} to="/community" />
-          <AdminAction icon={CalendarPlus} label="Create Events" allowed={isAdmin} to="/events" />
-          <AdminAction
-            icon={Megaphone}
-            label="Share Announcements"
-            allowed={isAdmin}
-            to="/create"
+      {/* Church hero */}
+      <section className="px-4 pt-1">
+        <div className="relative overflow-hidden rounded-2xl border border-border">
+          <img
+            src={resolveMedia(church.cover_url)}
+            alt=""
+            className="h-44 w-full object-cover"
+            loading="lazy"
           />
-          <AdminAction icon={BarChart3} label="View Analytics" allowed={isAdmin} to={null} />
-        </section>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/15" />
+          <div className="absolute inset-x-0 bottom-0 p-4">
+            <h1 className="flex items-center gap-1.5 font-display text-[19px] leading-tight font-bold text-white drop-shadow">
+              {church.name}
+              {church.verified && (
+                <BadgeCheck className="h-4 w-4 shrink-0 text-cyan" aria-label="Verified" />
+              )}
+            </h1>
+            <p className="text-[12px] text-white/80 drop-shadow">
+              {[church.denomination, church.city].filter(Boolean).join(" · ") ||
+                "Nuru Faith church"}
+            </p>
+          </div>
+        </div>
+      </section>
 
-        {!isAdmin && (
-          <p className="pt-4 text-center text-[11px] text-muted-foreground">
-            Management tools are available to your church's admins.
-          </p>
+      <div className="px-4 pt-4 pb-1">
+        <PillTabs tabs={TABS} value={tab} onChange={setTab} />
+      </div>
+
+      <div className="space-y-2 px-4 pt-2">
+        {tab === "About" && (
+          <>
+            <section className="grid grid-cols-3 gap-2 pb-2">
+              <Stat value={churchGroups.length} label="Groups" />
+              <Stat value={churchEvents.length} label="Events" />
+              <Stat value={churchMentors.length} label="Mentors" />
+            </section>
+
+            {church.description && (
+              <p className="pb-2 text-[13px] leading-relaxed text-secondary-foreground">
+                {church.description}
+              </p>
+            )}
+
+            <Row icon={Users} label="Groups" to="/groups" />
+            <Row icon={BookMarked} label="Liturgy & Books" to={null} />
+            <Row icon={GraduationCap} label="Catechism" to={null} />
+            <Row icon={Megaphone} label="Announcements" to="/community" />
+          </>
+        )}
+
+        {tab === "Services" && (
+          <>
+            <p className="pb-1 text-[11px] tracking-wide text-muted-foreground uppercase">
+              Upcoming
+            </p>
+            {churchEvents.length === 0 && (
+              <EmptyState
+                title="Nothing scheduled yet"
+                description="Your church's services and events will appear here."
+              />
+            )}
+            {churchEvents.map((e) => (
+              <Link
+                key={e.id}
+                to="/events"
+                className="nuru-card flex items-center gap-3 px-4 py-3.5"
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium">{e.title}</span>
+                  <span className="block truncate text-[11px] text-muted-foreground">
+                    {eventDate(e.starts_at)}
+                  </span>
+                </span>
+                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+              </Link>
+            ))}
+          </>
+        )}
+
+        {tab === "Leaders" && (
+          <>
+            {churchMentors.length === 0 && (
+              <EmptyState
+                title="No leaders listed yet"
+                description="Verified mentors and leaders from your church will appear here."
+              />
+            )}
+            {churchMentors.map((m) => (
+              <Link
+                key={m.id}
+                to="/mentors/$id"
+                params={{ id: m.id }}
+                className="nuru-card flex items-center gap-3 px-4 py-3.5"
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium">{m.display_name}</span>
+                  <span className="block truncate text-[11px] text-muted-foreground">
+                    {m.role_title ?? "Leader"}
+                  </span>
+                </span>
+                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+              </Link>
+            ))}
+          </>
+        )}
+
+        {/* Church admin tools stay available to the people who run the church. */}
+        {isAdmin && (
+          <section className="space-y-2 pt-5">
+            <p className="text-[11px] tracking-wide text-muted-foreground uppercase">
+              Church admin
+            </p>
+            <Row icon={Users} label="Manage Members" to="/community" />
+            <Row icon={CalendarPlus} label="Create Events" to="/events" />
+            <Row icon={Megaphone} label="Share Announcements" to="/create" />
+            <Row icon={BarChart3} label="View Analytics" to={null} />
+          </section>
         )}
       </div>
     </AppShell>
@@ -147,30 +244,27 @@ function Stat({ value, label }: { value: number; label: string }) {
   );
 }
 
-function AdminAction({
+function Row({
   icon: Icon,
   label,
-  allowed,
   to,
 }: {
   icon: LucideIcon;
   label: string;
-  allowed: boolean;
-  to: "/community" | "/events" | "/create" | null;
+  to: "/community" | "/events" | "/create" | "/groups" | null;
 }) {
   const inner = (
     <>
       <Icon className="h-4.5 w-4.5 shrink-0 text-cyan" strokeWidth={1.8} />
       <span className="flex-1 text-sm font-medium">{label}</span>
+      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
     </>
   );
-  if (!allowed || !to)
+  if (!to)
     return (
       <button
         type="button"
-        onClick={() =>
-          toast(allowed ? `${label} isn't available yet.` : "Church admin access required.")
-        }
+        onClick={() => toast(`${label} isn't available yet.`)}
         className="nuru-card flex w-full items-center gap-3 px-4 py-3.5 text-left opacity-70"
       >
         {inner}

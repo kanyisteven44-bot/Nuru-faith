@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { AtSign, Bell, CalendarDays, MessageCircle } from "lucide-react";
+import { AtSign, Bell, BookOpen, CalendarDays, MessageCircle, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { timeAgo } from "@/lib/format";
 import { useAuth } from "@/hooks/useAuth";
@@ -19,14 +19,18 @@ export const Route = createFileRoute("/_authenticated/notifications")({
   component: NotificationsScreen,
 });
 
-const TABS = ["All", "Mentions", "Messages", "Events"] as const;
+const TABS = ["All", "Mentions", "Updates"] as const;
 type Tab = (typeof TABS)[number];
 
-const ICONS: Record<string, typeof Bell> = {
-  mention: AtSign,
-  message: MessageCircle,
-  event: CalendarDays,
+/** Each kind of notification gets its own icon and tint, as the design shows. */
+const KINDS: Record<string, { icon: typeof Bell; tint: string }> = {
+  mention: { icon: AtSign, tint: "border-magenta/35 bg-magenta/12 text-magenta" },
+  message: { icon: MessageCircle, tint: "border-primary/35 bg-primary/12 text-cyan" },
+  event: { icon: CalendarDays, tint: "border-warning/35 bg-warning/12 text-warning" },
+  content: { icon: BookOpen, tint: "border-violet/35 bg-violet/12 text-violet" },
+  group: { icon: Users, tint: "border-growth/35 bg-growth/12 text-growth" },
 };
+const FALLBACK_KIND = { icon: Bell, tint: "border-primary/35 bg-primary/12 text-cyan" };
 
 function NotificationsScreen() {
   const { userId } = useAuth();
@@ -41,7 +45,12 @@ function NotificationsScreen() {
 
   const all = notifications.data ?? [];
   const rows =
-    tab === "All" ? all : all.filter((n) => n.category === tab.toLowerCase().replace(/s$/, ""));
+    tab === "All"
+      ? all
+      : tab === "Mentions"
+        ? all.filter((n) => n.category === "mention")
+        : // "Updates" is everything that is not a direct mention.
+          all.filter((n) => n.category !== "mention");
 
   async function open(id: string, read: boolean) {
     if (read) return;
@@ -66,7 +75,7 @@ function NotificationsScreen() {
           />
         )}
         {rows.map((n) => {
-          const Icon = ICONS[n.category] ?? Bell;
+          const { icon: Icon, tint } = KINDS[n.category] ?? FALLBACK_KIND;
           return (
             <button
               key={n.id}
@@ -77,7 +86,12 @@ function NotificationsScreen() {
                 !n.read && "border-primary/45 bg-primary/8",
               )}
             >
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-primary/35 bg-primary/12 text-cyan">
+              <span
+                className={cn(
+                  "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border",
+                  tint,
+                )}
+              >
                 <Icon className="h-4 w-4" strokeWidth={1.8} />
               </span>
               <span className="min-w-0 flex-1">

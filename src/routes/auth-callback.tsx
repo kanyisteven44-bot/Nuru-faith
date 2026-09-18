@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { NuruMark } from "@/components/nuru/Logo";
+import { NuruGlyph } from "@/components/nuru/Logo";
 
 export const Route = createFileRoute("/auth-callback")({
   ssr: false,
@@ -54,7 +54,7 @@ function GoogleAuthCallback() {
   return (
     <main className="flex min-h-dvh items-center justify-center bg-background px-6 text-center">
       <div className="w-full max-w-sm rounded-2xl border border-border bg-surface-2 p-7">
-        <NuruMark className="mx-auto h-16 w-16" />
+        <NuruGlyph className="mx-auto h-16 w-16" />
         {errorMessage ? (
           <>
             <h1 className="mt-5 font-display text-xl font-semibold">Google sign-in failed</h1>

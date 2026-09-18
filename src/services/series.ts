@@ -50,16 +50,47 @@ export type SeriesProgress = {
 const SERIES_COLUMNS =
   "id, title, slug, description, cover_image, category, difficulty, estimated_duration, session_count, status, is_featured, church_id";
 
-export async function fetchSeries(search?: string): Promise<SeriesRow[]> {
+export const SERIES_PAGE_SIZE = 60;
+
+export async function fetchSeries(
+  search?: string,
+  category?: string,
+  page = 0,
+  pageSize = SERIES_PAGE_SIZE,
+): Promise<SeriesRow[]> {
+  const from = Math.max(0, page) * pageSize;
   let q = supabase
     .from("scripture_series")
     .select(SERIES_COLUMNS)
     .eq("status", "published")
     .order("is_featured", { ascending: false })
-    .order("title");
-  if (search)
-    q = q.or(`title.ilike.%${search}%,description.ilike.%${search}%,category.ilike.%${search}%`);
+    .order("title")
+    .range(from, from + pageSize - 1);
+
+  const cleanedSearch = search?.trim().replace(/[%_,()]/g, " ");
+  if (cleanedSearch) {
+    q = q.or(
+      `title.ilike.%${cleanedSearch}%,description.ilike.%${cleanedSearch}%,category.ilike.%${cleanedSearch}%`,
+    );
+  }
+  if (category) q = q.eq("category", category);
+
   const { data, error } = await q;
+  if (error) throw new Error(error.message);
+  return (data ?? []) as SeriesRow[];
+}
+
+/**
+ * The library seed (`nuru-library-*` slugs) generates 1,200 filler series
+ * for browse/search volume. Screens that spotlight Nuru's hand-written
+ * series (Series home) fetch by slug directly so that bulk content never
+ * crowds out the curated set.
+ */
+export async function fetchCuratedSeries(slugs: string[]): Promise<SeriesRow[]> {
+  const { data, error } = await supabase
+    .from("scripture_series")
+    .select(SERIES_COLUMNS)
+    .in("slug", slugs);
   if (error) throw new Error(error.message);
   return (data ?? []) as SeriesRow[];
 }

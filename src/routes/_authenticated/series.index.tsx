@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { resolveMedia } from "@/lib/media";
-import { fetchMyProgress, fetchSeries, type SeriesRow } from "@/services/series";
+import { fetchCuratedSeries, fetchMyProgress, type SeriesRow } from "@/services/series";
 import { AppShell } from "@/components/nuru/AppShell";
 import { FeatureHeaderBar } from "@/components/nuru/FeatureHeader";
 import {
@@ -45,6 +45,17 @@ export const Route = createFileRoute("/_authenticated/series/")({
   component: SeriesHome,
 });
 
+// The library seed adds 1,200 auto-generated filler series to the same
+// table for browse/search volume. This screen spotlights only Nuru's
+// hand-written series, fetched by slug so bulk content never crowds them out.
+const CURATED_SLUGS = [
+  "finding-your-purpose",
+  "foundations-of-following-jesus",
+  "wisdom-for-everyday-life",
+  "relationships-and-dating",
+  "when-youre-anxious",
+];
+
 const CATEGORIES: { name: string; icon: LucideIcon; tint: string }[] = [
   { name: "Purpose & Calling", icon: Compass, tint: "from-warning/85 to-warning/50" },
   { name: "Discipleship", icon: BookOpen, tint: "from-violet/85 to-violet/50" },
@@ -57,7 +68,10 @@ function SeriesHome() {
   const { userId } = useAuth();
   const [filter, setFilter] = useState<string | null>(null);
 
-  const series = useQuery({ queryKey: ["series"], queryFn: () => fetchSeries() });
+  const series = useQuery({
+    queryKey: ["curated-series"],
+    queryFn: () => fetchCuratedSeries(CURATED_SLUGS),
+  });
   const progress = useQuery({
     queryKey: ["series-progress", userId],
     queryFn: () => fetchMyProgress(userId!),

@@ -41,6 +41,13 @@ const LIBRARY: Record<string, string> = {
   "topic-hope-healing": topicHopeHealing,
   "topic-faith-purpose": topicFaithPurpose,
   "topic-friends-relationships": topicFriendsRelationships,
+  // Aliases for the 1,200-row library seed, which still references these
+  // older keys — point them at real photos instead of a broken/fallback image.
+  "purpose-path": topicFaithPurpose,
+  "discipleship-book": topicDiscipleship,
+  "life-skills-growth": topicLifeSkills,
+  "relationships-bond": topicFriendsRelationships,
+  "calm-anchor": topicHopeHealing,
 };
 
 export const FALLBACK_IMAGE = mountainDawn;

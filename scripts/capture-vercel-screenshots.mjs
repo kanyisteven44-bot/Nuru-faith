@@ -50,7 +50,7 @@ await capture("05-reset-password", "/reset-password");
 
 // Sign in with the temporary QA account confirmed only for this screenshot run.
 const email = "nuru.vercel.qa.1789735101601@gmail.com";
-const password = "NuruQA!" + email.match(/\\d+/)[0] + "x";
+const password = "NuruQA!" + email.match(/[0-9]{10,}/)[0] + "x";
 await fs.writeFile(path.join(OUT, "qa-account.txt"), email + "\\n");
 
 await page.goto(BASE + "/auth?mode=login", { waitUntil: "domcontentloaded", timeout: 45000 });
@@ -58,7 +58,7 @@ await page.waitForTimeout(1200);
 await page.getByPlaceholder("you@email.com").fill(email);
 await page.locator('input[type="password"]').fill(password);
 await page.getByRole("button", { name: "Sign In" }).click();
-await page.waitForURL(/\\/(onboarding|home)/, { timeout: 30000 }).catch(() => {});
+await page.waitForFunction(() => location.pathname === "/onboarding" || location.pathname === "/home", { timeout: 30000 }).catch(() => {});
 await page.waitForTimeout(1500);
 
 if (!page.url().includes("/onboarding") && !page.url().includes("/home")) {

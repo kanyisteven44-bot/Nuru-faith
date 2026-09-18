@@ -18,8 +18,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { resolveMedia } from "@/lib/media";
 import { fetchProfile, fetchDevotionals } from "@/services/content";
 import { readSavedDevotionalIds, toggleSavedDevotional } from "@/lib/devotionalBookmarks";
-import { AppShell } from "@/components/nuru/AppShell";
-import { FeatureHeaderBar } from "@/components/nuru/FeatureHeader";
+import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
 import { CardSkeleton, EmptyState } from "@/components/nuru/Primitives";
 
 export const Route = createFileRoute("/_authenticated/devotionals")({
@@ -113,11 +112,23 @@ function DevotionalsScreen() {
 
   return (
     <AppShell>
-      <FeatureHeaderBar />
+      <ScreenHeader
+        title="Devotionals"
+        right={
+          <Link
+            to="/explore"
+            search={{ q: "", kind: "all" }}
+            aria-label="Search devotionals"
+            className="p-1 text-secondary-foreground"
+          >
+            <Search className="h-5 w-5" />
+          </Link>
+        }
+      />
 
-      <div className="space-y-6 px-4 pt-4 pb-6">
+      <div className="space-y-6 px-4 pt-2 pb-6">
         <div>
-          <h1 className="font-display text-2xl font-bold">
+          <h1 className="font-display text-xl font-bold">
             Hey there{firstName ? `, ${firstName}` : ""} <span className="align-middle">👋</span>
           </h1>
           <p className="mt-0.5 text-sm text-muted-foreground">New day. Same faithful God.</p>

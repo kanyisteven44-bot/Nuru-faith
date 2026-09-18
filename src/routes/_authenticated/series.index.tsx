@@ -5,6 +5,7 @@ import {
   BookOpen,
   Compass,
   Heart,
+  Search,
   LifeBuoy,
   Play,
   Sparkles,
@@ -14,8 +15,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { resolveMedia } from "@/lib/media";
 import { fetchCuratedSeries, fetchMyProgress, type SeriesRow } from "@/services/series";
-import { AppShell } from "@/components/nuru/AppShell";
-import { FeatureHeaderBar } from "@/components/nuru/FeatureHeader";
+import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
 import {
   CardSkeleton,
   Chip,
@@ -94,20 +94,22 @@ function SeriesHome() {
 
   return (
     <AppShell>
-      <FeatureHeaderBar
+      <ScreenHeader
+        title="Series"
+        subtitle="Go deeper. Grow further."
         right={
-          <p className="script max-w-[110px] text-right text-[15px] leading-[1.15] text-white/70">
-            More Than A Sunday Faith <Heart className="inline h-3 w-3 -translate-y-0.5" />
-          </p>
+          <Link
+            to="/explore"
+            search={{ q: "", kind: "all" }}
+            aria-label="Search series"
+            className="p-1 text-secondary-foreground"
+          >
+            <Search className="h-5 w-5" />
+          </Link>
         }
       />
 
-      <div className="space-y-6 px-4 pt-4 pb-6">
-        <div>
-          <h1 className="font-display text-2xl font-bold">Series</h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">Go deeper. Grow further.</p>
-        </div>
-
+      <div className="space-y-6 px-4 pt-3 pb-6">
         {series.isLoading && <CardSkeleton count={1} height="h-52" />}
         {series.isError && <ErrorState onRetry={() => void series.refetch()} />}
         {!series.isLoading && all.length === 0 && (

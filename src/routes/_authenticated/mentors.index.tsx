@@ -8,7 +8,7 @@ import { fetchMentors, fetchMyMentorshipRequests, fetchProfile } from "@/service
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
 import { CardSkeleton, EmptyState, PillTabs } from "@/components/nuru/Primitives";
 
-export const Route = createFileRoute("/_authenticated/mentors")({
+export const Route = createFileRoute("/_authenticated/mentors/")({
   head: () => ({
     meta: [
       { title: "Mentors — Nuru Faith" },

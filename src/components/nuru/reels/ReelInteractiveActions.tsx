@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Send, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { useShareSheet } from "@/hooks/useShareSheet";
 import type { Reel } from "@/services/reels";
 import {
   addExternalReelComment,
@@ -43,6 +44,7 @@ export function ReelInteractiveActions({
 }) {
   const { userId } = useAuth();
   const qc = useQueryClient();
+  const shareSheet = useShareSheet();
   const [commentsOpen, setCommentsOpen] = useState(false);
   const isExternal = reel.source_type === "youtube" && !!reel.external_id;
   const externalId = reel.external_id ?? "";
@@ -104,22 +106,13 @@ export function ReelInteractiveActions({
     },
   });
 
-  async function shareExternal() {
+  function shareExternal() {
     const url = reel.external_url ?? `https://www.youtube.com/watch?v=${externalId}`;
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: reel.title ?? "Nuru Faith Reel",
-          text: reel.caption ?? "",
-          url,
-        });
-      } else {
-        await navigator.clipboard.writeText(url);
-        toast.success("Link copied");
-      }
-    } catch {
-      // share sheet dismissed
-    }
+    void shareSheet.share({
+      title: reel.title ?? "Nuru Faith Reel",
+      text: reel.caption ?? "",
+      url,
+    });
   }
 
   return (
@@ -144,7 +137,7 @@ export function ReelInteractiveActions({
         }}
         onShare={() => {
           if (!isExternal) return onShare();
-          void shareExternal();
+          shareExternal();
         }}
         onSave={() => {
           if (!isExternal) return onSave();
@@ -164,6 +157,7 @@ export function ReelInteractiveActions({
           }}
         />
       )}
+      {shareSheet.node}
     </>
   );
 }

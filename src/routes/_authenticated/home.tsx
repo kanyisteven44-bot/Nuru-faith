@@ -15,6 +15,7 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { useShareSheet } from "@/hooks/useShareSheet";
 import { resolveMedia } from "@/lib/media";
 import { fetchVerseOfTheDay, verseOfTheDayRef } from "@/lib/bible";
 import { fetchDevotionals, fetchEvents, fetchProfile } from "@/services/content";
@@ -98,6 +99,7 @@ const CHALLENGES = [
 function HomeScreen() {
   const navigate = useNavigate();
   const { userId } = useAuth();
+  const shareSheet = useShareSheet();
   const [acceptedChallenge, setAcceptedChallenge] = useState(false);
 
   const profile = useQuery({
@@ -192,11 +194,11 @@ function HomeScreen() {
                 type="button"
                 onClick={() => {
                   const text = devotional?.title ?? "Today's Light on Nuru Faith";
-                  if (navigator.share) void navigator.share({ title: text, text }).catch(() => {});
-                  else {
-                    void navigator.clipboard?.writeText(text);
-                    toast.success("Copied to share");
-                  }
+                  void shareSheet.share({
+                    title: text,
+                    text,
+                    url: `${window.location.origin}/devotionals`,
+                  });
                 }}
                 className="flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-border bg-surface-2 text-xs font-semibold text-secondary-foreground"
               >
@@ -285,6 +287,7 @@ function HomeScreen() {
           )}
         </section>
       </div>
+      {shareSheet.node}
     </AppShell>
   );
 }

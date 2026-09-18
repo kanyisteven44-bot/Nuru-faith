@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { resolveMedia } from "@/lib/media";
 import { generatedAvatar } from "@/lib/avatar";
 import { compactNumber, initials, timeAgo } from "@/lib/format";
+import { useShareSheet } from "@/hooks/useShareSheet";
 import {
   addComment,
   fetchComments,
@@ -51,6 +52,7 @@ export function PostCard({
   saved: boolean;
 }) {
   const queryClient = useQueryClient();
+  const shareSheet = useShareSheet();
   const [showComments, setShowComments] = useState(false);
   const [draft, setDraft] = useState("");
   const [optimisticLike, setOptimisticLike] = useState<boolean | null>(null);
@@ -138,15 +140,13 @@ export function PostCard({
 
         <ActionButton
           label="Share"
-          onClick={async () => {
-            const url = `${window.location.origin}/community`;
-            if (navigator.share)
-              await navigator.share({ title: "Nuru Faith", url }).catch(() => {});
-            else {
-              await navigator.clipboard.writeText(url);
-              toast.success("Link copied");
-            }
-          }}
+          onClick={() =>
+            void shareSheet.share({
+              title: "Nuru Faith",
+              text: post.body ?? undefined,
+              url: `${window.location.origin}/community`,
+            })
+          }
         >
           <Share2 className="h-4.5 w-4.5" />
         </ActionButton>
@@ -231,6 +231,7 @@ export function PostCard({
           </form>
         </div>
       )}
+      {shareSheet.node}
     </article>
   );
 }

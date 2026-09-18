@@ -4,6 +4,7 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tansta
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { useShareSheet } from "@/hooks/useShareSheet";
 import {
   fetchInterests,
   fetchMyChurchIds,
@@ -79,6 +80,7 @@ function dataSaverOn() {
 
 function ReelsScreen() {
   const { userId, loading: authLoading } = useAuth();
+  const shareSheet = useShareSheet();
   const { reel: linkedId } = Route.useSearch();
   const linkedReel = useQuery({
     queryKey: ["linked-reel", userId, linkedId],
@@ -413,18 +415,10 @@ function ReelsScreen() {
     fn();
   }
 
-  async function share(reel: Reel) {
+  function share(reel: Reel) {
     const url = reel.external_url ?? `${window.location.origin}/reels?reel=${reel.id}`;
     const text = reel.caption ? reel.caption.slice(0, 120) : "A short teaching on Nuru Faith";
-    try {
-      if (navigator.share) await navigator.share({ title: "Nuru Faith", text, url });
-      else {
-        await navigator.clipboard.writeText(url);
-        toast.success("Link copied");
-      }
-    } catch {
-      /* dismissed */
-    }
+    void shareSheet.share({ title: "Nuru Faith", text, url });
   }
 
   async function copyLink(reel: Reel) {
@@ -701,6 +695,7 @@ function ReelsScreen() {
         />
       )}
       {whyFor && <ReelWhySheet reasons={whyReasons(whyFor)} onClose={() => setWhyFor(null)} />}
+      {shareSheet.node}
     </AppShell>
   );
 }

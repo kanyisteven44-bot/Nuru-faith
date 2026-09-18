@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { playOpeningChime } from "@/lib/chime";
 import { NuruGlyph } from "./Logo";
+import hero from "@/assets/mountain-dawn.jpg";
 
 const SESSION_KEY = "nuru-splash-shown";
 /** Earliest the hold phase can end — long enough for the beam + logo reveal to read as intentional. */
@@ -32,11 +33,11 @@ function wasSplashAlreadyShown(): boolean {
 }
 
 /**
- * The "Light / Nuru" app-open moment: near-black, a beam of light sweeps
- * across revealing the real Nuru mark, then the light itself expands into
- * the real interface underneath. Mounted once at the app root — it's an
- * overlay, not a route gate, so the destination screen (auth or home) keeps
- * loading normally underneath it and is simply ready by the time it's revealed.
+ * The "Light / Nuru" app-open moment: the mark rises out of the mountain dawn
+ * with the wordmark and tagline, then the light expands into the real
+ * interface underneath. Mounted once at the app root — it's an overlay, not a
+ * route gate, so the destination screen (auth or home) keeps loading normally
+ * underneath it and is simply ready by the time it's revealed.
  *
  * Shows once per browser tab session, skips instantly on every load after
  * that, and collapses to a quick fade for prefers-reduced-motion.
@@ -120,113 +121,39 @@ export function SplashScreen() {
         </div>
       ) : (
         <>
-          <div className="splash-beam" />
+          {/* The opening still from the app design: the mark rising out of the
+              mountain dawn, then the whole frame blooms into the interface. */}
+          <img
+            src={hero}
+            alt=""
+            width={1024}
+            height={640}
+            className="splash-photo absolute inset-0 h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#000814]/70 via-[#000814]/45 to-[#000814]" />
+
           <div
             className={cn(
-              "flex h-full flex-col items-center justify-center gap-4 transition-opacity duration-150",
+              "relative flex h-full flex-col items-center justify-center px-8 text-center transition-opacity duration-150",
               stage === "exiting" && "opacity-0",
             )}
           >
-            {/* The mark assembles from two pieces tumbling in from different
-                3D angles (arch on the Y axis, cross on the X axis) rather
-                than fading in as one flat unit, then flashes and catches a
-                light sheen the instant they lock together. */}
-            <div className="relative h-20 w-20 [perspective:700px]">
-              <div
-                aria-hidden="true"
-                className="splash-halo absolute -inset-3 rounded-full bg-[radial-gradient(circle,rgba(22,140,255,0.42),transparent_70%)]"
-              />
-              <div className="absolute inset-0 [transform-style:preserve-3d]">
-                <svg
-                  viewBox="0 0 64 64"
-                  className="splash-arch-tumble absolute inset-0 h-full w-full"
-                >
-                  <defs>
-                    <linearGradient
-                      id="nuru-arch-splash"
-                      x1="32"
-                      y1="6"
-                      x2="32"
-                      y2="58"
-                      gradientUnits="userSpaceOnUse"
-                    >
-                      <stop offset="0" stopColor="#7fe7ff" />
-                      <stop offset="1" stopColor="#168cff" />
-                    </linearGradient>
-                    <filter
-                      id="nuru-bloom-arch-splash"
-                      x="-60%"
-                      y="-60%"
-                      width="220%"
-                      height="220%"
-                    >
-                      <feGaussianBlur stdDeviation="2.2" result="blur" />
-                      <feMerge>
-                        <feMergeNode in="blur" />
-                        <feMergeNode in="SourceGraphic" />
-                      </feMerge>
-                    </filter>
-                  </defs>
-                  <path
-                    d="M17 52V29a15 15 0 0 1 30 0v23"
-                    fill="none"
-                    stroke="url(#nuru-arch-splash)"
-                    strokeWidth="4"
-                    strokeLinecap="round"
-                    filter="url(#nuru-bloom-arch-splash)"
-                  />
-                </svg>
-                <svg
-                  viewBox="0 0 64 64"
-                  className="splash-cross-tumble absolute inset-0 h-full w-full"
-                >
-                  <defs>
-                    <linearGradient
-                      id="nuru-cross-splash"
-                      x1="32"
-                      y1="16"
-                      x2="32"
-                      y2="48"
-                      gradientUnits="userSpaceOnUse"
-                    >
-                      <stop offset="0" stopColor="#ffffff" />
-                      <stop offset="1" stopColor="#8ad9ff" />
-                    </linearGradient>
-                    <filter
-                      id="nuru-bloom-cross-splash"
-                      x="-60%"
-                      y="-60%"
-                      width="220%"
-                      height="220%"
-                    >
-                      <feGaussianBlur stdDeviation="2.2" result="blur" />
-                      <feMerge>
-                        <feMergeNode in="blur" />
-                        <feMergeNode in="SourceGraphic" />
-                      </feMerge>
-                    </filter>
-                  </defs>
-                  <g
-                    stroke="url(#nuru-cross-splash)"
-                    strokeWidth="4.5"
-                    strokeLinecap="round"
-                    filter="url(#nuru-bloom-cross-splash)"
-                  >
-                    <line x1="32" y1="20" x2="32" y2="45" />
-                    <line x1="23" y1="31" x2="41" y2="31" />
-                  </g>
-                </svg>
-              </div>
-              <div
-                aria-hidden="true"
-                className="splash-converge-flash absolute -inset-1.5 rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.95),transparent_60%)]"
-              />
-              <div aria-hidden="true" className="absolute inset-0 overflow-hidden rounded-full">
-                <div className="splash-sheen absolute -inset-y-6 left-1/2 w-1/2 -translate-x-1/2 bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.85),transparent)]" />
-              </div>
-            </div>
-            <span className="splash-word-reveal font-display text-xs font-bold tracking-[0.28em] text-white">
-              NURU FAITH
+            <NuruGlyph className="splash-mark h-24 w-24" />
+
+            <span className="splash-rise-1 mt-6 font-display text-[38px] leading-none font-bold tracking-[0.18em] text-white">
+              NURU
+            </span>
+            <span className="splash-rise-1 mt-2 font-display text-[15px] tracking-[0.42em] text-cyan">
+              FAITH
+            </span>
+
+            <span className="splash-rise-2 absolute inset-x-0 bottom-14 px-8">
+              <span className="block font-display text-[15px] font-semibold tracking-[0.2em] text-white">
+                A BRIGHTER YOU.
+              </span>
+              <span className="mt-2 block text-[12px] text-white/70">
+                Faith. Community. Purpose. Always with you.
+              </span>
             </span>
           </div>
           <div className={cn("splash-flash", stage === "exiting" && "splash-flash-play")} />

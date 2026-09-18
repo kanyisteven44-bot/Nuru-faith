@@ -80,6 +80,21 @@ export async function fetchSeries(
   return (data ?? []) as SeriesRow[];
 }
 
+/**
+ * The library seed (`nuru-library-*` slugs) generates 1,200 filler series
+ * for browse/search volume. Screens that spotlight Nuru's hand-written
+ * series (Series home) fetch by slug directly so that bulk content never
+ * crowds out the curated set.
+ */
+export async function fetchCuratedSeries(slugs: string[]): Promise<SeriesRow[]> {
+  const { data, error } = await supabase
+    .from("scripture_series")
+    .select(SERIES_COLUMNS)
+    .in("slug", slugs);
+  if (error) throw new Error(error.message);
+  return (data ?? []) as SeriesRow[];
+}
+
 export async function fetchSeriesBySlug(slug: string): Promise<SeriesRow | null> {
   const { data, error } = await supabase
     .from("scripture_series")

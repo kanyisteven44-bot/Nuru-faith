@@ -6,11 +6,16 @@ import crossSunrise from "@/assets/cross-sunrise.jpg";
 import worshipNight from "@/assets/worship-night.jpg";
 import bibleCandle from "@/assets/bible-candle.jpg";
 import quietNight from "@/assets/quiet-night.jpg";
-import purposePath from "@/assets/purpose-path.svg";
-import discipleshipBook from "@/assets/discipleship-book.svg";
-import lifeSkillsGrowth from "@/assets/life-skills-growth.svg";
-import relationshipsBond from "@/assets/relationships-bond.svg";
-import calmAnchor from "@/assets/calm-anchor.svg";
+import topicPrayer from "@/assets/topic-prayer.jpg";
+import topicPersonalGrowth from "@/assets/topic-personal-growth.jpg";
+import topicMentalHealth from "@/assets/topic-mental-health.jpg";
+import topicRelationships from "@/assets/topic-relationships.jpg";
+import topicLifeSkills from "@/assets/topic-life-skills.jpg";
+import topicFaith from "@/assets/topic-faith.jpg";
+import topicDiscipleship from "@/assets/topic-discipleship.jpg";
+import topicHopeHealing from "@/assets/topic-hope-healing.jpg";
+import topicFaithPurpose from "@/assets/topic-faith-purpose.jpg";
+import topicFriendsRelationships from "@/assets/topic-friends-relationships.jpg";
 
 /**
  * Demo/library imagery is stored in the database as a stable token
@@ -26,11 +31,23 @@ const LIBRARY: Record<string, string> = {
   "worship-night": worshipNight,
   "bible-candle": bibleCandle,
   "quiet-night": quietNight,
-  "purpose-path": purposePath,
-  "discipleship-book": discipleshipBook,
-  "life-skills-growth": lifeSkillsGrowth,
-  "relationships-bond": relationshipsBond,
-  "calm-anchor": calmAnchor,
+  "topic-prayer": topicPrayer,
+  "topic-personal-growth": topicPersonalGrowth,
+  "topic-mental-health": topicMentalHealth,
+  "topic-relationships": topicRelationships,
+  "topic-life-skills": topicLifeSkills,
+  "topic-faith": topicFaith,
+  "topic-discipleship": topicDiscipleship,
+  "topic-hope-healing": topicHopeHealing,
+  "topic-faith-purpose": topicFaithPurpose,
+  "topic-friends-relationships": topicFriendsRelationships,
+  // Aliases for the 1,200-row library seed, which still references these
+  // older keys — point them at real photos instead of a broken/fallback image.
+  "purpose-path": topicFaithPurpose,
+  "discipleship-book": topicDiscipleship,
+  "life-skills-growth": topicLifeSkills,
+  "relationships-bond": topicFriendsRelationships,
+  "calm-anchor": topicHopeHealing,
 };
 
 export const FALLBACK_IMAGE = mountainDawn;

@@ -28,6 +28,7 @@ export type ReelPaneProps = {
   onView: (reel: Reel) => void;
   onToggleMuted: () => void;
   onLike: () => void;
+  onDoubleLike: () => void;
   onSave: () => void;
   onFollow: () => void;
   onComments: () => void;
@@ -136,9 +137,12 @@ export function ReelPane(props: ReelPaneProps) {
     if (tapTimer.current) {
       window.clearTimeout(tapTimer.current);
       tapTimer.current = null;
-      setBurst({ x, y, key: Date.now() });
-      window.setTimeout(() => setBurst(null), 800);
-      if (!isYouTubeEmbed && !props.liked) props.onLike();
+      const shouldLike = isYouTubeEmbed || !props.liked;
+      if (shouldLike) {
+        setBurst({ x, y, key: Date.now() });
+        window.setTimeout(() => setBurst(null), 800);
+        props.onDoubleLike();
+      }
       return;
     }
     tapTimer.current = window.setTimeout(() => {

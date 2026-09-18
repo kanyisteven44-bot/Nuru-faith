@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { fetchPassage, type Passage } from "@/lib/bible";
 import { useQuery } from "@tanstack/react-query";
 import { reportReel, REPORT_REASONS, type Reel } from "@/services/reels";
+import { reportExternalReel } from "@/services/externalReelInteractions";
 import { CardSkeleton, ErrorState } from "@/components/nuru/Primitives";
 import { Sheet } from "./Sheet";
 
@@ -75,7 +76,18 @@ export function ReportSheet({
     }
     setSending(true);
     try {
-      await reportReel({ reelId: reel.id, userId, reason, details });
+      if (reel.external_id) {
+        await reportExternalReel({
+          userId,
+          externalReelId: reel.external_id,
+          reason,
+          details,
+          sourceUrl: reel.external_url,
+          creatorName: reel.creator_name,
+        });
+      } else {
+        await reportReel({ reelId: reel.id, userId, reason, details });
+      }
       toast.success("Thank you — our moderators will review this");
       onClose();
     } catch (e) {

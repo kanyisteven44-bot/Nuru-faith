@@ -1,16 +1,10 @@
 import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { BadgeCheck, ChevronRight, Search, UserRound } from "lucide-react";
-import { toast } from "sonner";
 import { resolveMedia } from "@/lib/media";
 import { useAuth } from "@/hooks/useAuth";
-import {
-  fetchMentors,
-  fetchMyMentorshipRequests,
-  fetchProfile,
-  requestMentorship,
-} from "@/services/content";
+import { fetchMentors, fetchMyMentorshipRequests, fetchProfile } from "@/services/content";
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
 import { CardSkeleton, EmptyState, PillTabs } from "@/components/nuru/Primitives";
 
@@ -33,8 +27,6 @@ type Tab = (typeof TABS)[number];
 function MentorsScreen() {
   const { userId } = useAuth();
   const [tab, setTab] = useState<Tab>("All");
-  const [busyId, setBusyId] = useState<string | null>(null);
-
   const mentors = useQuery({ queryKey: ["mentors"], queryFn: fetchMentors });
   const profile = useQuery({
     queryKey: ["profile", userId],
@@ -53,28 +45,6 @@ function MentorsScreen() {
     tab === "My Church" && profile.data?.church_id
       ? all.filter((m) => m.church_id === profile.data?.church_id)
       : all;
-
-  async function ask(mentorId: string) {
-    if (!userId) {
-      toast.error("Sign in to request mentorship");
-      return;
-    }
-    setBusyId(mentorId);
-    try {
-      await requestMentorship({
-        mentor_id: mentorId,
-        requester_id: userId,
-        reason: "Mentorship request from Nuru Faith",
-        message: "",
-      });
-      await requests.refetch();
-      toast.success("Request sent");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Couldn't send that request");
-    } finally {
-      setBusyId(null);
-    }
-  }
 
   return (
     <AppShell>
@@ -102,7 +72,12 @@ function MentorsScreen() {
         {rows.map((m) => {
           const pending = requested.has(m.id);
           return (
-            <div key={m.id} className="nuru-card flex items-center gap-3 p-3">
+            <Link
+              key={m.id}
+              to="/mentors/$id"
+              params={{ id: m.id }}
+              className="nuru-card flex items-center gap-3 p-3 active:opacity-90"
+            >
               {m.photo_url ? (
                 <img
                   src={resolveMedia(m.photo_url)}
@@ -125,16 +100,13 @@ function MentorsScreen() {
                   {m.role_title ?? (m.specialties ?? []).slice(0, 2).join(" · ") ?? "Mentor"}
                 </span>
               </span>
-              <button
-                type="button"
-                disabled={pending || busyId === m.id}
-                onClick={() => void ask(m.id)}
-                className="shrink-0 rounded-lg bg-primary px-3.5 py-1.5 text-[11px] font-semibold text-primary-foreground disabled:opacity-60"
-              >
-                {pending ? "Requested" : "Connect"}
-              </button>
+              {pending && (
+                <span className="shrink-0 rounded-lg bg-surface-2 px-2.5 py-1 text-[10px] font-semibold text-cyan">
+                  Requested
+                </span>
+              )}
               <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-            </div>
+            </Link>
           );
         })}
       </div>

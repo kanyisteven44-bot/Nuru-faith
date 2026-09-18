@@ -362,6 +362,12 @@ export async function toggleAttendance(userId: string, eventId: string, going: b
 export const fetchMentors = async () =>
   unwrap(await supabase.from("mentors").select("*").order("verified", { ascending: false }));
 
+export async function fetchMentorById(id: string) {
+  const { data, error } = await supabase.from("mentors").select("*").eq("id", id).maybeSingle();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
 export const fetchMyMentorshipRequests = async (userId: string) =>
   unwrap(
     await supabase

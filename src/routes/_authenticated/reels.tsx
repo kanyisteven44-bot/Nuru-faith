@@ -30,6 +30,7 @@ import {
   readWatchedExternalReelIds,
   rememberWatchedExternalReel,
 } from "@/lib/reelWatchHistory";
+import { ensureExternalReelLike } from "@/services/externalReelInteractions";
 import { AppShell } from "@/components/nuru/AppShell";
 import { CardSkeleton } from "@/components/nuru/Primitives";
 import { ReelFeedTabs } from "@/components/nuru/reels/ReelFeedTabs";
@@ -389,7 +390,7 @@ function ReelsScreen() {
   }
 
   async function share(reel: Reel) {
-    const url = `${window.location.origin}/reels?reel=${reel.id}`;
+    const url = reel.external_url ?? `${window.location.origin}/reels?reel=${reel.id}`;
     const text = reel.caption ? reel.caption.slice(0, 120) : "A short teaching on Nuru Faith";
     try {
       if (navigator.share) await navigator.share({ title: "Nuru Faith", text, url });
@@ -500,6 +501,33 @@ function ReelsScreen() {
                     likeMutation.mutate({ reelId: reel.id, liked: likeSet.includes(reel.id) }),
                   )
                 }
+                onDoubleLike={() => {
+                  if (reel.external_id) {
+                    requireAuth(() => {
+                      const stateKey = ["external-reel-state", userId, reel.external_id] as const;
+                      qc.setQueryData(
+                        stateKey,
+                        (
+                          old:
+                            | { liked?: boolean; saved?: boolean; commentCount?: number }
+                            | undefined,
+                        ) => ({
+                          liked: true,
+                          saved: old?.saved ?? false,
+                          commentCount: old?.commentCount ?? 0,
+                        }),
+                      );
+                      void ensureExternalReelLike(userId!, reel.external_id!)
+                        .then(() => qc.invalidateQueries({ queryKey: stateKey }))
+                        .catch(() => {
+                          void qc.invalidateQueries({ queryKey: stateKey });
+                          toast.error("Couldn't save that like");
+                        });
+                    });
+                  } else if (!likeSet.includes(reel.id)) {
+                    requireAuth(() => likeMutation.mutate({ reelId: reel.id, liked: false }));
+                  }
+                }}
                 onSave={() =>
                   requireAuth(() =>
                     saveMutation.mutate({ reelId: reel.id, saved: saveSet.includes(reel.id) }),
@@ -519,7 +547,13 @@ function ReelsScreen() {
                 onComments={() => setCommentsFor(reel)}
                 onShare={() => void share(reel)}
                 onMore={() => setMoreFor(reel)}
-                onProfile={() => navigate({ to: "/profile" })}
+                onProfile={() => {
+                  if (reel.external_url) {
+                    window.open(reel.external_url, "_blank", "noopener,noreferrer");
+                  } else {
+                    void navigate({ to: "/profile" });
+                  }
+                }}
                 onRead={() => setReadFor(reel)}
                 onPray={() =>
                   requireAuth(() => {

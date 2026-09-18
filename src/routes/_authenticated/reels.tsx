@@ -403,7 +403,8 @@ function ReelsScreen() {
   }
 
   async function copyLink(reel: Reel) {
-    await navigator.clipboard.writeText(`${window.location.origin}/reels?reel=${reel.id}`);
+    const url = reel.external_url ?? `${window.location.origin}/reels?reel=${reel.id}`;
+    await navigator.clipboard.writeText(url);
     toast.success("Link copied");
   }
 
@@ -411,6 +412,11 @@ function ReelsScreen() {
     setHiddenIds((h) => [...h, reel.id]);
     setMoreFor(null);
     toast.success("You'll see fewer Reels like this");
+
+    if (reel.external_id) {
+      rememberWatchedExternalReel(userId, reel.external_id);
+      return;
+    }
     if (userId) void addReelFeedback(userId, reel.id).catch(() => undefined);
   }
 
@@ -520,10 +526,10 @@ function ReelsScreen() {
                     void addPrayerJournalEntry({
                       userId: userId!,
                       title: reel.caption?.slice(0, 60) ?? "Prayer from a Reel",
-                      content: `Lord, take what I just heard and make it real in my life.\n\n"${reel.caption ?? ""}"`,
+                      content: `Lord, take what I just heard and make it real in my life.\n\n"${reel.caption ?? ""}"${reel.external_url ? `\n\nSource: ${reel.external_url}` : ""}`,
                       scriptureRef: reel.scripture_ref,
-                      source: "reel",
-                      sourceId: reel.id,
+                      source: reel.external_id ? "external_reel" : "reel",
+                      sourceId: /^[0-9a-f-]{36}$/i.test(reel.id) ? reel.id : null,
                     })
                       .then(() => toast.success("Saved to your prayer journal"))
                       .catch(() => toast.error("Couldn't save that"));

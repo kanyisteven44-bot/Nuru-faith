@@ -15,7 +15,7 @@ export type ReelPaneProps = {
   reel: Reel;
   index: number;
   active: boolean;
-  /** Active, or directly next to it — only these load video data. */
+  /** Active, or directly next to it — only these load video data and full controls. */
   near: boolean;
   muted: boolean;
   autoplayAllowed: boolean;
@@ -28,6 +28,7 @@ export type ReelPaneProps = {
   onView: (reel: Reel) => void;
   onToggleMuted: () => void;
   onLike: () => void;
+  onDoubleLike: () => void;
   onSave: () => void;
   onFollow: () => void;
   onComments: () => void;
@@ -38,6 +39,11 @@ export type ReelPaneProps = {
   onPray: () => void;
   onAskAi: () => void;
   onDiscuss: () => void;
+};
+
+const OFFSCREEN_STYLE = {
+  contentVisibility: "auto" as const,
+  containIntrinsicSize: "100dvh",
 };
 
 export function ReelPane(props: ReelPaneProps) {
@@ -53,7 +59,9 @@ export function ReelPane(props: ReelPaneProps) {
   const [showIcon, setShowIcon] = useState(false);
   const [burst, setBurst] = useState<{ x: number; y: number; key: number } | null>(null);
   const [manualStart, setManualStart] = useState(false);
+  const [externalCommentsOpen, setExternalCommentsOpen] = useState(false);
 
+  const commentsVisible = commentsOpen || externalCommentsOpen;
   const hasVideo = !!reel.video_url;
   const isYouTubeEmbed = reel.source_type === "youtube" && !!reel.external_id;
   const isLinkOutOnly =
@@ -79,12 +87,12 @@ export function ReelPane(props: ReelPaneProps) {
     return () => io.disconnect();
   }, [index, onActive]);
 
-  /* --- playback: exactly one video plays at a time --- */
+  /* --- playback: exactly one native video plays at a time --- */
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
     v.muted = muted;
-    if (active && !paused && !commentsOpen && (autoplayAllowed || manualStart)) {
+    if (active && !paused && !commentsVisible && (autoplayAllowed || manualStart)) {
       void v.play().catch(() => undefined);
     } else {
       v.pause();
@@ -93,13 +101,13 @@ export function ReelPane(props: ReelPaneProps) {
         setPaused(false);
       }
     }
-  }, [active, paused, muted, commentsOpen, autoplayAllowed, manualStart]);
+  }, [active, paused, muted, commentsVisible, autoplayAllowed, manualStart]);
 
   /* --- pause while comments are open, resume after --- */
   useEffect(() => {
-    if (commentsOpen) wasPlaying.current = !paused;
+    if (commentsVisible) wasPlaying.current = !paused;
     else if (wasPlaying.current) setPaused(false);
-  }, [commentsOpen, paused]);
+  }, [commentsVisible, paused]);
 
   /* --- a view only counts after ~2 seconds of being active --- */
   useEffect(() => {
@@ -127,13 +135,14 @@ export function ReelPane(props: ReelPaneProps) {
     const y = e.clientY - rect.top;
 
     if (tapTimer.current) {
-      // second tap → like, and never pause. External YouTube likes use the right-side action
-      // rail because their interaction record is keyed by YouTube video id, not a Reel UUID.
       window.clearTimeout(tapTimer.current);
       tapTimer.current = null;
-      setBurst({ x, y, key: Date.now() });
-      window.setTimeout(() => setBurst(null), 800);
-      if (!isYouTubeEmbed && !props.liked) props.onLike();
+      const shouldLike = isYouTubeEmbed || !props.liked;
+      if (shouldLike) {
+        setBurst({ x, y, key: Date.now() });
+        window.setTimeout(() => setBurst(null), 800);
+        props.onDoubleLike();
+      }
       return;
     }
     tapTimer.current = window.setTimeout(() => {
@@ -142,9 +151,42 @@ export function ReelPane(props: ReelPaneProps) {
     }, 250);
   }
 
+  /*
+   * A long session may have hundreds or thousands of already-visited panes in
+   * the scroll container. Keep distant panes as tiny poster placeholders; the
+   * full controls/player mount only for the active Reel and its neighbours.
+   * IntersectionObserver still watches every placeholder, so it upgrades as
+   * soon as it reaches the active window.
+   */
+  if (!near) {
+    return (
+      <article
+        ref={paneRef}
+        style={OFFSCREEN_STYLE}
+        className="relative h-full w-full shrink-0 snap-start snap-always overflow-hidden bg-black"
+        aria-label={`Reel by ${reel.creator_name}`}
+      >
+        {reel.poster_url ? (
+          <img
+            src={resolveMedia(reel.poster_url)}
+            alt=""
+            width={720}
+            height={1280}
+            loading="lazy"
+            decoding="async"
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="h-full w-full bg-black" />
+        )}
+      </article>
+    );
+  }
+
   return (
     <article
       ref={paneRef}
+      style={OFFSCREEN_STYLE}
       className="relative h-full w-full shrink-0 snap-start snap-always overflow-hidden bg-black"
       aria-label={`Reel by ${reel.creator_name}`}
     >
@@ -168,7 +210,8 @@ export function ReelPane(props: ReelPaneProps) {
             loop
             controls={false}
             muted={muted}
-            playing={active && !paused && !commentsOpen}
+            playing={active && !paused && !commentsVisible}
+            interactive={false}
             className="h-full rounded-none"
           />
         ) : reel.poster_url ? (
@@ -177,7 +220,8 @@ export function ReelPane(props: ReelPaneProps) {
             alt=""
             width={720}
             height={1280}
-            loading={near ? "eager" : "lazy"}
+            loading="eager"
+            decoding="async"
             className="h-full w-full object-cover"
           />
         ) : (
@@ -224,7 +268,6 @@ export function ReelPane(props: ReelPaneProps) {
         </div>
       )}
 
-      {/* legibility gradients only where text sits */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/55 to-transparent"
@@ -299,6 +342,7 @@ export function ReelPane(props: ReelPaneProps) {
           <div className="pb-1">
             <ReelInteractiveActions
               reel={reel}
+              near={near}
               liked={props.liked}
               saved={props.saved}
               onProfile={props.onProfile}
@@ -307,6 +351,7 @@ export function ReelPane(props: ReelPaneProps) {
               onShare={props.onShare}
               onSave={props.onSave}
               onMore={props.onMore}
+              onCommentsVisibilityChange={setExternalCommentsOpen}
             />
           </div>
 

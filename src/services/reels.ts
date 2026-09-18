@@ -76,23 +76,14 @@ export const REELS_PAGE_SIZE = 6;
 const CANDIDATE_POOL_SIZE = 500;
 
 /**
- * Reel ids the person has already watched (logged after ~2s of active view),
- * newest watch first. Used to keep already-seen reels out of the feed for as
- * long as there's anything unseen left to show.
+ * Reel ids the person has already watched (logged after ~2s of active view).
+ * Watched reels are excluded from normal feeds; an intentional direct link can
+ * still open one through fetchReelById.
  */
-export async function fetchViewedReelTimestamps(userId: string): Promise<Map<string, string>> {
-  const { data, error } = await supabase
-    .from("reel_views")
-    .select("reel_id, created_at")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false })
-    .limit(2000);
+export async function fetchViewedReelIds(userId: string): Promise<Set<string>> {
+  const { data, error } = await supabase.from("reel_views").select("reel_id").eq("user_id", userId);
   if (error) throw new Error(error.message);
-  const lastViewedAt = new Map<string, string>();
-  for (const row of data ?? []) {
-    if (!lastViewedAt.has(row.reel_id)) lastViewedAt.set(row.reel_id, row.created_at);
-  }
-  return lastViewedAt;
+  return new Set((data ?? []).map((row) => row.reel_id));
 }
 
 /**
@@ -100,10 +91,9 @@ export async function fetchViewedReelTimestamps(userId: string): Promise<Map<str
  * newest published reels, gently boosted by the topics the person cares about,
  * their church and the creators they follow. Never ranked by raw views.
  *
- * Reels the person has already watched are always ranked behind unwatched
- * ones, so nothing repeats while there's still something new — a reel
- * watched yesterday won't resurface today unless the whole pool has been
- * seen. Once that happens, the reel watched longest ago comes back first.
+ * Reels the person has already watched are removed from normal feeds. We do
+ * not recycle old content when the unseen pool runs out: an empty feed is more
+ * honest than pretending an old Reel is new.
  */
 export async function fetchReelPage(params: {
   feed: ReelFeed;
@@ -132,12 +122,12 @@ export async function fetchReelPage(params: {
     q = q.eq("church_id", churchId);
   }
 
-  const [{ data, error }, lastViewedAt] = await Promise.all([
+  const [{ data, error }, viewedIds] = await Promise.all([
     q,
-    userId ? fetchViewedReelTimestamps(userId) : Promise.resolve(new Map<string, string>()),
+    userId ? fetchViewedReelIds(userId) : Promise.resolve(new Set<string>()),
   ]);
   if (error) throw new Error(error.message);
-  const rows = (data ?? []) as unknown as Reel[];
+  const rows = ((data ?? []) as unknown as Reel[]).filter((reel) => !viewedIds.has(reel.id));
 
   const score = (r: Reel) => {
     if (feed !== "For You") return 0;
@@ -154,10 +144,6 @@ export async function fetchReelPage(params: {
   };
 
   const ranked = [...rows].sort((a, b) => {
-    const aSeen = lastViewedAt.get(a.id);
-    const bSeen = lastViewedAt.get(b.id);
-    if (!aSeen !== !bSeen) return aSeen ? 1 : -1;
-    if (aSeen && bSeen && aSeen !== bSeen) return aSeen < bSeen ? -1 : 1;
     return score(b) - score(a);
   });
 
@@ -277,9 +263,10 @@ export async function recordReelView(
   watchDuration: number,
   completed: boolean,
 ) {
-  await supabase
+  const { error } = await supabase
     .from("reel_views")
     .insert({ user_id: userId, reel_id: reelId, watch_duration: watchDuration, completed });
+  if (error) throw new Error(error.message);
 }
 
 export async function reportReel(input: {

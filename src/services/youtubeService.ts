@@ -42,15 +42,20 @@ export function youtubeQuery(input: YouTubeQuery) {
   });
 }
 
-export function youtubeReelsInfiniteQuery() {
+export function youtubeReelsInfiniteQuery(userId: string | null) {
   return infiniteQueryOptions({
-    queryKey: ["youtube", "reels-pool-v8-paged-15k"],
+    // Including the user id makes a failed pre-auth request impossible to
+    // poison the signed-in feed cache after session restoration.
+    queryKey: ["youtube", "reels-pool-v8-paged-15k", userId],
     initialPageParam: null as string | null,
     queryFn: ({ pageParam }) => youtubeReelsFeed({ data: { cursor: pageParam } }),
     getNextPageParam: (lastPage) => lastPage.nextPageToken ?? undefined,
+    enabled: Boolean(userId),
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 60,
-    retry: 0,
+    retry: 1,
+    retryDelay: 900,
+    refetchOnReconnect: true,
   });
 }
 

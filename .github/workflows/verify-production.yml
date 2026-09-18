@@ -1,0 +1,26 @@
+name: Verify production build
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: Base URL to verify
+        required: false
+        default: https://nuru-faith-vortiqora.vercel.app
+  push:
+    branches:
+      - claude/nuru-faith-integrations-audit-anh4ux
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Check deployed bundle for merged UI
+        run: node scripts/verify-production-build.mjs "${{ inputs.base_url || 'https://nuru-faith-vortiqora.vercel.app' }}"

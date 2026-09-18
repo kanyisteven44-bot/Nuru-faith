@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Send, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
@@ -14,6 +14,8 @@ import {
 } from "@/services/externalReelInteractions";
 import { ReelActions } from "./ReelActions";
 
+type ExternalReelState = Awaited<ReturnType<typeof fetchExternalReelState>>;
+
 export function ReelInteractiveActions({
   reel,
   near,
@@ -25,6 +27,7 @@ export function ReelInteractiveActions({
   onShare,
   onSave,
   onMore,
+  onCommentsVisibilityChange,
 }: {
   reel: Reel;
   near: boolean;
@@ -36,15 +39,17 @@ export function ReelInteractiveActions({
   onShare: () => void;
   onSave: () => void;
   onMore: () => void;
+  onCommentsVisibilityChange?: (open: boolean) => void;
 }) {
   const { userId } = useAuth();
   const qc = useQueryClient();
   const [commentsOpen, setCommentsOpen] = useState(false);
   const isExternal = reel.source_type === "youtube" && !!reel.external_id;
   const externalId = reel.external_id ?? "";
+  const stateKey = ["external-reel-state", userId, externalId] as const;
 
   const state = useQuery({
-    queryKey: ["external-reel-state", userId, externalId],
+    queryKey: stateKey,
     queryFn: () => fetchExternalReelState(userId!, externalId),
     // A long feed can contain hundreds of external videos. Only hydrate
     // interaction state for the active Reel and its immediate neighbours.
@@ -52,27 +57,51 @@ export function ReelInteractiveActions({
     staleTime: 30_000,
   });
 
+  useEffect(() => () => onCommentsVisibilityChange?.(false), [onCommentsVisibilityChange]);
+
   const likeExternal = useMutation({
-    mutationFn: () => {
+    mutationFn: (liked: boolean) => {
       if (!userId) throw new Error("Sign in to like Reels");
-      return toggleExternalReelLike(userId, externalId, !!state.data?.liked);
+      return toggleExternalReelLike(userId, externalId, liked);
     },
-    onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: ["external-reel-state", userId, externalId] });
+    onMutate: async (liked) => {
+      await qc.cancelQueries({ queryKey: stateKey });
+      const previous = qc.getQueryData<ExternalReelState>(stateKey) ?? state.data;
+      const base = previous ?? { liked, saved: false, commentCount: 0 };
+      qc.setQueryData<ExternalReelState>(stateKey, { ...base, liked: !liked });
+      return { previous };
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Couldn't update like"),
+    onError: (e, _liked, context) => {
+      if (context?.previous) qc.setQueryData(stateKey, context.previous);
+      toast.error(e instanceof Error ? e.message : "Couldn't update like");
+    },
+    onSettled: async () => {
+      await qc.invalidateQueries({ queryKey: stateKey });
+    },
   });
 
   const saveExternal = useMutation({
-    mutationFn: () => {
+    mutationFn: (saved: boolean) => {
       if (!userId) throw new Error("Sign in to save Reels");
-      return toggleExternalReelSave(userId, externalId, !!state.data?.saved);
+      return toggleExternalReelSave(userId, externalId, saved);
     },
-    onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: ["external-reel-state", userId, externalId] });
-      toast.success(state.data?.saved ? "Removed from saved" : "Saved");
+    onMutate: async (saved) => {
+      await qc.cancelQueries({ queryKey: stateKey });
+      const previous = qc.getQueryData<ExternalReelState>(stateKey) ?? state.data;
+      const base = previous ?? { liked: false, saved, commentCount: 0 };
+      qc.setQueryData<ExternalReelState>(stateKey, { ...base, saved: !saved });
+      return { previous };
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Couldn't save Reel"),
+    onSuccess: (_data, saved) => {
+      toast.success(saved ? "Removed from saved" : "Saved");
+    },
+    onError: (e, _saved, context) => {
+      if (context?.previous) qc.setQueryData(stateKey, context.previous);
+      toast.error(e instanceof Error ? e.message : "Couldn't save Reel");
+    },
+    onSettled: async () => {
+      await qc.invalidateQueries({ queryKey: stateKey });
+    },
   });
 
   async function shareExternal() {
@@ -106,11 +135,12 @@ export function ReelInteractiveActions({
         onLike={() => {
           if (!isExternal) return onLike();
           if (!userId) return toast.error("Sign in to like Reels");
-          likeExternal.mutate();
+          if (!likeExternal.isPending) likeExternal.mutate(!!state.data?.liked);
         }}
         onComments={() => {
           if (!isExternal) return onComments();
           setCommentsOpen(true);
+          onCommentsVisibilityChange?.(true);
         }}
         onShare={() => {
           if (!isExternal) return onShare();
@@ -119,7 +149,7 @@ export function ReelInteractiveActions({
         onSave={() => {
           if (!isExternal) return onSave();
           if (!userId) return toast.error("Sign in to save Reels");
-          saveExternal.mutate();
+          if (!saveExternal.isPending) saveExternal.mutate(!!state.data?.saved);
         }}
         onMore={onMore}
       />
@@ -128,7 +158,10 @@ export function ReelInteractiveActions({
         <ExternalCommentsSheet
           externalReelId={externalId}
           userId={userId}
-          onClose={() => setCommentsOpen(false)}
+          onClose={() => {
+            setCommentsOpen(false);
+            onCommentsVisibilityChange?.(false);
+          }}
         />
       )}
     </>

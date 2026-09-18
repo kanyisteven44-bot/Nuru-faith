@@ -492,7 +492,27 @@ await ctx.route("**://*.supabase.co/**", async (route) => {
   }
 
   const table = tableFrom(url);
-  const rows = (table && FIXTURES[table]) || [];
+  let rows = (table && FIXTURES[table]) || [];
+
+  // Honour `col=eq.value` and `col=in.(a,b)` filters so detail screens, which
+  // look a single row up by id or slug, get the row they asked for.
+  for (const [key, value] of new URL(url).searchParams) {
+    if (["select", "order", "limit", "offset"].includes(key)) continue;
+    if (value.startsWith("eq.")) {
+      const want = value.slice(3);
+      rows = rows.filter((r) => String(r[key]) === want);
+    } else if (value.startsWith("in.")) {
+      const wanted = new Set(
+        value
+          .slice(3)
+          .replace(/^\(|\)$/g, "")
+          .split(",")
+          .map((v) => v.replace(/^"|"$/g, "")),
+      );
+      rows = rows.filter((r) => wanted.has(String(r[key])));
+    }
+  }
+
   const single = (req.headers()["accept"] ?? "").includes("pgrst.object");
   const body = single ? JSON.stringify(rows[0] ?? null) : JSON.stringify(rows);
   return route.fulfill({
@@ -547,6 +567,8 @@ for (const [name, route] of SCREENS) {
           .filter((x) => x.h > 600),
       );
       console.log("DIAG", name, JSON.stringify(big));
+      const text = await page.evaluate(() => document.body.innerText);
+      console.log("TEXT", name, text.slice(0, 400).replace(/\n+/g, " | "));
     }
     await page.screenshot({ path: `${OUT}/${name}.png`, fullPage: true });
     console.log("OK  ", name, "->", page.url());

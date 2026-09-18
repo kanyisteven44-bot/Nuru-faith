@@ -24,6 +24,7 @@ export function YouTubePlayer({
   playing,
   loop = false,
   controls = true,
+  interactive = true,
 }: {
   videoId?: string;
   playlistId?: string;
@@ -36,6 +37,8 @@ export function YouTubePlayer({
   playing?: boolean;
   loop?: boolean;
   controls?: boolean;
+  /** Disable direct iframe pointer input when a parent surface owns taps/swipes. */
+  interactive?: boolean;
 }) {
   const frameRef = useRef<HTMLIFrameElement | null>(null);
   const ready = useRef(false);
@@ -100,7 +103,8 @@ export function YouTubePlayer({
           allow="autoplay; accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
           allowFullScreen
           referrerPolicy="strict-origin-when-cross-origin"
-          className="h-full w-full border-0"
+          className={cn("h-full w-full border-0", !interactive && "pointer-events-none")}
+          tabIndex={interactive ? undefined : -1}
         />
       </div>
     </div>

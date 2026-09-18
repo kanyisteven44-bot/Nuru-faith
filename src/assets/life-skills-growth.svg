@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+  <defs>
+    <linearGradient id="bg-life" x1="0" y1="0" x2="0.6" y2="1">
+      <stop offset="0%" stop-color="#0a3a3c"/>
+      <stop offset="55%" stop-color="#052236"/>
+      <stop offset="100%" stop-color="#00132f"/>
+    </linearGradient>
+    <radialGradient id="glow-life" cx="55%" cy="28%" r="55%">
+      <stop offset="0%" stop-color="#36e4b5" stop-opacity="0.5"/>
+      <stop offset="55%" stop-color="#36e4b5" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#36e4b5" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="800" height="600" fill="url(#bg-life)"/>
+  <rect width="800" height="600" fill="url(#glow-life)"/>
+
+  <!-- balance scale -->
+  <g stroke="#dffff4" stroke-width="6" stroke-linecap="round" fill="none" opacity="0.9">
+    <line x1="400" y1="150" x2="400" y2="420"/>
+    <line x1="250" y1="210" x2="550" y2="210"/>
+    <line x1="250" y1="210" x2="200" y2="300"/>
+    <line x1="250" y1="210" x2="300" y2="300"/>
+    <line x1="550" y1="210" x2="500" y2="300"/>
+    <line x1="550" y1="210" x2="600" y2="300"/>
+  </g>
+  <path d="M180 300 A70 40 0 0 0 320 300 Z" fill="#dffff4" opacity="0.28"/>
+  <path d="M480 300 A70 40 0 0 0 620 300 Z" fill="#dffff4" opacity="0.28"/>
+  <path d="M180 300 A70 40 0 0 0 320 300" fill="none" stroke="#36e4b5" stroke-width="4" opacity="0.7"/>
+  <path d="M480 300 A70 40 0 0 0 620 300" fill="none" stroke="#36e4b5" stroke-width="4" opacity="0.7"/>
+
+  <!-- base -->
+  <path d="M340 420 L460 420 L430 460 L370 460 Z" fill="#dffff4" opacity="0.9"/>
+  <rect x="330" y="460" width="140" height="18" rx="6" fill="#dffff4" opacity="0.9"/>
+
+  <!-- sprout growing from the fulcrum, practical wisdom that grows -->
+  <g transform="translate(400,150)" stroke="#36e4b5" stroke-width="6" stroke-linecap="round" fill="none">
+    <line x1="0" y1="0" x2="0" y2="-58"/>
+    <path d="M0 -30 C -34 -30, -34 -66, -4 -66" fill="#36e4b5" opacity="0.85" stroke="none"/>
+    <path d="M0 -42 C 30 -42, 30 -74, 4 -74" fill="#36e4b5" opacity="0.85" stroke="none"/>
+  </g>
+</svg>

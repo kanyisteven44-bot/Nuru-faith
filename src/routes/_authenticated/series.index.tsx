@@ -1,10 +1,15 @@
-import { useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { Play, Search, Sparkles } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { resolveMedia } from "@/lib/media";
-import { fetchMyProgress, fetchSeries, type SeriesRow } from "@/services/series";
+import {
+  fetchMyProgress,
+  fetchSeries,
+  SERIES_PAGE_SIZE,
+  type SeriesRow,
+} from "@/services/series";
 import { AppShell } from "@/components/nuru/AppShell";
 import {
   CardSkeleton,
@@ -49,15 +54,27 @@ function SeriesHome() {
   const { userId } = useAuth();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>("All");
+  const deferredQuery = useDeferredValue(query.trim());
 
-  const series = useQuery({ queryKey: ["series"], queryFn: () => fetchSeries() });
+  const series = useInfiniteQuery({
+    queryKey: ["series", deferredQuery, filter],
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) =>
+      fetchSeries(
+        deferredQuery || undefined,
+        filter === "All" ? undefined : filter,
+        pageParam,
+      ),
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.length === SERIES_PAGE_SIZE ? allPages.length : undefined,
+  });
   const progress = useQuery({
     queryKey: ["series-progress", userId],
     queryFn: () => fetchMyProgress(userId!),
     enabled: !!userId,
   });
 
-  const all = useMemo(() => series.data ?? [], [series.data]);
+  const all = useMemo(() => (series.data?.pages ?? []).flat(), [series.data]);
   const progressMap = useMemo(
     () => new Map((progress.data ?? []).map((p) => [p.series_id, p.progress_percent])),
     [progress.data],
@@ -67,16 +84,7 @@ function SeriesHome() {
     [all, progressMap],
   );
 
-  const visible = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return all.filter((s) => {
-      const matchesFilter =
-        filter === "All" || s.category.toLowerCase().includes(filter.toLowerCase());
-      const matchesQuery =
-        !q || s.title.toLowerCase().includes(q) || (s.description ?? "").toLowerCase().includes(q);
-      return matchesFilter && matchesQuery;
-    });
-  }, [all, filter, query]);
+  const visible = all;
 
   const hero = inProgress[0] ?? visible[0] ?? all[0];
   const heroPercent = hero ? progressMap.get(hero.id) : undefined;
@@ -120,6 +128,17 @@ function SeriesHome() {
               <SeriesRow key={s.id} series={s} percent={progressMap.get(s.id)} />
             ))}
           </div>
+        )}
+
+        {series.hasNextPage && (
+          <button
+            type="button"
+            disabled={series.isFetchingNextPage}
+            onClick={() => void series.fetchNextPage()}
+            className="mx-auto flex min-h-11 items-center justify-center rounded-full bg-surface-2 px-5 text-sm font-semibold text-secondary-foreground disabled:opacity-60"
+          >
+            {series.isFetchingNextPage ? "Loading more…" : "Load more series"}
+          </button>
         )}
 
         <p className="flex items-start gap-2 rounded-2xl bg-surface-2 px-4 py-3 text-xs text-muted-foreground">

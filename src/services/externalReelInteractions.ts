@@ -120,3 +120,26 @@ export async function deleteExternalReelComment(userId: string, commentId: strin
     .eq("user_id", userId);
   if (error) throw new Error(error.message);
 }
+
+
+export async function reportExternalReel(input: {
+  userId: string;
+  externalReelId: string;
+  reason: string;
+  details?: string;
+  sourceUrl?: string | null;
+  creatorName?: string | null;
+}) {
+  const { error } = await supabase.from("external_reel_reports").insert({
+    external_reel_id: input.externalReelId,
+    reported_by: input.userId,
+    reason: input.reason,
+    details: input.details?.trim() || null,
+    source_url: input.sourceUrl ?? null,
+    creator_name: input.creatorName ?? null,
+  });
+
+  // A person only needs one active report per external Reel. Treat a repeat
+  // submission as already received instead of surfacing a database error.
+  if (error && error.code !== "23505") throw new Error(error.message);
+}

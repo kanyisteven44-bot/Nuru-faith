@@ -77,7 +77,7 @@ if (page.url().includes("/onboarding")) {
   const nameInput = page.locator("#ob-name");
   if (await nameInput.count()) await nameInput.fill("Nuru Vercel QA");
   const userInput = page.locator("#ob-user");
-  if (await userInput.count()) await userInput.fill("nuru_vercel_qa_" + String(stamp).slice(-6));
+  if (await userInput.count()) await userInput.fill("nuru_vercel_qa_" + email.match(/[0-9]{10,}/)[0].slice(-6));
 
   await page.getByRole("button", { name: "Continue" }).click();
   await page.waitForTimeout(500);

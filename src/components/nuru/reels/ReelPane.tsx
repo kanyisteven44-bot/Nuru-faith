@@ -58,7 +58,9 @@ export function ReelPane(props: ReelPaneProps) {
   const [showIcon, setShowIcon] = useState(false);
   const [burst, setBurst] = useState<{ x: number; y: number; key: number } | null>(null);
   const [manualStart, setManualStart] = useState(false);
+  const [externalCommentsOpen, setExternalCommentsOpen] = useState(false);
 
+  const commentsVisible = commentsOpen || externalCommentsOpen;
   const hasVideo = !!reel.video_url;
   const isYouTubeEmbed = reel.source_type === "youtube" && !!reel.external_id;
   const isLinkOutOnly =
@@ -89,7 +91,7 @@ export function ReelPane(props: ReelPaneProps) {
     const v = videoRef.current;
     if (!v) return;
     v.muted = muted;
-    if (active && !paused && !commentsOpen && (autoplayAllowed || manualStart)) {
+    if (active && !paused && !commentsVisible && (autoplayAllowed || manualStart)) {
       void v.play().catch(() => undefined);
     } else {
       v.pause();
@@ -98,13 +100,13 @@ export function ReelPane(props: ReelPaneProps) {
         setPaused(false);
       }
     }
-  }, [active, paused, muted, commentsOpen, autoplayAllowed, manualStart]);
+  }, [active, paused, muted, commentsVisible, autoplayAllowed, manualStart]);
 
   /* --- pause while comments are open, resume after --- */
   useEffect(() => {
-    if (commentsOpen) wasPlaying.current = !paused;
+    if (commentsVisible) wasPlaying.current = !paused;
     else if (wasPlaying.current) setPaused(false);
-  }, [commentsOpen, paused]);
+  }, [commentsVisible, paused]);
 
   /* --- a view only counts after ~2 seconds of being active --- */
   useEffect(() => {
@@ -204,7 +206,8 @@ export function ReelPane(props: ReelPaneProps) {
             loop
             controls={false}
             muted={muted}
-            playing={active && !paused && !commentsOpen}
+            playing={active && !paused && !commentsVisible}
+            interactive={false}
             className="h-full rounded-none"
           />
         ) : reel.poster_url ? (
@@ -362,6 +365,7 @@ export function ReelPane(props: ReelPaneProps) {
               onShare={props.onShare}
               onSave={props.onSave}
               onMore={props.onMore}
+              onCommentsVisibilityChange={setExternalCommentsOpen}
             />
           </div>
         </div>

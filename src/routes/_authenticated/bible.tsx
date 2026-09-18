@@ -34,6 +34,7 @@ import {
   setHighlight,
   type HighlightColor,
 } from "@/services/series";
+import { useShareSheet } from "@/hooks/useShareSheet";
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
 import { CardSkeleton, EmptyState, PillTabs } from "@/components/nuru/Primitives";
 import { Sheet } from "@/components/nuru/reels/Sheet";
@@ -274,6 +275,7 @@ function Reader({
   const reference = `${book.name} ${chapter}`;
   const { userId } = useAuth();
   const qc = useQueryClient();
+  const shareSheet = useShareSheet();
   const [bookSheetOpen, setBookSheetOpen] = useState(false);
   const [chapterSheetOpen, setChapterSheetOpen] = useState(false);
   const [colorPicker, setColorPicker] = useState<{ verse: number; text: string } | null>(null);
@@ -364,11 +366,11 @@ function Reader({
 
   function share() {
     const text = `${passage.data?.reference ?? reference} — Nuru Faith`;
-    if (navigator.share) void navigator.share({ title: text, text }).catch(() => {});
-    else {
-      void navigator.clipboard?.writeText(text);
-      toast.success("Copied");
-    }
+    void shareSheet.share({
+      title: text,
+      text,
+      url: `${window.location.origin}/bible`,
+    });
   }
 
   return (
@@ -572,6 +574,7 @@ function Reader({
           </div>
         </Sheet>
       )}
+      {shareSheet.node}
     </AppShell>
   );
 }

@@ -51,7 +51,7 @@ await capture("05-reset-password", "/reset-password");
 // Create a throwaway QA account through the real production signup form.
 // Credentials are generated only inside this workflow run and are never committed.
 const stamp = Date.now();
-const email = `nuru.vercel.qa.${stamp}@example.com`;
+const email = `nuru.vercel.qa.${stamp}@gmail.com`;
 const password = `NuruQA!${stamp}x`;
 await fs.writeFile(path.join(OUT, "qa-account.txt"), email + "\n");
 

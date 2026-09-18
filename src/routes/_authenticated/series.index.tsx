@@ -37,7 +37,14 @@ export const Route = createFileRoute("/_authenticated/series/")({
   component: SeriesHome,
 });
 
-const FILTERS = ["All", "Identity", "Emotions", "Relationships", "Faith", "Purpose"] as const;
+const FILTERS = [
+  "All",
+  "Discipleship",
+  "Life Skills",
+  "Relationships",
+  "Difficult Seasons",
+  "Purpose & Calling",
+] as const;
 
 function SeriesHome() {
   const { userId } = useAuth();

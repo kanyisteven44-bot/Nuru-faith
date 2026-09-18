@@ -75,8 +75,8 @@ const QUICK_ACCESS = [
     tint: "bg-gradient-to-br from-emerald-400 to-green-600",
   },
   {
-    to: "/learn",
-    label: "Courses",
+    to: "/series",
+    label: "Series",
     icon: GraduationCap,
     tint: "bg-gradient-to-br from-orange-400 to-amber-600",
   },

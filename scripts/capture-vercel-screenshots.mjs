@@ -48,34 +48,23 @@ await capture("03-auth-signup", "/auth?mode=signup");
 await capture("04-auth-forgot", "/auth?mode=forgot");
 await capture("05-reset-password", "/reset-password");
 
-// Create a throwaway QA account through the real production signup form.
-// Credentials are generated only inside this workflow run and are never committed.
-const stamp = Date.now();
-const email = `nuru.vercel.qa.${stamp}@gmail.com`;
-const password = `NuruQA!${stamp}x`;
-await fs.writeFile(path.join(OUT, "qa-account.txt"), email + "\n");
+// Sign in with the temporary QA account confirmed only for this screenshot run.
+const email = "nuru.vercel.qa.1789735101601@gmail.com";
+const password = "NuruQA!" + email.match(/\\d+/)[0] + "x";
+await fs.writeFile(path.join(OUT, "qa-account.txt"), email + "\\n");
 
-await page.goto(BASE + "/auth?mode=signup", { waitUntil: "domcontentloaded", timeout: 45000 });
+await page.goto(BASE + "/auth?mode=login", { waitUntil: "domcontentloaded", timeout: 45000 });
 await page.waitForTimeout(1200);
-await page.getByPlaceholder("Stephen Kanyi").fill("Nuru Vercel QA");
 await page.getByPlaceholder("you@email.com").fill(email);
 await page.locator('input[type="password"]').fill(password);
-await page.getByRole("button", { name: "Create account" }).click();
-await page.waitForTimeout(5000);
-
-const confirmationRequired = await page.getByText("Check your email").isVisible().catch(() => false);
-if (confirmationRequired) {
-  console.log("AUTH_CONFIRMATION_REQUIRED", email);
-  await page.screenshot({ path: path.join(OUT, "06-signup-email-confirmation-required.png"), fullPage: true });
-  await fs.writeFile(path.join(OUT, "AUTH_CONFIRMATION_REQUIRED.txt"), "Email confirmation is enabled; protected Vercel routes could not be captured with the throwaway account.\n");
-  await browser.close();
-  process.exit(0);
-}
+await page.getByRole("button", { name: "Sign In" }).click();
+await page.waitForURL(/\\/(onboarding|home)/, { timeout: 30000 }).catch(() => {});
+await page.waitForTimeout(1500);
 
 if (!page.url().includes("/onboarding") && !page.url().includes("/home")) {
   console.log("AUTH_UNEXPECTED_URL", page.url());
-  await page.screenshot({ path: path.join(OUT, "06-signup-unexpected-state.png"), fullPage: true });
-  await fs.writeFile(path.join(OUT, "AUTH_FAILED.txt"), "Unexpected post-signup URL: " + page.url() + "\n");
+  await page.screenshot({ path: path.join(OUT, "06-login-unexpected-state.png"), fullPage: true });
+  await fs.writeFile(path.join(OUT, "AUTH_FAILED.txt"), "Unexpected post-login URL: " + page.url() + "\\n");
   await browser.close();
   process.exit(0);
 }

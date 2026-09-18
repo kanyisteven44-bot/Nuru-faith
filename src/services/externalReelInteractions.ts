@@ -143,3 +143,12 @@ export async function reportExternalReel(input: {
   // submission as already received instead of surfacing a database error.
   if (error && error.code !== "23505") throw new Error(error.message);
 }
+
+
+export async function ensureExternalReelLike(userId: string, externalReelId: string) {
+  const { error } = await supabase.from("external_reel_likes").upsert(
+    { user_id: userId, external_reel_id: externalReelId },
+    { onConflict: "external_reel_id,user_id", ignoreDuplicates: true },
+  );
+  if (error) throw new Error(error.message);
+}

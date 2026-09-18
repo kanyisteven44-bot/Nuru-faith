@@ -1,18 +1,24 @@
 import type { ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Bell, BookOpen, Calendar, Home, User, Users } from "lucide-react";
+import { ArrowLeft, Bell, Compass, Home, Plus, User, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchProfile } from "@/services/content";
 import { generatedAvatar } from "@/lib/avatar";
 import { NuruMark } from "./Logo";
 
-const NAV = [
+/**
+ * Two nav items sit either side of the raised create button, matching the
+ * app design: Home, Explore, (+), Community, Profile.
+ */
+const NAV_LEFT = [
   { to: "/home", label: "Home", icon: Home },
+  { to: "/explore", label: "Explore", icon: Compass },
+] as const;
+
+const NAV_RIGHT = [
   { to: "/community", label: "Community", icon: Users },
-  { to: "/bible", label: "Bible", icon: BookOpen },
-  { to: "/events", label: "Events", icon: Calendar },
   { to: "/profile", label: "Profile", icon: User },
 ] as const;
 
@@ -46,11 +52,23 @@ export function AppShell({
         >
           <ul
             className={cn(
-              "mx-auto grid grid-cols-5 px-1 pb-[max(0.4rem,env(safe-area-inset-bottom))] pt-2",
+              "mx-auto grid grid-cols-5 items-end px-1 pb-[max(0.4rem,env(safe-area-inset-bottom))] pt-2",
               maxWidth,
             )}
           >
-            {NAV.map((item) => (
+            {NAV_LEFT.map((item) => (
+              <NavItem key={item.to} {...item} active={pathname.startsWith(item.to)} />
+            ))}
+            <li className="flex justify-center">
+              <Link
+                to="/create"
+                aria-label="Create"
+                className="-mt-6 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_8px_24px_-4px_var(--primary)] ring-4 ring-background transition-transform active:scale-95"
+              >
+                <Plus className="h-6 w-6" strokeWidth={2.5} />
+              </Link>
+            </li>
+            {NAV_RIGHT.map((item) => (
               <NavItem key={item.to} {...item} active={pathname.startsWith(item.to)} />
             ))}
           </ul>

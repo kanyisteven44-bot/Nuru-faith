@@ -80,7 +80,7 @@ function dataSaverOn() {
 }
 
 function ReelsScreen() {
-  const { userId } = useAuth();
+  const { userId, loading: authLoading } = useAuth();
   const { reel: linkedId } = Route.useSearch();
   const linkedReel = useQuery({
     queryKey: ["linked-reel", userId, linkedId],
@@ -156,6 +156,7 @@ function ReelsScreen() {
   const reels = useInfiniteQuery({
     queryKey: feedKey,
     initialPageParam: 0,
+    enabled: !!userId && !authLoading,
     queryFn: ({ pageParam }) =>
       fetchReelPage({
         feed,
@@ -175,7 +176,7 @@ function ReelsScreen() {
    * server page is requested when the viewer approaches the end of what is
    * already buffered.
    */
-  const youtubeFallback = useInfiniteQuery(youtubeReelsInfiniteQuery());
+  const youtubeFallback = useInfiniteQuery(youtubeReelsInfiniteQuery(userId));
 
   const loadedYoutubeVideos = useMemo(
     () => (youtubeFallback.data?.pages ?? []).flatMap((page) => page.videos),
@@ -442,7 +443,10 @@ function ReelsScreen() {
   const likeSet = likes.data ?? [];
   const saveSet = saves.data ?? [];
   const initialLoading =
-    reels.isLoading || linkedReel.isLoading || (feed === "For You" && youtubeFallback.isLoading);
+    authLoading ||
+    reels.isLoading ||
+    linkedReel.isLoading ||
+    (feed === "For You" && items.length === 0 && youtubeFallback.isLoading);
   const feedError =
     reels.isError || (feed === "For You" && youtubeFallback.isError && items.length === 0);
 

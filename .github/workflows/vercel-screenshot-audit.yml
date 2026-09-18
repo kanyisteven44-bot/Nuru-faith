@@ -1,0 +1,40 @@
+name: Vercel Screenshot Audit
+
+on:
+  push:
+    branches:
+      - vercel-screenshot-audit
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install app dependencies
+        run: npm ci
+
+      - name: Install Playwright
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Capture production Vercel screens
+        run: node scripts/capture-vercel-screenshots.mjs
+
+      - name: Upload screenshot artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuru-vercel-screenshots
+          path: screenshots-vercel
+          if-no-files-found: error
+          retention-days: 1

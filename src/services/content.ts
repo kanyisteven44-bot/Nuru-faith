@@ -323,42 +323,6 @@ export const fetchPlanDays = async (planId: string) =>
     await supabase.from("reading_plan_days").select("*").eq("plan_id", planId).order("day_number"),
   );
 
-export const fetchCourses = async () =>
-  unwrap(await supabase.from("courses").select("*").order("title"));
-
-export const fetchCourseLessons = async (courseId: string) =>
-  unwrap(
-    await supabase.from("course_lessons").select("*").eq("course_id", courseId).order("position"),
-  );
-
-export async function fetchMyProgress(userId: string) {
-  const { data, error } = await supabase
-    .from("course_progress")
-    .select("*, courses(title, slug, cover_url, lesson_count, category)")
-    .eq("user_id", userId);
-  if (error) throw new Error(error.message);
-  return data ?? [];
-}
-
-export async function upsertProgress(
-  userId: string,
-  courseId: string,
-  completedLessons: number,
-  total: number,
-) {
-  const { error } = await supabase.from("course_progress").upsert(
-    {
-      user_id: userId,
-      course_id: courseId,
-      completed_lessons: completedLessons,
-      completed: completedLessons >= total,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "user_id,course_id" },
-  );
-  if (error) throw new Error(error.message);
-}
-
 /* ---------- events, mentors, serve ---------- */
 
 export const fetchEvents = async () =>

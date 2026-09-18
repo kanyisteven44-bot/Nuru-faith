@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Sparkles } from "lucide-react";
+import { Play, Search, Sparkles } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { resolveMedia } from "@/lib/media";
 import { fetchMyProgress, fetchSeries, type SeriesRow } from "@/services/series";
@@ -13,7 +13,6 @@ import {
   ErrorState,
   PillTabs,
   ProgressBar,
-  SectionHeader,
 } from "@/components/nuru/Primitives";
 
 export const Route = createFileRoute("/_authenticated/series/")({
@@ -37,7 +36,14 @@ export const Route = createFileRoute("/_authenticated/series/")({
   component: SeriesHome,
 });
 
-const FILTERS = ["All", "Identity", "Emotions", "Relationships", "Faith", "Purpose"] as const;
+const FILTERS = [
+  "All",
+  "Discipleship",
+  "Life Skills",
+  "Relationships",
+  "Difficult Seasons",
+  "Purpose & Calling",
+] as const;
 
 function SeriesHome() {
   const { userId } = useAuth();
@@ -52,12 +58,14 @@ function SeriesHome() {
   });
 
   const all = useMemo(() => series.data ?? [], [series.data]);
-  const inProgress = useMemo(() => {
-    const map = new Map((progress.data ?? []).map((p) => [p.series_id, p]));
-    return all
-      .filter((s) => map.has(s.id) && (map.get(s.id)!.progress_percent ?? 0) < 100)
-      .map((s) => ({ series: s, percent: map.get(s.id)!.progress_percent }));
-  }, [all, progress.data]);
+  const progressMap = useMemo(
+    () => new Map((progress.data ?? []).map((p) => [p.series_id, p.progress_percent])),
+    [progress.data],
+  );
+  const inProgress = useMemo(
+    () => all.filter((s) => (progressMap.get(s.id) ?? 0) > 0 && (progressMap.get(s.id) ?? 0) < 100),
+    [all, progressMap],
+  );
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -70,21 +78,15 @@ function SeriesHome() {
     });
   }, [all, filter, query]);
 
-  const byCategory = useMemo(() => {
-    const groups = new Map<string, SeriesRow[]>();
-    for (const s of visible) groups.set(s.category, [...(groups.get(s.category) ?? []), s]);
-    return [...groups.entries()];
-  }, [visible]);
+  const hero = inProgress[0] ?? visible[0] ?? all[0];
+  const heroPercent = hero ? progressMap.get(hero.id) : undefined;
+  const rest = useMemo(() => visible.filter((s) => s.id !== hero?.id), [visible, hero]);
 
   return (
     <AppShell>
       <header className="px-4 pt-[max(1rem,env(safe-area-inset-top))]">
         <p className="text-xs font-medium tracking-wide text-cyan uppercase">Bible</p>
         <h1 className="font-display text-2xl font-semibold tracking-tight">Scripture Series</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Study a real question through connected passages — with context, reflection, prayer and
-          one thing to do.
-        </p>
 
         <div className="relative mt-4">
           <Search className="absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -99,38 +101,26 @@ function SeriesHome() {
         <PillTabs tabs={FILTERS} value={filter} onChange={setFilter} className="mt-3" />
       </header>
 
-      <div className="space-y-8 px-4 py-6">
-        {series.isLoading && <CardSkeleton count={3} height="h-40" />}
+      <div className="space-y-6 px-4 py-6">
+        {series.isLoading && <CardSkeleton count={1} height="h-64" />}
         {series.isError && <ErrorState onRetry={() => void series.refetch()} />}
 
-        {inProgress.length > 0 && (
-          <section>
-            <SectionHeader title="Continue studying" />
-            <div className="space-y-3">
-              {inProgress.map(({ series: s, percent }) => (
-                <SeriesCard key={s.id} series={s} percent={percent} />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {!series.isLoading && visible.length === 0 && (
+        {!series.isLoading && !hero && (
           <EmptyState
             title="Nothing matches that yet"
             description="Try another word — or ask Nuru AI your question directly."
           />
         )}
 
-        {byCategory.map(([category, rows]) => (
-          <section key={category}>
-            <SectionHeader title={category} />
-            <div className="space-y-3">
-              {rows.map((s) => (
-                <SeriesCard key={s.id} series={s} />
-              ))}
-            </div>
-          </section>
-        ))}
+        {hero && <SeriesHero series={hero} percent={heroPercent} />}
+
+        {rest.length > 0 && (
+          <div className="space-y-2.5">
+            {rest.map((s) => (
+              <SeriesRow key={s.id} series={s} percent={progressMap.get(s.id)} />
+            ))}
+          </div>
+        )}
 
         <p className="flex items-start gap-2 rounded-2xl bg-surface-2 px-4 py-3 text-xs text-muted-foreground">
           <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-cyan" />
@@ -142,31 +132,70 @@ function SeriesHome() {
   );
 }
 
-function SeriesCard({ series, percent }: { series: SeriesRow; percent?: number }) {
+function SeriesHero({ series, percent }: { series: SeriesRow; percent?: number | undefined }) {
+  const inProgress = percent !== undefined && percent > 0 && percent < 100;
   return (
     <Link
       to="/series/$slug"
       params={{ slug: series.slug }}
-      className="nuru-card block overflow-hidden active:opacity-90"
+      className="nuru-card relative block h-[260px] overflow-hidden active:opacity-95"
+    >
+      <img
+        src={resolveMedia(series.cover_image)}
+        alt=""
+        loading="eager"
+        className="absolute inset-0 h-full w-full object-cover"
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/45 to-background/5" />
+      <div className="absolute inset-x-0 bottom-0 space-y-3 p-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <Chip tone="brand">{series.category}</Chip>
+          <span className="text-xs font-medium text-secondary-foreground">
+            {series.session_count} sessions &middot; {series.estimated_duration} min
+          </span>
+        </div>
+        <h2 className="font-display text-xl leading-tight font-bold">{series.title}</h2>
+        {inProgress ? (
+          <ProgressBar value={percent!} label={`${percent}% complete`} className="max-w-[180px]" />
+        ) : (
+          series.description && (
+            <p className="line-clamp-2 max-w-[300px] text-[13px] text-secondary-foreground">
+              {series.description}
+            </p>
+          )
+        )}
+        <span className="inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border border-cyan/30 bg-primary px-4 text-[13px] font-semibold text-primary-foreground nuru-glow-sm">
+          <Play className="h-3.5 w-3.5 fill-current" />
+          {inProgress ? `Continue · ${percent}%` : "Start series"}
+        </span>
+      </div>
+    </Link>
+  );
+}
+
+function SeriesRow({ series, percent }: { series: SeriesRow; percent?: number | undefined }) {
+  const inProgress = percent !== undefined && percent > 0 && percent < 100;
+  return (
+    <Link
+      to="/series/$slug"
+      params={{ slug: series.slug }}
+      className="nuru-card flex items-center gap-3 p-2.5 active:opacity-90"
     >
       <img
         src={resolveMedia(series.cover_image)}
         alt=""
         loading="lazy"
-        className="h-32 w-full object-cover"
+        className="h-14 w-14 shrink-0 rounded-xl object-cover"
       />
-      <div className="space-y-2 p-4">
-        <div className="flex flex-wrap items-center gap-2">
-          <Chip tone="brand">{series.category}</Chip>
-          <Chip>{series.session_count} sessions</Chip>
-          <Chip>{series.estimated_duration} min</Chip>
-        </div>
-        <h3 className="font-display text-base font-semibold">{series.title}</h3>
-        {series.description && (
-          <p className="line-clamp-2 text-sm text-muted-foreground">{series.description}</p>
-        )}
-        {percent !== undefined && (
-          <ProgressBar className="pt-1" value={percent} label={`${percent}% complete`} />
+      <div className="min-w-0 flex-1 space-y-0.5">
+        <p className="text-[10px] font-bold tracking-wide text-cyan uppercase">{series.category}</p>
+        <h3 className="truncate font-display text-sm font-semibold">{series.title}</h3>
+        {inProgress ? (
+          <ProgressBar value={percent!} className="mt-1 max-w-[120px]" />
+        ) : (
+          <p className="text-[11px] text-muted-foreground">
+            {series.session_count} sessions &middot; {series.estimated_duration} min
+          </p>
         )}
       </div>
     </Link>

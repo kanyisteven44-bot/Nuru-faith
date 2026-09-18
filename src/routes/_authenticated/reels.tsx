@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -26,14 +26,12 @@ import {
 } from "@/services/reels";
 import { addPrayerJournalEntry } from "@/services/ai";
 import { youtubeReelsInfiniteQuery } from "@/services/youtubeService";
-import {
-  readWatchedExternalReelIds,
-  rememberWatchedExternalReel,
-} from "@/lib/reelWatchHistory";
+import { readWatchedExternalReelIds, rememberWatchedExternalReel } from "@/lib/reelWatchHistory";
 import { ensureExternalReelLike } from "@/services/externalReelInteractions";
 import { AppShell } from "@/components/nuru/AppShell";
 import { CardSkeleton } from "@/components/nuru/Primitives";
 import { ReelFeedTabs } from "@/components/nuru/reels/ReelFeedTabs";
+import { ReelGrid } from "@/components/nuru/reels/ReelGrid";
 import { ReelPane } from "@/components/nuru/reels/ReelPane";
 import { ReelComments } from "@/components/nuru/reels/ReelComments";
 import { ReelMoreMenu, ReelWhySheet } from "@/components/nuru/reels/ReelMoreMenu";
@@ -94,6 +92,9 @@ function ReelsScreen() {
   const [muted, setMuted] = useState(true);
   const [dataSaver, setDataSaver] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
+  // A shared reel link should open straight into the full-screen player;
+  // otherwise Reels opens on the browsable grid.
+  const [view, setView] = useState<"grid" | "feed">(linkedId ? "feed" : "grid");
   const [youtubeVisibleCount, setYoutubeVisibleCount] = useState(YOUTUBE_BATCH_SIZE);
   const [watchedExternalIds, setWatchedExternalIds] = useState<Set<string>>(new Set());
   const [hiddenIds, setHiddenIds] = useState<string[]>([]);
@@ -186,7 +187,8 @@ function ReelsScreen() {
   const unseenYoutubeVideos = useMemo(() => {
     const seen = new Set<string>();
     return loadedYoutubeVideos.filter((video) => {
-      if (watchedExternalIds.has(video.youtubeVideoId) || seen.has(video.youtubeVideoId)) return false;
+      if (watchedExternalIds.has(video.youtubeVideoId) || seen.has(video.youtubeVideoId))
+        return false;
       seen.add(video.youtubeVideoId);
       return true;
     });
@@ -276,9 +278,11 @@ function ReelsScreen() {
     );
     io.observe(node);
     return () => io.disconnect();
+    // Re-observe when the grid/feed swap replaces the sentinel/scroller nodes.
   }, [
     reels,
     items.length,
+    view,
     feed,
     hasMoreYouTube,
     hasBufferedYouTube,
@@ -292,17 +296,36 @@ function ReelsScreen() {
   useEffect(() => {
     if (feed !== "For You" || youtubeFallback.isFetchingNextPage) return;
     if (youtubeVisibleCount < youtubeTotal) {
-      setYoutubeVisibleCount((count) => Math.min(Math.max(count, YOUTUBE_BATCH_SIZE), youtubeTotal));
+      setYoutubeVisibleCount((count) =>
+        Math.min(Math.max(count, YOUTUBE_BATCH_SIZE), youtubeTotal),
+      );
     }
   }, [feed, youtubeFallback.isFetchingNextPage, youtubeTotal, youtubeVisibleCount]);
 
   useEffect(() => {
     scrollerRef.current?.scrollTo({ top: 0 });
     setActiveIndex(0);
+    setView(linkedId ? "feed" : "grid");
     setYoutubeVisibleCount(YOUTUBE_BATCH_SIZE);
+    // Only react to the person switching feeds, not to linkedId itself.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [feed]);
 
+  /* jump the scroller straight to the tapped tile the instant the grid hands off to the feed */
+  useLayoutEffect(() => {
+    const node = scrollerRef.current;
+    if (view !== "feed" || !node) return;
+    node.scrollTop = activeIndex * node.clientHeight;
+    // Only run this jump when switching into feed mode, not on every activeIndex change
+    // while already scrolling through it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view]);
+
   const onActive = useCallback((index: number) => setActiveIndex(index), []);
+  function openReel(index: number) {
+    setActiveIndex(index);
+    setView("feed");
+  }
   const onView = useCallback(
     (reel: Reel) => {
       if (reel.external_id) {
@@ -459,6 +482,17 @@ function ReelsScreen() {
           </div>
         </div>
 
+        {view === "feed" && (
+          <button
+            type="button"
+            onClick={() => setView("grid")}
+            aria-label="Back to Reels grid"
+            className="pointer-events-auto absolute left-3 top-[max(0.75rem,env(safe-area-inset-top))] z-20 rounded-full bg-black/40 p-2 text-white backdrop-blur-md"
+          >
+            <ArrowLeft className="h-4.5 w-4.5" />
+          </button>
+        )}
+
         {initialLoading && (
           <div className="flex h-full items-center justify-center p-6">
             <div className="w-full max-w-sm">
@@ -478,7 +512,19 @@ function ReelsScreen() {
           />
         )}
 
-        {items.length > 0 && (
+        {items.length > 0 && view === "grid" && (
+          <div ref={scrollerRef} className="no-scrollbar h-full overflow-y-auto pt-16">
+            <ReelGrid items={items} onOpen={openReel} />
+            <div ref={sentinelRef} aria-hidden="true" className="h-1" />
+            {reels.isFetchingNextPage && (
+              <div className="flex items-center justify-center gap-2 py-4 text-xs text-white/70">
+                <Loader2 className="h-4 w-4 animate-spin" /> Loading more
+              </div>
+            )}
+          </div>
+        )}
+
+        {items.length > 0 && view === "feed" && (
           <div
             ref={scrollerRef}
             className="no-scrollbar h-full snap-y snap-mandatory overflow-y-auto overscroll-contain"
@@ -513,8 +559,7 @@ function ReelsScreen() {
                         stateKey,
                         (
                           old:
-                            | { liked?: boolean; saved?: boolean; commentCount?: number }
-                            | undefined,
+                            { liked?: boolean; saved?: boolean; commentCount?: number } | undefined,
                         ) => ({
                           liked: true,
                           saved: old?.saved ?? false,

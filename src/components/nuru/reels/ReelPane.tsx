@@ -337,7 +337,24 @@ export function ReelPane(props: ReelPaneProps) {
       )}
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0">
+        {/* Actions sit on the left; the caption fills the remaining width on the right. */}
         <div className="pointer-events-auto flex items-end gap-3 px-3 pb-1">
+          <div className="pb-1">
+            <ReelInteractiveActions
+              reel={reel}
+              near={near}
+              liked={props.liked}
+              saved={props.saved}
+              onProfile={props.onProfile}
+              onLike={props.onLike}
+              onComments={props.onComments}
+              onShare={props.onShare}
+              onSave={props.onSave}
+              onMore={props.onMore}
+              onCommentsVisibilityChange={setExternalCommentsOpen}
+            />
+          </div>
+
           <div className="min-w-0 flex-1">
             <ReelFaithActions
               hasScripture={!!reel.scripture_ref}
@@ -355,22 +372,6 @@ export function ReelPane(props: ReelPaneProps) {
                 onOpenScripture={props.onRead}
               />
             </div>
-          </div>
-
-          <div className="pb-1">
-            <ReelInteractiveActions
-              reel={reel}
-              near={near}
-              liked={props.liked}
-              saved={props.saved}
-              onProfile={props.onProfile}
-              onLike={props.onLike}
-              onComments={props.onComments}
-              onShare={props.onShare}
-              onSave={props.onSave}
-              onMore={props.onMore}
-              onCommentsVisibilityChange={setExternalCommentsOpen}
-            />
           </div>
         </div>
 

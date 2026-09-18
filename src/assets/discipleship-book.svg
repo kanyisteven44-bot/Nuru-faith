@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+  <defs>
+    <linearGradient id="bg-disc" x1="0" y1="0" x2="0.6" y2="1">
+      <stop offset="0%" stop-color="#1c1638"/>
+      <stop offset="55%" stop-color="#0c1230"/>
+      <stop offset="100%" stop-color="#00132f"/>
+    </linearGradient>
+    <radialGradient id="glow-disc" cx="50%" cy="30%" r="55%">
+      <stop offset="0%" stop-color="#7e6cff" stop-opacity="0.55"/>
+      <stop offset="55%" stop-color="#7e6cff" stop-opacity="0.14"/>
+      <stop offset="100%" stop-color="#7e6cff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="book-cover" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#efe6ff"/>
+      <stop offset="100%" stop-color="#cdb9ff"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="800" height="600" fill="url(#bg-disc)"/>
+  <rect width="800" height="600" fill="url(#glow-disc)"/>
+
+  <!-- radiating light behind cross -->
+  <g stroke="#c9bcff" stroke-width="3" stroke-linecap="round" opacity="0.35">
+    <line x1="400" y1="70" x2="400" y2="20"/>
+    <line x1="470" y1="92" x2="506" y2="58"/>
+    <line x1="330" y1="92" x2="294" y2="58"/>
+  </g>
+
+  <!-- cross -->
+  <g fill="#efe6ff" opacity="0.95">
+    <rect x="388" y="90" width="24" height="150" rx="6"/>
+    <rect x="345" y="140" width="110" height="24" rx="6"/>
+  </g>
+
+  <!-- open book -->
+  <g transform="translate(400,430)">
+    <path d="M-260 -30 C -160 -70, -60 -70, 0 -30 L0 60 C -60 20, -160 20, -260 60 Z" fill="url(#book-cover)"/>
+    <path d="M260 -30 C 160 -70, 60 -70, 0 -30 L0 60 C 60 20, 160 20, 260 60 Z" fill="url(#book-cover)"/>
+    <path d="M-260 -30 C -160 -70, -60 -70, 0 -30 L0 60 C -60 20, -160 20, -260 60 Z" fill="#7e6cff" opacity="0.14"/>
+    <path d="M260 -30 C 160 -70, 60 -70, 0 -30 L0 60 C 60 20, 160 20, 260 60 Z" fill="#7e6cff" opacity="0.08"/>
+    <g stroke="#7e6cff" stroke-width="3" stroke-linecap="round" opacity="0.55">
+      <line x1="-210" y1="-24" x2="-40" y2="-8"/>
+      <line x1="-210" y1="0" x2="-40" y2="16"/>
+      <line x1="-210" y1="24" x2="-40" y2="40"/>
+      <line x1="210" y1="-24" x2="40" y2="-8"/>
+      <line x1="210" y1="0" x2="40" y2="16"/>
+      <line x1="210" y1="24" x2="40" y2="40"/>
+    </g>
+  </g>
+
+  <!-- path of footprints below, the journey of discipleship -->
+  <g fill="#c9bcff" opacity="0.5">
+    <ellipse cx="230" cy="540" rx="7" ry="11"/>
+    <ellipse cx="270" cy="558" rx="7" ry="11"/>
+    <ellipse cx="530" cy="558" rx="7" ry="11"/>
+    <ellipse cx="570" cy="540" rx="7" ry="11"/>
+  </g>
+</svg>

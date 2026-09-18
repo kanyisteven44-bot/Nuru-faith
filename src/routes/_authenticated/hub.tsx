@@ -36,7 +36,7 @@ const GROUPS = [
     title: "Grow",
     items: [
       { to: "/bible", label: "Bible & devotionals", icon: BookOpen },
-      { to: "/learn", label: "Courses", icon: GraduationCap },
+      { to: "/series", label: "Series", icon: GraduationCap },
       { to: "/ai", label: "Nuru AI", icon: Sparkles },
     ],
   },

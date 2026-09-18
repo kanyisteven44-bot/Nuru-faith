@@ -6,6 +6,11 @@ import crossSunrise from "@/assets/cross-sunrise.jpg";
 import worshipNight from "@/assets/worship-night.jpg";
 import bibleCandle from "@/assets/bible-candle.jpg";
 import quietNight from "@/assets/quiet-night.jpg";
+import purposePath from "@/assets/purpose-path.svg";
+import discipleshipBook from "@/assets/discipleship-book.svg";
+import lifeSkillsGrowth from "@/assets/life-skills-growth.svg";
+import relationshipsBond from "@/assets/relationships-bond.svg";
+import calmAnchor from "@/assets/calm-anchor.svg";
 
 /**
  * Demo/library imagery is stored in the database as a stable token
@@ -21,6 +26,11 @@ const LIBRARY: Record<string, string> = {
   "worship-night": worshipNight,
   "bible-candle": bibleCandle,
   "quiet-night": quietNight,
+  "purpose-path": purposePath,
+  "discipleship-book": discipleshipBook,
+  "life-skills-growth": lifeSkillsGrowth,
+  "relationships-bond": relationshipsBond,
+  "calm-anchor": calmAnchor,
 };
 
 export const FALLBACK_IMAGE = mountainDawn;

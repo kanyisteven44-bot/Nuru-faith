@@ -33,7 +33,6 @@ import {
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
 import { AiMarkdown } from "@/components/nuru/AiMarkdown";
 import { CardSkeleton } from "@/components/nuru/Primitives";
-import { NuruGlyph } from "@/components/nuru/Logo";
 
 type Search = {
   contextType?: string | undefined;
@@ -214,6 +213,7 @@ function AiScreen() {
     <AppShell>
       <ScreenHeader
         title="Nuru AI"
+        titleClassName="text-cyan drop-shadow-[0_0_14px_rgba(53,217,255,0.45)]"
         subtitle="Scripture, explained honestly"
         right={
           <div className="flex items-center gap-2">
@@ -285,9 +285,8 @@ function AiScreen() {
       <div className="space-y-4 px-4 py-4">
         {messages.length === 0 && (
           <>
-            <div className="flex flex-col items-center pt-6 text-center">
-              <NuruGlyph className="h-16 w-16" />
-              <h2 className="mt-4 font-display text-[26px] leading-tight font-bold tracking-tight">
+            <div className="flex flex-col items-center pt-8 text-center">
+              <h2 className="font-display text-[26px] leading-tight font-bold tracking-tight">
                 Hi, I'm Nuru.
               </h2>
               <p className="mt-1.5 max-w-[19rem] text-[13px] text-secondary-foreground">

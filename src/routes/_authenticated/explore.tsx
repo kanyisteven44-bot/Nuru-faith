@@ -140,7 +140,7 @@ function ExploreScreen() {
               <button
                 key={topic.label}
                 onClick={() => remember(topic.query)}
-                className="relative aspect-[5/4] overflow-hidden rounded-2xl border border-border text-left active:opacity-90"
+                className="relative aspect-square overflow-hidden rounded-2xl border border-border text-left active:opacity-90"
               >
                 <img
                   src={resolveMedia(topic.asset)}

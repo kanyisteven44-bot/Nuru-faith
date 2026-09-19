@@ -34,7 +34,7 @@ export function AppShell({
   return (
     <div className={cn("relative bg-background", flush ? "h-dvh overflow-hidden" : "min-h-dvh")}>
       <main
-        className={cn("relative z-10 mx-auto w-full", flush || hideNav ? "" : "pb-24", maxWidth)}
+        className={cn("relative z-10 mx-auto w-full", flush || hideNav ? "" : "pb-28", maxWidth)}
       >
         {children}
       </main>
@@ -42,11 +42,11 @@ export function AppShell({
       {!hideNav && (
         <nav
           aria-label="Main"
-          className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/95 backdrop-blur-xl"
+          className="fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(0.6rem,env(safe-area-inset-bottom))]"
         >
           <ul
             className={cn(
-              "mx-auto grid grid-cols-5 px-1 pb-[max(0.4rem,env(safe-area-inset-bottom))] pt-2",
+              "mx-auto grid grid-cols-5 rounded-[1.75rem] border border-cyan/55 bg-surface/80 px-1 py-2 shadow-[0_0_28px_-6px_var(--brand-cyan),0_10px_30px_-10px_rgba(0,0,0,0.8)] backdrop-blur-xl",
               maxWidth,
             )}
           >
@@ -77,15 +77,23 @@ function NavItem({
         to={to}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl text-[10px] font-medium transition-colors",
-          active ? "text-cyan" : "text-muted-foreground hover:text-secondary-foreground",
+          "flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl text-[11px] font-medium transition-colors",
+          active ? "text-cyan" : "text-secondary-foreground hover:text-foreground",
         )}
       >
         <Icon
           className={cn("h-5.5 w-5.5", active && "drop-shadow-[0_0_10px_var(--brand-cyan)]")}
-          strokeWidth={active ? 2.3 : 1.8}
+          strokeWidth={active ? 2.2 : 1.7}
         />
         {label}
+        {/* The design marks the active tab with a short bar under its label. */}
+        <span
+          aria-hidden="true"
+          className={cn(
+            "h-0.5 w-7 rounded-full transition-colors",
+            active ? "bg-cyan shadow-[0_0_8px_var(--brand-cyan)]" : "bg-transparent",
+          )}
+        />
       </Link>
     </li>
   );

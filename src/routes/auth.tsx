@@ -5,8 +5,7 @@ import { z } from "zod";
 import { Loader2, Lock, Mail, Phone, User as UserIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
-import { NuruGlyph } from "@/components/nuru/Logo";
-import { useRotatingPhoto } from "@/lib/photoRotation";
+import { NuruMark } from "@/components/nuru/Logo";
 
 const searchSchema = z.object({
   mode: z.enum(["login", "signup", "forgot"]).optional().default("login"),
@@ -37,7 +36,6 @@ const credentials = z.object({
 type Method = "email" | "phone";
 
 function AuthPage() {
-  const hero = useRotatingPhoto("authentication");
   const { mode } = Route.useSearch();
   const navigate = useNavigate();
   const signup = mode === "signup";
@@ -51,7 +49,6 @@ function AuthPage() {
   const [otpSent, setOtpSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
-  const [agreed, setAgreed] = useState(false);
 
   useEffect(() => {
     void supabase.auth.getSession().then(({ data }) => {
@@ -177,43 +174,68 @@ function AuthPage() {
   }
 
   return (
-    <div className="nuru-screen relative overflow-hidden">
-      {!signup && mode !== "forgot" && (
-        <>
-          <img
-            src={hero}
-            alt=""
-            className="pointer-events-none absolute inset-x-0 top-0 h-72 w-full object-cover opacity-55"
-          />
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-gradient-to-b from-[#000814]/25 via-[#000814]/62 to-background" />
-        </>
-      )}
-      <div
-        aria-hidden="true"
-        className="absolute inset-x-0 top-0 h-72 bg-[radial-gradient(circle_at_top,rgba(53,217,255,0.16),transparent_70%)]"
-      />
-      <div className="relative mx-auto flex min-h-dvh w-full flex-col px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))]">
-        <div className="flex flex-col items-center pt-1 text-center">
-          <NuruGlyph className="h-14 w-14" />
-          <h1 className="mt-2 font-display text-[21px] leading-none font-bold tracking-[0.2em]">
-            NURU <span className="text-cyan">FAITH</span>
+    <div className="relative min-h-dvh bg-background">
+      <div className="relative mx-auto flex min-h-dvh w-full max-w-md flex-col px-7 pb-10 pt-[max(2rem,env(safe-area-inset-top))]">
+        <div className="flex flex-col items-center pt-4 text-center">
+          <NuruMark className="h-16 w-16" />
+          <h1 className="mt-4 font-display text-[26px] leading-none font-bold tracking-tight">
+            Nuru <span className="text-cyan">Faith</span>
           </h1>
+          <p className="mt-2 text-[12px] tracking-wide text-secondary-foreground">
+            Connect • Grow • Live Your Faith
+          </p>
         </div>
 
-        <div className="pt-7">
-          <h2 className="font-display text-[26px] leading-tight font-bold tracking-tight">
+        {mode !== "forgot" && (
+          <div
+            role="tablist"
+            aria-label="Sign in or create an account"
+            className="mt-7 flex gap-1 rounded-2xl border border-border bg-surface-2/70 p-1"
+          >
+            {(
+              [
+                { value: "login", label: "Sign In" },
+                { value: "signup", label: "Sign Up" },
+              ] as const
+            ).map((tab) => (
+              <Link
+                key={tab.value}
+                to="/auth"
+                search={{ mode: tab.value }}
+                role="tab"
+                aria-selected={mode === tab.value}
+                replace
+                onClick={() => {
+                  setOtpSent(false);
+                  setSent(false);
+                }}
+                className={cn(
+                  "flex-1 rounded-xl py-2.5 text-center text-sm font-semibold transition-colors",
+                  mode === tab.value
+                    ? "bg-primary text-primary-foreground nuru-glow-sm"
+                    : "text-secondary-foreground hover:text-foreground",
+                )}
+              >
+                {tab.label}
+              </Link>
+            ))}
+          </div>
+        )}
+
+        <div className="pt-5 text-center">
+          <h2 className="font-display text-lg font-semibold">
             {mode === "forgot"
-              ? "Reset your password."
+              ? "Reset your password"
               : signup
-                ? "Create Your Account"
-                : "Welcome Back."}
+                ? "Create an account"
+                : "Welcome back"}
           </h2>
-          <p className="mt-1.5 text-[13px] text-muted-foreground">
+          <p className="mt-1 text-[13px] text-muted-foreground">
             {mode === "forgot"
               ? "We'll email you a link to set a new password."
               : signup
-                ? "Start your journey with Nuru Faith."
-                : "Sign in to continue your journey."}
+                ? "Start your faith journey"
+                : "Continue your faith journey"}
           </p>
         </div>
 
@@ -236,7 +258,7 @@ function AuthPage() {
             </button>
           </div>
         ) : mode === "forgot" ? (
-          <form onSubmit={submitEmail} className="nuru-card mt-6 space-y-3 p-4 sm:p-5">
+          <form onSubmit={submitEmail} className="mt-6 space-y-3">
             <Field icon={Mail} label="Email address">
               <input
                 type="email"
@@ -263,7 +285,7 @@ function AuthPage() {
               type="button"
               disabled={busy}
               onClick={() => void google()}
-              className="mt-6 flex min-h-11 w-full items-center justify-center gap-3 rounded-full bg-white text-sm font-semibold text-slate-900 transition-opacity hover:opacity-95 disabled:opacity-60"
+              className="mt-6 flex min-h-12 w-full items-center justify-center gap-3 rounded-xl bg-white text-sm font-semibold text-slate-900 transition-opacity hover:opacity-95 disabled:opacity-60"
             >
               <GoogleGlyph /> Continue with Google
             </button>
@@ -276,7 +298,7 @@ function AuthPage() {
               <span className="h-px flex-1 bg-border" />
             </div>
 
-            <div className="flex gap-1 rounded-lg border border-border bg-surface-2/70 p-1">
+            <div className="flex gap-1 rounded-xl border border-border bg-surface-2/70 p-1">
               {(
                 [
                   { value: "email", label: "Email", icon: Mail },
@@ -300,10 +322,7 @@ function AuthPage() {
             </div>
 
             {method === "email" ? (
-              <form
-                onSubmit={submitEmail}
-                className="mt-4 space-y-3 rounded-xl border border-border/70 bg-card/35 p-4"
-              >
+              <form onSubmit={submitEmail} className="mt-4 space-y-3">
                 {signup && (
                   <Field icon={UserIcon} label="Full name">
                     <input
@@ -312,7 +331,7 @@ function AuthPage() {
                       autoComplete="name"
                       required
                       maxLength={100}
-                      placeholder="Your full name"
+                      placeholder="Stephen Kanyi"
                       className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
                     />
                   </Field>
@@ -345,24 +364,7 @@ function AuthPage() {
                   />
                 </Field>
 
-                {signup && (
-                  <label className="flex items-start gap-2.5 pt-1 text-[12px] text-secondary-foreground">
-                    <input
-                      type="checkbox"
-                      checked={agreed}
-                      onChange={(e) => setAgreed(e.target.checked)}
-                      className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--primary)]"
-                    />
-                    <span>
-                      I agree to the{" "}
-                      <span className="font-semibold text-cyan">Terms &amp; Conditions</span>
-                    </span>
-                  </label>
-                )}
-
-                <SubmitButton busy={busy} disabled={signup && !agreed}>
-                  {signup ? "Create Account" : "Sign In"}
-                </SubmitButton>
+                <SubmitButton busy={busy}>{signup ? "Create account" : "Sign In"}</SubmitButton>
 
                 {!signup && (
                   <Link
@@ -375,10 +377,7 @@ function AuthPage() {
                 )}
               </form>
             ) : (
-              <form
-                onSubmit={otpSent ? verifyCode : sendCode}
-                className="mt-4 space-y-3 rounded-2xl border border-border/70 bg-card/35 p-4"
-              >
+              <form onSubmit={otpSent ? verifyCode : sendCode} className="mt-4 space-y-3">
                 {signup && !otpSent && (
                   <Field icon={UserIcon} label="Full name">
                     <input
@@ -387,7 +386,7 @@ function AuthPage() {
                       autoComplete="name"
                       required
                       maxLength={100}
-                      placeholder="Your full name"
+                      placeholder="Stephen Kanyi"
                       className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
                     />
                   </Field>
@@ -441,23 +440,11 @@ function AuthPage() {
           </>
         )}
 
-        {mode !== "forgot" && (
-          <p className="mt-auto pt-8 text-center text-[13px] text-muted-foreground">
-            {signup ? "Already have an account? " : "Don't have an account? "}
-            <Link
-              to="/auth"
-              search={{ mode: signup ? "login" : "signup" }}
-              replace
-              onClick={() => {
-                setOtpSent(false);
-                setSent(false);
-              }}
-              className="font-semibold text-cyan hover:underline"
-            >
-              {signup ? "Sign In" : "Sign Up"}
-            </Link>
-          </p>
-        )}
+        <p className="mt-auto pt-8 text-center text-[11px] leading-relaxed text-muted-foreground">
+          By continuing, you agree to our Terms and
+          <br />
+          Privacy Policy.
+        </p>
       </div>
     </div>
   );
@@ -488,19 +475,11 @@ function Field({
   );
 }
 
-function SubmitButton({
-  busy,
-  disabled = false,
-  children,
-}: {
-  busy: boolean;
-  disabled?: boolean;
-  children: React.ReactNode;
-}) {
+function SubmitButton({ busy, children }: { busy: boolean; children: React.ReactNode }) {
   return (
     <button
       type="submit"
-      disabled={busy || disabled}
+      disabled={busy}
       className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-primary-foreground nuru-glow-sm transition-opacity disabled:opacity-60"
     >
       {busy && <Loader2 className="h-4 w-4 animate-spin" />}

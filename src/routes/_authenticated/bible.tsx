@@ -42,7 +42,8 @@ import { BOOK_ART, bookAbbr } from "@/lib/bookArt";
 import { AppShell } from "@/components/nuru/AppShell";
 import { CardSkeleton, EmptyState, PillTabs } from "@/components/nuru/Primitives";
 import { Sheet } from "@/components/nuru/reels/Sheet";
-import { useRotatingPhoto } from "@/lib/photoRotation";
+import bibleHero from "@/assets/topic-life-skills.jpg";
+import verseArt from "@/assets/bible-candle.jpg";
 
 const ALL_BOOKS: BibleBook[] = [...OLD_TESTAMENT, ...NEW_TESTAMENT];
 
@@ -65,10 +66,8 @@ export const Route = createFileRoute("/_authenticated/bible")({
 const TABS = ["Books", "Topics", "Highlights", "My Notes"] as const;
 type Tab = (typeof TABS)[number];
 type ReaderTarget = { book: BibleBook; chapter: number };
-type BibleTranslation = "NIV" | "KJV";
 
 function BibleScreen() {
-  const bibleHero = useRotatingPhoto("bible-hero");
   const [tab, setTab] = useState<Tab>("Books");
   const [reader, setReader] = useState<ReaderTarget | null>(null);
   const [book, setBook] = useState<BibleBook | null>(null);
@@ -198,19 +197,21 @@ function openTopicReference(reference: string, setReader: (target: ReaderTarget)
 }
 
 /**
- * Fetches the translation the reader explicitly selected. Translation
- * failures stay visible instead of silently changing the Bible text.
+ * Prefers real NIV text (requires BIBLE_API_KEY / an API.Bible account with
+ * NIV enabled). Falls back to the free, public-domain KJV source when NIV
+ * isn't configured or the request fails for any reason.
  */
-async function fetchScripturePassage(reference: string, translation: BibleTranslation) {
-  return translation === "NIV"
-    ? fetchNivPassage({ data: { reference } })
-    : fetchKjvPassage(reference);
+async function fetchScripturePassage(reference: string) {
+  try {
+    return await fetchNivPassage({ data: { reference } });
+  } catch {
+    return fetchKjvPassage(reference);
+  }
 }
 
 /** The verse card the design puts above the book list. */
 function VerseOfTheDay({ onOpen }: { onOpen: (reference: string) => void }) {
   const reference = "Psalm 119:105";
-  const verseArt = useRotatingPhoto("bible-verse");
   return (
     <section className="nuru-card relative mb-6 overflow-hidden">
       <img src={verseArt} alt="" className="absolute inset-y-0 right-0 h-full w-1/2 object-cover" />
@@ -371,8 +372,8 @@ function ChapterTile({
       className={cn(
         "flex h-12 items-center justify-center rounded-xl border text-sm font-bold transition-colors",
         active
-          ? "border-cyan/70 bg-primary text-primary-foreground nuru-glow-sm"
-          : "border-border bg-card text-secondary-foreground hover:border-border-strong hover:text-foreground",
+          ? "border-transparent bg-[#f4c453] text-[#2a2314] shadow-[0_4px_14px_-6px_rgba(244,196,83,0.7)]"
+          : "border-black/[0.08] bg-[#f8f2e2] text-[#2a2314] hover:bg-[#f2e9d1]",
       )}
     >
       {label}
@@ -397,12 +398,11 @@ function Reader({
   const shareSheet = useShareSheet();
   const [bookSheetOpen, setBookSheetOpen] = useState(false);
   const [chapterSheetOpen, setChapterSheetOpen] = useState(false);
-  const [translation, setTranslation] = useState<BibleTranslation>("NIV");
   const [colorPicker, setColorPicker] = useState<{ verse: number; text: string } | null>(null);
 
   const passage = useQuery({
-    queryKey: ["scripture-passage", reference, translation],
-    queryFn: () => fetchScripturePassage(reference, translation),
+    queryKey: ["scripture-passage", reference],
+    queryFn: () => fetchScripturePassage(reference),
   });
 
   const highlightsQuery = useQuery({
@@ -495,7 +495,7 @@ function Reader({
 
   return (
     <AppShell>
-      <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-border/25 bg-background/90 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-2xl">
+      <header className="sticky top-0 z-30 flex items-center gap-3 bg-background/90 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-xl">
         <button
           type="button"
           onClick={onBack}
@@ -507,18 +507,9 @@ function Reader({
         <h1 className="min-w-0 flex-1 truncate font-display text-[22px] font-semibold tracking-tight">
           {passage.data?.reference ?? reference}
         </h1>
-        <label className="sr-only" htmlFor="bible-translation">
-          Bible translation
-        </label>
-        <select
-          id="bible-translation"
-          value={translation}
-          onChange={(event) => setTranslation(event.target.value as BibleTranslation)}
-          className="min-h-9 shrink-0 rounded-lg border border-border-strong bg-surface-2 px-2.5 text-[11px] font-semibold text-secondary-foreground outline-none focus:border-cyan"
-        >
-          <option value="NIV">NIV</option>
-          <option value="KJV">KJV</option>
-        </select>
+        <span className="shrink-0 rounded-lg border border-border-strong bg-surface-2 px-2.5 py-1 text-[11px] font-semibold text-secondary-foreground">
+          {passage.data?.translationId ?? "…"}
+        </span>
       </header>
 
       <div className="flex items-center justify-center gap-2 px-4 pb-1 pt-1">
@@ -562,34 +553,19 @@ function Reader({
         {passage.isLoading && <CardSkeleton count={4} height="h-6" />}
         {passage.isError && (
           <EmptyState
-            title={`${translation} isn't available right now`}
-            description={
-              translation === "NIV"
-                ? "NIV requires an active licensed Bible provider. You can switch to KJV without changing the selected chapter."
-                : "Check your connection and try this chapter again."
-            }
-            action={
-              translation === "NIV" ? (
-                <button
-                  type="button"
-                  onClick={() => setTranslation("KJV")}
-                  className="min-h-10 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground"
-                >
-                  Read KJV
-                </button>
-              ) : undefined
-            }
+            title="Couldn't load that passage"
+            description="Check your connection and try again."
           />
         )}
         {passage.data && (
-          <div className="rounded-3xl border border-border bg-card/80 p-5 text-foreground shadow-[0_24px_70px_-48px_var(--brand-cyan)]">
+          <div className="rounded-3xl bg-[#f8f2e2] p-5 text-[#2a2314] shadow-lg shadow-black/20">
             <ol className="space-y-3.5">
               {passage.data.verses.map((v) => {
                 const activeColor = highlightByVerse.get(v.verse);
                 const swatch = HIGHLIGHT_COLORS.find((c) => c.key === activeColor);
                 return (
                   <li key={`${v.chapter}:${v.verse}`} className="flex gap-2.5">
-                    <span className="mt-0.5 shrink-0 text-[11px] font-bold text-cyan/75">
+                    <span className="mt-0.5 shrink-0 text-[11px] font-bold text-amber-700">
                       {v.verse}
                     </span>
                     <button
@@ -603,7 +579,7 @@ function Reader({
                       }}
                       className={cn(
                         "flex-1 rounded px-1 text-left font-serif text-[15px] leading-relaxed transition-colors",
-                        swatch ? swatch.bgClass : "hover:bg-surface-2/60",
+                        swatch ? swatch.bgClass : "hover:bg-black/[0.03]",
                       )}
                     >
                       {v.text}
@@ -612,13 +588,13 @@ function Reader({
                 );
               })}
             </ol>
-            <p className="pt-5 text-[11px] text-muted-foreground">{passage.data.translation}</p>
+            <p className="pt-5 text-[11px] text-[#8a7a52]">{passage.data.translation}</p>
           </div>
         )}
       </div>
 
       <div className="fixed inset-x-0 bottom-20 z-30 mx-auto max-w-xl px-4">
-        <div className="flex items-center justify-around rounded-2xl border border-border-strong bg-surface/95 py-2 shadow-[0_16px_48px_-28px_var(--brand-cyan)] backdrop-blur-2xl">
+        <div className="flex items-center justify-around rounded-2xl border border-black/10 bg-[#f8f2e2] py-2 shadow-lg shadow-black/20 backdrop-blur-xl">
           <ReaderAction
             icon={Highlighter}
             label="Highlight"
@@ -745,7 +721,7 @@ function ReaderAction({
     </>
   );
   const cls =
-    "flex min-h-11 flex-1 flex-col items-center justify-center gap-1 text-secondary-foreground transition-colors hover:text-cyan";
+    "flex flex-1 flex-col items-center gap-1 text-[#5a4d2f] transition-colors hover:text-[#2a2314]";
   if (to)
     return (
       <Link to={to.to} search={to.search} className={cls}>

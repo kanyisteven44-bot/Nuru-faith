@@ -14,7 +14,7 @@ import {
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
 import { IconTile, ScreenHero, SectionHeader } from "@/components/nuru/Primitives";
 import { TAGLINE } from "@/constants/nuru";
-import { useRotatingPhoto } from "@/lib/photoRotation";
+import heroBg from "@/assets/quiet-night.jpg";
 
 export const Route = createFileRoute("/_authenticated/hub")({
   head: () => ({
@@ -66,7 +66,6 @@ const GROUPS = [
 ] as const;
 
 function HubScreen() {
-  const heroBg = useRotatingPhoto("faith-hub");
   return (
     <AppShell>
       <ScreenHeader title="Nuru Faith Hub" subtitle={TAGLINE} />

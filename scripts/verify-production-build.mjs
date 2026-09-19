@@ -1,93 +1,87 @@
 /**
- * Checks that the deployed production bundle actually contains the UI merged
- * into main.
+ * Checks whether the deployed site is serving a build that contains the image
+ * assets in this checkout.
  *
- * Lazy route chunks are only named by the server-side router manifest, so they
- * cannot be discovered by crawling the public entry chunk. Instead this builds
- * the current checkout, finds which emitted asset holds each marker string,
- * and asks production for that exact filename. Vite asset names carry a content
- * hash, so a 200 that still contains the marker means production is serving a
- * build made from this code; a 404 means production is serving something else.
+ * It deliberately does NOT compare JavaScript chunk filenames. Vite inlines
+ * VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY into the client bundle,
+ * so a build made without the production values produces different content
+ * hashes for most JS chunks even when the source is identical — changing only
+ * the key renames 87 of the 118 files emitted here. Comparing JS names across
+ * environments therefore says nothing about whether a deployment is stale.
+ *
+ * Image assets are hashed from file content alone, so their names are stable
+ * across build environments and are a sound signal.
  *
  * Usage: npm run build && node scripts/verify-production-build.mjs [baseUrl]
  */
 import fs from "node:fs/promises";
-import path from "node:path";
 
 const BASE = (process.argv[2] ?? "https://nuru-faith-vortiqora.vercel.app").replace(/\/$/, "");
 const ASSET_DIR = ".output/public/assets";
 
-/** Marker string -> the change it proves is deployed. */
-const MARKERS = {
-  "Quick Devotions": "Devotionals screen rebuild",
-  "Real Faith. Brighter Days": "Shared feature header",
-  "Made for You": "Series screen rebuild",
-  "Mentorship requested": "Mentor detail screen",
-  "Continue with Google": "Google sign-in button",
-  "Copy link": "Share sheet",
-  "topic-faith": "Topic photo assets",
-};
+/** An image that predates the recent work, proving the probe itself lines up. */
+const CONTROL = /^mountain-dawn-/;
+/** Images added by the recent UI work; present only if that work is deployed. */
+const RECENT = /^topic-/;
 
 let files;
 try {
-  files = (await fs.readdir(ASSET_DIR)).filter((f) => f.endsWith(".js"));
+  files = await fs.readdir(ASSET_DIR);
 } catch {
   console.error(`No build found at ${ASSET_DIR}. Run "npm run build" first.`);
   process.exit(1);
 }
 
-// Map each marker to the local chunk that carries it.
-const localChunk = new Map();
-for (const file of files) {
-  const body = await fs.readFile(path.join(ASSET_DIR, file), "utf8");
-  for (const marker of Object.keys(MARKERS)) {
-    if (!localChunk.has(marker) && body.includes(marker)) localChunk.set(marker, file);
-  }
+const images = files.filter((f) => /\.(jpg|png|webp)$/.test(f));
+const control = images.filter((f) => CONTROL.test(f));
+const recent = images.filter((f) => RECENT.test(f));
+
+if (control.length === 0 || recent.length === 0) {
+  console.error("This checkout has no control or recent images to compare; nothing to verify.");
+  process.exit(1);
 }
 
-async function probe(url) {
+async function status(path) {
   try {
-    const res = await fetch(url);
-    return {
-      status: res.status,
-      body: res.status === 200 ? await res.text() : "",
-      headers: res.headers,
-    };
+    const res = await fetch(BASE + path);
+    return res.status;
   } catch (err) {
-    return { status: 0, body: "", headers: new Headers(), error: err?.message ?? String(err) };
+    return `error: ${err?.message ?? String(err)}`;
   }
 }
 
-const index = await probe(BASE + "/");
-console.log(`GET ${BASE}/ -> ${index.status}${index.error ? " " + index.error : ""}`);
-console.log(`vercel id: ${index.headers.get("x-vercel-id") ?? "n/a"}`);
-if (index.status !== 200) {
+const root = await status("/");
+console.log(`GET ${BASE}/ -> ${root}`);
+if (root !== 200) {
   console.error("Production is not reachable from here; cannot verify.");
   process.exit(1);
 }
 
-console.log("\n--- marker report ---");
-let missing = 0;
-let unbuilt = 0;
-for (const [marker, change] of Object.entries(MARKERS)) {
-  const file = localChunk.get(marker);
-  if (!file) {
-    unbuilt += 1;
-    console.log(`NOT BUILT  ${change} ("${marker}") is not in this checkout's build`);
-    continue;
-  }
-  const res = await probe(`${BASE}/assets/${file}`);
-  if (res.status === 200 && res.body.includes(marker)) {
-    console.log(`DEPLOYED   ${change} -> /assets/${file}`);
-  } else {
-    missing += 1;
-    console.log(`STALE      ${change} -> /assets/${file} returned ${res.status}`);
-  }
+console.log("\n--- control images (should already be deployed) ---");
+let controlOk = 0;
+for (const f of control) {
+  const code = await status(`/assets/${f}`);
+  if (code === 200) controlOk += 1;
+  console.log(`${code === 200 ? "present" : "MISSING"}  /assets/${f} -> ${code}`);
 }
 
-const total = Object.keys(MARKERS).length;
-console.log(`\n${total - missing - unbuilt}/${total} markers deployed at ${BASE}`);
-if (missing > 0) {
-  console.log("Production is serving an older build than this checkout.");
+if (controlOk === 0) {
+  console.error("\nNo control image is served, so asset paths differ here; the probe is unsound.");
+  process.exit(1);
 }
-process.exit(missing + unbuilt === 0 ? 0 : 1);
+
+console.log("\n--- images added by the recent UI work ---");
+let missing = 0;
+for (const f of recent) {
+  const code = await status(`/assets/${f}`);
+  if (code !== 200) missing += 1;
+  console.log(`${code === 200 ? "present" : "MISSING"}  /assets/${f} -> ${code}`);
+}
+
+console.log(
+  `\n${recent.length - missing}/${recent.length} recent images deployed at ${BASE}` +
+    (missing === 0
+      ? " — production carries this checkout's assets."
+      : " — production is serving a build without them."),
+);
+process.exit(missing === 0 ? 0 : 1);

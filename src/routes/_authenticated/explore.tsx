@@ -4,8 +4,8 @@ import { Search } from "lucide-react";
 import { z } from "zod";
 import { useAuth } from "@/hooks/useAuth";
 import {
+  DISCOVERY_CHIP_LABELS,
   DISCOVERY_KINDS,
-  DISCOVERY_LABELS,
   SUGGESTED_SEARCHES,
   normalizeSearch,
   type DiscoveryKind,
@@ -127,7 +127,7 @@ function ExploreScreen() {
               className={`min-h-11 shrink-0 rounded-lg border px-4 text-xs ${search.kind === kind ? "border-cyan bg-primary/20 text-cyan" : "border-border bg-surface-2/60"}`}
               onClick={() => void navigate({ search: { ...search, kind } })}
             >
-              {kind === "all" ? "All" : DISCOVERY_LABELS[kind]}
+              {kind === "all" ? "All" : DISCOVERY_CHIP_LABELS[kind]}
             </button>
           ))}
         </div>

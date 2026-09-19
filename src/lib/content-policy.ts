@@ -12,6 +12,24 @@
   "videos",
 ] as const;
 export type DiscoveryKind = (typeof DISCOVERY_KINDS)[number];
+/**
+ * Short labels for the Explore filter chips, where the full section names are
+ * too long to sit in a row. DISCOVERY_LABELS stays the name used in headings.
+ */
+export const DISCOVERY_CHIP_LABELS: Record<DiscoveryKind, string> = {
+  reels: "Reels",
+  series: "Series",
+  bible: "Bible",
+  churches: "Churches",
+  groups: "Groups",
+  mentors: "Mentors",
+  courses: "Courses",
+  events: "Events",
+  podcasts: "Podcasts",
+  music: "Music",
+  videos: "Videos",
+};
+
 export const DISCOVERY_LABELS: Record<DiscoveryKind, string> = {
   reels: "Christian Reels",
   series: "Scripture Series",

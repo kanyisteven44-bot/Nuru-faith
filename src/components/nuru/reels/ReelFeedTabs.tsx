@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import type { ReelFeed } from "@/services/reels";
 
-export const REEL_FEEDS: readonly ReelFeed[] = ["Following", "For You", "My Church"] as const;
+export const REEL_FEEDS: readonly ReelFeed[] = ["For You", "Following", "My Church"] as const;
 
 /** Floating, header-less feed switcher that sits over the video. */
 export function ReelFeedTabs({

@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { NuruMark } from "@/components/nuru/Logo";
+import { NuruGlyph } from "@/components/nuru/Logo";
 import hero from "@/assets/mountain-dawn.jpg";
 
 export const Route = createFileRoute("/")({
@@ -61,23 +61,19 @@ function Splash() {
       <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/45 to-background" />
 
       <div className="relative mx-auto flex min-h-dvh max-w-xl flex-col items-center justify-center px-8 text-center">
-        <NuruMark className="h-24 w-24" />
+        <NuruGlyph className="h-24 w-24" />
 
-        <h1 className="mt-6 font-display text-[40px] leading-none font-bold tracking-tight">
-          Nuru <span className="text-cyan">Faith</span>
+        <h1 className="mt-6 font-display text-[38px] leading-none font-bold tracking-[0.18em]">
+          NURU
         </h1>
-        <p className="mt-3 text-[13px] tracking-wide text-secondary-foreground">
-          Connect • Grow • Live Your Faith
-        </p>
+        <p className="mt-2 font-display text-[15px] tracking-[0.42em] text-cyan">FAITH</p>
 
-        <p className="script mt-10 text-3xl leading-snug text-cyan/95">
-          Faith Today
-          <br />A Brighter Tomorrow
-        </p>
-
-        <p className="absolute inset-x-0 bottom-10 text-xs text-muted-foreground">
-          A generation for more.
-        </p>
+        <div className="absolute inset-x-0 bottom-14 px-8">
+          <p className="font-display text-[15px] font-semibold tracking-[0.2em]">A BRIGHTER YOU.</p>
+          <p className="mt-2 text-[12px] text-muted-foreground">
+            Faith. Community. Purpose. Always with you.
+          </p>
+        </div>
       </div>
     </div>
   );

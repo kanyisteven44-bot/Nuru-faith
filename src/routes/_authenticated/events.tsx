@@ -27,13 +27,13 @@ export const Route = createFileRoute("/_authenticated/events")({
   component: EventsScreen,
 });
 
-const TABS = ["All", "In-Person", "Online", "Nearby"] as const;
+const TABS = ["Upcoming", "My Events", "Past"] as const;
 type Tab = (typeof TABS)[number];
 
 function EventsScreen() {
   const { userId } = useAuth();
   const qc = useQueryClient();
-  const [tab, setTab] = useState<Tab>("All");
+  const [tab, setTab] = useState<Tab>("Upcoming");
 
   const events = useQuery({ queryKey: ["events"], queryFn: fetchEvents });
   const mine = useQuery({
@@ -41,16 +41,17 @@ function EventsScreen() {
     queryFn: () => fetchMyEventIds(userId!),
     enabled: !!userId,
   });
-  const going = new Set(mine.data ?? []);
+  const going = useMemo(() => new Set(mine.data ?? []), [mine.data]);
 
   const rows = useMemo(() => {
     const all = events.data ?? [];
-    if (tab === "Online") return all.filter((e) => e.is_online);
-    if (tab === "In-Person") return all.filter((e) => !e.is_online);
-    // "Nearby" has no geolocation yet; it shows events that carry a location.
-    if (tab === "Nearby") return all.filter((e) => !e.is_online && e.location);
-    return all;
-  }, [events.data, tab]);
+    // An event counts as past once it has ended, or once it started over a day ago.
+    const hasEnded = (e: (typeof all)[number]) =>
+      new Date(e.ends_at ?? e.starts_at).getTime() < Date.now();
+    if (tab === "Past") return all.filter(hasEnded);
+    if (tab === "My Events") return all.filter((e) => going.has(e.id));
+    return all.filter((e) => !hasEnded(e));
+  }, [events.data, tab, going]);
 
   const [featured, ...rest] = rows;
 

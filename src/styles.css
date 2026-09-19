@@ -348,146 +348,49 @@ a {
   }
 }
 
-/* App-open splash: a beam of light sweeps across the dark, reveals the mark,
-   then flashes and expands into the real interface. See SplashScreen.tsx. */
-@keyframes splash-beam {
-  0% {
-    translate: -30% 0;
+/* App-open splash: the mark rises out of the mountain dawn, then the light
+   expands into the real interface. See SplashScreen.tsx. */
+@keyframes splash-photo {
+  from {
     opacity: 0;
+    scale: 1.08;
   }
-  10% {
+  to {
     opacity: 1;
-  }
-  75% {
-    opacity: 1;
-  }
-  100% {
-    translate: 230% 0;
-    opacity: 0;
-  }
-}
-
-@utility splash-beam {
-  position: absolute;
-  top: -50%;
-  left: -55%;
-  width: 55%;
-  height: 200%;
-  rotate: 18deg;
-  filter: blur(7px);
-  background: linear-gradient(
-    100deg,
-    transparent,
-    color-mix(in oklab, white 92%, transparent),
-    color-mix(in oklab, var(--brand-cyan) 70%, transparent),
-    transparent
-  );
-  animation: splash-beam 900ms cubic-bezier(0.3, 0, 0.2, 1) both;
-}
-
-/* The mark assembles from two independently tumbling pieces (arch + cross)
-   rather than fading in as one unit — each turns face-on in 3D space, catches
-   an overshoot/settle like something physically landing, then the whole mark
-   flashes and catches a light sheen the instant both pieces lock together. */
-@keyframes splash-halo {
-  0% {
-    opacity: 0;
-    scale: 0.55;
-  }
-  100% {
-    opacity: 0.5;
     scale: 1;
   }
 }
 
-@utility splash-halo {
-  animation: splash-halo 400ms ease-out 120ms both;
+@utility splash-photo {
+  animation: splash-photo 1250ms cubic-bezier(0.2, 0, 0.2, 1) both;
 }
 
-@keyframes splash-arch-tumble {
-  0% {
-    opacity: 0;
-    transform: translate3d(-46px, 0, -90px) rotateY(-100deg);
-  }
-  55% {
-    opacity: 1;
-  }
-  75% {
-    transform: translate3d(4px, 0, 4px) rotateY(8deg);
-  }
-  100% {
-    opacity: 1;
-    transform: translate3d(0, 0, 0) rotateY(0deg);
-  }
-}
-
-@utility splash-arch-tumble {
-  animation: splash-arch-tumble 500ms cubic-bezier(0.2, 0.7, 0.2, 1) 180ms both;
-}
-
-@keyframes splash-cross-tumble {
-  0% {
-    opacity: 0;
-    transform: translate3d(0, 34px, -70px) rotateX(85deg);
-  }
-  55% {
-    opacity: 1;
-  }
-  75% {
-    transform: translate3d(0, -3px, 3px) rotateX(-7deg);
-  }
-  100% {
-    opacity: 1;
-    transform: translate3d(0, 0, 0) rotateX(0deg);
-  }
-}
-
-@utility splash-cross-tumble {
-  animation: splash-cross-tumble 500ms cubic-bezier(0.2, 0.7, 0.2, 1) 380ms both;
-}
-
-@keyframes splash-converge-flash {
-  0% {
-    opacity: 0;
-    scale: 0.6;
-  }
-  20% {
-    opacity: 0.85;
-  }
-  100% {
-    opacity: 0;
-    scale: 1.8;
-  }
-}
-
-@utility splash-converge-flash {
-  animation: splash-converge-flash 350ms ease-out 880ms both;
-}
-
-@keyframes splash-sheen {
-  0% {
-    translate: -140% 0;
-    rotate: -18deg;
-    opacity: 0;
-  }
-  45% {
-    opacity: 0.9;
-  }
-  100% {
-    translate: 140% 0;
-    rotate: -18deg;
-    opacity: 0;
-  }
-}
-
-@utility splash-sheen {
-  animation: splash-sheen 400ms ease-out 880ms both;
-}
-
-@keyframes splash-word-reveal {
+/* The mark fades up and its bloom swells, so it reads as light gathering
+   rather than an image switching on. */
+@keyframes splash-mark {
   from {
     opacity: 0;
-    translate: 0 8px;
+    scale: 0.9;
+    filter: drop-shadow(0 0 0 transparent);
+  }
+  60% {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+    filter: drop-shadow(0 0 22px color-mix(in oklab, var(--brand-cyan) 55%, transparent));
+  }
+}
+
+@utility splash-mark {
+  animation: splash-mark 820ms cubic-bezier(0.2, 0, 0.2, 1) 80ms both;
+}
+
+@keyframes splash-rise {
+  from {
+    opacity: 0;
+    translate: 0 10px;
   }
   to {
     opacity: 1;
@@ -495,8 +398,12 @@ a {
   }
 }
 
-@utility splash-word-reveal {
-  animation: splash-word-reveal 400ms ease-out 1050ms both;
+@utility splash-rise-1 {
+  animation: splash-rise 440ms ease-out 520ms both;
+}
+
+@utility splash-rise-2 {
+  animation: splash-rise 440ms ease-out 760ms both;
 }
 
 @keyframes splash-flash {
@@ -534,13 +441,10 @@ a {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .splash-beam,
-  .splash-halo,
-  .splash-arch-tumble,
-  .splash-cross-tumble,
-  .splash-converge-flash,
-  .splash-sheen,
-  .splash-word-reveal,
+  .splash-photo,
+  .splash-mark,
+  .splash-rise-1,
+  .splash-rise-2,
   .splash-flash-play {
     animation: none !important;
   }

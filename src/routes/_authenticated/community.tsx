@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Plus, Search, Users } from "lucide-react";
+import { Check, Search, Users } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -122,14 +122,6 @@ function CommunityScreen() {
           ))}
         </div>
       )}
-
-      <Link
-        to="/create"
-        aria-label="Create a post"
-        className="fixed bottom-24 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground nuru-glow transition-transform active:scale-95"
-      >
-        <Plus className="h-6 w-6" />
-      </Link>
     </AppShell>
   );
 }

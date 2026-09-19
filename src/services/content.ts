@@ -157,6 +157,29 @@ export async function createPost(input: {
   if (error) throw new Error(error.message);
 }
 
+/**
+ * The three counts the profile header shows. Each is a head-only count so the
+ * rows themselves are never transferred.
+ */
+export async function fetchProfileCounts(userId: string) {
+  const [posts, followers, following] = await Promise.all([
+    supabase.from("posts").select("id", { count: "exact", head: true }).eq("author_id", userId),
+    supabase
+      .from("user_follows")
+      .select("follower_id", { count: "exact", head: true })
+      .eq("following_id", userId),
+    supabase
+      .from("user_follows")
+      .select("following_id", { count: "exact", head: true })
+      .eq("follower_id", userId),
+  ]);
+  return {
+    posts: posts.count ?? 0,
+    followers: followers.count ?? 0,
+    following: following.count ?? 0,
+  };
+}
+
 /** Ids of the people this user follows — powers the Community "Following" tab. */
 export async function fetchMyFollowing(userId: string) {
   const { data, error } = await supabase

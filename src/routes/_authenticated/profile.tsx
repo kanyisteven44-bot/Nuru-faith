@@ -2,33 +2,41 @@ import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  BadgeCheck,
   BookMarked,
+  BookOpen,
   Bookmark,
   CalendarCheck,
-  ChevronRight,
-  CircleHelp,
+  Clapperboard,
   Flame,
   HandHeart,
   Heart,
   Loader2,
+  Music2,
   Settings,
   Sparkles,
   SquarePen,
   Users,
+  type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { resolveMedia } from "@/lib/media";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import {
   fetchMyEventIds,
   fetchMyGroupIds,
-  fetchMySavedPosts,
+  fetchMyPosts,
+  fetchMySavedPostRows,
   fetchProfile,
+  fetchProfileCounts,
   updateProfile,
 } from "@/services/content";
+import { fetchMyReels } from "@/services/reels";
 import { AppShell, Avatar, ScreenHeader } from "@/components/nuru/AppShell";
-import { CardSkeleton, ProgressBar } from "@/components/nuru/Primitives";
+import { CardSkeleton, EmptyState, ProgressBar } from "@/components/nuru/Primitives";
+import coverArt from "@/assets/cross-sunrise.jpg";
 
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
@@ -54,13 +62,39 @@ const BADGES = [
     label: "Kindness",
     tint: "text-emerald-300 bg-emerald-500/15 border-emerald-400/30",
   },
-  { icon: Users, label: "Community", tint: "text-sky-300 bg-sky-500/15 border-sky-400/30" },
+  { icon: Users, label: "Community", tint: "text-cyan bg-primary/15 border-primary/30" },
   {
     icon: Flame,
     label: "Bible Streak",
     tint: "text-amber-300 bg-amber-500/15 border-amber-400/30",
   },
 ] as const;
+
+/** The eight shortcuts the design puts under the stats row. */
+const TILES: {
+  icon: LucideIcon;
+  label: string;
+  to: "/community" | "/reels" | "/groups" | "/events" | "/bible" | "/music" | "/settings";
+}[] = [
+  { icon: SquarePen, label: "My Posts", to: "/community" },
+  { icon: Clapperboard, label: "My Reels", to: "/reels" },
+  { icon: Bookmark, label: "Saved", to: "/community" },
+  { icon: Users, label: "My Groups", to: "/groups" },
+  { icon: CalendarCheck, label: "My Events", to: "/events" },
+  { icon: BookOpen, label: "Bible", to: "/bible" },
+  { icon: Music2, label: "Music", to: "/music" },
+  { icon: Settings, label: "Settings", to: "/settings" },
+];
+
+const GRID_TABS = ["Posts", "Reels", "Saved"] as const;
+type GridTab = (typeof GRID_TABS)[number];
+
+/** 1200 -> "1.2K", so a long count never pushes the stats row out of shape. */
+function compactCount(value: number) {
+  if (value < 1000) return String(value);
+  const thousands = value / 1000;
+  return `${thousands >= 10 ? Math.round(thousands) : thousands.toFixed(1).replace(/\.0$/, "")}K`;
+}
 
 function ProfileScreen() {
   const { userId } = useAuth();
@@ -70,15 +104,16 @@ function ProfileScreen() {
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
   const [saving, setSaving] = useState(false);
+  const [tab, setTab] = useState<GridTab>("Posts");
 
   const profile = useQuery({
     queryKey: ["profile", userId],
     queryFn: () => fetchProfile(userId!),
     enabled: !!userId,
   });
-  const saved = useQuery({
-    queryKey: ["saved-posts", userId],
-    queryFn: () => fetchMySavedPosts(userId!),
+  const counts = useQuery({
+    queryKey: ["profile-counts", userId],
+    queryFn: () => fetchProfileCounts(userId!),
     enabled: !!userId,
   });
   const myGroups = useQuery({
@@ -91,51 +126,56 @@ function ProfileScreen() {
     queryFn: () => fetchMyEventIds(userId!),
     enabled: !!userId,
   });
+  const myPosts = useQuery({
+    queryKey: ["my-posts", userId],
+    queryFn: () => fetchMyPosts(userId!),
+    enabled: !!userId && tab === "Posts",
+  });
+  const myReels = useQuery({
+    queryKey: ["my-reels", userId],
+    queryFn: () => fetchMyReels(userId!),
+    enabled: !!userId && tab === "Reels",
+  });
+  const savedPosts = useQuery({
+    queryKey: ["saved-post-rows", userId],
+    queryFn: () => fetchMySavedPostRows(userId!),
+    enabled: !!userId && tab === "Saved",
+  });
 
   const streak = profile.data?.faith_streak ?? 0;
   const level = Math.floor(streak / LEVEL_STEP) + 1;
   const intoLevel = streak % LEVEL_STEP;
 
+  const active = tab === "Posts" ? myPosts : tab === "Reels" ? myReels : savedPosts;
+  const items = (active.data ?? []).map((row) => {
+    const r = row as Record<string, unknown>;
+    return {
+      id: String(r["id"]),
+      title: String(r["caption"] ?? r["body"] ?? ""),
+      cover: (r["poster_url"] ?? r["media_url"] ?? null) as string | null,
+      likes: Number(r["like_count"] ?? 0),
+    };
+  });
+
   async function save() {
     if (!userId) return;
     setSaving(true);
     try {
-      await updateProfile(userId, { full_name: name.trim() || null, bio: bio.trim() || null });
+      await updateProfile(userId, { full_name: name, bio });
       await qc.invalidateQueries({ queryKey: ["profile", userId] });
       setEditing(false);
       toast.success("Profile updated");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Couldn't save your profile");
+      toast.error(e instanceof Error ? e.message : "Couldn't save that");
     } finally {
       setSaving(false);
     }
   }
 
   async function signOut() {
-    await qc.cancelQueries();
-    qc.clear();
     await supabase.auth.signOut();
-    void navigate({ to: "/auth", search: { mode: "login" as const }, replace: true });
+    void navigate({ to: "/auth", search: { mode: "login" }, replace: true });
   }
-
-  const MENU = [
-    { icon: SquarePen, label: "My Posts", count: null, to: "/community" as const },
-    { icon: Bookmark, label: "Saved", count: (saved.data ?? []).length, to: "/community" as const },
-    {
-      icon: Users,
-      label: "My Groups",
-      count: (myGroups.data ?? []).length,
-      to: "/groups" as const,
-    },
-    {
-      icon: CalendarCheck,
-      label: "My Events",
-      count: (myEvents.data ?? []).length,
-      to: "/events" as const,
-    },
-    { icon: Settings, label: "Settings", count: null, to: "/settings" as const },
-    { icon: CircleHelp, label: "Help & Support", count: null, to: "/settings" as const },
-  ];
 
   return (
     <AppShell>
@@ -153,40 +193,70 @@ function ProfileScreen() {
           <CardSkeleton count={3} height="h-20" />
         </div>
       ) : (
-        <div className="px-4 pt-2">
-          <section className="flex flex-col items-center text-center">
-            <Avatar
-              url={profile.data?.avatar_url ?? null}
-              name={profile.data?.full_name ?? ""}
-              seed={userId}
-              size="lg"
-            />
-            <h1 className="mt-3 font-display text-xl font-semibold">
-              {profile.data?.full_name ?? "Nuru member"}
-            </h1>
-            <p className="text-[12px] text-muted-foreground">
-              @{profile.data?.username ?? "member"}
-            </p>
-            {profile.data?.bio && (
-              <p className="mt-2 max-w-xs text-[13px] text-secondary-foreground">
-                {profile.data.bio}
+        <div className="px-4 pt-1">
+          {/* Cover, avatar and identity */}
+          <section className="nuru-card overflow-hidden">
+            <div className="relative h-28">
+              <img src={coverArt} alt="" className="h-full w-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-card via-card/25 to-transparent" />
+              <p className="script absolute top-3 right-4 text-right text-[19px] leading-[1.15] text-white/90">
+                Faith
+                <span className="block">Purpose</span>
+                <span className="block">Impact</span>
               </p>
-            )}
-            <button
-              type="button"
-              onClick={() => {
-                setName(profile.data?.full_name ?? "");
-                setBio(profile.data?.bio ?? "");
-                setEditing((v) => !v);
-              }}
-              className="mt-3 rounded-lg border border-border-strong bg-surface-2 px-4 py-1.5 text-[12px] font-semibold text-secondary-foreground"
-            >
-              {editing ? "Cancel" : "Edit profile"}
-            </button>
+            </div>
+
+            <div className="relative px-4 pb-4">
+              {/* The avatar lifts into the cover; the identity column sits
+                  beside it, as the design lays it out. */}
+              <div className="flex gap-3">
+                <Avatar
+                  url={profile.data?.avatar_url ?? null}
+                  name={profile.data?.full_name ?? ""}
+                  seed={userId}
+                  size="lg"
+                  className="-mt-11 shrink-0 ring-4 ring-card"
+                />
+                <div className="min-w-0 flex-1 pt-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <h1 className="flex items-center gap-1.5 font-display text-[19px] leading-tight font-bold">
+                        <span>{profile.data?.full_name ?? "Nuru member"}</span>
+                        {profile.data?.verified && (
+                          <BadgeCheck
+                            className="h-4.5 w-4.5 shrink-0 text-cyan"
+                            aria-label="Verified"
+                          />
+                        )}
+                      </h1>
+                      <p className="truncate text-[13px] text-muted-foreground">
+                        @{profile.data?.username ?? "member"}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setName(profile.data?.full_name ?? "");
+                        setBio(profile.data?.bio ?? "");
+                        setEditing((v) => !v);
+                      }}
+                      className="shrink-0 rounded-xl border border-border-strong bg-surface-2 px-3 py-1.5 text-[12px] font-semibold text-secondary-foreground"
+                    >
+                      {editing ? "Cancel" : "Edit profile"}
+                    </button>
+                  </div>
+                  {profile.data?.bio && (
+                    <p className="mt-1.5 text-[13px] text-secondary-foreground">
+                      {profile.data.bio}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
           </section>
 
           {editing && (
-            <section className="nuru-card mt-4 space-y-2 p-4">
+            <section className="nuru-card mt-3 space-y-2 p-4">
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -215,7 +285,94 @@ function ProfileScreen() {
             </section>
           )}
 
-          <section className="nuru-card mt-5 p-4">
+          {/* Stats */}
+          <dl className="nuru-card mt-3 grid grid-cols-4 divide-x divide-border py-3">
+            <Stat label="Posts" value={counts.data?.posts} />
+            <Stat label="Followers" value={counts.data?.followers} />
+            <Stat label="Following" value={counts.data?.following} />
+            <Stat label="Groups" value={(myGroups.data ?? []).length} />
+          </dl>
+
+          {/* Shortcuts */}
+          <section className="mt-3 grid grid-cols-4 gap-2">
+            {TILES.map(({ icon: Icon, label, to }) => (
+              <Link
+                key={label}
+                to={to}
+                className="nuru-card flex flex-col items-center gap-1.5 py-3 text-center"
+              >
+                <Icon className="h-5 w-5 text-cyan" strokeWidth={1.7} />
+                <span className="text-[11px] text-secondary-foreground">{label}</span>
+              </Link>
+            ))}
+          </section>
+
+          {/* Grid tabs */}
+          <div className="mt-6 flex gap-5 border-b border-border">
+            {GRID_TABS.map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setTab(t)}
+                aria-current={tab === t ? "true" : undefined}
+                className={cn(
+                  "-mb-px border-b-2 pb-2.5 text-[14px] font-semibold transition-colors",
+                  tab === t ? "border-cyan text-cyan" : "border-transparent text-muted-foreground",
+                )}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+
+          <section className="pt-3">
+            {active.isLoading && <CardSkeleton count={2} height="h-28" />}
+            {!active.isLoading && items.length === 0 && (
+              <EmptyState
+                title={`No ${tab.toLowerCase()} yet`}
+                description={
+                  tab === "Saved"
+                    ? "Posts you save will collect here."
+                    : "What you share will show up here."
+                }
+              />
+            )}
+            {items.length > 0 && (
+              <ul className="grid grid-cols-3 gap-2">
+                {items.map((item) => (
+                  <li key={item.id}>
+                    <div className="relative aspect-[3/4] overflow-hidden rounded-xl border border-border">
+                      {item.cover ? (
+                        <img
+                          src={resolveMedia(item.cover)}
+                          alt=""
+                          loading="lazy"
+                          className="absolute inset-0 h-full w-full object-cover"
+                        />
+                      ) : (
+                        <span className="absolute inset-0 bg-gradient-to-br from-surface-2 to-card" />
+                      )}
+                      <span className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
+                      <span className="absolute inset-x-0 bottom-0 p-2">
+                        {item.title && (
+                          <span className="line-clamp-2 block text-[12px] leading-tight font-semibold text-white">
+                            {item.title}
+                          </span>
+                        )}
+                        <span className="mt-1 flex items-center gap-1 text-[11px] text-white/85">
+                          <Heart className="h-3 w-3 fill-current text-rose-400" />
+                          {compactCount(item.likes)}
+                        </span>
+                      </span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          {/* Faith journey */}
+          <section className="nuru-card mt-6 p-4">
             <div className="flex items-center gap-3">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-primary/35 bg-primary/12 text-cyan">
                 <Sparkles className="h-5 w-5" strokeWidth={1.8} />
@@ -249,33 +406,39 @@ function ProfileScreen() {
             </div>
           </section>
 
-          <section className="space-y-2 pt-6">
-            {MENU.map(({ icon: Icon, label, count, to }) => (
-              <Link key={label} to={to} className="nuru-card flex items-center gap-3 px-4 py-3.5">
-                <Icon className="h-4.5 w-4.5 shrink-0 text-cyan" strokeWidth={1.8} />
-                <span className="min-w-0 flex-1 truncate text-sm font-medium">{label}</span>
-                {count !== null && count > 0 && (
-                  <span className="shrink-0 text-[12px] text-muted-foreground">{count}</span>
-                )}
-                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-              </Link>
-            ))}
-            <Link to="/bible" className="nuru-card flex items-center gap-3 px-4 py-3.5">
-              <BookMarked className="h-4.5 w-4.5 shrink-0 text-cyan" strokeWidth={1.8} />
-              <span className="min-w-0 flex-1 truncate text-sm font-medium">Saved Scripture</span>
-              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-            </Link>
-          </section>
+          <Link to="/bible" className="nuru-card mt-6 flex items-center gap-3 px-4 py-3.5">
+            <BookMarked className="h-4.5 w-4.5 shrink-0 text-cyan" strokeWidth={1.8} />
+            <span className="min-w-0 flex-1 truncate text-sm font-medium">Saved Scripture</span>
+          </Link>
+
+          <p className="pt-3 text-center text-[11px] text-muted-foreground">
+            {(myEvents.data ?? []).length} event
+            {(myEvents.data ?? []).length === 1 ? "" : "s"} on your calendar
+          </p>
 
           <button
             type="button"
             onClick={() => void signOut()}
-            className="mt-6 min-h-12 w-full rounded-xl border border-destructive/40 bg-destructive/10 text-sm font-semibold text-destructive"
+            className="mt-4 min-h-12 w-full rounded-xl border border-destructive/40 bg-destructive/10 text-sm font-semibold text-destructive"
           >
             Log Out
           </button>
         </div>
       )}
     </AppShell>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: number | undefined }) {
+  return (
+    <div className="px-1 text-center">
+      <dt className="sr-only">{label}</dt>
+      <dd>
+        <span className="block font-display text-[19px] font-bold">
+          {value == null ? "—" : compactCount(value)}
+        </span>
+        <span className="block text-[11px] text-muted-foreground">{label}</span>
+      </dd>
+    </div>
   );
 }

@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 /** Compact themed hero banner used under a screen's sticky header. */
 export function ScreenHero({ image, alt = "" }: { image: string; alt?: string }) {
   return (
-    <div className="relative h-32 w-full overflow-hidden" aria-hidden={alt === ""}>
+    <div className="relative h-28 w-full overflow-hidden" aria-hidden={alt === ""}>
       <img src={image} alt={alt} loading="eager" className="h-full w-full object-cover" />
       <div className="absolute inset-0 bg-gradient-to-b from-background/25 via-background/60 to-background" />
     </div>
@@ -31,7 +31,7 @@ export function SectionHeader({
             {eyebrow}
           </p>
         )}
-        <h2 className="font-display text-[17px] font-semibold tracking-tight">{title}</h2>
+        <h2 className="font-display text-[15px] font-semibold tracking-tight">{title}</h2>
       </div>
       {action &&
         (to ? (
@@ -75,7 +75,7 @@ export function PillTabs<T extends string>({
             aria-selected={active}
             onClick={() => onChange(tab)}
             className={cn(
-              "min-h-8 shrink-0 rounded-lg px-3 text-[11px] font-semibold transition-all",
+              "min-h-9 shrink-0 rounded-lg px-4 text-[13px] font-semibold transition-all",
               active
                 ? "bg-primary text-primary-foreground nuru-glow-sm"
                 : "border border-border bg-surface-2/60 text-muted-foreground hover:text-secondary-foreground",
@@ -99,7 +99,7 @@ export function GradientButton({
     <button
       {...props}
       className={cn(
-        "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-cyan/40 bg-primary px-5 text-sm font-semibold text-primary-foreground nuru-glow-sm transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-50 disabled:shadow-none",
+        "inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-cyan/30 bg-primary px-5 text-sm font-semibold text-primary-foreground nuru-glow-sm transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-50 disabled:shadow-none",
         className,
       )}
     >
@@ -119,7 +119,7 @@ export function GhostButton({
     <button
       {...props}
       className={cn(
-        "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border-strong bg-surface-2 px-5 text-sm font-medium text-secondary-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50",
+        "inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-border-strong bg-surface-2 px-5 text-sm font-medium text-secondary-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50",
         className,
       )}
     >

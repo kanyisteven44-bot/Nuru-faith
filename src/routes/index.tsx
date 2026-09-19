@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { NuruMark } from "@/components/nuru/Logo";
-import { useRotatingPhoto } from "@/lib/photoRotation";
+import hero from "@/assets/mountain-dawn.jpg";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -27,7 +27,6 @@ const SPLASH_MS = 2200;
 
 function Splash() {
   const navigate = useNavigate();
-  const hero = useRotatingPhoto("launch-splash");
 
   useEffect(() => {
     let done = false;

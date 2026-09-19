@@ -10,7 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { fetchEvents, fetchMyEventIds, toggleAttendance } from "@/services/content";
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
 import { CardSkeleton, EmptyState, PillTabs } from "@/components/nuru/Primitives";
-import { useRotatingPhoto } from "@/lib/photoRotation";
+import heroBg from "@/assets/church-interior.jpg";
 
 export const Route = createFileRoute("/_authenticated/events")({
   head: () => ({
@@ -31,7 +31,6 @@ const TABS = ["All", "In-Person", "Online", "Nearby"] as const;
 type Tab = (typeof TABS)[number];
 
 function EventsScreen() {
-  const heroBg = useRotatingPhoto("events-fallback");
   const { userId } = useAuth();
   const qc = useQueryClient();
   const [tab, setTab] = useState<Tab>("All");

@@ -1,24 +1,18 @@
 import type { ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Bell, Compass, Home, Plus, User, Users } from "lucide-react";
+import { ArrowLeft, Bell, BookOpen, Calendar, Home, User, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchProfile } from "@/services/content";
 import { generatedAvatar } from "@/lib/avatar";
 import { NuruMark } from "./Logo";
 
-/**
- * Two nav items sit either side of the raised create button, matching the
- * app design: Home, Explore, (+), Community, Profile.
- */
-const NAV_LEFT = [
+const NAV = [
   { to: "/home", label: "Home", icon: Home },
-  { to: "/explore", label: "Explore", icon: Compass },
-] as const;
-
-const NAV_RIGHT = [
   { to: "/community", label: "Community", icon: Users },
+  { to: "/bible", label: "Bible", icon: BookOpen },
+  { to: "/events", label: "Events", icon: Calendar },
   { to: "/profile", label: "Profile", icon: User },
 ] as const;
 
@@ -34,29 +28,13 @@ export function AppShell({
   flush?: boolean;
   hideNav?: boolean;
 }) {
-  // The approved boards describe a phone application, not a desktop content
-  // site. Keep every route on the same 430px mobile canvas at all widths.
-  // `wide` remains accepted for compatibility but no longer stretches pages.
-  const maxWidth = "max-w-[430px]";
+  const maxWidth = wide === "xl" ? "max-w-7xl" : wide ? "max-w-5xl" : "max-w-xl";
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   return (
-    <div
-      className={cn(
-        "nuru-app-frame relative bg-background/60",
-        flush ? "h-dvh overflow-hidden" : "min-h-dvh",
-      )}
-    >
-      <div
-        aria-hidden="true"
-        className="pointer-events-none fixed inset-x-0 top-0 h-72 bg-[radial-gradient(circle_at_top,rgba(22,140,255,0.13),transparent_68%)]"
-      />
+    <div className={cn("relative bg-background", flush ? "h-dvh overflow-hidden" : "min-h-dvh")}>
       <main
-        className={cn(
-          "relative z-10 mx-auto w-full",
-          flush || hideNav ? "" : "pb-[calc(6.25rem+env(safe-area-inset-bottom))] md:pb-28",
-          maxWidth,
-        )}
+        className={cn("relative z-10 mx-auto w-full", flush || hideNav ? "" : "pb-24", maxWidth)}
       >
         {children}
       </main>
@@ -64,27 +42,15 @@ export function AppShell({
       {!hideNav && (
         <nav
           aria-label="Main"
-          className="nuru-bottom-nav fixed inset-x-0 bottom-0 z-40 mx-auto max-w-[430px] border-t border-border bg-surface/96 backdrop-blur-2xl"
+          className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/95 backdrop-blur-xl"
         >
           <ul
             className={cn(
-              "mx-auto grid grid-cols-5 items-end px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2",
+              "mx-auto grid grid-cols-5 px-1 pb-[max(0.4rem,env(safe-area-inset-bottom))] pt-2",
               maxWidth,
             )}
           >
-            {NAV_LEFT.map((item) => (
-              <NavItem key={item.to} {...item} active={pathname.startsWith(item.to)} />
-            ))}
-            <li className="flex justify-center">
-              <Link
-                to="/create"
-                aria-label="Create"
-                className="-mt-3 flex h-12 w-12 items-center justify-center rounded-full border border-cyan/70 bg-primary text-primary-foreground shadow-[0_0_0_5px_var(--surface),0_6px_24px_-3px_var(--brand-cyan)] transition-transform hover:brightness-110 active:scale-95"
-              >
-                <Plus className="h-5.5 w-5.5" strokeWidth={2.2} />
-              </Link>
-            </li>
-            {NAV_RIGHT.map((item) => (
+            {NAV.map((item) => (
               <NavItem key={item.to} {...item} active={pathname.startsWith(item.to)} />
             ))}
           </ul>
@@ -111,13 +77,13 @@ function NavItem({
         to={to}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl text-[10px] font-semibold transition-colors",
+          "flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl text-[10px] font-medium transition-colors",
           active ? "text-cyan" : "text-muted-foreground hover:text-secondary-foreground",
         )}
       >
         <Icon
-          className={cn("h-5 w-5", active && "drop-shadow-[0_0_10px_var(--brand-cyan)]")}
-          strokeWidth={active ? 2 : 1.6}
+          className={cn("h-5.5 w-5.5", active && "drop-shadow-[0_0_10px_var(--brand-cyan)]")}
+          strokeWidth={active ? 2.3 : 1.8}
         />
         {label}
       </Link>
@@ -138,7 +104,7 @@ export function BrandBar() {
   });
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-transparent bg-background/88 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-2xl supports-[backdrop-filter]:border-border/25">
+    <header className="sticky top-0 z-30 flex items-center justify-between gap-3 bg-background/90 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-xl">
       <span className="flex items-center gap-2">
         <NuruMark className="h-7 w-7" />
         <span className="font-display text-[17px] font-semibold">
@@ -173,18 +139,15 @@ export function ScreenHeader({
   subtitle,
   right,
   back = false,
-  titleClassName,
 }: {
   title: string;
   subtitle?: string;
   right?: ReactNode;
   back?: boolean;
-  /** Lets a screen tint its own title, as Explore does in the design. */
-  titleClassName?: string;
 }) {
   const navigate = useNavigate();
   return (
-    <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-transparent bg-background/88 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-2xl supports-[backdrop-filter]:border-border/25">
+    <header className="sticky top-0 z-30 flex items-center gap-3 bg-background/90 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-xl">
       {back && (
         <button
           type="button"
@@ -196,14 +159,7 @@ export function ScreenHeader({
         </button>
       )}
       <div className="min-w-0 flex-1">
-        <h1
-          className={cn(
-            "truncate font-display text-[22px] font-semibold tracking-tight",
-            titleClassName,
-          )}
-        >
-          {title}
-        </h1>
+        <h1 className="truncate font-display text-[22px] font-semibold tracking-tight">{title}</h1>
         {subtitle && <p className="truncate text-xs text-muted-foreground">{subtitle}</p>}
       </div>
       {right && <div className="flex shrink-0 items-center gap-2">{right}</div>}

@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { resolveMedia } from "@/lib/media";
-import { RotatingPhoto } from "@/lib/photoRotation";
 import { fetchProfile, fetchDevotionals } from "@/services/content";
 import { readSavedDevotionalIds, toggleSavedDevotional } from "@/lib/devotionalBookmarks";
 import { AppShell } from "@/components/nuru/AppShell";
@@ -168,8 +167,8 @@ function DevotionalsScreen() {
                 onClick={() => search(t.dbSubtitle)}
                 className="nuru-card relative block h-28 overflow-hidden text-left active:opacity-90"
               >
-                <RotatingPhoto
-                  slot={`devotional-topic-${t.asset}`}
+                <img
+                  src={resolveMedia(`asset:${t.asset}`)}
                   alt=""
                   className="absolute inset-0 h-full w-full object-cover"
                 />

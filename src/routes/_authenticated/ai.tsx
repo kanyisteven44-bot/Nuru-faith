@@ -42,7 +42,7 @@ import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
 import { NuruAiMark } from "@/components/nuru/NuruAiMark";
 import { AiMarkdown } from "@/components/nuru/AiMarkdown";
 import { CardSkeleton, IconTile } from "@/components/nuru/Primitives";
-import { useRotatingPhoto } from "@/lib/photoRotation";
+import heroBg from "@/assets/mountain-dawn.jpg";
 
 type Search = {
   contextType?: string | undefined;
@@ -120,7 +120,6 @@ const STARTERS: { prompt: string; hint: string; icon: LucideIcon; tint: string }
 type ChatMessage = { id: string; role: "user" | "assistant"; content: string; pending?: boolean };
 
 function AiScreen() {
-  const heroBg = useRotatingPhoto("nuru-ai");
   const { userId } = useAuth();
   const qc = useQueryClient();
   const search = Route.useSearch();

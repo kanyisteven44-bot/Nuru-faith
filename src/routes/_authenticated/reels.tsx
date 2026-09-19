@@ -94,9 +94,9 @@ function ReelsScreen() {
   const [muted, setMuted] = useState(true);
   const [dataSaver, setDataSaver] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
-  // Reels is an immersive player first, matching the approved Youth Social
-  // direction. The grid remains available as an optional discovery surface.
-  const [view, setView] = useState<"grid" | "feed">("feed");
+  // A shared reel link should open straight into the full-screen player;
+  // otherwise Reels opens on the browsable grid.
+  const [view, setView] = useState<"grid" | "feed">(linkedId ? "feed" : "grid");
   const [youtubeVisibleCount, setYoutubeVisibleCount] = useState(YOUTUBE_BATCH_SIZE);
   const [watchedExternalIds, setWatchedExternalIds] = useState<Set<string>>(new Set());
   const [hiddenIds, setHiddenIds] = useState<string[]>([]);
@@ -307,7 +307,7 @@ function ReelsScreen() {
   useEffect(() => {
     scrollerRef.current?.scrollTo({ top: 0 });
     setActiveIndex(0);
-    setView("feed");
+    setView(linkedId ? "feed" : "grid");
     setYoutubeVisibleCount(YOUTUBE_BATCH_SIZE);
     // Only react to the person switching feeds, not to linkedId itself.
     // eslint-disable-next-line react-hooks/exhaustive-deps

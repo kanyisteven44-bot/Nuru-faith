@@ -19,7 +19,7 @@ import {
   ScreenHero,
   SectionHeader,
 } from "@/components/nuru/Primitives";
-import { useRotatingPhoto } from "@/lib/photoRotation";
+import heroBg from "@/assets/worship-night.jpg";
 import { YouTubePlayer, YouTubeNotice } from "@/components/youtube/YouTubePlayer";
 import { YouTubeSearchResults } from "@/components/youtube/YouTubeSearchResults";
 import { MediaCategoryRail } from "@/components/youtube/MediaCategoryRail";
@@ -54,12 +54,16 @@ type NowPlaying =
   | { kind: "youtube-playlist"; id: string; title: string };
 
 function MusicScreen() {
-  const heroBg = useRotatingPhoto("music-hero");
   const { userId } = useAuth();
   const [tab, setTab] = useState<Tab>("Music");
   const [search, setSearch] = useState("");
-  const [submittedSearch, setSubmittedSearch] = useState("");
+  const [debounced, setDebounced] = useState("");
   const [nowPlaying, setNowPlaying] = useState<NowPlaying | null>(null);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(search), 450);
+    return () => clearTimeout(t);
+  }, [search]);
 
   const profile = useQuery({
     queryKey: ["profile", userId],
@@ -95,13 +99,7 @@ function MusicScreen() {
       <ScreenHero image={heroBg} />
 
       <div className="space-y-3 px-4 py-3">
-        <form
-          className="relative"
-          onSubmit={(event) => {
-            event.preventDefault();
-            setSubmittedSearch(search.trim());
-          }}
-        >
+        <div className="relative">
           <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             value={search}
@@ -113,31 +111,20 @@ function MusicScreen() {
           {search && (
             <button
               type="button"
-              onClick={() => {
-                setSearch("");
-                setSubmittedSearch("");
-              }}
+              onClick={() => setSearch("")}
               aria-label="Clear search"
-              className="absolute right-12 top-1/2 -translate-y-1/2 rounded-full p-1.5 text-muted-foreground"
+              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1.5 text-muted-foreground"
             >
               <X className="h-4 w-4" />
             </button>
           )}
-          <button
-            type="submit"
-            aria-label="Search music and media"
-            disabled={!search.trim()}
-            className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-primary text-primary-foreground disabled:opacity-40"
-          >
-            <Search className="h-4 w-4" />
-          </button>
-        </form>
+        </div>
         <PillTabs tabs={TABS} value={tab} onChange={setTab} />
       </div>
 
-      {submittedSearch ? (
+      {debounced.trim() ? (
         <YouTubeSearchResults
-          query={submittedSearch}
+          query={debounced}
           onSelectVideo={openVideo}
           onSelectPlaylist={openPlaylist}
         />

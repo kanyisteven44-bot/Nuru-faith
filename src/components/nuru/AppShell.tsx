@@ -54,7 +54,7 @@ export function AppShell({
       <main
         className={cn(
           "relative z-10 mx-auto w-full",
-          flush || hideNav ? "" : "pb-[calc(7.25rem+env(safe-area-inset-bottom))] md:pb-32",
+          flush || hideNav ? "" : "pb-[calc(6.25rem+env(safe-area-inset-bottom))] md:pb-28",
           maxWidth,
         )}
       >
@@ -62,35 +62,33 @@ export function AppShell({
       </main>
 
       {!hideNav && (
-        <div
-          className={cn(
-            "pointer-events-none fixed inset-x-0 bottom-0 z-40 mx-auto px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))]",
-            maxWidth,
-          )}
+        <nav
+          aria-label="Main"
+          className="nuru-bottom-nav fixed inset-x-0 bottom-0 z-40 mx-auto max-w-[430px] border-t border-border bg-surface/96 backdrop-blur-2xl"
         >
-          <nav
-            aria-label="Main"
-            className="nuru-bottom-nav pointer-events-auto rounded-[1.75rem] border border-cyan/55 bg-surface/95 backdrop-blur-2xl"
+          <ul
+            className={cn(
+              "mx-auto grid grid-cols-5 items-end px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2",
+              maxWidth,
+            )}
           >
-            <ul className="grid grid-cols-5 items-end px-2 pb-2 pt-2.5">
-              {NAV_LEFT.map((item) => (
-                <NavItem key={item.to} {...item} active={pathname.startsWith(item.to)} />
-              ))}
-              <li className="flex justify-center">
-                <Link
-                  to="/create"
-                  aria-label="Create"
-                  className="-mt-5 flex h-12 w-12 items-center justify-center rounded-full border border-cyan/70 bg-primary text-primary-foreground shadow-[0_0_0_5px_var(--surface),0_6px_24px_-3px_var(--brand-cyan)] transition-transform hover:brightness-110 active:scale-95"
-                >
-                  <Plus className="h-5.5 w-5.5" strokeWidth={2.2} />
-                </Link>
-              </li>
-              {NAV_RIGHT.map((item) => (
-                <NavItem key={item.to} {...item} active={pathname.startsWith(item.to)} />
-              ))}
-            </ul>
-          </nav>
-        </div>
+            {NAV_LEFT.map((item) => (
+              <NavItem key={item.to} {...item} active={pathname.startsWith(item.to)} />
+            ))}
+            <li className="flex justify-center">
+              <Link
+                to="/create"
+                aria-label="Create"
+                className="-mt-3 flex h-12 w-12 items-center justify-center rounded-full border border-cyan/70 bg-primary text-primary-foreground shadow-[0_0_0_5px_var(--surface),0_6px_24px_-3px_var(--brand-cyan)] transition-transform hover:brightness-110 active:scale-95"
+              >
+                <Plus className="h-5.5 w-5.5" strokeWidth={2.2} />
+              </Link>
+            </li>
+            {NAV_RIGHT.map((item) => (
+              <NavItem key={item.to} {...item} active={pathname.startsWith(item.to)} />
+            ))}
+          </ul>
+        </nav>
       )}
     </div>
   );
@@ -114,7 +112,7 @@ function NavItem({
         aria-current={active ? "page" : undefined}
         className={cn(
           "flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl text-[10px] font-semibold transition-colors",
-          active ? "text-cyan" : "text-secondary-foreground hover:text-foreground",
+          active ? "text-cyan" : "text-muted-foreground hover:text-secondary-foreground",
         )}
       >
         <Icon
@@ -122,13 +120,6 @@ function NavItem({
           strokeWidth={active ? 2 : 1.6}
         />
         {label}
-        <span
-          aria-hidden="true"
-          className={cn(
-            "h-0.5 w-7 rounded-full transition-colors",
-            active ? "bg-cyan" : "bg-transparent",
-          )}
-        />
       </Link>
     </li>
   );

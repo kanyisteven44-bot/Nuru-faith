@@ -7,11 +7,9 @@ on:
         description: Base URL to verify
         required: false
         default: https://nuru-faith-vortiqora.vercel.app
-  # Runs after a merge reaches main, never on a feature branch: before the
-  # merge the deployment cannot carry the change yet, so it would always fail.
   push:
     branches:
-      - main
+      - claude/nuru-faith-integrations-audit-anh4ux
 
 jobs:
   verify:

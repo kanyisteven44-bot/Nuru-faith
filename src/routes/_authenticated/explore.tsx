@@ -22,13 +22,7 @@ const TOPICS = [
   { label: "Identity", asset: "asset:topic-personal-growth", query: "identity" },
   { label: "Relationships", asset: "asset:topic-relationships", query: "relationships" },
   { label: "Purpose", asset: "asset:topic-faith-purpose", query: "purpose" },
-  { label: "Worship", asset: "asset:topic-worship-music", query: "worship" },
-  { label: "Youth Life", asset: "asset:topic-youth-life", query: "youth" },
-  { label: "Mental Health", asset: "asset:topic-mental-health", query: "anxiety" },
-  { label: "Bible Study", asset: "asset:topic-bible-study", query: "bible study" },
-  { label: "Testimonies", asset: "asset:topic-testimonies", query: "testimony" },
-  { label: "Family", asset: "asset:topic-family-life", query: "family" },
-  { label: "Hope & Healing", asset: "asset:topic-hope-healing", query: "hope" },
+  { label: "Worship", asset: "asset:worship-night", query: "worship" },
 ] as const;
 
 const schema = z.object({

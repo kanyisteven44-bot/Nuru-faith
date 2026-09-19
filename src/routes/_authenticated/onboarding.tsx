@@ -93,7 +93,7 @@ function Onboarding() {
         className="absolute inset-x-0 top-0 h-64 w-full object-cover opacity-30"
       />
       <div className="absolute inset-x-0 top-0 h-64 bg-gradient-to-b from-background/20 to-background" />
-      <div className="relative mx-auto flex min-h-dvh w-full max-w-md flex-col px-6 py-8">
+      <div className="relative mx-auto flex min-h-dvh w-full max-w-lg flex-col px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(2rem,env(safe-area-inset-top))] sm:px-8">
         <div className="mb-6 flex items-center gap-3">
           {step > 0 && (
             <button
@@ -127,7 +127,7 @@ function Onboarding() {
 
         <h1 className="font-display text-2xl font-semibold">{steps[step]}</h1>
 
-        <div className="mt-6 flex-1 space-y-4">
+        <div className="nuru-card mt-6 flex-1 space-y-4 p-4 sm:p-6">
           {step === 0 && (
             <>
               <Labeled label="Full name" id="ob-name">

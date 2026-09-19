@@ -74,8 +74,8 @@ function AdminScreen() {
   }
 
   return (
-    <div className="min-h-dvh bg-background">
-      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-surface/90 px-6 py-4 backdrop-blur-xl">
+    <div className="min-h-dvh bg-background/60">
+      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-surface/92 px-4 py-4 backdrop-blur-2xl sm:px-6">
         <div className="flex items-center gap-4">
           <NuruLogo compact />
           <span className="hidden items-center gap-1.5 rounded-full bg-surface-2 px-3 py-1 text-xs text-cyan sm:flex">
@@ -87,7 +87,7 @@ function AdminScreen() {
         </Link>
       </header>
 
-      <main className="mx-auto max-w-5xl space-y-8 px-6 py-8">
+      <main className="mx-auto max-w-5xl space-y-8 px-4 py-6 sm:px-6 sm:py-8">
         <div>
           <h1 className="font-display text-2xl font-semibold">Church dashboard</h1>
           <p className="text-sm text-muted-foreground">

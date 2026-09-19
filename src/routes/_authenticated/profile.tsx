@@ -4,20 +4,14 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   BadgeCheck,
   BookMarked,
-  BookOpen,
-  Bookmark,
-  CalendarCheck,
-  Clapperboard,
+  ChevronRight,
   Flame,
   HandHeart,
   Heart,
   Loader2,
-  Music2,
   Settings,
   Sparkles,
-  SquarePen,
   Users,
-  type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -69,22 +63,6 @@ const BADGES = [
     tint: "text-amber-300 bg-amber-500/15 border-amber-400/30",
   },
 ] as const;
-
-/** The eight shortcuts the design puts under the stats row. */
-const TILES: {
-  icon: LucideIcon;
-  label: string;
-  to: "/community" | "/reels" | "/groups" | "/events" | "/bible" | "/music" | "/settings";
-}[] = [
-  { icon: SquarePen, label: "My Posts", to: "/community" },
-  { icon: Clapperboard, label: "My Reels", to: "/reels" },
-  { icon: Bookmark, label: "Saved", to: "/community" },
-  { icon: Users, label: "My Groups", to: "/groups" },
-  { icon: CalendarCheck, label: "My Events", to: "/events" },
-  { icon: BookOpen, label: "Bible", to: "/bible" },
-  { icon: Music2, label: "Music", to: "/music" },
-  { icon: Settings, label: "Settings", to: "/settings" },
-];
 
 const GRID_TABS = ["Posts", "Reels", "Saved"] as const;
 type GridTab = (typeof GRID_TABS)[number];
@@ -293,19 +271,11 @@ function ProfileScreen() {
             <Stat label="Groups" value={(myGroups.data ?? []).length} />
           </dl>
 
-          {/* Shortcuts */}
-          <section className="mt-3 grid grid-cols-4 gap-2">
-            {TILES.map(({ icon: Icon, label, to }) => (
-              <Link
-                key={label}
-                to={to}
-                className="nuru-card flex flex-col items-center gap-1.5 py-3 text-center"
-              >
-                <Icon className="h-5 w-5 text-cyan" strokeWidth={1.7} />
-                <span className="text-[11px] text-secondary-foreground">{label}</span>
-              </Link>
-            ))}
-          </section>
+          <Link to="/groups" className="nuru-card mt-3 flex items-center gap-3 px-4 py-3.5">
+            <Users className="h-4.5 w-4.5 shrink-0 text-cyan" strokeWidth={1.8} />
+            <span className="min-w-0 flex-1 truncate text-sm font-medium">My Groups</span>
+            <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+          </Link>
 
           {/* Grid tabs */}
           <div className="mt-6 flex gap-5 border-b border-border">

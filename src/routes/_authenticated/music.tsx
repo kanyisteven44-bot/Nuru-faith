@@ -19,7 +19,7 @@ import {
   ScreenHero,
   SectionHeader,
 } from "@/components/nuru/Primitives";
-import heroBg from "@/assets/worship-night.jpg";
+import { useRotatingPhoto } from "@/lib/photoRotation";
 import { YouTubePlayer, YouTubeNotice } from "@/components/youtube/YouTubePlayer";
 import { YouTubeSearchResults } from "@/components/youtube/YouTubeSearchResults";
 import { MediaCategoryRail } from "@/components/youtube/MediaCategoryRail";
@@ -54,6 +54,7 @@ type NowPlaying =
   | { kind: "youtube-playlist"; id: string; title: string };
 
 function MusicScreen() {
+  const heroBg = useRotatingPhoto("music-hero");
   const { userId } = useAuth();
   const [tab, setTab] = useState<Tab>("Music");
   const [search, setSearch] = useState("");

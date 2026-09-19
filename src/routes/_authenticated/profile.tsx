@@ -30,7 +30,7 @@ import {
 import { fetchMyReels } from "@/services/reels";
 import { AppShell, Avatar, ScreenHeader } from "@/components/nuru/AppShell";
 import { CardSkeleton, EmptyState, ProgressBar } from "@/components/nuru/Primitives";
-import coverArt from "@/assets/cross-sunrise.jpg";
+import { useRotatingPhoto } from "@/lib/photoRotation";
 
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
@@ -75,6 +75,7 @@ function compactCount(value: number) {
 }
 
 function ProfileScreen() {
+  const coverArt = useRotatingPhoto("profile-cover");
   const { userId } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();

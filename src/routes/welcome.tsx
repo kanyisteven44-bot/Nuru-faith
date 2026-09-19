@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
 import { NuruLogo } from "@/components/nuru/Logo";
-import hero from "@/assets/mountain-dawn.jpg";
+import { useRotatingPhoto } from "@/lib/photoRotation";
 
 export const Route = createFileRoute("/welcome")({
   ssr: false,
@@ -19,6 +19,7 @@ export const Route = createFileRoute("/welcome")({
 
 function Welcome() {
   const navigate = useNavigate();
+  const hero = useRotatingPhoto("welcome");
 
   return (
     <div className="nuru-screen relative overflow-hidden">

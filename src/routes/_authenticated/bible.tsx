@@ -42,8 +42,7 @@ import { BOOK_ART, bookAbbr } from "@/lib/bookArt";
 import { AppShell } from "@/components/nuru/AppShell";
 import { CardSkeleton, EmptyState, PillTabs } from "@/components/nuru/Primitives";
 import { Sheet } from "@/components/nuru/reels/Sheet";
-import bibleHero from "@/assets/topic-life-skills.jpg";
-import verseArt from "@/assets/bible-candle.jpg";
+import { useRotatingPhoto } from "@/lib/photoRotation";
 
 const ALL_BOOKS: BibleBook[] = [...OLD_TESTAMENT, ...NEW_TESTAMENT];
 
@@ -69,6 +68,7 @@ type ReaderTarget = { book: BibleBook; chapter: number };
 type BibleTranslation = "NIV" | "KJV";
 
 function BibleScreen() {
+  const bibleHero = useRotatingPhoto("bible-hero");
   const [tab, setTab] = useState<Tab>("Books");
   const [reader, setReader] = useState<ReaderTarget | null>(null);
   const [book, setBook] = useState<BibleBook | null>(null);
@@ -210,6 +210,7 @@ async function fetchScripturePassage(reference: string, translation: BibleTransl
 /** The verse card the design puts above the book list. */
 function VerseOfTheDay({ onOpen }: { onOpen: (reference: string) => void }) {
   const reference = "Psalm 119:105";
+  const verseArt = useRotatingPhoto("bible-verse");
   return (
     <section className="nuru-card relative mb-6 overflow-hidden">
       <img src={verseArt} alt="" className="absolute inset-y-0 right-0 h-full w-1/2 object-cover" />

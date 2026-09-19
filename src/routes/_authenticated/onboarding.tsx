@@ -9,7 +9,7 @@ import { COUNTRIES, DENOMINATIONS, INTERESTS } from "@/constants/nuru";
 import { fetchChurches, joinChurch, saveInterests, updateProfile } from "@/services/content";
 import { GradientButton } from "@/components/nuru/Primitives";
 import { NuruLogo } from "@/components/nuru/Logo";
-import hero from "@/assets/walk-purpose.jpg";
+import { useRotatingPhoto } from "@/lib/photoRotation";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
   head: () => ({
@@ -34,6 +34,7 @@ const STAGES = [
 ];
 
 function Onboarding() {
+  const hero = useRotatingPhoto("onboarding");
   const { userId } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState(0);

@@ -18,7 +18,7 @@ import { fetchDevotionals, fetchEvents, fetchProfile } from "@/services/content"
 import { fetchCuratedSeries } from "@/services/series";
 import { AppShell, Avatar } from "@/components/nuru/AppShell";
 import { CardSkeleton } from "@/components/nuru/Primitives";
-import verseBg from "@/assets/bible-candle.jpg";
+import { useRotatingPhoto } from "@/lib/photoRotation";
 
 export const Route = createFileRoute("/_authenticated/home")({
   head: () => ({
@@ -63,6 +63,7 @@ function greetingFor(date: Date) {
 }
 
 function HomeScreen() {
+  const verseBg = useRotatingPhoto("home-todays-light");
   const navigate = useNavigate();
   const { userId } = useAuth();
   const [acceptedChallenge, setAcceptedChallenge] = useState(false);

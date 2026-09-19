@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { playOpeningChime } from "@/lib/chime";
 import { NuruGlyph } from "./Logo";
-import hero from "@/assets/mountain-dawn.jpg";
+import { useRotatingPhoto } from "@/lib/photoRotation";
 
 const SESSION_KEY = "nuru-splash-shown";
 /** Earliest the hold phase can end — long enough for the beam + logo reveal to read as intentional. */
@@ -43,6 +43,7 @@ function wasSplashAlreadyShown(): boolean {
  * that, and collapses to a quick fade for prefers-reduced-motion.
  */
 export function SplashScreen() {
+  const hero = useRotatingPhoto("nuru-signature-splash");
   const { loading: authLoading } = useAuth();
   const [stage, setStage] = useState<Stage>("pending");
   const [reducedMotion, setReducedMotion] = useState(false);

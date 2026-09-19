@@ -6,7 +6,7 @@ import { Loader2, Lock, Mail, Phone, User as UserIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { NuruGlyph } from "@/components/nuru/Logo";
-import hero from "@/assets/mountain-dawn.jpg";
+import { useRotatingPhoto } from "@/lib/photoRotation";
 
 const searchSchema = z.object({
   mode: z.enum(["login", "signup", "forgot"]).optional().default("login"),
@@ -37,6 +37,7 @@ const credentials = z.object({
 type Method = "email" | "phone";
 
 function AuthPage() {
+  const hero = useRotatingPhoto("authentication");
   const { mode } = Route.useSearch();
   const navigate = useNavigate();
   const signup = mode === "signup";

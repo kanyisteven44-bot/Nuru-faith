@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
+  ArrowRight,
   Bookmark,
   Check,
   ChevronDown,
@@ -11,6 +12,8 @@ import {
   Highlighter,
   Search,
   Share2,
+  Layers,
+  SlidersHorizontal,
   Sparkles,
   SquarePen,
   Trash2,
@@ -35,9 +38,12 @@ import {
   type HighlightColor,
 } from "@/services/series";
 import { useShareSheet } from "@/hooks/useShareSheet";
-import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
+import { BOOK_ART, bookAbbr } from "@/lib/bookArt";
+import { AppShell } from "@/components/nuru/AppShell";
 import { CardSkeleton, EmptyState, PillTabs } from "@/components/nuru/Primitives";
 import { Sheet } from "@/components/nuru/reels/Sheet";
+import bibleHero from "@/assets/topic-life-skills.jpg";
+import verseArt from "@/assets/bible-candle.jpg";
 
 const ALL_BOOKS: BibleBook[] = [...OLD_TESTAMENT, ...NEW_TESTAMENT];
 
@@ -90,26 +96,62 @@ function BibleScreen() {
 
   return (
     <AppShell>
-      <ScreenHeader title="Bible" />
+      <header className="relative overflow-hidden">
+        <img src={bibleHero} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-r from-background via-background/85 to-background/30" />
+        <div className="relative flex items-start justify-between gap-3 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-5">
+          <div>
+            <h1 className="font-display text-[34px] leading-none font-bold tracking-tight">
+              Bible
+            </h1>
+            <p className="mt-1.5 text-[13px] text-secondary-foreground">
+              Read <span className="text-muted-foreground">•</span> Learn{" "}
+              <span className="text-muted-foreground">•</span>{" "}
+              <span className="text-cyan">Grow</span>{" "}
+              <span className="text-muted-foreground">•</span> Live
+            </p>
+          </div>
+          <p className="script max-w-[7.5rem] text-right text-[22px] leading-[1.1] text-white/90">
+            Grow
+            <span className="block text-[17px]">in His Word</span>
+          </p>
+        </div>
+      </header>
 
       <div className="space-y-3 px-4 pb-1">
         <div className="relative">
-          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search books, topics or verses…"
             aria-label="Search the Bible"
-            className="input-nuru pl-11"
+            className="input-nuru pr-12 pl-11"
           />
+          <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 rounded-lg bg-surface-2 p-1.5 text-cyan">
+            <SlidersHorizontal className="h-4 w-4" />
+          </span>
         </div>
         <PillTabs tabs={TABS} value={tab} onChange={setTab} />
       </div>
 
       {tab === "Books" && (
-        <div className="px-4 pt-2">
-          <Testament title="Old Testament" books={OLD_TESTAMENT.filter(match)} onOpen={setBook} />
-          <Testament title="New Testament" books={NEW_TESTAMENT.filter(match)} onOpen={setBook} />
+        <div className="px-4 pt-3">
+          <VerseOfTheDay onOpen={(reference) => openTopicReference(reference, setReader)} />
+          <Testament
+            title="Old Testament"
+            caption="From creation to the coming Messiah"
+            books={OLD_TESTAMENT.filter(match)}
+            total={OLD_TESTAMENT.length}
+            onOpen={setBook}
+          />
+          <Testament
+            title="New Testament"
+            caption="The life of Jesus and the early church"
+            books={NEW_TESTAMENT.filter(match)}
+            total={NEW_TESTAMENT.length}
+            onOpen={setBook}
+          />
         </div>
       )}
 
@@ -167,39 +209,117 @@ async function fetchScripturePassage(reference: string) {
   }
 }
 
+/** The verse card the design puts above the book list. */
+function VerseOfTheDay({ onOpen }: { onOpen: (reference: string) => void }) {
+  const reference = "Psalm 119:105";
+  return (
+    <section className="nuru-card relative mb-6 overflow-hidden">
+      <img src={verseArt} alt="" className="absolute inset-y-0 right-0 h-full w-1/2 object-cover" />
+      <div className="absolute inset-0 bg-gradient-to-r from-[#04244d] via-[#04244d]/90 to-transparent" />
+      <div className="relative max-w-[62%] p-4">
+        <p className="text-[10px] font-semibold tracking-[0.18em] text-muted-foreground uppercase">
+          Verse of the day
+        </p>
+        <blockquote className="mt-2">
+          <p className="font-display text-[17px] leading-snug font-bold text-white">
+            “Your word is a lamp to my feet and a light to my path.”
+          </p>
+          <cite className="mt-1.5 block text-[12px] text-white/70 not-italic">{reference}</cite>
+        </blockquote>
+        <button
+          type="button"
+          onClick={() => onOpen(reference)}
+          className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-full bg-primary px-4 text-[12px] font-semibold text-primary-foreground nuru-glow-sm"
+        >
+          Read Now <ArrowRight className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    </section>
+  );
+}
+
+const TESTAMENT_PREVIEW = 8;
+
 function Testament({
   title,
+  caption,
   books,
+  total,
   onOpen,
 }: {
   title: string;
+  caption: string;
   books: BibleBook[];
+  total: number;
   onOpen: (b: BibleBook) => void;
 }) {
+  const [expanded, setExpanded] = useState(false);
   if (books.length === 0) return null;
+  const shown = expanded ? books : books.slice(0, TESTAMENT_PREVIEW);
   return (
     <section className="pb-5">
-      <h2 className="mb-2 font-display text-[15px] font-semibold">{title}</h2>
+      <div className="mb-3 flex items-start gap-2">
+        <Layers className="mt-0.5 h-5 w-5 shrink-0 text-cyan" />
+        <div className="min-w-0 flex-1">
+          <h2 className="font-display text-[19px] font-bold">{title}</h2>
+          <p className="text-[12px] text-muted-foreground">
+            {total} books <span className="px-0.5">•</span> {caption}
+          </p>
+        </div>
+        {books.length > TESTAMENT_PREVIEW && (
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            className="shrink-0 rounded-xl bg-primary px-3.5 py-2 text-[12px] font-semibold text-primary-foreground"
+          >
+            {expanded ? "Show less" : "View All"}
+          </button>
+        )}
+      </div>
       <ul className="space-y-2">
-        {books.map((b) => (
-          <li key={b.name}>
-            <button
-              type="button"
-              onClick={() => onOpen(b)}
-              className="nuru-card flex w-full items-center gap-3 px-3 py-2.5 text-left"
-            >
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-primary/35 bg-primary/12 text-[11px] font-bold text-cyan">
-                {b.name.slice(0, 2)}
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-semibold">{b.name}</span>
-                <span className="block text-[11px] text-muted-foreground">
-                  {b.chapters} chapters
+        {shown.map((b) => {
+          const art = BOOK_ART[b.name];
+          return (
+            <li key={b.name}>
+              <button
+                type="button"
+                onClick={() => onOpen(b)}
+                className="nuru-card flex w-full items-center gap-3 p-2.5 text-left active:opacity-90"
+              >
+                <span className="relative h-14 w-20 shrink-0 overflow-hidden rounded-xl">
+                  {art ? (
+                    <img
+                      src={art.art}
+                      alt=""
+                      loading="lazy"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span className="block h-full w-full bg-surface-2" />
+                  )}
+                  <span
+                    className="absolute top-1/2 left-1/2 flex h-9 w-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-xl text-[12px] font-bold text-white shadow-lg shadow-black/40"
+                    style={{ backgroundColor: art?.badge ?? "var(--surface-2)" }}
+                  >
+                    {bookAbbr(b.name)}
+                  </span>
                 </span>
-              </span>
-            </button>
-          </li>
-        ))}
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[15px] font-semibold">{b.name}</span>
+                  <span className="block text-[12px] text-muted-foreground">
+                    {b.chapters} chapters
+                  </span>
+                  {art && (
+                    <span className="block truncate text-[12px] text-secondary-foreground">
+                      {art.tagline}
+                    </span>
+                  )}
+                </span>
+                <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+              </button>
+            </li>
+          );
+        })}
       </ul>
     </section>
   );
@@ -495,6 +615,8 @@ function Reader({
           <div className="px-4 pb-4">
             <Testament
               title="Old Testament"
+              caption="From creation to the coming Messiah"
+              total={OLD_TESTAMENT.length}
               books={OLD_TESTAMENT}
               onOpen={(b) => {
                 onNavigate(b, 1);
@@ -503,6 +625,8 @@ function Reader({
             />
             <Testament
               title="New Testament"
+              caption="The life of Jesus and the early church"
+              total={NEW_TESTAMENT.length}
               books={NEW_TESTAMENT}
               onOpen={(b) => {
                 onNavigate(b, 1);

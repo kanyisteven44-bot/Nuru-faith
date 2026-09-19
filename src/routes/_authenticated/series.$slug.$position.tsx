@@ -1,7 +1,23 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Bookmark, Check, HandHeart, MessageCircle, Sparkles } from "lucide-react";
+import {
+  ArrowLeft,
+  BookOpen,
+  Bookmark,
+  Check,
+  ChevronRight,
+  Crown,
+  FileText,
+  HandHeart,
+  MessageCircle,
+  MessagesSquare,
+  MoreHorizontal,
+  Share2,
+  Sparkles,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { addPrayerJournalEntry } from "@/services/ai";
@@ -16,6 +32,9 @@ import {
   saveReflection,
   saveScripture,
 } from "@/services/series";
+import { cn } from "@/lib/utils";
+import { resolveMedia } from "@/lib/media";
+import { useShareSheet } from "@/hooks/useShareSheet";
 import { AppShell } from "@/components/nuru/AppShell";
 import { ScriptureText } from "@/components/nuru/Scripture";
 import {
@@ -25,6 +44,14 @@ import {
   GhostButton,
   GradientButton,
 } from "@/components/nuru/Primitives";
+
+/** The three movements of a session, as the design groups them. */
+const STAGES = [
+  { key: "Read", hint: "God's Word", icon: BookOpen },
+  { key: "Reflect", hint: "Think Deeper", icon: MessagesSquare },
+  { key: "Pray", hint: "Talk to God", icon: HandHeart },
+] as const;
+type Stage = (typeof STAGES)[number]["key"];
 
 export const Route = createFileRoute("/_authenticated/series/$slug/$position")({
   head: () => ({
@@ -78,6 +105,8 @@ function SessionScreen() {
     enabled: !!userId && !!session,
   });
 
+  const shareSheet = useShareSheet();
+  const [stage, setStage] = useState<Stage>("Read");
   const [note, setNote] = useState("");
   useEffect(() => {
     if (reflection.data !== undefined) setNote(reflection.data);
@@ -152,34 +181,170 @@ function SessionScreen() {
 
   return (
     <AppShell>
-      <header className="flex items-center gap-3 px-4 pt-[max(0.75rem,env(safe-area-inset-top))]">
-        <Link
-          to="/series/$slug"
-          params={{ slug }}
-          aria-label="Back to series"
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-2"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Link>
-        <div className="min-w-0">
-          <p className="truncate text-xs text-muted-foreground">{series.data.title}</p>
-          <p className="text-xs font-medium text-cyan">
-            Session {session.position} of {sessions.data?.length ?? 0}
+      {/* Hero */}
+      <header className="relative overflow-hidden">
+        <img
+          src={resolveMedia(series.data.cover_image)}
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-background via-background/85 to-background/35" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/45" />
+
+        <div className="relative px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <Link
+                to="/series/$slug"
+                params={{ slug }}
+                aria-label="Back to series"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border-strong bg-surface-2/80 backdrop-blur"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Link>
+              <div className="min-w-0">
+                <p className="truncate text-[13px] font-medium">{series.data.title}</p>
+                <p className="text-[13px] font-semibold text-cyan">
+                  Session {session.position} of {sessions.data?.length ?? 0}
+                </p>
+              </div>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <button
+                type="button"
+                aria-label="Save this session's passage"
+                onClick={() => {
+                  if (!userId) {
+                    toast.error("Sign in to save passages");
+                    return;
+                  }
+                  if (!primary[0]) {
+                    toast("This session has no passage to save yet");
+                    return;
+                  }
+                  void saveScripture(userId, primary[0].reference)
+                    .then(() => toast.success("Saved to your Bible"))
+                    .catch(() => toast.error("Couldn't save that"));
+                }}
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-border-strong bg-surface-2/80 backdrop-blur"
+              >
+                <Bookmark className="h-4.5 w-4.5" />
+              </button>
+              <button
+                type="button"
+                aria-label="Share this session"
+                onClick={() =>
+                  shareSheet.share({
+                    title: session.title,
+                    text: `${series.data!.title} · Session ${session.position}`,
+                    url: `${window.location.origin}/series/${slug}/${session.position}`,
+                  })
+                }
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-border-strong bg-surface-2/80 backdrop-blur"
+              >
+                <Share2 className="h-4.5 w-4.5" />
+              </button>
+              <Link
+                to="/series/$slug"
+                params={{ slug }}
+                aria-label="All sessions in this series"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-border-strong bg-surface-2/80 backdrop-blur"
+              >
+                <MoreHorizontal className="h-4.5 w-4.5" />
+              </Link>
+            </div>
+          </div>
+
+          <p className="mt-4 inline-flex rounded-full border border-cyan/60 px-3 py-1 text-[11px] font-semibold tracking-[0.14em] text-cyan uppercase">
+            {series.data.category}
           </p>
+
+          <h1 className="mt-2 max-w-[68%] font-display text-[30px] leading-[1.08] font-bold tracking-tight">
+            {titleHead(session.title)} <span className="text-cyan">{titleTail(session.title)}</span>
+          </h1>
+
+          {session.introduction && (
+            <p className="mt-2 max-w-[68%] text-[13px] leading-relaxed text-secondary-foreground">
+              {session.introduction}
+            </p>
+          )}
+
+          <p className="pointer-events-none absolute right-4 bottom-[4.5rem] text-right">
+            <span className="block font-display text-[11px] tracking-[0.32em] text-white/85">
+              NURU FAITH
+            </span>
+            <span className="block text-[8px] tracking-[0.2em] text-white/55">
+              FAITH | GROWTH | PURPOSE
+            </span>
+          </p>
+
+          <div className="mt-4 flex items-center gap-3">
+            <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-2">
+              <span
+                className="block h-full rounded-full bg-gradient-to-r from-cyan to-primary"
+                style={{
+                  width: `${(session.position / Math.max(sessions.data?.length ?? 1, 1)) * 100}%`,
+                }}
+              />
+            </span>
+            <span className="shrink-0 text-[13px] font-semibold">
+              {session.position} / {sessions.data?.length ?? 0}
+            </span>
+            {next ? (
+              <Link
+                to="/series/$slug/$position"
+                params={{ slug, position: String(next.position) }}
+                aria-label="Next session"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground nuru-glow-sm"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </Link>
+            ) : (
+              <span
+                aria-hidden="true"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-2 text-muted-foreground"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </span>
+            )}
+          </div>
         </div>
       </header>
 
-      <article className="space-y-6 px-4 py-5">
-        <div>
-          <h1 className="font-display text-xl font-semibold tracking-tight">{session.title}</h1>
-          {session.introduction && (
-            <p className="mt-2 text-sm text-secondary-foreground">{session.introduction}</p>
-          )}
+      <article className="space-y-5 px-4 pt-4 pb-5">
+        {/* Read / Reflect / Pray */}
+        <div className="grid grid-cols-3 gap-2">
+          {STAGES.map(({ key, hint, icon: Icon }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setStage(key)}
+              aria-pressed={stage === key}
+              className={cn(
+                "flex items-center gap-2 rounded-2xl border px-3 py-2.5 text-left transition-colors",
+                stage === key
+                  ? "border-cyan/70 bg-primary text-primary-foreground nuru-glow-sm"
+                  : "border-border bg-surface-2/60 text-secondary-foreground",
+              )}
+            >
+              <Icon className="h-5 w-5 shrink-0" strokeWidth={1.8} />
+              <span className="min-w-0">
+                <span className="block text-[13px] leading-tight font-bold">{key}</span>
+                <span
+                  className={cn(
+                    "block truncate text-[10px] leading-tight",
+                    stage === key ? "text-primary-foreground/80" : "text-muted-foreground",
+                  )}
+                >
+                  {hint}
+                </span>
+              </span>
+            </button>
+          ))}
         </div>
 
-        {primary.length > 0 && (
-          <section className="nuru-card space-y-4 p-4">
-            <h2 className="font-display text-[15px] font-semibold">Read</h2>
+        {stage === "Read" && primary.length > 0 && (
+          <>
             {primary.map((p) => (
               <PassageBlock
                 key={p.id}
@@ -188,26 +353,32 @@ function SessionScreen() {
                 userId={userId}
               />
             ))}
-          </section>
+          </>
         )}
 
-        {session.context_note && (
-          <section className="space-y-2">
-            <h2 className="font-display text-[15px] font-semibold">Understand the context</h2>
-            <p className="text-sm text-secondary-foreground">{session.context_note}</p>
-          </section>
+        {stage === "Read" && session.context_note && (
+          <TeachingCard
+            icon={FileText}
+            title="Understand the context"
+            action="Why it matters"
+            to={askSearch(`Why does the context of ${session.title} matter?`)}
+          >
+            {session.context_note}
+          </TeachingCard>
         )}
 
-        {session.main_teaching && (
-          <section className="space-y-2">
-            <h2 className="font-display text-[15px] font-semibold">What this means</h2>
-            <p className="text-sm whitespace-pre-line text-secondary-foreground">
-              {session.main_teaching}
-            </p>
-          </section>
+        {stage === "Read" && session.main_teaching && (
+          <TeachingCard
+            icon={Users}
+            title="What this means"
+            action="Go deeper"
+            to={askSearch(`Go deeper on what this session means: ${session.title}`)}
+          >
+            {session.main_teaching}
+          </TeachingCard>
         )}
 
-        {supporting.length > 0 && (
+        {stage === "Read" && supporting.length > 0 && (
           <section className="nuru-card space-y-4 p-4">
             <h2 className="font-display text-[15px] font-semibold">Connect the passages</h2>
             {session.connections && (
@@ -224,7 +395,7 @@ function SessionScreen() {
           </section>
         )}
 
-        {session.reflection_questions?.length > 0 && (
+        {stage === "Reflect" && session.reflection_questions?.length > 0 && (
           <section className="space-y-3">
             <h2 className="font-display text-[15px] font-semibold">Reflect</h2>
             <ul className="space-y-2">
@@ -257,7 +428,7 @@ function SessionScreen() {
           </section>
         )}
 
-        {session.prayer && (
+        {stage === "Pray" && session.prayer && (
           <section className="nuru-card space-y-3 p-4">
             <h2 className="flex items-center gap-2 font-display text-[15px] font-semibold">
               <HandHeart className="h-4 w-4 text-cyan" /> Pray
@@ -288,7 +459,7 @@ function SessionScreen() {
           </section>
         )}
 
-        {session.practical_action && (
+        {stage === "Pray" && session.practical_action && (
           <section className="space-y-2">
             <h2 className="font-display text-[15px] font-semibold">Apply</h2>
             <p className="text-sm text-secondary-foreground">{session.practical_action}</p>
@@ -308,7 +479,7 @@ function SessionScreen() {
           </section>
         )}
 
-        {further.length > 0 && (
+        {stage === "Read" && further.length > 0 && (
           <section className="space-y-2">
             <h2 className="font-display text-[15px] font-semibold">Go further</h2>
             <div className="flex flex-wrap gap-2">
@@ -359,7 +530,54 @@ function SessionScreen() {
               : "Complete series"}
         </GradientButton>
       </article>
+      {shareSheet.node}
     </AppShell>
+  );
+}
+
+/** Splits a title so the design can pick the last word out in cyan. */
+function titleHead(title: string) {
+  const words = title.trim().split(/\s+/);
+  return words.length > 1 ? words.slice(0, -1).join(" ") : title;
+}
+function titleTail(title: string) {
+  const words = title.trim().split(/\s+/);
+  return words.length > 1 ? words[words.length - 1] : "";
+}
+
+function TeachingCard({
+  icon: Icon,
+  title,
+  action,
+  to,
+  children,
+}: {
+  icon: LucideIcon;
+  title: string;
+  action: string;
+  to: Record<string, unknown>;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="nuru-card p-4">
+      <div className="flex items-start justify-between gap-3">
+        <h2 className="flex items-center gap-2 font-display text-[15px] font-semibold">
+          <Icon className="h-5 w-5 shrink-0 text-cyan" strokeWidth={1.8} />
+          {title}
+        </h2>
+        <Link
+          to="/ai"
+          search={to}
+          className="flex shrink-0 items-center gap-0.5 text-[12px] font-semibold text-cyan"
+        >
+          {action}
+          <ChevronRight className="h-4 w-4" />
+        </Link>
+      </div>
+      <p className="mt-2 text-[13px] leading-relaxed whitespace-pre-line text-secondary-foreground">
+        {children}
+      </p>
+    </section>
   );
 }
 
@@ -373,9 +591,12 @@ function PassageBlock({
   userId: string | null;
 }) {
   return (
-    <div className="space-y-2">
+    <section className="nuru-card relative overflow-hidden p-4 nuru-glow-sm">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-sm font-semibold text-cyan">{reference}</p>
+        <h2 className="flex min-w-0 items-center gap-2">
+          <BookOpen className="h-5 w-5 shrink-0 text-cyan" strokeWidth={1.8} />
+          <span className="truncate font-display text-[16px] font-bold">{reference}</span>
+        </h2>
         <button
           onClick={() => {
             if (!userId) {
@@ -387,13 +608,23 @@ function PassageBlock({
               .catch(() => toast.error("Couldn't save that"));
           }}
           aria-label={`Save ${reference}`}
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-2 text-muted-foreground"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border-strong bg-surface-2 text-secondary-foreground"
         >
           <Bookmark className="h-4 w-4" />
         </button>
       </div>
-      <ScriptureText reference={reference} className="text-sm text-secondary-foreground" />
-      {explanation && <p className="text-xs text-muted-foreground">{explanation}</p>}
-    </div>
+
+      <ScriptureText
+        reference={reference}
+        className="mt-3 text-[14px] leading-relaxed text-secondary-foreground"
+      />
+
+      {explanation && (
+        <p className="mt-3 flex items-start gap-3 rounded-2xl border border-primary/35 bg-primary/10 p-3 text-[13px] leading-relaxed text-secondary-foreground">
+          <Crown className="mt-0.5 h-5 w-5 shrink-0 text-cyan" strokeWidth={1.8} />
+          {explanation}
+        </p>
+      )}
+    </section>
   );
 }

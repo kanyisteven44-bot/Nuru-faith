@@ -25,7 +25,6 @@ import {
   fetchMyGroupIds,
   fetchMySavedPosts,
   fetchProfile,
-  fetchProfileCounts,
   updateProfile,
 } from "@/services/content";
 import { AppShell, Avatar, ScreenHeader } from "@/components/nuru/AppShell";
@@ -63,28 +62,6 @@ const BADGES = [
   },
 ] as const;
 
-/** Compact "128 / Posts" pair for the profile header. */
-function Count({ label, value }: { label: string; value: number | undefined }) {
-  return (
-    <div className="text-center">
-      <dt className="sr-only">{label}</dt>
-      <dd>
-        <span className="block font-display text-[17px] font-bold">
-          {value == null ? "—" : compactCount(value)}
-        </span>
-        <span className="block text-[11px] text-muted-foreground">{label}</span>
-      </dd>
-    </div>
-  );
-}
-
-/** 1200 -> "1.2K", so long counts never push the row out of shape. */
-function compactCount(value: number) {
-  if (value < 1000) return String(value);
-  const thousands = value / 1000;
-  return `${thousands >= 10 ? Math.round(thousands) : thousands.toFixed(1).replace(/\.0$/, "")}K`;
-}
-
 function ProfileScreen() {
   const { userId } = useAuth();
   const navigate = useNavigate();
@@ -112,11 +89,6 @@ function ProfileScreen() {
   const myEvents = useQuery({
     queryKey: ["my-events", userId],
     queryFn: () => fetchMyEventIds(userId!),
-    enabled: !!userId,
-  });
-  const counts = useQuery({
-    queryKey: ["profile-counts", userId],
-    queryFn: () => fetchProfileCounts(userId!),
     enabled: !!userId,
   });
 
@@ -200,13 +172,6 @@ function ProfileScreen() {
                 {profile.data.bio}
               </p>
             )}
-
-            <dl className="mt-4 flex items-start gap-8">
-              <Count label="Posts" value={counts.data?.posts} />
-              <Count label="Followers" value={counts.data?.followers} />
-              <Count label="Following" value={counts.data?.following} />
-            </dl>
-
             <button
               type="button"
               onClick={() => {

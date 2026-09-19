@@ -1,24 +1,18 @@
 import type { ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Bell, Compass, Home, Plus, User, Users } from "lucide-react";
+import { ArrowLeft, Bell, BookOpen, Calendar, Home, User, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchProfile } from "@/services/content";
 import { generatedAvatar } from "@/lib/avatar";
 import { NuruMark } from "./Logo";
 
-/**
- * Two nav items sit either side of the raised create button, matching the
- * app design: Home, Explore, (+), Community, Profile.
- */
-const NAV_LEFT = [
+const NAV = [
   { to: "/home", label: "Home", icon: Home },
-  { to: "/explore", label: "Explore", icon: Compass },
-] as const;
-
-const NAV_RIGHT = [
   { to: "/community", label: "Community", icon: Users },
+  { to: "/bible", label: "Bible", icon: BookOpen },
+  { to: "/events", label: "Events", icon: Calendar },
   { to: "/profile", label: "Profile", icon: User },
 ] as const;
 
@@ -52,23 +46,11 @@ export function AppShell({
         >
           <ul
             className={cn(
-              "mx-auto grid grid-cols-5 items-end px-1 pb-[max(0.4rem,env(safe-area-inset-bottom))] pt-2",
+              "mx-auto grid grid-cols-5 px-1 pb-[max(0.4rem,env(safe-area-inset-bottom))] pt-2",
               maxWidth,
             )}
           >
-            {NAV_LEFT.map((item) => (
-              <NavItem key={item.to} {...item} active={pathname.startsWith(item.to)} />
-            ))}
-            <li className="flex justify-center">
-              <Link
-                to="/create"
-                aria-label="Create"
-                className="-mt-1.5 flex h-11 w-11 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_4px_18px_-2px_var(--primary)] transition-transform active:scale-95"
-              >
-                <Plus className="h-5.5 w-5.5" strokeWidth={2.2} />
-              </Link>
-            </li>
-            {NAV_RIGHT.map((item) => (
+            {NAV.map((item) => (
               <NavItem key={item.to} {...item} active={pathname.startsWith(item.to)} />
             ))}
           </ul>
@@ -95,13 +77,13 @@ function NavItem({
         to={to}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl text-[9px] font-medium transition-colors",
+          "flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl text-[10px] font-medium transition-colors",
           active ? "text-cyan" : "text-muted-foreground hover:text-secondary-foreground",
         )}
       >
         <Icon
-          className={cn("h-5 w-5", active && "drop-shadow-[0_0_10px_var(--brand-cyan)]")}
-          strokeWidth={active ? 2 : 1.6}
+          className={cn("h-5.5 w-5.5", active && "drop-shadow-[0_0_10px_var(--brand-cyan)]")}
+          strokeWidth={active ? 2.3 : 1.8}
         />
         {label}
       </Link>
@@ -157,14 +139,11 @@ export function ScreenHeader({
   subtitle,
   right,
   back = false,
-  titleClassName,
 }: {
   title: string;
   subtitle?: string;
   right?: ReactNode;
   back?: boolean;
-  /** Lets a screen tint its own title, as Explore does in the design. */
-  titleClassName?: string;
 }) {
   const navigate = useNavigate();
   return (
@@ -180,14 +159,7 @@ export function ScreenHeader({
         </button>
       )}
       <div className="min-w-0 flex-1">
-        <h1
-          className={cn(
-            "truncate font-display text-[22px] font-semibold tracking-tight",
-            titleClassName,
-          )}
-        >
-          {title}
-        </h1>
+        <h1 className="truncate font-display text-[22px] font-semibold tracking-tight">{title}</h1>
         {subtitle && <p className="truncate text-xs text-muted-foreground">{subtitle}</p>}
       </div>
       {right && <div className="flex shrink-0 items-center gap-2">{right}</div>}

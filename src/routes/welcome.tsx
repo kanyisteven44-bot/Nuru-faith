@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowRight, HandHeart, Sprout, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
-import hero from "@/assets/mountain-dawn.jpg";
+import forest from "@/assets/quiet-night.jpg";
 
 export const Route = createFileRoute("/welcome")({
   ssr: false,
@@ -29,13 +29,13 @@ function Welcome() {
   return (
     <div className="relative min-h-dvh overflow-hidden bg-background">
       <img
-        src={hero}
+        src={forest}
         alt=""
         width={1024}
         height={640}
-        className="absolute inset-x-0 top-0 h-[46%] w-full object-cover"
+        className="absolute inset-x-0 bottom-0 h-[55%] w-full object-cover opacity-60"
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-background/25 via-background/85 to-background" />
+      <div className="absolute inset-0 bg-gradient-to-b from-background via-background/85 to-background/55" />
 
       <div className="relative mx-auto flex min-h-dvh max-w-xl flex-col px-7 pb-10 pt-[max(1.5rem,env(safe-area-inset-top))]">
         <div className="flex justify-end">
@@ -48,18 +48,18 @@ function Welcome() {
           </Link>
         </div>
 
-        <div className="pt-[38vh]">
+        <div className="pt-10">
           <h1 className="font-display text-[34px] leading-[1.15] font-bold tracking-tight">
-            Faith for
+            Welcome to
             <br />
-            Real Life.
+            Nuru <span className="text-cyan">Faith</span>
           </h1>
           <p className="mt-3 max-w-[17rem] text-sm leading-relaxed text-secondary-foreground">
-            Grow. Connect. Belong.
+            A safe, Christ-centered community for young people.
           </p>
         </div>
 
-        <ul className="space-y-4 pt-8">
+        <ul className="space-y-4 pt-10">
           {VALUES.map(({ icon: Icon, title, copy }) => (
             <li key={title} className="flex items-center gap-4">
               <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-primary/40 bg-primary/12 text-cyan">

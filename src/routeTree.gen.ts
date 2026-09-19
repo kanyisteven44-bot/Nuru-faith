@@ -27,6 +27,7 @@ import { Route as AuthenticatedExploreRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedGroupsRouteImport } from './routes/_authenticated/groups'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
 import { Route as AuthenticatedHubRouteImport } from './routes/_authenticated/hub'
+import { Route as AuthenticatedMentorsRouteImport } from './routes/_authenticated/mentors'
 import { Route as AuthenticatedMessagesRouteImport } from './routes/_authenticated/messages'
 import { Route as AuthenticatedMusicRouteImport } from './routes/_authenticated/music'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
@@ -36,7 +37,6 @@ import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedReelsRouteImport } from './routes/_authenticated/reels'
 import { Route as AuthenticatedServeRouteImport } from './routes/_authenticated/serve'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
-import { Route as AuthenticatedMentorsIndexRouteImport } from './routes/_authenticated/mentors.index'
 import { Route as AuthenticatedMentorsIdRouteImport } from './routes/_authenticated/mentors.$id'
 import { Route as AuthenticatedSeriesIndexRouteImport } from './routes/_authenticated/series.index'
 import { Route as AuthenticatedDiscoveryKindIdRouteImport } from './routes/_authenticated/discovery.$kind.$id'
@@ -133,6 +133,11 @@ const AuthenticatedHubRoute = AuthenticatedHubRouteImport.update({
   path: '/hub',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedMentorsRoute = AuthenticatedMentorsRouteImport.update({
+  id: '/mentors',
+  path: '/mentors',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedMessagesRoute = AuthenticatedMessagesRouteImport.update({
   id: '/messages',
   path: '/messages',
@@ -179,16 +184,10 @@ const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedMentorsIndexRoute =
-  AuthenticatedMentorsIndexRouteImport.update({
-    id: '/mentors/',
-    path: '/mentors/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedMentorsIdRoute = AuthenticatedMentorsIdRouteImport.update({
-  id: '/mentors/$id',
-  path: '/mentors/$id',
-  getParentRoute: () => AuthenticatedRouteRoute,
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthenticatedMentorsRoute,
 } as any)
 const AuthenticatedSeriesIndexRoute =
   AuthenticatedSeriesIndexRouteImport.update({
@@ -233,6 +232,7 @@ export interface FileRoutesByFullPath {
   '/groups': typeof AuthenticatedGroupsRoute
   '/home': typeof AuthenticatedHomeRoute
   '/hub': typeof AuthenticatedHubRoute
+  '/mentors': typeof AuthenticatedMentorsRouteWithChildren
   '/messages': typeof AuthenticatedMessagesRoute
   '/music': typeof AuthenticatedMusicRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
@@ -243,7 +243,6 @@ export interface FileRoutesByFullPath {
   '/serve': typeof AuthenticatedServeRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/mentors/$id': typeof AuthenticatedMentorsIdRoute
-  '/mentors/': typeof AuthenticatedMentorsIndexRoute
   '/series/': typeof AuthenticatedSeriesIndexRoute
   '/discovery/$kind/$id': typeof AuthenticatedDiscoveryKindIdRoute
   '/series/$slug/$position': typeof AuthenticatedSeriesSlugPositionRoute
@@ -267,6 +266,7 @@ export interface FileRoutesByTo {
   '/groups': typeof AuthenticatedGroupsRoute
   '/home': typeof AuthenticatedHomeRoute
   '/hub': typeof AuthenticatedHubRoute
+  '/mentors': typeof AuthenticatedMentorsRouteWithChildren
   '/messages': typeof AuthenticatedMessagesRoute
   '/music': typeof AuthenticatedMusicRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
@@ -277,7 +277,6 @@ export interface FileRoutesByTo {
   '/serve': typeof AuthenticatedServeRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/mentors/$id': typeof AuthenticatedMentorsIdRoute
-  '/mentors': typeof AuthenticatedMentorsIndexRoute
   '/series': typeof AuthenticatedSeriesIndexRoute
   '/discovery/$kind/$id': typeof AuthenticatedDiscoveryKindIdRoute
   '/series/$slug/$position': typeof AuthenticatedSeriesSlugPositionRoute
@@ -303,6 +302,7 @@ export interface FileRoutesById {
   '/_authenticated/groups': typeof AuthenticatedGroupsRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/hub': typeof AuthenticatedHubRoute
+  '/_authenticated/mentors': typeof AuthenticatedMentorsRouteWithChildren
   '/_authenticated/messages': typeof AuthenticatedMessagesRoute
   '/_authenticated/music': typeof AuthenticatedMusicRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
@@ -313,7 +313,6 @@ export interface FileRoutesById {
   '/_authenticated/serve': typeof AuthenticatedServeRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/mentors/$id': typeof AuthenticatedMentorsIdRoute
-  '/_authenticated/mentors/': typeof AuthenticatedMentorsIndexRoute
   '/_authenticated/series/': typeof AuthenticatedSeriesIndexRoute
   '/_authenticated/discovery/$kind/$id': typeof AuthenticatedDiscoveryKindIdRoute
   '/_authenticated/series/$slug/$position': typeof AuthenticatedSeriesSlugPositionRoute
@@ -339,6 +338,7 @@ export interface FileRouteTypes {
     | '/groups'
     | '/home'
     | '/hub'
+    | '/mentors'
     | '/messages'
     | '/music'
     | '/notifications'
@@ -349,7 +349,6 @@ export interface FileRouteTypes {
     | '/serve'
     | '/settings'
     | '/mentors/$id'
-    | '/mentors/'
     | '/series/'
     | '/discovery/$kind/$id'
     | '/series/$slug/$position'
@@ -373,6 +372,7 @@ export interface FileRouteTypes {
     | '/groups'
     | '/home'
     | '/hub'
+    | '/mentors'
     | '/messages'
     | '/music'
     | '/notifications'
@@ -383,7 +383,6 @@ export interface FileRouteTypes {
     | '/serve'
     | '/settings'
     | '/mentors/$id'
-    | '/mentors'
     | '/series'
     | '/discovery/$kind/$id'
     | '/series/$slug/$position'
@@ -408,6 +407,7 @@ export interface FileRouteTypes {
     | '/_authenticated/groups'
     | '/_authenticated/home'
     | '/_authenticated/hub'
+    | '/_authenticated/mentors'
     | '/_authenticated/messages'
     | '/_authenticated/music'
     | '/_authenticated/notifications'
@@ -418,7 +418,6 @@ export interface FileRouteTypes {
     | '/_authenticated/serve'
     | '/_authenticated/settings'
     | '/_authenticated/mentors/$id'
-    | '/_authenticated/mentors/'
     | '/_authenticated/series/'
     | '/_authenticated/discovery/$kind/$id'
     | '/_authenticated/series/$slug/$position'
@@ -562,6 +561,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedHubRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/mentors': {
+      id: '/_authenticated/mentors'
+      path: '/mentors'
+      fullPath: '/mentors'
+      preLoaderRoute: typeof AuthenticatedMentorsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/messages': {
       id: '/_authenticated/messages'
       path: '/messages'
@@ -625,19 +631,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/mentors/': {
-      id: '/_authenticated/mentors/'
-      path: '/mentors'
-      fullPath: '/mentors/'
-      preLoaderRoute: typeof AuthenticatedMentorsIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/mentors/$id': {
       id: '/_authenticated/mentors/$id'
-      path: '/mentors/$id'
+      path: '/$id'
       fullPath: '/mentors/$id'
       preLoaderRoute: typeof AuthenticatedMentorsIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedMentorsRoute
     }
     '/_authenticated/series/': {
       id: '/_authenticated/series/'
@@ -670,6 +669,17 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedMentorsRouteChildren {
+  AuthenticatedMentorsIdRoute: typeof AuthenticatedMentorsIdRoute
+}
+
+const AuthenticatedMentorsRouteChildren: AuthenticatedMentorsRouteChildren = {
+  AuthenticatedMentorsIdRoute: AuthenticatedMentorsIdRoute,
+}
+
+const AuthenticatedMentorsRouteWithChildren =
+  AuthenticatedMentorsRoute._addFileChildren(AuthenticatedMentorsRouteChildren)
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedAiRoute: typeof AuthenticatedAiRoute
@@ -683,6 +693,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedGroupsRoute: typeof AuthenticatedGroupsRoute
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedHubRoute: typeof AuthenticatedHubRoute
+  AuthenticatedMentorsRoute: typeof AuthenticatedMentorsRouteWithChildren
   AuthenticatedMessagesRoute: typeof AuthenticatedMessagesRoute
   AuthenticatedMusicRoute: typeof AuthenticatedMusicRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
@@ -692,8 +703,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReelsRoute: typeof AuthenticatedReelsRoute
   AuthenticatedServeRoute: typeof AuthenticatedServeRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
-  AuthenticatedMentorsIdRoute: typeof AuthenticatedMentorsIdRoute
-  AuthenticatedMentorsIndexRoute: typeof AuthenticatedMentorsIndexRoute
   AuthenticatedSeriesIndexRoute: typeof AuthenticatedSeriesIndexRoute
   AuthenticatedDiscoveryKindIdRoute: typeof AuthenticatedDiscoveryKindIdRoute
   AuthenticatedSeriesSlugPositionRoute: typeof AuthenticatedSeriesSlugPositionRoute
@@ -713,6 +722,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedGroupsRoute: AuthenticatedGroupsRoute,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedHubRoute: AuthenticatedHubRoute,
+  AuthenticatedMentorsRoute: AuthenticatedMentorsRouteWithChildren,
   AuthenticatedMessagesRoute: AuthenticatedMessagesRoute,
   AuthenticatedMusicRoute: AuthenticatedMusicRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
@@ -722,8 +732,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedReelsRoute: AuthenticatedReelsRoute,
   AuthenticatedServeRoute: AuthenticatedServeRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
-  AuthenticatedMentorsIdRoute: AuthenticatedMentorsIdRoute,
-  AuthenticatedMentorsIndexRoute: AuthenticatedMentorsIndexRoute,
   AuthenticatedSeriesIndexRoute: AuthenticatedSeriesIndexRoute,
   AuthenticatedDiscoveryKindIdRoute: AuthenticatedDiscoveryKindIdRoute,
   AuthenticatedSeriesSlugPositionRoute: AuthenticatedSeriesSlugPositionRoute,

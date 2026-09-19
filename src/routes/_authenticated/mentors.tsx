@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { BadgeCheck, ChevronRight, MessageCircle, Search, UserRound } from "lucide-react";
+import { BadgeCheck, ChevronRight, Search, UserRound } from "lucide-react";
 import { resolveMedia } from "@/lib/media";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchMentors, fetchMyMentorshipRequests, fetchProfile } from "@/services/content";
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
 import { CardSkeleton, EmptyState, PillTabs } from "@/components/nuru/Primitives";
 
-export const Route = createFileRoute("/_authenticated/mentors/")({
+export const Route = createFileRoute("/_authenticated/mentors")({
   head: () => ({
     meta: [
       { title: "Mentors — Nuru Faith" },
@@ -21,7 +21,7 @@ export const Route = createFileRoute("/_authenticated/mentors/")({
   component: MentorsScreen,
 });
 
-const TABS = ["All", "My Mentors", "Topics"] as const;
+const TABS = ["All", "My Church", "By Topic"] as const;
 type Tab = (typeof TABS)[number];
 
 function MentorsScreen() {
@@ -42,11 +42,9 @@ function MentorsScreen() {
   const requested = new Set((requests.data ?? []).map((r) => r.mentor_id));
   const all = mentors.data ?? [];
   const rows =
-    tab === "My Mentors"
-      ? all.filter((m) => requested.has(m.id))
-      : tab === "Topics" && profile.data?.church_id
-        ? all.filter((m) => m.church_id === profile.data?.church_id)
-        : all;
+    tab === "My Church" && profile.data?.church_id
+      ? all.filter((m) => m.church_id === profile.data?.church_id)
+      : all;
 
   return (
     <AppShell>
@@ -78,46 +76,36 @@ function MentorsScreen() {
               key={m.id}
               to="/mentors/$id"
               params={{ id: m.id }}
-              className="nuru-card block p-3.5 active:opacity-90"
+              className="nuru-card flex items-center gap-3 p-3 active:opacity-90"
             >
-              <span className="flex items-start gap-3">
-                {m.photo_url ? (
-                  <img
-                    src={resolveMedia(m.photo_url)}
-                    alt=""
-                    className="h-14 w-14 shrink-0 rounded-full object-cover"
-                  />
-                ) : (
-                  <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-border-strong bg-surface-2 text-cyan">
-                    <UserRound className="h-6 w-6" />
-                  </span>
-                )}
-                <span className="min-w-0 flex-1">
-                  <span className="flex items-center gap-1.5">
-                    <span className="truncate text-[15px] font-semibold">{m.display_name}</span>
-                    {m.verified && (
-                      <BadgeCheck
-                        className="h-3.5 w-3.5 shrink-0 text-cyan"
-                        aria-label="Verified"
-                      />
-                    )}
-                  </span>
-                  {m.role_title && (
-                    <span className="block truncate text-[12px] text-cyan">{m.role_title}</span>
-                  )}
-                  {(m.specialties ?? []).length > 0 && (
-                    <span className="block truncate text-[11px] text-muted-foreground">
-                      {(m.specialties ?? []).slice(0, 3).join(" • ")}
-                    </span>
+              {m.photo_url ? (
+                <img
+                  src={resolveMedia(m.photo_url)}
+                  alt=""
+                  className="h-12 w-12 shrink-0 rounded-full object-cover"
+                />
+              ) : (
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-border-strong bg-surface-2 text-cyan">
+                  <UserRound className="h-5 w-5" />
+                </span>
+              )}
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center gap-1.5">
+                  <span className="truncate text-sm font-semibold">{m.display_name}</span>
+                  {m.verified && (
+                    <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-cyan" aria-label="Verified" />
                   )}
                 </span>
-                <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground" />
+                <span className="block truncate text-[11px] text-muted-foreground">
+                  {m.role_title ?? (m.specialties ?? []).slice(0, 2).join(" · ") ?? "Mentor"}
+                </span>
               </span>
-
-              <span className="mt-3 flex min-h-10 items-center justify-center gap-2 rounded-xl bg-primary text-[13px] font-semibold text-primary-foreground">
-                <MessageCircle className="h-4 w-4" />
-                {pending ? "Requested" : "Message"}
-              </span>
+              {pending && (
+                <span className="shrink-0 rounded-lg bg-surface-2 px-2.5 py-1 text-[10px] font-semibold text-cyan">
+                  Requested
+                </span>
+              )}
+              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
             </Link>
           );
         })}

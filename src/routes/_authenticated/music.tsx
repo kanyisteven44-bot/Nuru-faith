@@ -16,6 +16,7 @@ import {
   EmptyState,
   IconTile,
   PillTabs,
+  ScreenHero,
   SectionHeader,
 } from "@/components/nuru/Primitives";
 import heroBg from "@/assets/worship-night.jpg";
@@ -45,7 +46,7 @@ export const Route = createFileRoute("/_authenticated/music")({
   component: MusicScreen,
 });
 
-const TABS = ["Playlists", "Worship", "Chill", "Praise", "Sermons", "Videos"] as const;
+const TABS = ["Music", "Podcasts", "Sermons", "Videos"] as const;
 type Tab = (typeof TABS)[number];
 
 type NowPlaying =
@@ -54,7 +55,7 @@ type NowPlaying =
 
 function MusicScreen() {
   const { userId } = useAuth();
-  const [tab, setTab] = useState<Tab>("Playlists");
+  const [tab, setTab] = useState<Tab>("Music");
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
   const [nowPlaying, setNowPlaying] = useState<NowPlaying | null>(null);
@@ -94,26 +95,8 @@ function MusicScreen() {
 
   return (
     <AppShell>
-      <ScreenHeader title="Music" />
-
-      {/* Hero player card */}
-      <section className="px-4 pt-1">
-        <div className="relative overflow-hidden rounded-2xl border border-border">
-          <img src={heroBg} alt="" className="h-40 w-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/45 to-transparent" />
-          <div className="absolute inset-0 flex items-center justify-between gap-3 p-4">
-            <span>
-              <span className="block font-display text-[22px] leading-tight font-bold text-white drop-shadow">
-                Worship
-              </span>
-              <span className="block text-[13px] text-white/80 drop-shadow">Anytime, Anywhere</span>
-            </span>
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground nuru-glow-sm">
-              <Play className="h-5 w-5 fill-current" />
-            </span>
-          </div>
-        </div>
-      </section>
+      <ScreenHeader title="Music & media" subtitle="Worship, teaching and sound for your week" />
+      <ScreenHero image={heroBg} />
 
       <div className="space-y-3 px-4 py-3">
         <div className="relative">
@@ -147,7 +130,7 @@ function MusicScreen() {
         />
       ) : (
         <>
-          {tab === "Worship" && (
+          {tab === "Music" && (
             <>
               <MediaCategoryRail
                 title="Worship right now"
@@ -156,22 +139,28 @@ function MusicScreen() {
                 showUnavailableNotice
               />
               <MediaCategoryRail
-                title="Worship sets"
-                query="worship set full"
-                onSelect={openVideo}
-              />
-              <MediaCategoryRail title="Hymns" query="christian hymns" onSelect={openVideo} />
-            </>
-          )}
-
-          {tab === "Chill" && (
-            <>
-              <MediaCategoryRail
                 title="Songs for hard days"
                 query="christian worship peace anxiety"
                 onSelect={openVideo}
+              />
+              <MediaCategoryRail
+                title="Praise & celebration"
+                query="gospel praise songs"
+                onSelect={openVideo}
+              />
+              <NuruAudioSection tracks={tracks.data ?? []} loading={tracks.isLoading} />
+            </>
+          )}
+
+          {tab === "Sermons" && (
+            <>
+              <MediaCategoryRail
+                title="Worship sets"
+                query="worship set full"
+                onSelect={openVideo}
                 showUnavailableNotice
               />
+              <MediaCategoryRail title="Hymns" query="christian hymns" onSelect={openVideo} />
               <MediaCategoryRail
                 title="Acoustic worship"
                 query="acoustic worship christian"
@@ -180,50 +169,32 @@ function MusicScreen() {
             </>
           )}
 
-          {tab === "Praise" && (
-            <>
-              <MediaCategoryRail
-                title="Praise & celebration"
-                query="gospel praise songs"
-                onSelect={openVideo}
-                showUnavailableNotice
-              />
-              <MediaCategoryRail title="Gospel choirs" query="gospel choir" onSelect={openVideo} />
-            </>
-          )}
-
-          {tab === "Playlists" && (
+          {tab === "Podcasts" && (
             <section className="pt-3">
               <div className="px-4">
                 <SectionHeader title="Nuru playlists" />
               </div>
-              <div className="space-y-2 px-4">
-                {playlists.isLoading && <CardSkeleton count={3} height="h-16" />}
+              <div className="no-scrollbar flex gap-3 overflow-x-auto px-4 pb-1">
+                {playlists.isLoading && <CardSkeleton count={2} height="h-40" />}
                 {(playlists.data ?? []).map((p) => (
-                  <article key={p.id} className="nuru-card flex items-center gap-3 p-2.5">
-                    <img
-                      src={resolveMedia(p.cover_url)}
-                      alt=""
-                      width={128}
-                      height={128}
-                      loading="lazy"
-                      className="h-14 w-14 shrink-0 rounded-xl border border-border object-cover"
-                    />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-semibold">{p.title}</span>
-                      <span className="block truncate text-[11px] text-muted-foreground">
-                        {p.description}
+                  <article key={p.id} className="w-40 shrink-0">
+                    <div className="relative">
+                      <img
+                        src={resolveMedia(p.cover_url)}
+                        alt=""
+                        width={320}
+                        height={320}
+                        loading="lazy"
+                        className="h-40 w-40 rounded-2xl border border-border object-cover"
+                      />
+                      <span className="absolute bottom-2 right-2 flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground nuru-glow-sm">
+                        <Play className="h-4 w-4 fill-current" />
                       </span>
-                    </span>
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-cyan/50 text-cyan">
-                      <Play className="h-4 w-4 fill-current" />
-                    </span>
+                    </div>
+                    <p className="mt-2 truncate text-sm font-semibold">{p.title}</p>
+                    <p className="truncate text-[11px] text-muted-foreground">{p.description}</p>
                   </article>
                 ))}
-              </div>
-
-              <div className="px-4 pt-5">
-                <NuruAudioSection tracks={tracks.data ?? []} loading={tracks.isLoading} />
               </div>
 
               <div className="px-4 pt-5">

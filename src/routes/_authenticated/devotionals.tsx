@@ -18,8 +18,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { resolveMedia } from "@/lib/media";
 import { fetchProfile, fetchDevotionals } from "@/services/content";
 import { readSavedDevotionalIds, toggleSavedDevotional } from "@/lib/devotionalBookmarks";
-import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
-import { CardSkeleton, EmptyState, PillTabs } from "@/components/nuru/Primitives";
+import { AppShell } from "@/components/nuru/AppShell";
+import { FeatureHeaderBar } from "@/components/nuru/FeatureHeader";
+import { CardSkeleton, EmptyState } from "@/components/nuru/Primitives";
 
 export const Route = createFileRoute("/_authenticated/devotionals")({
   head: () => ({
@@ -39,13 +40,10 @@ const TOPICS: {
   subtitle: string;
   dbSubtitle: string;
   asset: string;
-  /** Ring + icon colour for the circular Categories row. */
-  tint: string;
   icon: ComponentType<{ className?: string }>;
 }[] = [
   {
     label: "Faith",
-    tint: "border-primary/60 bg-primary/15 text-cyan",
     subtitle: "Trust deeper",
     dbSubtitle: "Faith",
     asset: "topic-faith",
@@ -53,7 +51,6 @@ const TOPICS: {
   },
   {
     label: "Anxiety",
-    tint: "border-cyan/60 bg-cyan/12 text-cyan",
     subtitle: "Find peace",
     dbSubtitle: "Anxiety & Peace",
     asset: "topic-mental-health",
@@ -61,7 +58,6 @@ const TOPICS: {
   },
   {
     label: "Prayer",
-    tint: "border-violet/60 bg-violet/15 text-violet",
     subtitle: "Talk to God",
     dbSubtitle: "Prayer",
     asset: "topic-prayer",
@@ -69,7 +65,6 @@ const TOPICS: {
   },
   {
     label: "Relationships",
-    tint: "border-magenta/60 bg-magenta/15 text-magenta",
     subtitle: "Love well",
     dbSubtitle: "Relationships",
     asset: "topic-relationships",
@@ -77,7 +72,6 @@ const TOPICS: {
   },
   {
     label: "Purpose",
-    tint: "border-growth/60 bg-growth/15 text-growth",
     subtitle: "Live with intention",
     dbSubtitle: "Purpose",
     asset: "topic-faith-purpose",
@@ -85,7 +79,6 @@ const TOPICS: {
   },
   {
     label: "Identity",
-    tint: "border-warning/60 bg-warning/15 text-warning",
     subtitle: "Know who you are",
     dbSubtitle: "Identity",
     asset: "topic-personal-growth",
@@ -93,13 +86,9 @@ const TOPICS: {
   },
 ];
 
-const TABS = ["Today", "Popular", "Topics"] as const;
-type Tab = (typeof TABS)[number];
-
 function DevotionalsScreen() {
   const { userId } = useAuth();
   const navigate = useNavigate();
-  const [tab, setTab] = useState<Tab>("Today");
   const [query, setQuery] = useState("");
   const [savedIds, setSavedIds] = useState<Set<string>>(() =>
     readSavedDevotionalIds(userId ?? null),
@@ -111,15 +100,8 @@ function DevotionalsScreen() {
     enabled: !!userId,
   });
   const devotionals = useQuery({ queryKey: ["devotionals"], queryFn: fetchDevotionals });
-  const all = devotionals.data ?? [];
-  // "Popular" has no engagement metric yet, so it reads longest-first as a
-  // stand-in rather than pretending to rank by something we do not measure.
-  const rows =
-    tab === "Popular"
-      ? [...all].sort((a, b) => (b.read_minutes ?? 0) - (a.read_minutes ?? 0))
-      : all;
-  const featured = rows[0] ?? null;
-  const rest = rows.slice(1, 9);
+  const rows = devotionals.data ?? [];
+  const firstName = profile.data?.full_name?.split(" ")[0];
 
   function search(q: string) {
     void navigate({ to: "/explore", search: { q, kind: "all" } });
@@ -131,25 +113,16 @@ function DevotionalsScreen() {
 
   return (
     <AppShell>
-      <ScreenHeader
-        title="Devotionals"
-        right={
-          <Link
-            to="/explore"
-            search={{ q: "", kind: "all" }}
-            aria-label="Search devotionals"
-            className="p-1 text-secondary-foreground"
-          >
-            <Search className="h-5 w-5" />
-          </Link>
-        }
-      />
+      <FeatureHeaderBar />
 
-      <div className="px-4 pb-1">
-        <PillTabs tabs={TABS} value={tab} onChange={setTab} />
-      </div>
+      <div className="space-y-6 px-4 pt-4 pb-6">
+        <div>
+          <h1 className="font-display text-2xl font-bold">
+            Hey there{firstName ? `, ${firstName}` : ""} <span className="align-middle">👋</span>
+          </h1>
+          <p className="mt-0.5 text-sm text-muted-foreground">New day. Same faithful God.</p>
+        </div>
 
-      <div className="space-y-6 px-4 pt-3 pb-6">
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -175,137 +148,104 @@ function DevotionalsScreen() {
           </button>
         </form>
 
-        {devotionals.isLoading && <CardSkeleton count={1} height="h-64" />}
-        {!devotionals.isLoading && rows.length === 0 && (
-          <EmptyState
-            title="No devotionals yet"
-            description="Daily readings will appear here as they're published."
-          />
-        )}
-
-        {tab !== "Topics" && featured && (
-          <section className="nuru-card overflow-hidden">
-            <div className="relative h-56">
-              <img
-                src={resolveMedia(featured.cover_url)}
-                alt=""
-                className="absolute inset-0 h-full w-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-black/10" />
+        <section>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="font-display text-[15px] font-semibold">Explore by Topic</h2>
+            <Link
+              to="/explore"
+              search={{ q: "", kind: "all" }}
+              className="text-xs font-semibold text-cyan"
+            >
+              See all
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 gap-2.5">
+            {TOPICS.map((t) => (
               <button
+                key={t.label}
                 type="button"
-                onClick={() => toggleSave(featured.id)}
-                aria-label={savedIds.has(featured.id) ? "Remove bookmark" : "Save devotional"}
-                aria-pressed={savedIds.has(featured.id)}
-                className="absolute top-3 right-3 rounded-full bg-black/45 p-2 text-white backdrop-blur-sm"
+                onClick={() => search(t.dbSubtitle)}
+                className="nuru-card relative block h-28 overflow-hidden text-left active:opacity-90"
               >
-                <Bookmark
-                  className="h-4 w-4"
-                  fill={savedIds.has(featured.id) ? "currentColor" : "none"}
+                <img
+                  src={resolveMedia(`asset:${t.asset}`)}
+                  alt=""
+                  className="absolute inset-0 h-full w-full object-cover"
                 />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/10" />
+                <div className="absolute inset-x-0 bottom-0 p-2.5">
+                  <t.icon className="mb-1 h-4 w-4 text-white drop-shadow" />
+                  <p className="font-display text-[15px] leading-tight font-bold text-white">
+                    {t.label}
+                  </p>
+                  <p className="text-[11px] text-white/75">{t.subtitle}</p>
+                </div>
               </button>
-              <div className="absolute inset-x-0 bottom-0 p-4">
-                <h2 className="font-display text-[22px] leading-tight font-bold text-white drop-shadow">
-                  {featured.title}
-                </h2>
-                <p className="mt-1 text-[12px] text-white/80 drop-shadow">
-                  {featured.read_minutes ?? 3} min read
-                </p>
-              </div>
-            </div>
-            <div className="p-3">
-              <Link
-                to="/bible"
-                className="flex min-h-11 w-full items-center justify-center rounded-xl bg-white text-[14px] font-semibold text-slate-900"
-              >
-                Read Now
-              </Link>
-            </div>
-          </section>
-        )}
+            ))}
+          </div>
+        </section>
 
-        {tab !== "Topics" && (
-          <section>
-            <h2 className="mb-3 font-display text-[15px] font-semibold">Categories</h2>
-            <div className="no-scrollbar -mx-4 flex gap-4 overflow-x-auto px-4 pb-1">
-              {TOPICS.map((t) => (
-                <button
-                  key={t.label}
-                  type="button"
-                  onClick={() => search(t.dbSubtitle)}
-                  className="flex w-16 shrink-0 flex-col items-center gap-1.5 text-center"
-                >
-                  <span
-                    className={`flex h-14 w-14 items-center justify-center rounded-full border ${t.tint}`}
+        <section>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="font-display text-[15px] font-semibold">Recommended for You</h2>
+            <Link
+              to="/explore"
+              search={{ q: "", kind: "all" }}
+              className="text-xs font-semibold text-cyan"
+            >
+              See all
+            </Link>
+          </div>
+          {devotionals.isLoading && <CardSkeleton count={1} height="h-44" />}
+          {!devotionals.isLoading && rows.length === 0 && (
+            <EmptyState
+              title="No devotionals yet"
+              description="Daily readings will appear here as they're published."
+            />
+          )}
+          {rows.length > 0 && (
+            <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
+              {rows.slice(0, 8).map((d) => {
+                const saved = savedIds.has(d.id);
+                return (
+                  <Link
+                    key={d.id}
+                    to="/bible"
+                    className="nuru-card relative block w-36 shrink-0 overflow-hidden active:opacity-90"
                   >
-                    <t.icon className="h-5.5 w-5.5" />
-                  </span>
-                  <span className="text-[11px] text-secondary-foreground">{t.label}</span>
-                </button>
-              ))}
+                    <img
+                      src={resolveMedia(d.cover_url)}
+                      alt=""
+                      loading="lazy"
+                      className="h-24 w-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        toggleSave(d.id);
+                      }}
+                      aria-label={saved ? "Remove bookmark" : "Save devotional"}
+                      aria-pressed={saved}
+                      className="absolute top-2 right-2 rounded-full bg-black/45 p-1.5 text-white backdrop-blur-sm"
+                    >
+                      <Bookmark className="h-3.5 w-3.5" fill={saved ? "currentColor" : "none"} />
+                    </button>
+                    <div className="space-y-0.5 p-2.5">
+                      <p className="line-clamp-2 font-display text-[13px] leading-tight font-semibold">
+                        {d.title}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {d.read_minutes ?? 3} min read
+                      </p>
+                      <p className="text-[10px] font-semibold text-cyan">{d.subtitle}</p>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
-          </section>
-        )}
-
-        {tab !== "Topics" && rest.length > 0 && (
-          <section>
-            <h2 className="mb-3 font-display text-[15px] font-semibold">
-              {tab === "Popular" ? "Most read" : "More for today"}
-            </h2>
-            <div className="space-y-2">
-              {rest.map((d) => (
-                <Link key={d.id} to="/bible" className="nuru-card flex items-center gap-3 p-2.5">
-                  <img
-                    src={resolveMedia(d.cover_url)}
-                    alt=""
-                    loading="lazy"
-                    className="h-14 w-14 shrink-0 rounded-xl object-cover"
-                  />
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold">{d.title}</span>
-                    <span className="block truncate text-[11px] text-muted-foreground">
-                      {d.read_minutes ?? 3} min read
-                    </span>
-                    {d.subtitle && (
-                      <span className="block truncate text-[10px] font-semibold text-cyan">
-                        {d.subtitle}
-                      </span>
-                    )}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {tab === "Topics" && (
-          <section>
-            <div className="grid grid-cols-2 gap-2.5">
-              {TOPICS.map((t) => (
-                <button
-                  key={t.label}
-                  type="button"
-                  onClick={() => search(t.dbSubtitle)}
-                  className="nuru-card relative block h-28 overflow-hidden text-left active:opacity-90"
-                >
-                  <img
-                    src={resolveMedia(`asset:${t.asset}`)}
-                    alt=""
-                    className="absolute inset-0 h-full w-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/10" />
-                  <div className="absolute inset-x-0 bottom-0 p-2.5">
-                    <t.icon className="mb-1 h-4 w-4 text-white drop-shadow" />
-                    <p className="font-display text-[15px] leading-tight font-bold text-white">
-                      {t.label}
-                    </p>
-                    <p className="text-[11px] text-white/75">{t.subtitle}</p>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </section>
-        )}
+          )}
+        </section>
 
         <section>
           <div className="mb-3 flex items-center justify-between">

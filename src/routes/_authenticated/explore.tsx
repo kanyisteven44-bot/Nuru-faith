@@ -4,26 +4,15 @@ import { Search } from "lucide-react";
 import { z } from "zod";
 import { useAuth } from "@/hooks/useAuth";
 import {
-  DISCOVERY_CHIP_LABELS,
   DISCOVERY_KINDS,
+  DISCOVERY_LABELS,
   SUGGESTED_SEARCHES,
   normalizeSearch,
   type DiscoveryKind,
 } from "@/lib/content-policy";
-import { resolveMedia } from "@/lib/media";
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
 import { DiscoveryResults } from "@/components/nuru/DiscoveryResults";
 import { EmptyState } from "@/components/nuru/Primitives";
-
-/** The topic tiles the design shows before anyone has typed a query. */
-const TOPICS = [
-  { label: "Faith", asset: "asset:topic-faith", query: "faith" },
-  { label: "Prayer", asset: "asset:topic-prayer", query: "prayer" },
-  { label: "Identity", asset: "asset:topic-personal-growth", query: "identity" },
-  { label: "Relationships", asset: "asset:topic-relationships", query: "relationships" },
-  { label: "Purpose", asset: "asset:topic-faith-purpose", query: "purpose" },
-  { label: "Worship", asset: "asset:worship-night", query: "worship" },
-] as const;
 
 const schema = z.object({
   q: z.string().max(120).catch(""),
@@ -97,10 +86,7 @@ function ExploreScreen() {
   }
   return (
     <AppShell>
-      <ScreenHeader
-        title="Explore"
-        titleClassName="text-cyan drop-shadow-[0_0_14px_rgba(53,217,255,0.45)]"
-      />
+      <ScreenHeader title="Search" />
       <div className="space-y-3 px-4 py-4">
         <form
           className="relative"
@@ -113,7 +99,7 @@ function ExploreScreen() {
           <input
             aria-label="Search Nuru Faith"
             className="input-nuru pl-11"
-            placeholder="Search devotionals, series, music…"
+            placeholder="Search faith, people and teachings"
             maxLength={120}
             value={input}
             onChange={(event) => setInput(event.target.value)}
@@ -130,31 +116,10 @@ function ExploreScreen() {
               className={`min-h-11 shrink-0 rounded-lg border px-4 text-xs ${search.kind === kind ? "border-cyan bg-primary/20 text-cyan" : "border-border bg-surface-2/60"}`}
               onClick={() => void navigate({ search: { ...search, kind } })}
             >
-              {kind === "all" ? "All" : DISCOVERY_CHIP_LABELS[kind]}
+              {kind === "all" ? "All" : DISCOVERY_LABELS[kind]}
             </button>
           ))}
         </div>
-        {!search.q && (
-          <div className="grid grid-cols-2 gap-3 pt-1">
-            {TOPICS.map((topic) => (
-              <button
-                key={topic.label}
-                onClick={() => remember(topic.query)}
-                className="relative aspect-square overflow-hidden rounded-2xl border border-border text-left active:opacity-90"
-              >
-                <img
-                  src={resolveMedia(topic.asset)}
-                  alt=""
-                  className="absolute inset-0 h-full w-full object-cover"
-                />
-                <span className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
-                <span className="absolute inset-x-0 bottom-0 p-3 font-display text-[15px] font-semibold text-white drop-shadow">
-                  {topic.label}
-                </span>
-              </button>
-            ))}
-          </div>
-        )}
         {!search.q && (
           <div>
             <p className="mb-2 text-xs text-muted-foreground">Suggested searches</p>

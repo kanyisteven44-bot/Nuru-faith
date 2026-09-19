@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, BookOpen, Check, MessageCircle, Sparkles } from "lucide-react";
@@ -19,7 +18,6 @@ import {
   EmptyState,
   ErrorState,
   GradientButton,
-  PillTabs,
 } from "@/components/nuru/Primitives";
 
 export const Route = createFileRoute("/_authenticated/series/$slug/")({
@@ -39,21 +37,8 @@ export const Route = createFileRoute("/_authenticated/series/$slug/")({
   component: SeriesDetail,
 });
 
-const DETAIL_TABS = ["Sessions", "About", "Discussion"] as const;
-type DetailTab = (typeof DETAIL_TABS)[number];
-
-function Meta({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="nuru-card px-3.5 py-2.5">
-      <dt className="text-[10px] tracking-wide text-muted-foreground uppercase">{label}</dt>
-      <dd className="mt-0.5 text-sm font-semibold capitalize">{value}</dd>
-    </div>
-  );
-}
-
 function SeriesDetail() {
   const { slug } = Route.useParams();
-  const [tab, setTab] = useState<DetailTab>("Sessions");
   const { userId } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -143,14 +128,12 @@ function SeriesDetail() {
           <div className="flex flex-wrap gap-2">
             <Chip tone="brand">{s.category}</Chip>
             <Chip>{s.difficulty}</Chip>
+            <Chip>
+              {s.session_count} sessions · {s.estimated_duration} min
+            </Chip>
           </div>
           <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight">{s.title}</h1>
           {s.description && <p className="mt-1 text-sm text-muted-foreground">{s.description}</p>}
-          <p className="mt-2 flex items-center gap-1.5 text-[12px] text-cyan">
-            <BookOpen className="h-3.5 w-3.5" />
-            {s.session_count} sessions
-            <span className="text-muted-foreground">· {s.estimated_duration} min</span>
-          </p>
         </div>
 
         {started && (
@@ -188,9 +171,8 @@ function SeriesDetail() {
           </Link>
         </div>
 
-        <PillTabs tabs={DETAIL_TABS} value={tab} onChange={setTab} />
-
-        <section className={tab === "Sessions" ? undefined : "hidden"}>
+        <section>
+          <h2 className="mb-3 font-display text-[15px] font-semibold">Sessions</h2>
           {sessions.isLoading && <CardSkeleton count={4} height="h-16" />}
           {!sessions.isLoading && list.length === 0 && (
             <EmptyState
@@ -233,29 +215,13 @@ function SeriesDetail() {
           </ol>
         </section>
 
-        {tab === "About" && (
-          <section className="space-y-3">
-            <p className="text-sm leading-relaxed text-secondary-foreground">
-              {s.description ?? "This series is still being prepared."}
-            </p>
-            <dl className="grid grid-cols-2 gap-2">
-              <Meta label="Sessions" value={String(s.session_count)} />
-              <Meta label="Time" value={`${s.estimated_duration} min`} />
-              <Meta label="Level" value={s.difficulty} />
-              <Meta label="Topic" value={s.category} />
-            </dl>
-          </section>
-        )}
-
-        {tab === "Discussion" && (
-          <div className="nuru-card flex items-start gap-3 px-4 py-4">
-            <MessageCircle className="mt-0.5 h-4 w-4 shrink-0 text-cyan" />
-            <p className="text-xs text-muted-foreground">
-              Studying with others? Share a session in Community or with your group and use the
-              discussion prompt at the end of each session.
-            </p>
-          </div>
-        )}
+        <div className="nuru-card flex items-start gap-3 px-4 py-4">
+          <MessageCircle className="mt-0.5 h-4 w-4 shrink-0 text-cyan" />
+          <p className="text-xs text-muted-foreground">
+            Studying with others? Share a session in Community or with your group and use the
+            discussion prompt at the end of each session.
+          </p>
+        </div>
       </div>
     </AppShell>
   );

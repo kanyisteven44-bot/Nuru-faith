@@ -21,21 +21,6 @@ export const Route = createFileRoute("/_authenticated/groups")({
 const TABS = ["My Groups", "Discover"] as const;
 type Tab = (typeof TABS)[number];
 
-/** Each group keeps the same tile colour across renders, picked from its id. */
-const TILE_TINTS = [
-  "border-primary/35 bg-primary/12 text-cyan",
-  "border-growth/35 bg-growth/12 text-growth",
-  "border-violet/35 bg-violet/12 text-violet",
-  "border-warning/35 bg-warning/12 text-warning",
-  "border-magenta/35 bg-magenta/12 text-magenta",
-] as const;
-
-function tintFor(id: string) {
-  let sum = 0;
-  for (let i = 0; i < id.length; i += 1) sum += id.charCodeAt(i);
-  return TILE_TINTS[sum % TILE_TINTS.length]!;
-}
-
 function GroupsScreen() {
   const { userId } = useAuth();
   const qc = useQueryClient();
@@ -101,17 +86,13 @@ function GroupsScreen() {
           const isMember = joined.has(g.id);
           return (
             <div key={g.id} className="nuru-card flex items-center gap-3 p-3">
-              <span
-                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${tintFor(g.id)}`}
-              >
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-primary/35 bg-primary/12 text-cyan">
                 <Users className="h-5 w-5" strokeWidth={1.8} />
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-semibold">{g.name}</span>
                 <span className="block truncate text-[11px] text-muted-foreground">
-                  {g.member_count != null
-                    ? `${g.member_count.toLocaleString()} members`
-                    : (g.description ?? "Group")}
+                  {g.description ?? `${g.member_count ?? 0} members`}
                 </span>
               </span>
               <button

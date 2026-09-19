@@ -63,9 +63,9 @@ export function AppShell({
               <Link
                 to="/create"
                 aria-label="Create"
-                className="-mt-6 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_8px_24px_-4px_var(--primary)] ring-4 ring-background transition-transform active:scale-95"
+                className="-mt-1.5 flex h-11 w-11 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_4px_18px_-2px_var(--primary)] transition-transform active:scale-95"
               >
-                <Plus className="h-6 w-6" strokeWidth={2.5} />
+                <Plus className="h-5.5 w-5.5" strokeWidth={2.2} />
               </Link>
             </li>
             {NAV_RIGHT.map((item) => (
@@ -95,13 +95,13 @@ function NavItem({
         to={to}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl text-[10px] font-medium transition-colors",
+          "flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl text-[9px] font-medium transition-colors",
           active ? "text-cyan" : "text-muted-foreground hover:text-secondary-foreground",
         )}
       >
         <Icon
-          className={cn("h-5.5 w-5.5", active && "drop-shadow-[0_0_10px_var(--brand-cyan)]")}
-          strokeWidth={active ? 2.3 : 1.8}
+          className={cn("h-5 w-5", active && "drop-shadow-[0_0_10px_var(--brand-cyan)]")}
+          strokeWidth={active ? 2 : 1.6}
         />
         {label}
       </Link>
@@ -157,11 +157,14 @@ export function ScreenHeader({
   subtitle,
   right,
   back = false,
+  titleClassName,
 }: {
   title: string;
   subtitle?: string;
   right?: ReactNode;
   back?: boolean;
+  /** Lets a screen tint its own title, as Explore does in the design. */
+  titleClassName?: string;
 }) {
   const navigate = useNavigate();
   return (
@@ -177,7 +180,14 @@ export function ScreenHeader({
         </button>
       )}
       <div className="min-w-0 flex-1">
-        <h1 className="truncate font-display text-[22px] font-semibold tracking-tight">{title}</h1>
+        <h1
+          className={cn(
+            "truncate font-display text-[22px] font-semibold tracking-tight",
+            titleClassName,
+          )}
+        >
+          {title}
+        </h1>
         {subtitle && <p className="truncate text-xs text-muted-foreground">{subtitle}</p>}
       </div>
       {right && <div className="flex shrink-0 items-center gap-2">{right}</div>}

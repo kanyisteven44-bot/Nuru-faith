@@ -97,7 +97,10 @@ function ExploreScreen() {
   }
   return (
     <AppShell>
-      <ScreenHeader title="Explore" />
+      <ScreenHeader
+        title="Explore"
+        titleClassName="text-cyan drop-shadow-[0_0_14px_rgba(53,217,255,0.45)]"
+      />
       <div className="space-y-3 px-4 py-4">
         <form
           className="relative"

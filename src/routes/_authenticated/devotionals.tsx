@@ -39,10 +39,13 @@ const TOPICS: {
   subtitle: string;
   dbSubtitle: string;
   asset: string;
+  /** Ring + icon colour for the circular Categories row. */
+  tint: string;
   icon: ComponentType<{ className?: string }>;
 }[] = [
   {
     label: "Faith",
+    tint: "border-primary/60 bg-primary/15 text-cyan",
     subtitle: "Trust deeper",
     dbSubtitle: "Faith",
     asset: "topic-faith",
@@ -50,6 +53,7 @@ const TOPICS: {
   },
   {
     label: "Anxiety",
+    tint: "border-cyan/60 bg-cyan/12 text-cyan",
     subtitle: "Find peace",
     dbSubtitle: "Anxiety & Peace",
     asset: "topic-mental-health",
@@ -57,6 +61,7 @@ const TOPICS: {
   },
   {
     label: "Prayer",
+    tint: "border-violet/60 bg-violet/15 text-violet",
     subtitle: "Talk to God",
     dbSubtitle: "Prayer",
     asset: "topic-prayer",
@@ -64,6 +69,7 @@ const TOPICS: {
   },
   {
     label: "Relationships",
+    tint: "border-magenta/60 bg-magenta/15 text-magenta",
     subtitle: "Love well",
     dbSubtitle: "Relationships",
     asset: "topic-relationships",
@@ -71,6 +77,7 @@ const TOPICS: {
   },
   {
     label: "Purpose",
+    tint: "border-growth/60 bg-growth/15 text-growth",
     subtitle: "Live with intention",
     dbSubtitle: "Purpose",
     asset: "topic-faith-purpose",
@@ -78,6 +85,7 @@ const TOPICS: {
   },
   {
     label: "Identity",
+    tint: "border-warning/60 bg-warning/15 text-warning",
     subtitle: "Know who you are",
     dbSubtitle: "Identity",
     asset: "topic-personal-growth",
@@ -227,7 +235,9 @@ function DevotionalsScreen() {
                   onClick={() => search(t.dbSubtitle)}
                   className="flex w-16 shrink-0 flex-col items-center gap-1.5 text-center"
                 >
-                  <span className="flex h-14 w-14 items-center justify-center rounded-full border border-border-strong bg-surface-2 text-cyan">
+                  <span
+                    className={`flex h-14 w-14 items-center justify-center rounded-full border ${t.tint}`}
+                  >
                     <t.icon className="h-5.5 w-5.5" />
                   </span>
                   <span className="text-[11px] text-secondary-foreground">{t.label}</span>

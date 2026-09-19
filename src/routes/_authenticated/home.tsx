@@ -128,10 +128,10 @@ function HomeScreen() {
           />
         </Link>
         <div className="min-w-0 flex-1">
-          <p className="truncate font-display text-[19px] font-bold tracking-tight">
-            {greetingFor(today)}, {firstName}
+          <p className="truncate text-[13px] text-secondary-foreground">{greetingFor(today)},</p>
+          <p className="truncate font-display text-[21px] leading-tight font-bold tracking-tight">
+            {firstName}
           </p>
-          <p className="truncate text-[11px] text-muted-foreground">A brighter you.</p>
         </div>
         <Link
           to="/explore"
@@ -155,57 +155,48 @@ function HomeScreen() {
         </Link>
 
         {/* Today's Light */}
-        <section className="nuru-card relative overflow-hidden">
-          <div className="relative min-h-52 w-full">
-            <img
-              src={devotional?.cover_url ? resolveMedia(devotional.cover_url) : verseBg}
-              alt=""
-              className="absolute inset-0 h-full w-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/92 via-black/55 to-black/25" />
-            <div className="relative flex h-full flex-col justify-between p-4">
-              <div className="flex items-center justify-between">
-                <span className="font-display text-[15px] font-semibold drop-shadow">
-                  Today's Light
-                </span>
-                <span className="rounded-full bg-background/65 px-2.5 py-1 text-[11px] font-medium backdrop-blur">
-                  {today.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-                </span>
-              </div>
+        <section className="relative overflow-hidden rounded-2xl border border-border">
+          <img
+            src={devotional?.cover_url ? resolveMedia(devotional.cover_url) : verseBg}
+            alt=""
+            className="absolute inset-y-0 right-0 h-full w-3/5 object-cover"
+          />
+          {/* Copy sits on the left, so the wash has to stay opaque there and
+              fade out before it covers the artwork. */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0b2a5c] via-[#0b2a5c]/85 to-transparent" />
+          <div className="relative min-h-44 p-4">
+            <p className="font-display text-[16px] font-bold">Today's Light</p>
 
-              {verse.isLoading ? (
-                <div className="mt-8 h-16 animate-pulse rounded-lg bg-white/10" />
-              ) : (
-                <blockquote className="mt-8">
-                  <p className="font-display text-[21px] leading-snug font-semibold text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
-                    “{verse.data?.text ?? "Be still, and know that I am God."}”
-                  </p>
-                  <cite className="mt-1.5 block text-[12px] font-semibold text-cyan not-italic drop-shadow-[0_2px_6px_rgba(0,0,0,0.85)]">
-                    {verse.data?.reference ?? verseOfTheDayRef()}
-                  </cite>
-                </blockquote>
-              )}
+            {verse.isLoading ? (
+              <div className="mt-2 h-12 w-3/4 animate-pulse rounded-lg bg-white/10" />
+            ) : (
+              <blockquote className="mt-1.5 max-w-[62%]">
+                <p className="font-display text-[15px] leading-snug font-semibold text-white">
+                  “{verse.data?.text ?? "Be still, and know that I am God."}”
+                </p>
+                <cite className="mt-1 block text-[11px] text-white/70 not-italic">
+                  {verse.data?.reference ?? verseOfTheDayRef()}
+                </cite>
+              </blockquote>
+            )}
 
-              <Link
-                to="/devotionals"
-                className="mt-4 inline-flex min-h-10 w-fit items-center gap-2 rounded-full bg-primary px-5 text-[13px] font-semibold text-primary-foreground nuru-glow-sm"
-              >
-                Read Now <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
+            <Link
+              to="/devotionals"
+              className="mt-4 inline-flex min-h-9 w-fit items-center gap-2 rounded-full border border-cyan/70 bg-primary/25 px-4 text-[12px] font-semibold text-white nuru-glow-sm"
+            >
+              Read Now <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
           </div>
         </section>
 
         {/* Quick Access */}
         <section className="grid grid-cols-4 gap-2">
           {QUICK_ACCESS.map(({ to, label, icon: Icon }) => (
-            <Link
-              key={to}
-              to={to}
-              className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-surface-2/70 py-3 text-center transition-colors active:bg-surface-2"
-            >
-              <Icon className="h-5.5 w-5.5 text-cyan" strokeWidth={1.9} />
-              <span className="text-[11px] font-medium text-secondary-foreground">{label}</span>
+            <Link key={to} to={to} className="flex flex-col items-center gap-1.5 text-center">
+              <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-surface-2/80">
+                <Icon className="h-5.5 w-5.5 text-white" strokeWidth={1.6} />
+              </span>
+              <span className="text-[11px] text-secondary-foreground">{label}</span>
             </Link>
           ))}
         </section>

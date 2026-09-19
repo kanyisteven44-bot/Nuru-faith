@@ -10,7 +10,9 @@
  * environments therefore says nothing about whether a deployment is stale.
  *
  * Image assets are hashed from file content alone, so their names are stable
- * across build environments and are a sound signal.
+ * across build environments and are a sound signal. Images only change when
+ * artwork does, though, so the probe also reads the server-rendered splash
+ * copy, which changes whenever that screen's markup does.
  *
  * Usage: npm run build && node scripts/verify-production-build.mjs [baseUrl]
  */
@@ -57,6 +59,15 @@ if (root !== 200) {
   process.exit(1);
 }
 
+// The splash route is server-rendered, so its copy appears in the HTML and
+// moves with the deployed source rather than with the build environment.
+const SPLASH_MARKER = "A BRIGHTER YOU.";
+const home = await fetch(BASE + "/").then((r) => r.text());
+const splashDeployed = home.includes(SPLASH_MARKER);
+console.log(
+  `\n--- server-rendered splash ---\n${splashDeployed ? "present" : "MISSING"}  "${SPLASH_MARKER}" in the HTML at /`,
+);
+
 console.log("\n--- control images (should already be deployed) ---");
 let controlOk = 0;
 for (const f of control) {
@@ -84,4 +95,7 @@ console.log(
       ? " — production carries this checkout's assets."
       : " — production is serving a build without them."),
 );
-process.exit(missing === 0 ? 0 : 1);
+if (!splashDeployed) {
+  console.log("The current splash copy is not being served, so this build is not live yet.");
+}
+process.exit(missing === 0 && splashDeployed ? 0 : 1);

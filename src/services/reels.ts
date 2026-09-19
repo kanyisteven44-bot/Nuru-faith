@@ -150,6 +150,18 @@ export async function fetchReelPage(params: {
   return ranked.slice(from, from + REELS_PAGE_SIZE);
 }
 
+/** Reels this person published, for the profile grid. */
+export async function fetchMyReels(userId: string) {
+  const { data, error } = await supabase
+    .from("reels")
+    .select("*")
+    .eq("author_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(60);
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
 export async function fetchFollowingIds(userId: string) {
   const { data, error } = await supabase
     .from("user_follows")

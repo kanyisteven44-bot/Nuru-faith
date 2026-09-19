@@ -5,14 +5,22 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   BookOpen,
   Bookmark,
+  Brain,
+  ChevronRight,
+  Church,
+  Compass,
   Hand,
+  HandHeart,
   History,
+  ListChecks,
   Mic,
   Plus,
   Send,
+  ShieldCheck,
   Sparkles,
   Square,
   Trash2,
+  type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -31,6 +39,7 @@ import {
   type AiMessage,
 } from "@/services/ai";
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
+import { NuruAiMark } from "@/components/nuru/NuruAiMark";
 import { AiMarkdown } from "@/components/nuru/AiMarkdown";
 import { CardSkeleton, IconTile } from "@/components/nuru/Primitives";
 import heroBg from "@/assets/mountain-dawn.jpg";
@@ -69,13 +78,43 @@ export const Route = createFileRoute("/_authenticated/ai")({
   component: AiScreen,
 });
 
-const STARTERS = [
-  "Explain this verse",
-  "Help me pray",
-  "What does the Bible say about anxiety?",
-  "Help me understand my church",
-  "How do I read the Bible without getting lost?",
-  "How do I know if something is God's will?",
+const STARTERS: { prompt: string; hint: string; icon: LucideIcon; tint: string }[] = [
+  {
+    prompt: "Explain this verse",
+    hint: "Get a clear explanation",
+    icon: BookOpen,
+    tint: "border-primary/45 bg-primary/15 text-cyan",
+  },
+  {
+    prompt: "Help me pray",
+    hint: "Guided and personal prayers",
+    icon: HandHeart,
+    tint: "border-violet/45 bg-violet/15 text-violet",
+  },
+  {
+    prompt: "What does the Bible say about anxiety?",
+    hint: "Find peace in God's Word",
+    icon: Brain,
+    tint: "border-magenta/45 bg-magenta/15 text-magenta",
+  },
+  {
+    prompt: "Help me understand my church",
+    hint: "Learn, grow, and get involved",
+    icon: Church,
+    tint: "border-growth/45 bg-growth/15 text-growth",
+  },
+  {
+    prompt: "How do I read the Bible without getting lost?",
+    hint: "Simple steps for beginners",
+    icon: ListChecks,
+    tint: "border-warning/45 bg-warning/15 text-warning",
+  },
+  {
+    prompt: "How do I know if something is God's will?",
+    hint: "Biblical guidance for decisions",
+    icon: Compass,
+    tint: "border-destructive/45 bg-destructive/15 text-destructive",
+  },
 ];
 
 type ChatMessage = { id: string; role: "user" | "assistant"; content: string; pending?: boolean };
@@ -212,6 +251,18 @@ function AiScreen() {
 
   return (
     <AppShell>
+      {messages.length === 0 && (
+        <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10">
+          <img
+            src={heroBg}
+            alt=""
+            loading="eager"
+            className="h-full w-full object-cover opacity-40"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/75 to-background" />
+        </div>
+      )}
+
       <ScreenHeader
         title="Nuru AI"
         subtitle="Scripture, explained honestly"
@@ -285,41 +336,67 @@ function AiScreen() {
       <div className="space-y-4 px-4 py-4">
         {messages.length === 0 && (
           <>
-            <div className="nuru-card-hero relative overflow-hidden p-5">
-              <img
-                src={heroBg}
-                alt=""
-                loading="eager"
-                className="absolute inset-0 h-full w-full object-cover opacity-30"
-              />
-              <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/75 to-background/90" />
-              <div className="relative">
-                <IconTile icon={Sparkles} tone="cyan" size="lg" />
-                <h2 className="mt-3 font-display text-lg font-semibold">
-                  Ask anything about faith
+            <div className="pb-2">
+              <div>
+                <div className="flex items-start justify-between gap-2">
+                  <p className="script max-w-[6.5rem] text-[17px] leading-[1.15] text-white/80">
+                    Closer to God
+                    <span className="block">A Brighter Tomorrow</span>
+                  </p>
+                  <p className="script max-w-[6.5rem] text-right text-[17px] leading-[1.15] text-white/80">
+                    Your Questions Matter
+                  </p>
+                </div>
+
+                <NuruAiMark className="mx-auto mt-2 h-28 w-28" />
+
+                <h2 className="mt-3 text-center font-display text-[24px] leading-tight font-bold">
+                  Hello, I'm <span className="text-cyan">Nuru AI</span>{" "}
+                  <span className="align-middle">👋</span>
                 </h2>
-                <p className="mt-1 text-sm text-secondary-foreground">
-                  Nuru AI explains Scripture in context, shows how different Christian traditions
-                  understand it, and always points you back to the Bible and to real people in your
+                <p className="mx-auto mt-2 max-w-[20rem] text-center text-[13px] leading-relaxed text-secondary-foreground">
+                  Ask me anything about the Bible, faith, prayer, life or church. I'll give you
+                  clear, biblical answers and always point you to Scripture and real people in your
                   church.
-                </p>
-                <p className="mt-3 rounded-2xl bg-surface-2 p-3 text-xs text-muted-foreground">
-                  Nuru AI is a study helper, not a pastor, priest or counsellor. It can be wrong.
-                  Check what it says against the Bible and talk with trusted leaders in your church.
-                  If you are in danger or crisis, contact someone you trust or your local emergency
-                  services straight away.
                 </p>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
-              {STARTERS.map((s) => (
+            <div className="nuru-card flex items-start gap-3 p-4">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-primary/40 bg-primary/12 text-cyan">
+                <ShieldCheck className="h-5 w-5" strokeWidth={1.8} />
+              </span>
+              <p className="text-[12px] leading-relaxed text-secondary-foreground">
+                Nuru AI is a study helper, not a pastor, priest or counsellor. It can be wrong.
+                Always check with the Bible and trusted leaders in your church. If you are in danger
+                or crisis, contact someone you trust or your local emergency services straight away.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5">
+              {STARTERS.map(({ prompt, hint, icon: Icon, tint }) => (
                 <button
-                  key={s}
-                  onClick={() => void send(s)}
-                  className="rounded-2xl border border-border bg-surface-2/60 px-3.5 py-3 text-left text-[13px] font-medium text-secondary-foreground transition-colors hover:border-border-strong hover:text-foreground"
+                  key={prompt}
+                  onClick={() => void send(prompt)}
+                  className="nuru-card flex items-start gap-2 p-2.5 text-left transition-colors active:opacity-90"
                 >
-                  {s}
+                  <span
+                    className={cn(
+                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border",
+                      tint,
+                    )}
+                  >
+                    <Icon className="h-4.5 w-4.5" strokeWidth={1.8} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[12.5px] leading-tight font-semibold">
+                      {prompt}
+                    </span>
+                    <span className="mt-0.5 block text-[11px] leading-tight text-muted-foreground">
+                      {hint}
+                    </span>
+                  </span>
+                  <ChevronRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                 </button>
               ))}
             </div>
@@ -401,13 +478,16 @@ function AiScreen() {
           }}
           className="flex items-center gap-2 rounded-full border border-border-strong bg-surface/95 p-1.5 shadow-[var(--shadow-raised)] backdrop-blur-xl"
         >
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-cyan">
+            <Sparkles className="h-4.5 w-4.5" />
+          </span>
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder={voice.listening ? "Listening…" : "Ask about a verse, a doubt, a decision…"}
             maxLength={2000}
             aria-label="Ask Nuru AI"
-            className="min-h-11 flex-1 bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground"
+            className="min-h-11 min-w-0 flex-1 bg-transparent px-2 text-sm outline-none placeholder:text-muted-foreground"
           />
           {voice.supported && (
             <button

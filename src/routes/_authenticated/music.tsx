@@ -148,17 +148,10 @@ function MusicScreen() {
                 query="gospel praise songs"
                 onSelect={openVideo}
               />
-              <NuruAudioSection tracks={tracks.data ?? []} loading={tracks.isLoading} />
-            </>
-          )}
-
-          {tab === "Sermons" && (
-            <>
               <MediaCategoryRail
                 title="Worship sets"
                 query="worship set full"
                 onSelect={openVideo}
-                showUnavailableNotice
               />
               <MediaCategoryRail title="Hymns" query="christian hymns" onSelect={openVideo} />
               <MediaCategoryRail
@@ -166,6 +159,7 @@ function MusicScreen() {
                 query="acoustic worship christian"
                 onSelect={openVideo}
               />
+              <NuruAudioSection tracks={tracks.data ?? []} loading={tracks.isLoading} />
             </>
           )}
 
@@ -283,6 +277,25 @@ function MusicScreen() {
                     ))}
                 </div>
               )}
+
+              <SectionHeader title="Search YouTube" />
+              <p className="text-xs text-muted-foreground">
+                Search Christian worship, teaching and testimony. Videos play in YouTube's own
+                player — Nuru Faith never downloads or re-hosts them.
+              </p>
+              <div className="pt-3">
+                <MediaCategoryRail
+                  title="Christian teaching"
+                  query="bible teaching sermon"
+                  onSelect={openVideo}
+                  showUnavailableNotice
+                />
+                <MediaCategoryRail
+                  title="Testimonies"
+                  query="christian testimony story"
+                  onSelect={openVideo}
+                />
+              </div>
             </section>
           )}
 
@@ -327,29 +340,6 @@ function MusicScreen() {
                     <Play className="h-4 w-4 text-cyan" />
                   </button>
                 ))}
-              </div>
-            </section>
-          )}
-
-          {tab === "Videos" && (
-            <section className="px-4 pt-3">
-              <SectionHeader title="Search YouTube" />
-              <p className="text-xs text-muted-foreground">
-                Search Christian worship, teaching and testimony. Videos play in YouTube's own
-                player — Nuru Faith never downloads or re-hosts them.
-              </p>
-              <div className="pt-3">
-                <MediaCategoryRail
-                  title="Christian teaching"
-                  query="bible teaching sermon"
-                  onSelect={openVideo}
-                  showUnavailableNotice
-                />
-                <MediaCategoryRail
-                  title="Testimonies"
-                  query="christian testimony story"
-                  onSelect={openVideo}
-                />
               </div>
             </section>
           )}

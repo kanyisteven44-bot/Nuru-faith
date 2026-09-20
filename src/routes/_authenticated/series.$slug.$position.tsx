@@ -6,6 +6,7 @@ import {
   BookOpen,
   Bookmark,
   Check,
+  ChevronDown,
   ChevronRight,
   Crown,
   FileText,
@@ -17,6 +18,7 @@ import {
   Sparkles,
   Users,
   type LucideIcon,
+  Quote,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -37,6 +39,7 @@ import { resolveMedia } from "@/lib/media";
 import { useShareSheet } from "@/hooks/useShareSheet";
 import { AppShell } from "@/components/nuru/AppShell";
 import { ScriptureText } from "@/components/nuru/Scripture";
+import { DEFAULT_TRANSLATION, TRANSLATIONS } from "@/lib/bible";
 import {
   CardSkeleton,
   Chip,
@@ -259,13 +262,31 @@ function SessionScreen() {
             {series.data.category}
           </p>
 
-          <h1 className="mt-2 max-w-[68%] font-display text-[30px] leading-[1.08] font-bold tracking-tight">
+          <h1 className="mt-2 max-w-[60%] font-display text-[30px] leading-[1.08] font-bold tracking-tight">
             {titleHead(session.title)} <span className="text-cyan">{titleTail(session.title)}</span>
           </h1>
 
           {session.introduction && (
-            <p className="mt-2 max-w-[68%] text-[13px] leading-relaxed text-secondary-foreground">
+            <p className="mt-2 max-w-[58%] text-[13px] leading-relaxed text-secondary-foreground">
               {session.introduction}
+            </p>
+          )}
+
+          {session.hero_words && session.hero_words.length > 0 && (
+            <p
+              aria-hidden="true"
+              className="pointer-events-none absolute top-[4.5rem] right-4 max-w-[36%] text-right"
+            >
+              {session.hero_words.map((word, i) => (
+                <span
+                  key={word}
+                  className="script block text-[23px] leading-[1.08] font-medium text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.65)]"
+                  style={{ paddingRight: `${(session.hero_words!.length - 1 - i) * 6}px` }}
+                >
+                  {word}
+                </span>
+              ))}
+              <span className="mt-1 ml-auto block h-0.5 w-24 rounded-full bg-gradient-to-l from-cyan to-transparent" />
             </p>
           )}
 
@@ -345,12 +366,13 @@ function SessionScreen() {
 
         {stage === "Read" && primary.length > 0 && (
           <>
-            {primary.map((p) => (
+            {primary.map((p, i) => (
               <PassageBlock
                 key={p.id}
                 reference={p.reference}
                 explanation={p.explanation}
                 userId={userId}
+                pullQuote={i === 0 ? session.pull_quote : null}
               />
             ))}
           </>
@@ -585,11 +607,16 @@ function PassageBlock({
   reference,
   explanation,
   userId,
+  pullQuote,
 }: {
   reference: string;
   explanation: string | null;
   userId: string | null;
+  /** Optional handwritten phrase set down the side of the card. */
+  pullQuote?: string | null;
 }) {
+  const [translation, setTranslation] = useState<string>(DEFAULT_TRANSLATION);
+
   return (
     <section className="nuru-card relative overflow-hidden p-4 nuru-glow-sm">
       <div className="flex items-center justify-between gap-2">
@@ -597,27 +624,60 @@ function PassageBlock({
           <BookOpen className="h-5 w-5 shrink-0 text-cyan" strokeWidth={1.8} />
           <span className="truncate font-display text-[16px] font-bold">{reference}</span>
         </h2>
-        <button
-          onClick={() => {
-            if (!userId) {
-              toast.error("Sign in to save passages");
-              return;
-            }
-            void saveScripture(userId, reference)
-              .then(() => toast.success("Saved to your Bible"))
-              .catch(() => toast.error("Couldn't save that"));
-          }}
-          aria-label={`Save ${reference}`}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border-strong bg-surface-2 text-secondary-foreground"
-        >
-          <Bookmark className="h-4 w-4" />
-        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          <label className="relative">
+            <span className="sr-only">Translation for {reference}</span>
+            <select
+              value={translation}
+              onChange={(e) => setTranslation(e.target.value)}
+              className="appearance-none rounded-full border border-border-strong bg-surface-2 py-1.5 pr-7 pl-3 text-[12px] font-medium text-secondary-foreground"
+            >
+              {TRANSLATIONS.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.label} ({t.short})
+                </option>
+              ))}
+            </select>
+            <ChevronDown
+              aria-hidden="true"
+              className="pointer-events-none absolute top-1/2 right-2.5 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground"
+            />
+          </label>
+          <button
+            onClick={() => {
+              if (!userId) {
+                toast.error("Sign in to save passages");
+                return;
+              }
+              void saveScripture(userId, reference)
+                .then(() => toast.success("Saved to your Bible"))
+                .catch(() => toast.error("Couldn't save that"));
+            }}
+            aria-label={`Save ${reference}`}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border-strong bg-surface-2 text-secondary-foreground"
+          >
+            <Bookmark className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
-      <ScriptureText
-        reference={reference}
-        className="mt-3 text-[14px] leading-relaxed text-secondary-foreground"
-      />
+      <div className="mt-3 flex items-start gap-3">
+        <ScriptureText
+          reference={reference}
+          translation={translation}
+          className="min-w-0 flex-1 text-[14px] leading-relaxed text-secondary-foreground"
+        />
+
+        {pullQuote && (
+          <p aria-hidden="true" className="w-16 shrink-0 pt-1 text-right">
+            <Quote className="ml-auto h-5 w-5 fill-current text-white/15" strokeWidth={0} />
+            <span className="script mt-1 block text-[19px] leading-[1.15] font-medium text-white/90">
+              {pullQuote}
+            </span>
+            <span className="mt-1 ml-auto block h-0.5 w-12 rounded-full bg-gradient-to-l from-cyan to-transparent" />
+          </p>
+        )}
+      </div>
 
       {explanation && (
         <p className="mt-3 flex items-start gap-3 rounded-2xl border border-primary/35 bg-primary/10 p-3 text-[13px] leading-relaxed text-secondary-foreground">

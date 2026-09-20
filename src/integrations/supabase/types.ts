@@ -2308,12 +2308,14 @@ export type Database = {
           context_note: string | null
           created_at: string
           discussion_prompt: string | null
+          hero_words: string[] | null
           id: string
           introduction: string | null
           main_teaching: string | null
           position: number
           practical_action: string | null
           prayer: string | null
+          pull_quote: string | null
           reflection_questions: string[]
           series_id: string
           title: string
@@ -2324,12 +2326,14 @@ export type Database = {
           context_note?: string | null
           created_at?: string
           discussion_prompt?: string | null
+          hero_words?: string[] | null
           id?: string
           introduction?: string | null
           main_teaching?: string | null
           position: number
           practical_action?: string | null
           prayer?: string | null
+          pull_quote?: string | null
           reflection_questions?: string[]
           series_id: string
           title: string
@@ -2340,12 +2344,14 @@ export type Database = {
           context_note?: string | null
           created_at?: string
           discussion_prompt?: string | null
+          hero_words?: string[] | null
           id?: string
           introduction?: string | null
           main_teaching?: string | null
           position?: number
           practical_action?: string | null
           prayer?: string | null
+          pull_quote?: string | null
           reflection_questions?: string[]
           series_id?: string
           title?: string

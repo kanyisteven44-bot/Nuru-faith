@@ -1,5 +1,5 @@
 /**
- * Real Scripture text from the free bible-api.com service (World English Bible).
+ * Real Scripture text from the free bible-api.com service.
  * No API key, no server-side secret needed.
  */
 
@@ -9,6 +9,33 @@ export type Passage = {
   translation: string;
   verses: { chapter: number; verse: number; text: string }[];
 };
+
+/**
+ * Translations bible-api.com publishes. `web` is the default the app has always
+ * used; the rest are offered in the reader's translation picker. If one of them
+ * ever stops being served, `fetchPassage` falls back to `web` rather than
+ * leaving the reader with an error.
+ */
+export const TRANSLATIONS = [
+  { id: "web", label: "World English Bible", short: "WEB" },
+  { id: "kjv", label: "King James Version", short: "KJV" },
+  { id: "asv", label: "American Standard Version", short: "ASV" },
+  { id: "bbe", label: "Bible in Basic English", short: "BBE" },
+  { id: "ylt", label: "Young's Literal Translation", short: "YLT" },
+  { id: "webbe", label: "World English Bible (British)", short: "WEBBE" },
+] as const;
+
+export type TranslationId = (typeof TRANSLATIONS)[number]["id"];
+
+export const DEFAULT_TRANSLATION: TranslationId = "web";
+
+export function translationLabel(id: string): string {
+  return TRANSLATIONS.find((t) => t.id === id)?.label ?? "World English Bible";
+}
+
+export function translationShort(id: string): string {
+  return TRANSLATIONS.find((t) => t.id === id)?.short ?? "WEB";
+}
 
 type ApiResponse = {
   reference?: string;
@@ -20,27 +47,46 @@ type ApiResponse = {
 
 const cache = new Map<string, Passage>();
 
-export async function fetchPassage(reference: string): Promise<Passage> {
-  const ref = reference.trim();
-  const cached = cache.get(ref.toLowerCase());
-  if (cached) return cached;
-
-  const res = await fetch(`https://bible-api.com/${encodeURIComponent(ref)}?translation=web`);
+async function load(ref: string, translation: string): Promise<Passage> {
+  const res = await fetch(
+    `https://bible-api.com/${encodeURIComponent(ref)}?translation=${encodeURIComponent(translation)}`,
+  );
   if (!res.ok) throw new Error(`Couldn't load ${ref}`);
   const json = (await res.json()) as ApiResponse;
   if (json.error || !json.text) throw new Error(json.error ?? `Couldn't load ${ref}`);
 
-  const passage: Passage = {
+  return {
     reference: json.reference ?? ref,
     text: json.text.replace(/\s+/g, " ").trim(),
-    translation: json.translation_name ?? "World English Bible",
+    translation: json.translation_name ?? translationLabel(translation),
     verses: (json.verses ?? []).map((v) => ({
       chapter: v.chapter,
       verse: v.verse,
       text: v.text.replace(/\s+/g, " ").trim(),
     })),
   };
-  cache.set(ref.toLowerCase(), passage);
+}
+
+export async function fetchPassage(
+  reference: string,
+  translation: string = DEFAULT_TRANSLATION,
+): Promise<Passage> {
+  const ref = reference.trim();
+  const key = `${translation}:${ref.toLowerCase()}`;
+  const cached = cache.get(key);
+  if (cached) return cached;
+
+  let passage: Passage;
+  try {
+    passage = await load(ref, translation);
+  } catch (err) {
+    // A translation the API no longer serves must not cost the reader the
+    // passage itself — fall back to the one this app has always used.
+    if (translation === DEFAULT_TRANSLATION) throw err;
+    passage = await load(ref, DEFAULT_TRANSLATION);
+  }
+
+  cache.set(key, passage);
   return passage;
 }
 

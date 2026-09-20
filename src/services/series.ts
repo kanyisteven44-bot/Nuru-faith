@@ -38,6 +38,10 @@ export type SeriesSession = {
   prayer: string | null;
   practical_action: string | null;
   discussion_prompt: string | null;
+  /** Optional handwritten words stacked over the session hero. */
+  hero_words: string[] | null;
+  /** Optional handwritten phrase set beside the Scripture card. */
+  pull_quote: string | null;
 };
 
 export type SeriesProgress = {

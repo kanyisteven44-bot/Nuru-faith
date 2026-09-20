@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchPassage } from "@/lib/bible";
+import { DEFAULT_TRANSLATION, fetchPassage } from "@/lib/bible";
 import { cn } from "@/lib/utils";
 
 /** Renders the real text of a Bible reference, fetched from a public Bible API. */
@@ -8,15 +8,18 @@ export function ScriptureText({
   className,
   showTranslation = true,
   clamp,
+  translation = DEFAULT_TRANSLATION,
 }: {
   reference: string;
   className?: string;
   showTranslation?: boolean;
   clamp?: boolean;
+  /** Which bible-api translation to read. Falls back to WEB if unavailable. */
+  translation?: string;
 }) {
   const passage = useQuery({
-    queryKey: ["passage", reference],
-    queryFn: () => fetchPassage(reference),
+    queryKey: ["passage", reference, translation],
+    queryFn: () => fetchPassage(reference, translation),
     staleTime: Infinity,
     retry: 1,
   });

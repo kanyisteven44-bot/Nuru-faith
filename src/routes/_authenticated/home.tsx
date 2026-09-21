@@ -166,7 +166,8 @@ function HomeScreen() {
                       ”
                     </p>
                     <cite className="mt-1 block text-[11px] font-semibold text-cyan not-italic drop-shadow-[0_2px_6px_rgba(0,0,0,0.85)]">
-                      {verse.data?.reference ?? verseOfTheDayRef()} (NIV)
+                      {verse.data?.reference ?? verseOfTheDayRef()}
+                      {verse.data?.translation ? ` (${verse.data.translation})` : ""}
                     </cite>
                   </blockquote>
                 )}

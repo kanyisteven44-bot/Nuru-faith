@@ -23,8 +23,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { NEW_TESTAMENT, OLD_TESTAMENT, type BibleBook } from "@/lib/bible";
-import { fetchKjvPassage } from "@/lib/kjvBible";
-import { fetchNivPassage } from "@/lib/apiBible.functions";
+import { fetchChapterPassage } from "@/lib/bibleChapter";
 import { BIBLE_TOPICS } from "@/lib/content-policy";
 import {
   fetchAllHighlights,
@@ -54,7 +53,7 @@ export const Route = createFileRoute("/_authenticated/bible")({
       {
         name: "description",
         content:
-          "Read the King James Version Bible by book and chapter, browse topics and keep your saved verses.",
+          "Read the Bible by book and chapter in modern English, browse topics and keep your saved verses.",
       },
       { property: "og:title", content: "Bible — Nuru Faith" },
       { property: "og:description", content: "Read Scripture and save what speaks to you." },
@@ -187,26 +186,49 @@ function BibleScreen() {
   );
 }
 
+/**
+ * Names that appear in references but are not how the canonical book list
+ * spells them. "Psalm 119:105" is the common way to cite a single psalm, and
+ * without this the Verse of the Day's Read Now button matched nothing and
+ * silently did nothing.
+ */
+const BOOK_ALIASES: Record<string, string> = {
+  psalm: "Psalms",
+  "song of songs": "Song of Solomon",
+  canticles: "Song of Solomon",
+  revelations: "Revelation",
+};
+
+function findBook(name: string) {
+  const n = name.trim().toLowerCase();
+  const direct = ALL_BOOKS.find((b) => b.name.toLowerCase() === n);
+  if (direct) return direct;
+  const alias = BOOK_ALIASES[n];
+  return alias ? ALL_BOOKS.find((b) => b.name === alias) : undefined;
+}
+
 function openTopicReference(reference: string, setReader: (target: ReaderTarget) => void) {
   const match = reference.match(/^(.+?)\s+(\d+)/);
   if (!match) return;
   const name = match[1]?.trim();
   const chapter = Number(match[2]);
-  const book = ALL_BOOKS.find((b) => b.name.toLowerCase() === name?.toLowerCase());
+  const book = name ? findBook(name) : undefined;
   if (book && chapter >= 1 && chapter <= book.chapters) setReader({ book, chapter });
 }
 
 /**
- * Prefers real NIV text (requires BIBLE_API_KEY / an API.Bible account with
- * NIV enabled). Falls back to the free, public-domain KJV source when NIV
- * isn't configured or the request fails for any reason.
+ * Reads the chapter in the World English Bible — modern English, public
+ * domain, and the same translation the rest of the app uses, so a verse reads
+ * identically on Home, in a series session and here.
+ *
+ * NIV is copyrighted and cannot be served without a publisher licence. The
+ * API.Bible integration for it is still in the repo at
+ * `src/lib/apiBible.functions.ts`; set BIBLE_API_KEY and call `fetchNivPassage`
+ * here to prefer it. It is deliberately not called while no key is configured,
+ * since every request would fail and cost a round trip before falling back.
  */
 async function fetchScripturePassage(reference: string) {
-  try {
-    return await fetchNivPassage({ data: { reference } });
-  } catch {
-    return fetchKjvPassage(reference);
-  }
+  return fetchChapterPassage(reference);
 }
 
 /** The verse card the design puts above the book list. */

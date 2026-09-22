@@ -71,6 +71,31 @@ self.addEventListener("fetch", (event) => {
   );
 });
 
+self.addEventListener("push", (event) => {
+  let payload = {};
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch {
+    payload = { body: event.data ? event.data.text() : "" };
+  }
+
+  const title = typeof payload.title === "string" ? payload.title : "Nuru Faith";
+  const body = typeof payload.body === "string" ? payload.body : "";
+  const id = typeof payload.id === "string" ? payload.id : "";
+  const rawUrl = typeof payload.url === "string" ? payload.url : "/notifications";
+  const url = rawUrl.startsWith("/") ? rawUrl : "/notifications";
+
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body,
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
+      tag: id ? `nuru-${id}` : undefined,
+      data: { url },
+    }),
+  );
+});
+
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   const target = event.notification?.data?.url || "/notifications";

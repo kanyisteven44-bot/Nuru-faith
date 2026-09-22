@@ -1,11 +1,27 @@
 import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, CalendarDays, HeartHandshake, MessageCircle, Users } from "lucide-react";
+import {
+  Bell,
+  BellOff,
+  BellRing,
+  CalendarDays,
+  HeartHandshake,
+  LoaderCircle,
+  MessageCircle,
+  Users,
+} from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { timeAgo } from "@/lib/format";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchNotifications, markNotificationRead } from "@/services/content";
+import {
+  disableWebPush,
+  enableWebPush,
+  getWebPushState,
+  type WebPushState,
+} from "@/services/push";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
 import { CardSkeleton, EmptyState, PillTabs } from "@/components/nuru/Primitives";
@@ -85,14 +101,14 @@ function NotificationsScreen() {
       ]);
     }
 
-    if (notification.deep_link) {
-      window.location.assign(notification.deep_link);
-    }
+    if (notification.deep_link) window.location.assign(notification.deep_link);
   }
 
   return (
     <AppShell>
       <ScreenHeader title="Notifications" />
+
+      {userId && <PushControl />}
 
       <div className="px-4 pb-1">
         <PillTabs tabs={TABS} value={tab} onChange={setTab} />
@@ -152,5 +168,108 @@ function NotificationsScreen() {
         })}
       </div>
     </AppShell>
+  );
+}
+
+function PushControl() {
+  const [state, setState] = useState<WebPushState | "checking">("checking");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+
+    void getWebPushState()
+      .then((next) => {
+        if (active) setState(next);
+      })
+      .catch(() => {
+        if (active) setState("available");
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (state === "unsupported") return null;
+
+  const enabled = state === "enabled";
+  const blocked = state === "blocked";
+
+  async function togglePush() {
+    if (blocked || state === "checking") return;
+
+    setBusy(true);
+    try {
+      if (enabled) {
+        await disableWebPush();
+        setState("available");
+        toast.success("Device notifications are off");
+      } else {
+        await enableWebPush();
+        setState("enabled");
+        toast.success("Device notifications are on");
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Couldn't update device notifications");
+      const next = await getWebPushState().catch(() => "available" as const);
+      setState(next);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="px-4 pb-3">
+      <div
+        className={cn(
+          "nuru-card flex items-center gap-3 p-3",
+          enabled && "border-cyan/35 bg-cyan/5",
+        )}
+      >
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-primary/30 bg-primary/10 text-cyan">
+          {blocked ? <BellOff className="h-4.5 w-4.5" /> : <BellRing className="h-4.5 w-4.5" />}
+        </span>
+
+        <div className="min-w-0 flex-1">
+          <p className="text-[13px] font-semibold">
+            {blocked
+              ? "Device alerts are blocked"
+              : enabled
+                ? "Device alerts are on"
+                : "Get alerts when Nuru is closed"}
+          </p>
+          <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">
+            {blocked
+              ? "Allow notifications for this site in your browser settings to enable them."
+              : enabled
+                ? "Community and mentorship updates can reach this browser in the background."
+                : "Enable secure browser alerts for this device. You can turn them off anytime."}
+          </p>
+        </div>
+
+        {!blocked && (
+          <button
+            type="button"
+            disabled={busy || state === "checking"}
+            onClick={() => void togglePush()}
+            className={cn(
+              "flex min-h-9 min-w-16 shrink-0 items-center justify-center rounded-xl px-3 text-[11px] font-semibold transition-colors disabled:opacity-50",
+              enabled
+                ? "border border-border-strong bg-surface-2 text-secondary-foreground"
+                : "bg-primary text-primary-foreground",
+            )}
+          >
+            {busy || state === "checking" ? (
+              <LoaderCircle className="h-4 w-4 animate-spin" />
+            ) : enabled ? (
+              "Turn off"
+            ) : (
+              "Enable"
+            )}
+          </button>
+        )}
+      </div>
+    </div>
   );
 }

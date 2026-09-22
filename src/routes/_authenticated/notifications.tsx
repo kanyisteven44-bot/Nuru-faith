@@ -1,11 +1,27 @@
 import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, CalendarDays, HeartHandshake, MessageCircle, Users } from "lucide-react";
+import {
+  Bell,
+  BellOff,
+  BellRing,
+  CalendarDays,
+  HeartHandshake,
+  LoaderCircle,
+  MessageCircle,
+  Users,
+} from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { timeAgo } from "@/lib/format";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchNotifications, markNotificationRead } from "@/services/content";
+import {
+  disableWebPush,
+  enableWebPush,
+  getWebPushState,
+  type WebPushState,
+} from "@/services/push";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
 import { CardSkeleton, EmptyState, PillTabs } from "@/components/nuru/Primitives";
@@ -94,6 +110,8 @@ function NotificationsScreen() {
     <AppShell>
       <ScreenHeader title="Notifications" />
 
+      {userId && <PushControl userId={userId} />}
+
       <div className="px-4 pb-1">
         <PillTabs tabs={TABS} value={tab} onChange={setTab} />
       </div>
@@ -152,5 +170,118 @@ function NotificationsScreen() {
         })}
       </div>
     </AppShell>
+  );
+}
+
+function PushControl({ userId }: { userId: string }) {
+  const [state, setState] = useState<WebPushState | "checking">("checking");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    let live = true;
+
+    void getWebPushState()
+      .then((next) => {
+        if (live) setState(next);
+      })
+      .catch(() => {
+        if (live) setState("available");
+      });
+
+    return () => {
+      live = false;
+    };
+  }, [userId]);
+
+  if (state === "unsupported") return null;
+
+  async function enable() {
+    setBusy(true);
+    try {
+      await enableWebPush();
+      setState("enabled");
+      toast.success("Device notifications are on");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Couldn't enable notifications";
+      toast.error(message);
+      const next = await getWebPushState().catch(() => "available" as const);
+      setState(next);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function disable() {
+    setBusy(true);
+    try {
+      await disableWebPush();
+      setState("available");
+      toast.success("Device notifications are off");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Couldn't disable notifications");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const blocked = state === "blocked";
+  const enabled = state === "enabled";
+
+  return (
+    <div className="px-4 pb-3">
+      <div
+        className={cn(
+          "nuru-card flex items-center gap-3 p-3",
+          enabled && "border-cyan/35 bg-cyan/5",
+        )}
+      >
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-primary/30 bg-primary/10 text-cyan">
+          {blocked ? (
+            <BellOff className="h-4.5 w-4.5" />
+          ) : (
+            <BellRing className="h-4.5 w-4.5" />
+          )}
+        </span>
+
+        <div className="min-w-0 flex-1">
+          <p className="text-[13px] font-semibold">
+            {blocked
+              ? "Device alerts are blocked"
+              : enabled
+                ? "Device alerts are on"
+                : "Get alerts when Nuru is closed"}
+          </p>
+          <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">
+            {blocked
+              ? "Allow notifications for this site in your browser settings to turn them on."
+              : enabled
+                ? "Important community and mentorship updates can reach this browser in the background."
+                : "Enable secure browser push for this device. You can turn it off here anytime."}
+          </p>
+        </div>
+
+        {!blocked && (
+          <button
+            type="button"
+            disabled={busy || state === "checking"}
+            onClick={() => void (enabled ? disable() : enable())}
+            className={cn(
+              "min-h-9 shrink-0 rounded-xl px-3 text-[11px] font-semibold transition-colors disabled:opacity-50",
+              enabled
+                ? "border border-border-strong bg-surface-2 text-secondary-foreground"
+                : "bg-primary text-primary-foreground",
+            )}
+          >
+            {busy || state === "checking" ? (
+              <LoaderCircle className="h-4 w-4 animate-spin" />
+            ) : enabled ? (
+              "Turn off"
+            ) : (
+              "Enable"
+            )}
+          </button>
+        )}
+      </div>
+    </div>
   );
 }

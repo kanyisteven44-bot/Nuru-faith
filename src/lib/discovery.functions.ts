@@ -1,6 +1,7 @@
 ﻿import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { enforceNuruRateLimit } from "./rateLimit";
 import { BIBLE_TOPICS, DISCOVERY_KINDS, searchFilter, type DiscoveryKind } from "./content-policy";
 
 export type DiscoveryItem = {
@@ -28,6 +29,14 @@ export const searchDiscovery = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ items: DiscoveryItem[]; hasMore: boolean }> => {
     const { supabase } = context;
     const { kind, query, page, id } = data;
+
+    if (!id) {
+      await enforceNuruRateLimit(
+        supabase,
+        "discovery_search",
+        "You have searched very quickly. Please wait a moment and continue.",
+      );
+    }
     const start = page * PAGE_SIZE;
     const base = (
       itemId: string,

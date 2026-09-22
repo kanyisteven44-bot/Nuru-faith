@@ -6,9 +6,11 @@ import { Loader2, Lock, Mail, Phone, User as UserIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { NuruMark } from "@/components/nuru/Logo";
+import { MfaChallenge, MfaSecurityPanel } from "@/components/nuru/MfaSecurity";
+import { getMfaRequirement, newPasswordError } from "@/lib/accountSecurity";
 
 const searchSchema = z.object({
-  mode: z.enum(["login", "signup", "forgot"]).optional().default("login"),
+  mode: z.enum(["login", "signup", "forgot", "mfa", "mfa-setup"]).optional().default("login"),
 });
 
 export const Route = createFileRoute("/auth")({
@@ -30,7 +32,7 @@ export const Route = createFileRoute("/auth")({
 
 const credentials = z.object({
   email: z.string().trim().email("Enter a valid email address").max(255),
-  password: z.string().min(8, "Use at least 8 characters").max(72),
+  password: z.string().min(1, "Enter your password").max(72),
 });
 
 type Method = "email" | "phone";
@@ -51,10 +53,33 @@ function AuthPage() {
   const [sent, setSent] = useState(false);
 
   useEffect(() => {
-    void supabase.auth.getSession().then(({ data }) => {
-      if (data.session) void navigate({ to: "/home", replace: true });
+    if (mode === "mfa" || mode === "mfa-setup") return;
+
+    void supabase.auth.getSession().then(async ({ data }) => {
+      if (!data.session) return;
+      const requirement = await getMfaRequirement().catch(() => "none" as const);
+      if (requirement === "challenge") {
+        void navigate({ to: "/auth", search: { mode: "mfa" }, replace: true });
+      } else if (requirement === "setup") {
+        void navigate({ to: "/auth", search: { mode: "mfa-setup" }, replace: true });
+      } else {
+        void navigate({ to: "/home", replace: true });
+      }
     });
-  }, [navigate]);
+  }, [navigate, mode]);
+
+  async function continueAfterSignIn(fallback: "/home" | "/onboarding") {
+    const requirement = await getMfaRequirement();
+    if (requirement === "challenge") {
+      void navigate({ to: "/auth", search: { mode: "mfa" }, replace: true });
+      return;
+    }
+    if (requirement === "setup") {
+      void navigate({ to: "/auth", search: { mode: "mfa-setup" }, replace: true });
+      return;
+    }
+    void navigate({ to: fallback, replace: true });
+  }
 
   async function submitEmail(e: React.FormEvent) {
     e.preventDefault();
@@ -77,6 +102,8 @@ function AuthPage() {
 
       if (signup) {
         if (!fullName.trim()) throw new Error("Enter your full name");
+        const passwordIssue = newPasswordError(parsed.data.password);
+        if (passwordIssue) throw new Error(passwordIssue);
         const { data, error } = await supabase.auth.signUp({
           email: parsed.data.email,
           password: parsed.data.password,
@@ -91,14 +118,14 @@ function AuthPage() {
           toast.success("Check your email to confirm your account");
           return;
         }
-        void navigate({ to: "/onboarding" });
+        await continueAfterSignIn("/onboarding");
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email: parsed.data.email,
           password: parsed.data.password,
         });
         if (error) throw error;
-        void navigate({ to: "/home" });
+        await continueAfterSignIn("/home");
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Something went wrong");
@@ -140,7 +167,7 @@ function AuthPage() {
         type: "sms",
       });
       if (error) throw error;
-      void navigate({ to: signup ? "/onboarding" : "/home" });
+      await continueAfterSignIn(signup ? "/onboarding" : "/home");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "That code didn't work");
     } finally {
@@ -173,6 +200,25 @@ function AuthPage() {
     }
   }
 
+  if (mode === "mfa") {
+    return (
+      <AuthSecurityShell>
+        <MfaChallenge onSuccess={() => void navigate({ to: "/home", replace: true })} />
+      </AuthSecurityShell>
+    );
+  }
+
+  if (mode === "mfa-setup") {
+    return (
+      <AuthSecurityShell>
+        <MfaSecurityPanel
+          required
+          onReady={() => void navigate({ to: "/home", replace: true })}
+        />
+      </AuthSecurityShell>
+    );
+  }
+
   return (
     <div className="relative min-h-dvh bg-background">
       <div className="relative mx-auto flex min-h-dvh w-full max-w-md flex-col px-7 pb-10 pt-[max(2rem,env(safe-area-inset-top))]">
@@ -186,7 +232,7 @@ function AuthPage() {
           </p>
         </div>
 
-        {mode !== "forgot" && (
+        {(mode === "login" || mode === "signup") && (
           <div
             role="tablist"
             aria-label="Sign in or create an account"
@@ -350,7 +396,7 @@ function AuthPage() {
                 <Field
                   icon={Lock}
                   label="Password"
-                  hint={signup ? "At least 8 characters" : undefined}
+                  hint={signup ? "12+ characters with upper/lowercase, number & symbol" : undefined}
                 >
                   <input
                     type="password"
@@ -358,7 +404,7 @@ function AuthPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     autoComplete={signup ? "new-password" : "current-password"}
                     required
-                    minLength={8}
+                    minLength={signup ? 12 : 1}
                     placeholder="••••••••"
                     className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
                   />
@@ -508,5 +554,23 @@ function GoogleGlyph() {
         d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58Z"
       />
     </svg>
+  );
+}
+
+
+function AuthSecurityShell({ children }: { children: React.ReactNode }) {
+  return (
+    <main className="flex min-h-dvh items-center justify-center bg-background px-6 py-10">
+      <div className="w-full max-w-sm">
+        <div className="mb-5 text-center">
+          <NuruMark className="mx-auto h-14 w-14" />
+          <h1 className="mt-3 font-display text-xl font-semibold">Secure your Nuru account</h1>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Administrative and MFA-enabled accounts require an additional verification step.
+          </p>
+        </div>
+        {children}
+      </div>
+    </main>
   );
 }

@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Bell,
   ChevronRight,
@@ -13,6 +14,9 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
+import { MfaSecurityPanel } from "@/components/nuru/MfaSecurity";
+import { useAuth } from "@/hooks/useAuth";
+import { fetchMyRoles } from "@/services/content";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -37,6 +41,17 @@ const ROWS = [
 function SettingsScreen() {
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const { userId } = useAuth();
+  const [securityOpen, setSecurityOpen] = useState(false);
+
+  const roles = useQuery({
+    queryKey: ["roles", userId],
+    queryFn: () => fetchMyRoles(userId!),
+    enabled: !!userId,
+  });
+  const staffMfaRequired = (roles.data ?? []).some((row) =>
+    ["super_admin", "moderator", "church_admin"].includes(String(row.role)),
+  );
 
   async function logOut() {
     qc.clear();
@@ -66,13 +81,18 @@ function SettingsScreen() {
             <button
               key={label}
               type="button"
-              onClick={() => toast(`${label} isn't available yet.`)}
+              onClick={() => {
+                if (label === "Privacy & Security") setSecurityOpen((value) => !value);
+                else toast(`${label} isn't available yet.`);
+              }}
               className="nuru-card flex w-full items-center gap-3 px-4 py-3.5 text-left"
             >
               {inner}
             </button>
           );
         })}
+
+        {securityOpen && <MfaSecurityPanel required={staffMfaRequired} />}
 
         <button
           type="button"

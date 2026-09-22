@@ -482,8 +482,21 @@ export const fetchNotifications = async (userId: string) =>
   );
 
 export async function markNotificationRead(id: string) {
-  const { error } = await supabase.from("notifications").update({ read: true }).eq("id", id);
+  const { error } = await supabase
+    .from("notifications")
+    .update({ read: true, read_at: new Date().toISOString() })
+    .eq("id", id);
   if (error) throw new Error(error.message);
+}
+
+export async function fetchUnreadNotificationCount(userId: string) {
+  const { count, error } = await supabase
+    .from("notifications")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .eq("read", false);
+  if (error) throw new Error(error.message);
+  return count ?? 0;
 }
 
 /* ---------- AI ---------- */
@@ -623,4 +636,93 @@ export async function fetchPeople(userId: string): Promise<PersonRow[]> {
     .limit(100);
   if (error) throw new Error(error.message);
   return (data ?? []) as PersonRow[];
+}
+
+
+/* ---------- moderation ---------- */
+
+export type ModerationItem = {
+  id: string;
+  source: "report" | "reel" | "external_reel";
+  reason: string;
+  details: string | null;
+  status: string;
+  created_at: string;
+  target: string;
+  source_url: string | null;
+};
+
+export async function fetchModerationQueue(): Promise<ModerationItem[]> {
+  const [generic, reels, external] = await Promise.all([
+    supabase
+      .from("reports")
+      .select("id, target_type, target_id, reason, status, created_at")
+      .order("created_at", { ascending: false })
+      .limit(50),
+    supabase
+      .from("reel_reports")
+      .select("id, reel_id, reason, details, status, created_at")
+      .order("created_at", { ascending: false })
+      .limit(50),
+    supabase
+      .from("external_reel_reports")
+      .select("id, external_reel_id, reason, details, source_url, status, created_at")
+      .order("created_at", { ascending: false })
+      .limit(50),
+  ]);
+
+  for (const result of [generic, reels, external]) {
+    if (result.error) throw new Error(result.error.message);
+  }
+
+  const rows: ModerationItem[] = [
+    ...(generic.data ?? []).map((row) => ({
+      id: row.id,
+      source: "report" as const,
+      reason: row.reason,
+      details: null,
+      status: row.status,
+      created_at: row.created_at,
+      target: `${row.target_type} · ${row.target_id}`,
+      source_url: null,
+    })),
+    ...(reels.data ?? []).map((row) => ({
+      id: row.id,
+      source: "reel" as const,
+      reason: row.reason,
+      details: row.details,
+      status: row.status,
+      created_at: row.created_at,
+      target: `Reel · ${row.reel_id}`,
+      source_url: null,
+    })),
+    ...(external.data ?? []).map((row) => ({
+      id: row.id,
+      source: "external_reel" as const,
+      reason: row.reason,
+      details: row.details,
+      status: row.status,
+      created_at: row.created_at,
+      target: `External Reel · ${row.external_reel_id}`,
+      source_url: row.source_url,
+    })),
+  ];
+
+  return rows.sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at));
+}
+
+export async function updateModerationStatus(
+  source: ModerationItem["source"],
+  id: string,
+  status: "reviewing" | "resolved" | "dismissed",
+) {
+  const table =
+    source === "report"
+      ? "reports"
+      : source === "reel"
+        ? "reel_reports"
+        : "external_reel_reports";
+
+  const { error } = await supabase.from(table).update({ status }).eq("id", id);
+  if (error) throw new Error(error.message);
 }

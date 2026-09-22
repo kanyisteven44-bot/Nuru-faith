@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
 import { WifiOff } from "lucide-react";
 
-/** Design screen 22 — shown whenever the browser reports it is offline. */
+/**
+ * Connectivity status only. This deliberately does not block the app:
+ * already-rendered/static content may still be usable, while fresh Supabase
+ * reads and writes must wait for connectivity.
+ */
 export function OfflineNotice() {
   const [offline, setOffline] = useState(false);
 
@@ -20,28 +23,19 @@ export function OfflineNotice() {
   if (!offline) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background px-8 text-center">
-      <span className="flex h-20 w-20 items-center justify-center rounded-full border border-primary/35 bg-primary/12 text-cyan">
-        <WifiOff className="h-8 w-8" strokeWidth={1.6} />
+    <div
+      role="status"
+      aria-live="polite"
+      className="fixed inset-x-3 top-[max(0.75rem,env(safe-area-inset-top))] z-[70] mx-auto flex max-w-md items-center gap-3 rounded-2xl border border-amber-300/30 bg-surface/95 px-4 py-3 shadow-xl backdrop-blur-xl"
+    >
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-300/10 text-amber-200">
+        <WifiOff className="h-4.5 w-4.5" strokeWidth={1.8} />
       </span>
-      <h1 className="mt-6 font-display text-xl font-semibold">You're offline</h1>
-      <p className="mt-2 max-w-xs text-[13px] leading-relaxed text-muted-foreground">
-        You can still read your downloaded content, saved devotionals and notes.
-      </p>
-      <div className="mt-7 w-full max-w-xs space-y-2.5">
-        <Link
-          to="/profile"
-          className="flex min-h-11 w-full items-center justify-center rounded-xl bg-primary text-sm font-semibold text-primary-foreground nuru-glow-sm"
-        >
-          Go to My Downloads
-        </Link>
-        <button
-          type="button"
-          onClick={() => window.location.reload()}
-          className="flex min-h-11 w-full items-center justify-center rounded-xl border border-border-strong bg-surface-2 text-sm font-semibold text-secondary-foreground"
-        >
-          Try Again
-        </button>
+      <div className="min-w-0">
+        <p className="text-sm font-semibold">You’re offline</p>
+        <p className="text-[11px] leading-relaxed text-muted-foreground">
+          Fresh community and account changes will sync after you reconnect.
+        </p>
       </div>
     </div>
   );

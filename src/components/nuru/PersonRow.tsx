@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { BadgeCheck, UserPlus } from "lucide-react";
 import { toast } from "sonner";
@@ -42,13 +43,24 @@ export function PersonRow({
 
   return (
     <div className="flex items-center gap-3 border-b border-border/60 py-3 last:border-b-0">
-      <img
-        src={person.avatar_url || generatedAvatar(person.id, name)}
-        alt=""
-        className="h-11 w-11 shrink-0 rounded-full object-cover"
-      />
+      <Link
+        to="/discovery/$kind/$id"
+        params={{ kind: "profile", id: person.id }}
+        aria-label={`View ${name}'s profile`}
+        className="shrink-0"
+      >
+        <img
+          src={person.avatar_url || generatedAvatar(person.id, name)}
+          alt=""
+          className="h-11 w-11 rounded-full object-cover"
+        />
+      </Link>
 
-      <div className="min-w-0 flex-1">
+      <Link
+        to="/discovery/$kind/$id"
+        params={{ kind: "profile", id: person.id }}
+        className="min-w-0 flex-1 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+      >
         <p className="flex items-center gap-1 text-[14px] font-semibold">
           <span className="truncate">{name}</span>
           {person.verified && (
@@ -64,7 +76,7 @@ export function PersonRow({
         ) : (
           person.bio && <p className="truncate text-[12px] text-muted-foreground">{person.bio}</p>
         )}
-      </div>
+      </Link>
 
       {viewerId && !isSelf && (
         <button

@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { AtSign, Bell, CalendarDays, MessageCircle } from "lucide-react";
+import { Bell, CalendarDays, HeartHandshake, MessageCircle, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { timeAgo } from "@/lib/format";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchNotifications, markNotificationRead } from "@/services/content";
+import { supabase } from "@/integrations/supabase/client";
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
 import { CardSkeleton, EmptyState, PillTabs } from "@/components/nuru/Primitives";
 
@@ -13,18 +14,20 @@ export const Route = createFileRoute("/_authenticated/notifications")({
   head: () => ({
     meta: [
       { title: "Notifications — Nuru Faith" },
-      { name: "description", content: "Mentions, messages and event reminders." },
+      { name: "description", content: "Community, mentorship and event notifications." },
     ],
   }),
   component: NotificationsScreen,
 });
 
-const TABS = ["All", "Mentions", "Messages", "Events"] as const;
+const TABS = ["All", "Social", "Mentorship", "Events"] as const;
 type Tab = (typeof TABS)[number];
 
 const ICONS: Record<string, typeof Bell> = {
-  mention: AtSign,
+  social: Users,
+  mention: MessageCircle,
   message: MessageCircle,
+  mentorship: HeartHandshake,
   event: CalendarDays,
 };
 
@@ -39,14 +42,52 @@ function NotificationsScreen() {
     enabled: !!userId,
   });
 
+  useEffect(() => {
+    if (!userId) return;
+
+    const channel = supabase
+      .channel(`notifications:${userId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${userId}`,
+        },
+        () => {
+          void qc.invalidateQueries({ queryKey: ["notifications", userId] });
+          void qc.invalidateQueries({ queryKey: ["notification-unread-count", userId] });
+        },
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [userId, qc]);
+
   const all = notifications.data ?? [];
   const rows =
-    tab === "All" ? all : all.filter((n) => n.category === tab.toLowerCase().replace(/s$/, ""));
+    tab === "All"
+      ? all
+      : all.filter((n) => {
+          const expected = tab === "Events" ? "event" : tab.toLowerCase();
+          return n.category === expected;
+        });
 
-  async function open(id: string, read: boolean) {
-    if (read) return;
-    await markNotificationRead(id);
-    await qc.invalidateQueries({ queryKey: ["notifications", userId] });
+  async function open(notification: (typeof all)[number]) {
+    if (!notification.read) {
+      await markNotificationRead(notification.id);
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["notifications", userId] }),
+        qc.invalidateQueries({ queryKey: ["notification-unread-count", userId] }),
+      ]);
+    }
+
+    if (notification.deep_link) {
+      window.location.assign(notification.deep_link);
+    }
   }
 
   return (
@@ -62,7 +103,7 @@ function NotificationsScreen() {
         {!notifications.isLoading && rows.length === 0 && (
           <EmptyState
             title="Nothing here yet"
-            description="Mentions, replies and event reminders will show up here."
+            description="Community, mentorship and event updates will show up here."
           />
         )}
         {rows.map((n) => {
@@ -71,7 +112,7 @@ function NotificationsScreen() {
             <button
               key={n.id}
               type="button"
-              onClick={() => void open(n.id, n.read)}
+              onClick={() => void open(n)}
               className={cn(
                 "nuru-card flex w-full items-start gap-3 p-3 text-left transition-colors",
                 !n.read && "border-primary/45 bg-primary/8",
@@ -81,7 +122,21 @@ function NotificationsScreen() {
                 <Icon className="h-4 w-4" strokeWidth={1.8} />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-medium">{n.title}</span>
+                <span className="flex items-center gap-2">
+                  <span className="block truncate text-sm font-medium">{n.title}</span>
+                  {n.priority !== "normal" && (
+                    <span
+                      className={cn(
+                        "rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide",
+                        n.priority === "critical"
+                          ? "bg-red-500/15 text-red-200"
+                          : "bg-amber-400/15 text-amber-200",
+                      )}
+                    >
+                      {n.priority}
+                    </span>
+                  )}
+                </span>
                 {n.body && (
                   <span className="mt-0.5 block line-clamp-2 text-[12px] text-muted-foreground">
                     {n.body}

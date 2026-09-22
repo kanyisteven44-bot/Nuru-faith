@@ -419,6 +419,42 @@ export type Database = {
         }
         Relationships: []
       }
+      device_push_tokens: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          last_seen_at: string
+          platform: string
+          token: string
+          updated_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          last_seen_at?: string
+          platform?: string
+          token: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          last_seen_at?: string
+          platform?: string
+          token?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       devotionals: {
         Row: {
           body: string | null
@@ -1223,13 +1259,44 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_preferences: {
+        Row: {
+          events_enabled: boolean
+          mentorship_enabled: boolean
+          push_enabled: boolean
+          social_enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          events_enabled?: boolean
+          mentorship_enabled?: boolean
+          push_enabled?: boolean
+          social_enabled?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          events_enabled?: boolean
+          mentorship_enabled?: boolean
+          push_enabled?: boolean
+          social_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           body: string | null
           category: string
           created_at: string
+          deep_link: string | null
+          delivered_at: string | null
           id: string
+          priority: string
           read: boolean
+          read_at: string | null
           title: string
           user_id: string
         }
@@ -1237,8 +1304,12 @@ export type Database = {
           body?: string | null
           category?: string
           created_at?: string
+          deep_link?: string | null
+          delivered_at?: string | null
           id?: string
+          priority?: string
           read?: boolean
+          read_at?: string | null
           title: string
           user_id: string
         }
@@ -1246,8 +1317,12 @@ export type Database = {
           body?: string | null
           category?: string
           created_at?: string
+          deep_link?: string | null
+          delivered_at?: string | null
           id?: string
+          priority?: string
           read?: boolean
+          read_at?: string | null
           title?: string
           user_id?: string
         }

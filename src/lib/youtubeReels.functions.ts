@@ -152,6 +152,76 @@ function putCachedPage(key: string, value: PlayablePage): void {
     pageCache.delete(oldestKey);
   }
 }
+const RSS_CHANNELS_PER_REQUEST = 8;
+const RSS_VIDEOS_PER_CHANNEL = 3;
+
+function decodeXmlText(value: string): string {
+  return value
+    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&apos;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .trim();
+}
+
+function xmlTag(block: string, tag: string): string {
+  const safeTag = tag.replace(":", "\\:");
+  const match = new RegExp("<" + safeTag + "[^>]*>([\\s\\S]*?)<\\/" + safeTag + ">", "i").exec(block);
+  return match ? decodeXmlText(match[1] ?? "") : "";
+}
+
+/**
+ * Public YouTube Atom feeds give Nuru a no-key fallback when Data API
+ * configuration or quota is unavailable. Playback still stays on YouTube.
+ */
+async function fetchRssFallback(channels: ApprovedChannel[]): Promise<YouTubeVideo[]> {
+  const selected = channels.slice(0, RSS_CHANNELS_PER_REQUEST);
+  const pages = await Promise.all(
+    selected.map(async (channel) => {
+      try {
+        const response = await fetch(
+          `https://www.youtube.com/feeds/videos.xml?channel_id=${encodeURIComponent(channel.id)}`,
+          { cache: "no-store" },
+        );
+        if (!response.ok) return [] as YouTubeVideo[];
+        const xml = await response.text();
+        const entries = [...xml.matchAll(/<entry>([\s\S]*?)<\/entry>/gi)]
+          .slice(0, RSS_VIDEOS_PER_CHANNEL)
+          .map((match) => match[1] ?? "");
+
+        return entries
+          .map((entry): YouTubeVideo | null => {
+            const id = xmlTag(entry, "yt:videoId");
+            if (!id) return null;
+            const title = xmlTag(entry, "title") || "YouTube video";
+            const publishedAt = xmlTag(entry, "published");
+            return {
+              youtubeVideoId: id,
+              title,
+              description: "",
+              thumbnail: `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
+              channelId: channel.id,
+              channelName: channel.name,
+              publishedAt,
+              duration: null,
+              source: "youtube",
+            };
+          })
+          .filter((video): video is YouTubeVideo => video !== null);
+      } catch {
+        return [] as YouTubeVideo[];
+      }
+    }),
+  );
+
+  const deduped = new Map<string, YouTubeVideo>();
+  for (const video of pages.flat()) deduped.set(video.youtubeVideoId, video);
+  return [...deduped.values()].sort((a, b) =>
+    (b.publishedAt || "").localeCompare(a.publishedAt || ""),
+  );
+}
 
 async function fetchPlayableUploadPage(
   key: string,
@@ -334,12 +404,15 @@ export const youtubeReelsFeed = createServerFn({ method: "GET" })
   .handler(async ({ data, context }): Promise<YouTubeSearchResult> => {
     const key = process.env["YOUTUBE_API_KEY"];
     if (!key) {
+      const videos = await fetchRssFallback(
+        FALLBACK_APPROVED_CHANNELS.map((channel) => ({ ...channel })),
+      );
       return {
-        videos: [],
+        videos,
         playlists: [],
         channels: [],
         nextPageToken: null,
-        error: "not-configured",
+        error: videos.length ? null : "not-configured",
       };
     }
 
@@ -415,14 +488,19 @@ export const youtubeReelsFeed = createServerFn({ method: "GET" })
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : "unavailable";
-      if (message === "quota") console.warn("[youtube-reels] serving graceful quota fallback");
-      else console.error("[youtube-reels] feed failed", error);
+      if (message === "quota")
+        console.warn("[youtube-reels] Data API quota unavailable; using RSS fallback");
+      else console.error("[youtube-reels] Data API feed failed; using RSS fallback", error);
+
+      const videos = await fetchRssFallback(
+        FALLBACK_APPROVED_CHANNELS.map((channel) => ({ ...channel })),
+      );
       return {
-        videos: [],
+        videos,
         playlists: [],
         channels: [],
         nextPageToken: null,
-        error: message,
+        error: videos.length ? null : message,
       };
     }
   });

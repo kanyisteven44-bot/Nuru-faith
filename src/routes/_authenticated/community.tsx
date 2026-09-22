@@ -4,9 +4,11 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Plus, Search, Users } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { fetchFollowingIds } from "@/services/reels";
 import {
   fetchGroups,
   fetchMyFollowing,
+  fetchPeople,
   fetchMyGroupIds,
   fetchMyPostLikes,
   fetchMySavedPosts,
@@ -15,6 +17,7 @@ import {
   leaveGroup,
 } from "@/services/content";
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
+import { PersonRow } from "@/components/nuru/PersonRow";
 import { PostCard, type PostRow } from "@/components/nuru/PostCard";
 import { CardSkeleton, EmptyState, ErrorState, PillTabs } from "@/components/nuru/Primitives";
 
@@ -33,7 +36,7 @@ export const Route = createFileRoute("/_authenticated/community")({
   component: CommunityScreen,
 });
 
-const TABS = ["For You", "Following", "Groups"] as const;
+const TABS = ["For You", "Following", "People", "Groups"] as const;
 type Tab = (typeof TABS)[number];
 
 function CommunityScreen() {
@@ -87,6 +90,8 @@ function CommunityScreen() {
 
       {tab === "Groups" ? (
         <GroupsTab userId={userId} />
+      ) : tab === "People" ? (
+        <PeopleTab userId={userId} />
       ) : (
         <div className="space-y-3 px-4 pt-2">
           {posts.isLoading && <CardSkeleton count={3} height="h-48" />}
@@ -131,6 +136,52 @@ function CommunityScreen() {
         <Plus className="h-6 w-6" />
       </Link>
     </AppShell>
+  );
+}
+
+/**
+ * Everyone else on Nuru, so people can actually find each other. Until this
+ * existed the only way to follow anyone was from a Reels video, which left
+ * the Followers and Following lists empty for everybody.
+ */
+function PeopleTab({ userId }: { userId: string | null }) {
+  const people = useQuery({
+    queryKey: ["people-directory", userId],
+    queryFn: () => fetchPeople(userId!),
+    enabled: !!userId,
+  });
+
+  const myFollowing = useQuery({
+    queryKey: ["my-following-ids", userId],
+    queryFn: () => fetchFollowingIds(userId!),
+    enabled: !!userId,
+  });
+  const followingIds = new Set(myFollowing.data ?? []);
+
+  const rows = people.data ?? [];
+
+  return (
+    <div className="px-4 pt-2">
+      {people.isLoading && <CardSkeleton count={5} height="h-14" />}
+      {people.isError && (
+        <ErrorState message="Couldn't load people." onRetry={() => void people.refetch()} />
+      )}
+      {people.isSuccess && rows.length === 0 && (
+        <EmptyState
+          title="No one else here yet"
+          description="As more people join Nuru Faith, they'll show up here to follow."
+        />
+      )}
+      {rows.map((person) => (
+        <PersonRow
+          key={person.id}
+          person={person}
+          viewerId={userId}
+          isFollowing={followingIds.has(person.id)}
+          invalidate={[["people-directory", userId]]}
+        />
+      ))}
+    </div>
   );
 }
 

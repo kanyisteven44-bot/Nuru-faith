@@ -20,6 +20,7 @@ import {
   disableWebPush,
   enableWebPush,
   getWebPushState,
+  sendTestWebPush,
   type WebPushState,
 } from "@/services/push";
 import { supabase } from "@/integrations/supabase/client";
@@ -174,6 +175,7 @@ function NotificationsScreen() {
 function PushControl() {
   const [state, setState] = useState<WebPushState | "checking">("checking");
   const [busy, setBusy] = useState(false);
+  const [testing, setTesting] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -219,6 +221,20 @@ function PushControl() {
     }
   }
 
+  async function sendTest() {
+    if (!enabled || testing) return;
+    setTesting(true);
+    try {
+      const request = sendTestWebPush();
+      toast("Test queued — minimize or close Nuru now. The alert will fire in about 5 seconds.");
+      await request;
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Couldn't send the test alert");
+    } finally {
+      setTesting(false);
+    }
+  }
+
   return (
     <div className="px-4 pb-3">
       <div
@@ -249,25 +265,37 @@ function PushControl() {
         </div>
 
         {!blocked && (
-          <button
-            type="button"
-            disabled={busy || state === "checking"}
-            onClick={() => void togglePush()}
-            className={cn(
-              "flex min-h-9 min-w-16 shrink-0 items-center justify-center rounded-xl px-3 text-[11px] font-semibold transition-colors disabled:opacity-50",
-              enabled
-                ? "border border-border-strong bg-surface-2 text-secondary-foreground"
-                : "bg-primary text-primary-foreground",
+          <div className="flex shrink-0 flex-col gap-2">
+            {enabled && (
+              <button
+                type="button"
+                disabled={testing || busy}
+                onClick={() => void sendTest()}
+                className="flex min-h-9 min-w-16 items-center justify-center rounded-xl bg-primary px-3 text-[11px] font-semibold text-primary-foreground disabled:opacity-50"
+              >
+                {testing ? <LoaderCircle className="h-4 w-4 animate-spin" /> : "Test"}
+              </button>
             )}
-          >
-            {busy || state === "checking" ? (
-              <LoaderCircle className="h-4 w-4 animate-spin" />
-            ) : enabled ? (
-              "Turn off"
-            ) : (
-              "Enable"
-            )}
-          </button>
+            <button
+              type="button"
+              disabled={busy || state === "checking" || testing}
+              onClick={() => void togglePush()}
+              className={cn(
+                "flex min-h-9 min-w-16 items-center justify-center rounded-xl px-3 text-[11px] font-semibold transition-colors disabled:opacity-50",
+                enabled
+                  ? "border border-border-strong bg-surface-2 text-secondary-foreground"
+                  : "bg-primary text-primary-foreground",
+              )}
+            >
+              {busy || state === "checking" ? (
+                <LoaderCircle className="h-4 w-4 animate-spin" />
+              ) : enabled ? (
+                "Turn off"
+              ) : (
+                "Enable"
+              )}
+            </button>
+          </div>
         )}
       </div>
     </div>

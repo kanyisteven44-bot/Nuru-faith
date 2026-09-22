@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -13,6 +14,7 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
+import { MfaSecurityPanel } from "@/components/nuru/MfaSecurity";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -37,6 +39,7 @@ const ROWS = [
 function SettingsScreen() {
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const [securityOpen, setSecurityOpen] = useState(false);
 
   async function logOut() {
     qc.clear();
@@ -66,13 +69,18 @@ function SettingsScreen() {
             <button
               key={label}
               type="button"
-              onClick={() => toast(`${label} isn't available yet.`)}
+              onClick={() => {
+                if (label === "Privacy & Security") setSecurityOpen((value) => !value);
+                else toast(`${label} isn't available yet.`);
+              }}
               className="nuru-card flex w-full items-center gap-3 px-4 py-3.5 text-left"
             >
               {inner}
             </button>
           );
         })}
+
+        {securityOpen && <MfaSecurityPanel />}
 
         <button
           type="button"

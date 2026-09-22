@@ -135,16 +135,25 @@ function authorFields(profiles: unknown) {
   };
 }
 
-export const fetchPosts = async (limit = 20) => {
-  const rows = unwrap(
-    await supabase
-      .from("posts")
-      .select("*, profiles(full_name, username, avatar_url)")
-      .order("created_at", { ascending: false })
-      .limit(limit),
-  );
+export const COMMUNITY_PAGE_SIZE = 20;
+
+export async function fetchPostPage(page: number, authorIds?: string[]) {
+  if (authorIds && authorIds.length === 0) return [];
+
+  const from = page * COMMUNITY_PAGE_SIZE;
+  const to = from + COMMUNITY_PAGE_SIZE - 1;
+
+  let query = supabase
+    .from("posts")
+    .select("*, profiles(full_name, username, avatar_url)")
+    .order("created_at", { ascending: false })
+    .range(from, to);
+
+  if (authorIds) query = query.in("author_id", authorIds);
+
+  const rows = unwrap(await query);
   return rows.map((row) => ({ ...row, ...authorFields(row.profiles) }));
-};
+}
 
 export async function createPost(input: {
   author_id: string;
@@ -630,13 +639,18 @@ export async function fetchFollowing(userId: string): Promise<PersonRow[]> {
  * Without somewhere to discover people, nobody can follow anybody and the
  * Followers/Following lists stay permanently empty.
  */
-export async function fetchPeople(userId: string): Promise<PersonRow[]> {
+export const PEOPLE_PAGE_SIZE = 50;
+
+export async function fetchPeoplePage(userId: string, page: number): Promise<PersonRow[]> {
+  const from = page * PEOPLE_PAGE_SIZE;
+  const to = from + PEOPLE_PAGE_SIZE - 1;
+
   const { data, error } = await supabase
     .from("profiles")
     .select("id, full_name, username, avatar_url, bio, verified")
     .neq("id", userId)
     .order("created_at", { ascending: false })
-    .limit(100);
+    .range(from, to);
   if (error) throw new Error(error.message);
   return (data ?? []) as PersonRow[];
 }

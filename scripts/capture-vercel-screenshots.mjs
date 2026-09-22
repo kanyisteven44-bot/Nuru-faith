@@ -48,10 +48,14 @@ await capture("03-auth-signup", "/auth?mode=signup");
 await capture("04-auth-forgot", "/auth?mode=forgot");
 await capture("05-reset-password", "/reset-password");
 
-// Sign in with the temporary QA account confirmed only for this screenshot run.
-const email = "nuru.vercel.qa.1789735101601@gmail.com";
-const password = "NuruQA!" + email.match(/[0-9]{10,}/)[0] + "x";
-await fs.writeFile(path.join(OUT, "qa-account.txt"), email + "\\n");
+// Protected-route captures require ephemeral credentials supplied by CI/local env.
+const email = process.env.NURU_QA_EMAIL;
+const password = process.env.NURU_QA_PASSWORD;
+if (!email || !password) {
+  console.log("SKIP_PROTECTED: set NURU_QA_EMAIL and NURU_QA_PASSWORD to capture signed-in screens");
+  await browser.close();
+  process.exit(0);
+}
 
 await page.goto(BASE + "/auth?mode=login", { waitUntil: "domcontentloaded", timeout: 45000 });
 await page.waitForTimeout(1200);

@@ -1,18 +1,20 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Plus, Search, Users } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchFollowingIds } from "@/services/reels";
 import {
+  COMMUNITY_PAGE_SIZE,
+  PEOPLE_PAGE_SIZE,
   fetchGroups,
   fetchMyFollowing,
-  fetchPeople,
+  fetchPeoplePage,
   fetchMyGroupIds,
   fetchMyPostLikes,
   fetchMySavedPosts,
-  fetchPosts,
+  fetchPostPage,
   joinGroup,
   leaveGroup,
 } from "@/services/content";
@@ -43,7 +45,24 @@ function CommunityScreen() {
   const { userId } = useAuth();
   const [tab, setTab] = useState<Tab>("For You");
 
-  const posts = useQuery({ queryKey: ["posts"], queryFn: () => fetchPosts() });
+  const following = useQuery({
+    queryKey: ["following", userId],
+    queryFn: () => fetchMyFollowing(userId!),
+    enabled: !!userId && tab === "Following",
+  });
+  const followingIds = following.data ?? [];
+
+  const posts = useInfiniteQuery({
+    queryKey: ["posts", tab, tab === "Following" ? followingIds : "all"],
+    queryFn: ({ pageParam }) =>
+      fetchPostPage(pageParam, tab === "Following" ? followingIds : undefined),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, pages) =>
+      lastPage.length === COMMUNITY_PAGE_SIZE ? pages.length : undefined,
+    enabled:
+      tab === "For You" ||
+      (tab === "Following" && !!userId && following.isSuccess),
+  });
   const likes = useQuery({
     queryKey: ["post-likes", userId],
     queryFn: () => fetchMyPostLikes(userId!),
@@ -57,16 +76,7 @@ function CommunityScreen() {
 
   const likedIds = new Set(likes.data ?? []);
   const savedIds = new Set(saves.data ?? []);
-  const rows = (posts.data ?? []) as PostRow[];
-  const following = useQuery({
-    queryKey: ["following", userId],
-    queryFn: () => fetchMyFollowing(userId!),
-    enabled: !!userId && tab === "Following",
-  });
-  const followingRows =
-    tab === "Following"
-      ? rows.filter((p) => p.author_id && (following.data ?? []).includes(p.author_id))
-      : rows;
+  const rows = (posts.data?.pages.flat() ?? []) as PostRow[];
 
   return (
     <AppShell>
@@ -98,7 +108,7 @@ function CommunityScreen() {
           {posts.isError && (
             <ErrorState message="Couldn't load the feed." onRetry={() => void posts.refetch()} />
           )}
-          {!posts.isLoading && followingRows.length === 0 && (
+          {!posts.isLoading && rows.length === 0 && (
             <EmptyState
               title={tab === "Following" ? "Nothing from people you follow" : "No posts yet"}
               description={
@@ -116,7 +126,7 @@ function CommunityScreen() {
               }
             />
           )}
-          {followingRows.map((post) => (
+          {rows.map((post) => (
             <PostCard
               key={post.id}
               post={post}
@@ -125,6 +135,16 @@ function CommunityScreen() {
               saved={savedIds.has(post.id)}
             />
           ))}
+          {posts.hasNextPage && (
+            <button
+              type="button"
+              disabled={posts.isFetchingNextPage}
+              onClick={() => void posts.fetchNextPage()}
+              className="nuru-card flex min-h-11 w-full items-center justify-center text-sm font-semibold text-cyan disabled:opacity-50"
+            >
+              {posts.isFetchingNextPage ? "Loading…" : "Load more posts"}
+            </button>
+          )}
         </div>
       )}
 
@@ -145,9 +165,12 @@ function CommunityScreen() {
  * the Followers and Following lists empty for everybody.
  */
 function PeopleTab({ userId }: { userId: string | null }) {
-  const people = useQuery({
+  const people = useInfiniteQuery({
     queryKey: ["people-directory", userId],
-    queryFn: () => fetchPeople(userId!),
+    queryFn: ({ pageParam }) => fetchPeoplePage(userId!, pageParam),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, pages) =>
+      lastPage.length === PEOPLE_PAGE_SIZE ? pages.length : undefined,
     enabled: !!userId,
   });
 
@@ -158,7 +181,7 @@ function PeopleTab({ userId }: { userId: string | null }) {
   });
   const followingIds = new Set(myFollowing.data ?? []);
 
-  const rows = people.data ?? [];
+  const rows = people.data?.pages.flat() ?? [];
 
   return (
     <div className="px-4 pt-2">
@@ -181,6 +204,16 @@ function PeopleTab({ userId }: { userId: string | null }) {
           invalidate={[["people-directory", userId]]}
         />
       ))}
+      {people.hasNextPage && (
+        <button
+          type="button"
+          disabled={people.isFetchingNextPage}
+          onClick={() => void people.fetchNextPage()}
+          className="mt-3 flex min-h-11 w-full items-center justify-center rounded-xl border border-border-strong bg-surface-2 text-sm font-semibold text-cyan disabled:opacity-50"
+        >
+          {people.isFetchingNextPage ? "Loading…" : "Load more people"}
+        </button>
+      )}
     </div>
   );
 }

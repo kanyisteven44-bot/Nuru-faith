@@ -607,3 +607,20 @@ export async function fetchFollowing(userId: string): Promise<PersonRow[]> {
   if (error) throw new Error(error.message);
   return peopleByIds((data ?? []).map((r) => r.following_id));
 }
+
+/**
+ * Everyone else on Nuru, for the Community People tab.
+ *
+ * Without somewhere to discover people, nobody can follow anybody and the
+ * Followers/Following lists stay permanently empty.
+ */
+export async function fetchPeople(userId: string): Promise<PersonRow[]> {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, full_name, username, avatar_url, bio, verified")
+    .neq("id", userId)
+    .order("created_at", { ascending: false })
+    .limit(100);
+  if (error) throw new Error(error.message);
+  return (data ?? []) as PersonRow[];
+}

@@ -78,6 +78,10 @@ function MusicScreen() {
     queryKey: ["media-playlists"],
     queryFn: () => fetchMediaPlaylists(),
   });
+  const featuredSongs = useQuery({
+    queryKey: ["media-items", "featured-songs"],
+    queryFn: () => fetchMediaItems({ mediaType: "music", featuredOnly: true, limit: 12 }),
+  });
   const artists = useQuery({
     queryKey: ["media-sources", "artist"],
     queryFn: () => fetchMediaSources({ sourceType: "youtube" }),
@@ -171,6 +175,49 @@ function MusicScreen() {
                         </span>
                       </button>
                     ))}
+                </div>
+              </section>
+
+              <section className="px-4 pt-4">
+                <SectionHeader title="Featured songs" />
+                {featuredSongs.isLoading && <CardSkeleton count={3} height="h-44" />}
+                <div className="no-scrollbar flex gap-3 overflow-x-auto pb-2">
+                  {(featuredSongs.data ?? []).map((song) => (
+                    <button
+                      key={song.id}
+                      type="button"
+                      onClick={() =>
+                        song.source === "youtube"
+                          ? setNowPlaying({
+                              kind: "youtube-video",
+                              id: song.external_id,
+                              title: song.title,
+                            })
+                          : toast("This song has no playable source yet")
+                      }
+                      className="w-36 shrink-0 text-left"
+                    >
+                      <div className="relative overflow-hidden rounded-2xl border border-border bg-surface-2">
+                        <img
+                          src={resolveMedia(song.thumbnail_url)}
+                          alt=""
+                          width={320}
+                          height={320}
+                          loading="lazy"
+                          className="h-36 w-36 object-cover"
+                        />
+                        <span className="absolute bottom-2 right-2 flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground nuru-glow-sm">
+                          <Play className="h-4 w-4 fill-current" />
+                        </span>
+                      </div>
+                      <span className="mt-2 block line-clamp-2 text-sm font-semibold">
+                        {song.title}
+                      </span>
+                      <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">
+                        {song.creator_name}
+                      </span>
+                    </button>
+                  ))}
                 </div>
               </section>
 

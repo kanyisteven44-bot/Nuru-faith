@@ -115,7 +115,7 @@ begin
     'social',
     'New follower',
     coalesce(follower_name, 'Someone') || ' started following you.',
-    '/profile/' || new.follower_id::text,
+    '/discovery/profile/' || new.follower_id::text,
     'normal'
   );
 

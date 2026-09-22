@@ -23,7 +23,6 @@ import {
   sendTestWebPush,
   type WebPushState,
 } from "@/services/push";
-import { supabase } from "@/integrations/supabase/client";
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
 import { CardSkeleton, EmptyState, PillTabs } from "@/components/nuru/Primitives";
 
@@ -57,32 +56,11 @@ function NotificationsScreen() {
     queryKey: ["notifications", userId],
     queryFn: () => fetchNotifications(userId!),
     enabled: !!userId,
+    staleTime: 10_000,
+    refetchInterval: 30_000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true,
   });
-
-  useEffect(() => {
-    if (!userId) return;
-
-    const channel = supabase
-      .channel(`notifications:${userId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "notifications",
-          filter: `user_id=eq.${userId}`,
-        },
-        () => {
-          void qc.invalidateQueries({ queryKey: ["notifications", userId] });
-          void qc.invalidateQueries({ queryKey: ["notification-unread-count", userId] });
-        },
-      )
-      .subscribe();
-
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, [userId, qc]);
 
   const all = notifications.data ?? [];
   const rows =

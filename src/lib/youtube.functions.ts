@@ -14,6 +14,8 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
  */
 
 const API = "https://www.googleapis.com/youtube/v3";
+const QUOTA_COOLDOWN_MS = 1000 * 60 * 60 * 6;
+let quotaCooldownUntil = 0;
 
 export type YouTubeVideo = {
   youtubeVideoId: string;
@@ -137,14 +139,21 @@ function readableDuration(iso?: string | null): string | null {
 }
 
 async function call(path: string, params: Record<string, string | undefined>, key: string) {
+  if (Date.now() < quotaCooldownUntil) throw new Error("quota");
+
   const url = new URL(`${API}/${path}`);
   for (const [k, v] of Object.entries(params)) if (v) url.searchParams.set(k, v);
   url.searchParams.set("key", key);
   const res = await fetch(url.toString());
   if (!res.ok) {
     const body = await res.text().catch(() => "");
-    console.error(`[youtube] ${path} ${res.status} ${body.slice(0, 400)}`);
-    throw new Error(res.status === 403 ? "quota" : "unavailable");
+    if (res.status === 403 || res.status === 429) {
+      quotaCooldownUntil = Date.now() + QUOTA_COOLDOWN_MS;
+      console.warn(`[youtube] quota unavailable; pausing API calls for 6h (${res.status})`);
+      throw new Error("quota");
+    }
+    console.warn(`[youtube] ${path} unavailable (${res.status}) ${body.slice(0, 180)}`);
+    throw new Error("unavailable");
   }
   return responseSchema.parse(await res.json());
 }

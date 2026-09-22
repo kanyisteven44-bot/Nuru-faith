@@ -96,7 +96,7 @@ For SEV-1, stop rollout/rollback first. Diagnose second.
 
 Supabase is the notification source of truth.
 
-The production database now creates notifications for:
+The production database creates notifications for:
 
 - new followers;
 - comments on posts;
@@ -107,20 +107,21 @@ The production database now creates notifications for:
 The app subscribes to notification changes in real time while it is connected, tracks reads with
 `read_at`, supports deep links, and displays a real unread count.
 
-### Background push
+### Background browser push
 
-The database is ready for push tokens and user notification preferences through
-`device_push_tokens` and `notification_preferences`.
+The PWA uses the standards-based Web Push API rather than Firebase for browser notifications.
 
-True background push while the PWA/app is closed is **not enabled until a Firebase Cloud
-Messaging project is configured**. Do not commit Firebase server credentials to Git.
+- Users opt in from the Notifications screen; permission is never requested on page load.
+- Browser subscriptions are registered through the JWT-protected
+  `manage-web-push-subscription` Edge Function.
+- VAPID private material and the database-to-function dispatch secret are encrypted in Supabase Vault.
+- The VAPID public key is safe to ship to browsers.
+- Notification inserts dispatch asynchronously with `pg_net` to `send-web-push`.
+- The sender disables expired 404/410 subscriptions and records `delivered_at` after successful delivery.
+- A failed push never deletes the database notification; in-app notifications remain authoritative.
 
-When FCM is enabled, configure the public web app values in Vercel and keep server credentials
-server-only. Required concepts include the Firebase web-app config, Web Push/VAPID public key,
-and server authorization for FCM send calls.
-
-Database notifications must remain authoritative even after FCM is enabled: a failed push must
-never delete or lose the notification.
+This covers compatible browsers/PWAs. A future native Android/iOS app may use a platform-specific
+push layer such as FCM/APNs without replacing the database notification source of truth.
 
 ## PWA and offline behavior
 

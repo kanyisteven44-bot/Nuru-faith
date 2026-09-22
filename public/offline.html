@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <meta name="theme-color" content="#06152A" />
+    <title>Nuru Faith — Offline</title>
+    <style>
+      :root { color-scheme: dark; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      * { box-sizing: border-box; }
+      body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #06152a; color: #f8fafc; padding: 24px; }
+      main { width: min(100%, 420px); text-align: center; }
+      .mark { width: 68px; height: 68px; margin: 0 auto 20px; border-radius: 999px; display: grid; place-items: center; border: 1px solid rgba(34,211,238,.35); background: rgba(34,211,238,.1); font-size: 30px; }
+      h1 { margin: 0; font-size: 1.35rem; }
+      p { color: #aab8cb; line-height: 1.6; font-size: .92rem; }
+      button { margin-top: 14px; min-height: 44px; border: 0; border-radius: 12px; padding: 0 18px; background: #22d3ee; color: #052235; font-weight: 700; cursor: pointer; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="mark" aria-hidden="true">✦</div>
+      <h1>You’re offline</h1>
+      <p>Nuru Faith can’t reach the server right now. Reconnect to sync fresh community, mentorship and account data.</p>
+      <button type="button" onclick="location.reload()">Try again</button>
+    </main>
+  </body>
+</html>

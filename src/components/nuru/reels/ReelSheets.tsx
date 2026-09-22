@@ -7,7 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { reportReel, REPORT_REASONS, type Reel } from "@/services/reels";
 import { reportExternalReel } from "@/services/externalReelInteractions";
 import { CardSkeleton, ErrorState } from "@/components/nuru/Primitives";
-import { Sheet } from "./Sheet";
+import { Sheet } from "../Sheet";
 
 export function ReadSheet({ reel, onClose }: { reel: Reel; onClose: () => void }) {
   const passage = useQuery({

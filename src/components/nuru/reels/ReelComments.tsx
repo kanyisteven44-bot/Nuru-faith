@@ -15,7 +15,7 @@ import {
   type ReelComment as ReelCommentRow,
 } from "@/services/reels";
 import { CardSkeleton, EmptyState } from "@/components/nuru/Primitives";
-import { Sheet } from "./Sheet";
+import { Sheet } from "../Sheet";
 
 type Row = ReelCommentRow & { pending?: boolean; failed?: boolean };
 

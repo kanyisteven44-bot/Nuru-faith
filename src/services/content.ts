@@ -554,3 +554,56 @@ export async function fetchMyChurchIds(userId: string) {
   if (error) throw new Error(error.message);
   return (data ?? []).map((r) => r.church_id);
 }
+
+/* ---------- followers / following ---------- */
+
+export type PersonRow = {
+  id: string;
+  full_name: string | null;
+  username: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+  verified: boolean;
+};
+
+/**
+ * `user_follows` declares no foreign key to `profiles`, so PostgREST cannot
+ * embed the profile in one request — the ids and the people are fetched
+ * separately, then put back in the order the follow rows came in (newest
+ * follow first).
+ */
+async function peopleByIds(ids: string[]): Promise<PersonRow[]> {
+  if (ids.length === 0) return [];
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, full_name, username, avatar_url, bio, verified")
+    .in("id", ids);
+  if (error) throw new Error(error.message);
+
+  const byId = new Map((data ?? []).map((p) => [p.id, p as PersonRow]));
+  return ids.map((id) => byId.get(id)).filter((p): p is PersonRow => !!p);
+}
+
+/** The people who follow this user, most recent follower first. */
+export async function fetchFollowers(userId: string): Promise<PersonRow[]> {
+  const { data, error } = await supabase
+    .from("user_follows")
+    .select("follower_id, created_at")
+    .eq("following_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(200);
+  if (error) throw new Error(error.message);
+  return peopleByIds((data ?? []).map((r) => r.follower_id));
+}
+
+/** The people this user follows, most recently followed first. */
+export async function fetchFollowing(userId: string): Promise<PersonRow[]> {
+  const { data, error } = await supabase
+    .from("user_follows")
+    .select("following_id, created_at")
+    .eq("follower_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(200);
+  if (error) throw new Error(error.message);
+  return peopleByIds((data ?? []).map((r) => r.following_id));
+}

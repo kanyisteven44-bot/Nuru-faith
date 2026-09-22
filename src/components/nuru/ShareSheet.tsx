@@ -1,6 +1,6 @@
 import { Mail, Link2, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
-import { Sheet } from "@/components/nuru/reels/Sheet";
+import { Sheet } from "@/components/nuru/Sheet";
 import { shareIntentUrls, type SharePayload } from "@/lib/share";
 
 /**

@@ -29,6 +29,7 @@ import {
 } from "@/services/content";
 import { fetchMyReels } from "@/services/reels";
 import { AppShell, Avatar, ScreenHeader } from "@/components/nuru/AppShell";
+import { PeopleSheet, type PeopleKind } from "@/components/nuru/PeopleSheet";
 import { CardSkeleton, EmptyState, ProgressBar } from "@/components/nuru/Primitives";
 import coverArt from "@/assets/cross-sunrise.jpg";
 
@@ -83,6 +84,7 @@ function ProfileScreen() {
   const [bio, setBio] = useState("");
   const [saving, setSaving] = useState(false);
   const [tab, setTab] = useState<GridTab>("Posts");
+  const [people, setPeople] = useState<PeopleKind | null>(null);
 
   const profile = useQuery({
     queryKey: ["profile", userId],
@@ -266,8 +268,16 @@ function ProfileScreen() {
           {/* Stats */}
           <dl className="nuru-card mt-3 grid grid-cols-4 divide-x divide-border py-3">
             <Stat label="Posts" value={counts.data?.posts} />
-            <Stat label="Followers" value={counts.data?.followers} />
-            <Stat label="Following" value={counts.data?.following} />
+            <Stat
+              label="Followers"
+              value={counts.data?.followers}
+              onOpen={() => setPeople("followers")}
+            />
+            <Stat
+              label="Following"
+              value={counts.data?.following}
+              onOpen={() => setPeople("following")}
+            />
             <Stat label="Groups" value={(myGroups.data ?? []).length} />
           </dl>
 
@@ -395,19 +405,61 @@ function ProfileScreen() {
           </button>
         </div>
       )}
+
+      {people && userId && (
+        <PeopleSheet
+          kind={people}
+          userId={userId}
+          viewerId={userId}
+          onClose={() => setPeople(null)}
+        />
+      )}
     </AppShell>
   );
 }
 
-function Stat({ label, value }: { label: string; value: number | undefined }) {
+function Stat({
+  label,
+  value,
+  onOpen,
+}: {
+  label: string;
+  value: number | undefined;
+  /** When given, the whole stat becomes a button that opens its list. */
+  onOpen?: () => void;
+}) {
+  const body = (
+    <>
+      <span className="block font-display text-[19px] font-bold">
+        {value == null ? "—" : compactCount(value)}
+      </span>
+      <span
+        className={cn(
+          "block text-[11px]",
+          onOpen ? "text-secondary-foreground" : "text-muted-foreground",
+        )}
+      >
+        {label}
+      </span>
+    </>
+  );
+
   return (
     <div className="px-1 text-center">
       <dt className="sr-only">{label}</dt>
       <dd>
-        <span className="block font-display text-[19px] font-bold">
-          {value == null ? "—" : compactCount(value)}
-        </span>
-        <span className="block text-[11px] text-muted-foreground">{label}</span>
+        {onOpen ? (
+          <button
+            type="button"
+            onClick={onOpen}
+            aria-label={`See ${label.toLowerCase()}`}
+            className="w-full rounded-lg py-0.5 transition-colors active:bg-surface-2"
+          >
+            {body}
+          </button>
+        ) : (
+          body
+        )}
       </dd>
     </div>
   );

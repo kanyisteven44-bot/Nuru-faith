@@ -1,7 +1,7 @@
 import { ExternalLink, Flag, HelpCircle, Link2, Pencil, Trash2, ThumbsDown } from "lucide-react";
 import type { Reel } from "@/services/reels";
 import { SOURCE_LABEL, type ImportedSource } from "@/lib/reelImport";
-import { Sheet } from "./Sheet";
+import { Sheet } from "../Sheet";
 
 export type WhyReason = string;
 

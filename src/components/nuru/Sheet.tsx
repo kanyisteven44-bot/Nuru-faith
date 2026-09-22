@@ -1,10 +1,16 @@
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
  * Bottom sheet with an intentional drag-to-dismiss gesture.
  * The drag handle is the only draggable area, so scrolling the body never closes the sheet.
+ *
+ * Rendered through a portal on to document.body. AppShell puts page content
+ * inside a `relative z-10` <main>, which is a stacking context, so a sheet left
+ * in the tree there is capped at z-10 and paints *under* the z-40 bottom nav no
+ * matter how high its own z-index is. The portal lifts it out of that context.
  */
 export function Sheet({
   title,
@@ -38,7 +44,13 @@ export function Sheet({
     start.current = null;
   }
 
-  return (
+  // document.body only exists once mounted in the browser; this component is
+  // rendered during SSR too.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
+
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex flex-col justify-end"
       role="dialog"
@@ -77,6 +89,7 @@ export function Sheet({
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">{children}</div>
         {footer}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

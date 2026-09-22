@@ -40,7 +40,7 @@ import { useShareSheet } from "@/hooks/useShareSheet";
 import { BOOK_ART, bookAbbr } from "@/lib/bookArt";
 import { AppShell } from "@/components/nuru/AppShell";
 import { CardSkeleton, EmptyState, PillTabs } from "@/components/nuru/Primitives";
-import { Sheet } from "@/components/nuru/reels/Sheet";
+import { Sheet } from "@/components/nuru/Sheet";
 import bibleHero from "@/assets/topic-life-skills.jpg";
 import verseArt from "@/assets/bible-candle.jpg";
 

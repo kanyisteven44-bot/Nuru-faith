@@ -1,11 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  Activity,
+  BellRing,
   CalendarDays,
   ExternalLink,
   Flag,
   LayoutDashboard,
   ShieldCheck,
+  UserCheck,
   Users,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -29,6 +32,7 @@ import {
   SectionHeader,
 } from "@/components/nuru/Primitives";
 import { NuruLogo } from "@/components/nuru/Logo";
+import { fetchPilotMetrics } from "@/services/pilot";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -69,6 +73,15 @@ function AdminScreen() {
     queryKey: ["moderation-queue", userId],
     queryFn: fetchModerationQueue,
     enabled: !!userId && isAdmin,
+  });
+
+  const pilot = useQuery({
+    queryKey: ["pilot-metrics"],
+    queryFn: fetchPilotMetrics,
+    enabled: !!userId && (isSuper || isModerator),
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+    refetchIntervalInBackground: false,
   });
 
   const updateReport = useMutation({
@@ -121,6 +134,15 @@ function AdminScreen() {
   );
 
   const roleLabel = isSuper ? "Super admin" : isModerator ? "Moderator" : "Church admin";
+  const pilotMetrics = pilot.data;
+  const onboardingRate =
+    pilotMetrics?.profiles && pilotMetrics.profiles > 0
+      ? Math.round((pilotMetrics.onboarded / pilotMetrics.profiles) * 100)
+      : 0;
+  const activationRate =
+    pilotMetrics?.profiles && pilotMetrics.profiles > 0
+      ? Math.round((pilotMetrics.activated_users / pilotMetrics.profiles) * 100)
+      : 0;
 
   return (
     <div className="min-h-dvh bg-background">
@@ -150,6 +172,53 @@ function AdminScreen() {
           <Metric label="Upcoming events" value={events.data?.length ?? 0} icon={CalendarDays} />
           <Metric label="Open reports" value={openReports.length} icon={Flag} />
         </div>
+
+        {(isSuper || isModerator) && (
+          <section>
+            <SectionHeader title="Pilot health" />
+            {pilot.isLoading ? (
+              <CardSkeleton count={4} height="h-20" />
+            ) : pilot.isError || !pilotMetrics ? (
+              <div className="nuru-card p-4">
+                <p className="text-sm font-semibold">Pilot metrics unavailable</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  The app is still usable; refresh this dashboard after the next activity heartbeat.
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                  <Metric label="Members" value={pilotMetrics.profiles} icon={Users} />
+                  <Metric label="Active today" value={pilotMetrics.active_today} icon={Activity} />
+                  <Metric label="7-day active" value={pilotMetrics.active_7d} icon={UserCheck} />
+                  <Metric label="Push enabled" value={pilotMetrics.push_enabled_users} icon={BellRing} />
+                </div>
+                <div className="mt-3 grid gap-3 md:grid-cols-2">
+                  <div className="nuru-card p-4">
+                    <p className="text-xs font-medium text-muted-foreground">Onboarding completion</p>
+                    <p className="mt-1 font-display text-2xl font-semibold">{onboardingRate}%</p>
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      {pilotMetrics.onboarded} of {pilotMetrics.profiles} profiles onboarded
+                    </p>
+                  </div>
+                  <div className="nuru-card p-4">
+                    <p className="text-xs font-medium text-muted-foreground">Core activation</p>
+                    <p className="mt-1 font-display text-2xl font-semibold">{activationRate}%</p>
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      A user counts as activated after a Reel view, follow, post or mentorship request.
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] text-muted-foreground md:grid-cols-4">
+                  <span>Reel viewers: {pilotMetrics.reel_viewers}</span>
+                  <span>Following: {pilotMetrics.following_users}</span>
+                  <span>Post authors: {pilotMetrics.post_authors}</span>
+                  <span>Mentorship: {pilotMetrics.mentorship_requesters}</span>
+                </div>
+              </>
+            )}
+          </section>
+        )}
 
         <section>
           <SectionHeader title="Your churches" />
@@ -303,7 +372,7 @@ function Metric({
   icon: Icon,
 }: {
   label: string;
-  value: number;
+  value: number | string;
   icon: typeof Users;
 }) {
   return (

@@ -71,6 +71,30 @@ self.addEventListener("fetch", (event) => {
   );
 });
 
+self.addEventListener("push", (event) => {
+  let payload = {};
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch {
+    payload = { body: event.data ? event.data.text() : "" };
+  }
+
+  const title = payload.title || "Nuru Faith";
+  const url = typeof payload.url === "string" && payload.url.startsWith("/")
+    ? payload.url
+    : "/notifications";
+
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body: payload.body || "",
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
+      tag: payload.id ? `nuru-${payload.id}` : undefined,
+      data: { url },
+    }),
+  );
+});
+
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   const target = event.notification?.data?.url || "/notifications";

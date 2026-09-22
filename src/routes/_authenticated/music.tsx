@@ -132,6 +132,48 @@ function MusicScreen() {
         <>
           {tab === "Music" && (
             <>
+              <section className="px-4 pt-2">
+                <SectionHeader title="Official worship channels" />
+                <p className="pb-2 text-xs text-muted-foreground">
+                  Curated official YouTube channels — tap one to play its latest worship uploads.
+                </p>
+                {curatedPlaylists.isLoading && <CardSkeleton count={3} height="h-16" />}
+                <div className="no-scrollbar flex gap-3 overflow-x-auto pb-2">
+                  {(curatedPlaylists.data ?? [])
+                    .filter((playlist) => playlist.category === "worship")
+                    .slice(0, 10)
+                    .map((playlist) => (
+                      <button
+                        key={playlist.id}
+                        type="button"
+                        onClick={() =>
+                          playlist.youtube_playlist_id
+                            ? setNowPlaying({
+                                kind: "youtube-playlist",
+                                id: playlist.youtube_playlist_id,
+                                title: playlist.title,
+                              })
+                            : toast("This worship channel has no playable source yet")
+                        }
+                        className="nuru-card w-48 shrink-0 p-4 text-left"
+                      >
+                        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/12 text-cyan">
+                          <Music2 className="h-5 w-5" />
+                        </span>
+                        <span className="mt-3 block line-clamp-2 text-sm font-semibold">
+                          {playlist.title.replace(" — Official Worship", "")}
+                        </span>
+                        <span className="mt-1 block line-clamp-2 text-[11px] text-muted-foreground">
+                          {playlist.description}
+                        </span>
+                        <span className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold text-cyan">
+                          <Play className="h-3.5 w-3.5 fill-current" /> Play latest
+                        </span>
+                      </button>
+                    ))}
+                </div>
+              </section>
+
               <MediaCategoryRail
                 title="Worship right now"
                 query="christian worship live"

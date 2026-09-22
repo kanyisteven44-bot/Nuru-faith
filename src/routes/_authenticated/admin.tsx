@@ -32,7 +32,7 @@ import {
   SectionHeader,
 } from "@/components/nuru/Primitives";
 import { NuruLogo } from "@/components/nuru/Logo";
-import { fetchPilotMetrics } from "@/services/pilot";
+import { getPilotMetrics } from "@/lib/pilot.functions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -77,7 +77,7 @@ function AdminScreen() {
 
   const pilot = useQuery({
     queryKey: ["pilot-metrics"],
-    queryFn: fetchPilotMetrics,
+    queryFn: () => getPilotMetrics(),
     enabled: !!userId && (isSuper || isModerator),
     staleTime: 30_000,
     refetchInterval: 60_000,

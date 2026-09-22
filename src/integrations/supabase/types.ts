@@ -2920,7 +2920,10 @@ export type Database = {
       }
     }
     Functions: {
+      consume_nuru_rate_limit: { Args: { p_action: string }; Returns: Json }
+      get_nuru_pilot_metrics: { Args: never; Returns: Json }
       get_web_push_server_config: { Args: never; Returns: Json }
+      record_nuru_activity: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role:

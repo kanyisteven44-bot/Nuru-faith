@@ -2844,6 +2844,48 @@ export type Database = {
         }
         Relationships: []
       }
+      web_push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          enabled: boolean
+          endpoint: string
+          expiration_time: number | null
+          id: string
+          last_seen_at: string
+          p256dh: string
+          updated_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          enabled?: boolean
+          endpoint: string
+          expiration_time?: number | null
+          id?: string
+          last_seen_at?: string
+          p256dh: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          enabled?: boolean
+          endpoint?: string
+          expiration_time?: number | null
+          id?: string
+          last_seen_at?: string
+          p256dh?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       prayer_wall: {
@@ -2878,7 +2920,22 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      get_web_push_public_key: { Args: never; Returns: string }
+      get_web_push_server_config: { Args: never; Returns: Json }
+      register_web_push_subscription: {
+        Args: {
+          p_auth: string
+          p_endpoint: string
+          p_expiration_time?: number
+          p_p256dh: string
+          p_user_agent?: string
+        }
+        Returns: string
+      }
+      unregister_web_push_subscription: {
+        Args: { p_endpoint: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role:

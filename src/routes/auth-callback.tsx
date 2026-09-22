@@ -3,6 +3,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { NuruMark } from "@/components/nuru/Logo";
+import { getMfaRequirement } from "@/lib/accountSecurity";
 
 export const Route = createFileRoute("/auth-callback")({
   ssr: false,
@@ -42,7 +43,14 @@ function GoogleAuthCallback() {
         return;
       }
 
-      void navigate({ to: "/home", replace: true });
+      const requirement = await getMfaRequirement();
+      if (requirement === "challenge") {
+        void navigate({ to: "/auth", search: { mode: "mfa" }, replace: true });
+      } else if (requirement === "setup") {
+        void navigate({ to: "/auth", search: { mode: "mfa-setup" }, replace: true });
+      } else {
+        void navigate({ to: "/home", replace: true });
+      }
     }
 
     void finishSignIn();

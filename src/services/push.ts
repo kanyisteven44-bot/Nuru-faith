@@ -107,3 +107,11 @@ export async function disableWebPush(): Promise<void> {
 
   await subscription.unsubscribe();
 }
+
+
+export async function sendTestWebPush(): Promise<void> {
+  const { error } = await supabase.functions.invoke("manage-web-push-subscription", {
+    body: { action: "test" },
+  });
+  if (error) throw new Error(error.message);
+}

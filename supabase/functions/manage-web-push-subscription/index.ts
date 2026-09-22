@@ -116,6 +116,45 @@ Deno.serve(async (req) => {
     return json({ ok: true });
   }
 
+  if (action === "test") {
+    const { data: recent } = await admin
+      .from("notifications")
+      .select("id,created_at")
+      .eq("user_id", user.id)
+      .eq("category", "system")
+      .eq("title", "Nuru Faith test alert")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (recent?.created_at && Date.now() - Date.parse(recent.created_at) < 30_000) {
+      return json({ error: "Please wait a few seconds before sending another test." }, 429);
+    }
+
+    // Give the user time to minimize/close Nuru so this exercises true
+    // background delivery rather than only the foreground notification UI.
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+
+    const { data: notification, error: notificationError } = await admin
+      .from("notifications")
+      .insert({
+        user_id: user.id,
+        category: "system",
+        title: "Nuru Faith test alert",
+        body: "Background notifications are working on this device.",
+        deep_link: "/notifications",
+        priority: "normal",
+      })
+      .select("id")
+      .single();
+
+    if (notificationError || !notification) {
+      return json({ error: "Could not create the test notification" }, 500);
+    }
+
+    return json({ ok: true, notificationId: notification.id });
+  }
+
   if (action === "unregister") {
     const endpoint = typeof body.endpoint === "string" ? body.endpoint : "";
     if (!endpoint.startsWith("https://")) return json({ error: "Invalid endpoint" }, 400);

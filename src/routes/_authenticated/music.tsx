@@ -78,6 +78,10 @@ function MusicScreen() {
     queryKey: ["media-playlists"],
     queryFn: () => fetchMediaPlaylists(),
   });
+  const featuredSongs = useQuery({
+    queryKey: ["media-items", "featured-songs"],
+    queryFn: () => fetchMediaItems({ mediaType: "music", featuredOnly: true, limit: 12 }),
+  });
   const artists = useQuery({
     queryKey: ["media-sources", "artist"],
     queryFn: () => fetchMediaSources({ sourceType: "youtube" }),
@@ -132,6 +136,91 @@ function MusicScreen() {
         <>
           {tab === "Music" && (
             <>
+              <section className="px-4 pt-2">
+                <SectionHeader title="Official worship channels" />
+                <p className="pb-2 text-xs text-muted-foreground">
+                  Curated official YouTube channels — tap one to play its latest worship uploads.
+                </p>
+                {curatedPlaylists.isLoading && <CardSkeleton count={3} height="h-16" />}
+                <div className="no-scrollbar flex gap-3 overflow-x-auto pb-2">
+                  {(curatedPlaylists.data ?? [])
+                    .filter((playlist) => playlist.category === "worship")
+                    .slice(0, 10)
+                    .map((playlist) => (
+                      <button
+                        key={playlist.id}
+                        type="button"
+                        onClick={() =>
+                          playlist.youtube_playlist_id
+                            ? setNowPlaying({
+                                kind: "youtube-playlist",
+                                id: playlist.youtube_playlist_id,
+                                title: playlist.title,
+                              })
+                            : toast("This worship channel has no playable source yet")
+                        }
+                        className="nuru-card w-48 shrink-0 p-4 text-left"
+                      >
+                        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/12 text-cyan">
+                          <Music2 className="h-5 w-5" />
+                        </span>
+                        <span className="mt-3 block line-clamp-2 text-sm font-semibold">
+                          {playlist.title.replace(" — Official Worship", "")}
+                        </span>
+                        <span className="mt-1 block line-clamp-2 text-[11px] text-muted-foreground">
+                          {playlist.description}
+                        </span>
+                        <span className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold text-cyan">
+                          <Play className="h-3.5 w-3.5 fill-current" /> Play latest
+                        </span>
+                      </button>
+                    ))}
+                </div>
+              </section>
+
+              <section className="px-4 pt-4">
+                <SectionHeader title="Featured songs" />
+                {featuredSongs.isLoading && <CardSkeleton count={3} height="h-44" />}
+                <div className="no-scrollbar flex gap-3 overflow-x-auto pb-2">
+                  {(featuredSongs.data ?? []).map((song) => (
+                    <button
+                      key={song.id}
+                      type="button"
+                      onClick={() =>
+                        song.source === "youtube"
+                          ? setNowPlaying({
+                              kind: "youtube-video",
+                              id: song.external_id,
+                              title: song.title,
+                            })
+                          : toast("This song has no playable source yet")
+                      }
+                      className="w-36 shrink-0 text-left"
+                    >
+                      <div className="relative overflow-hidden rounded-2xl border border-border bg-surface-2">
+                        <img
+                          src={resolveMedia(song.thumbnail_url)}
+                          alt=""
+                          width={320}
+                          height={320}
+                          loading="lazy"
+                          className="h-36 w-36 object-cover"
+                        />
+                        <span className="absolute bottom-2 right-2 flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground nuru-glow-sm">
+                          <Play className="h-4 w-4 fill-current" />
+                        </span>
+                      </div>
+                      <span className="mt-2 block line-clamp-2 text-sm font-semibold">
+                        {song.title}
+                      </span>
+                      <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">
+                        {song.creator_name}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+
               <MediaCategoryRail
                 title="Worship right now"
                 query="christian worship live"

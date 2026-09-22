@@ -34,8 +34,8 @@ async function currentSubscription(): Promise<PushSubscription | null> {
 async function registerSubscription(subscription: PushSubscription): Promise<void> {
   const serialized = subscription.toJSON();
   const endpoint = serialized.endpoint ?? subscription.endpoint;
-  const p256dh = serialized.keys?.p256dh;
-  const auth = serialized.keys?.auth;
+  const p256dh = serialized.keys?.["p256dh"];
+  const auth = serialized.keys?.["auth"];
 
   if (!endpoint || !p256dh || !auth) {
     throw new Error("The browser returned an incomplete push subscription.");

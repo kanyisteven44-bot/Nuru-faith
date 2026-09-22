@@ -1,10 +1,11 @@
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Bell, BookOpen, Calendar, Home, User, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
-import { fetchProfile } from "@/services/content";
+import { fetchProfile, fetchUnreadNotificationCount } from "@/services/content";
+import { supabase } from "@/integrations/supabase/client";
 import { generatedAvatar } from "@/lib/avatar";
 import { NuruMark } from "./Logo";
 
@@ -97,11 +98,42 @@ function NavItem({
  */
 export function BrandBar() {
   const { userId } = useAuth();
+  const qc = useQueryClient();
   const { data: profile } = useQuery({
     queryKey: ["profile", userId],
     queryFn: () => fetchProfile(userId!),
     enabled: !!userId,
   });
+
+  const { data: unread = 0 } = useQuery({
+    queryKey: ["notification-unread-count", userId],
+    queryFn: () => fetchUnreadNotificationCount(userId!),
+    enabled: !!userId,
+    refetchOnWindowFocus: true,
+  });
+
+  useEffect(() => {
+    if (!userId) return;
+    const channel = supabase
+      .channel(`notification-badge:${userId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${userId}`,
+        },
+        () => {
+          void qc.invalidateQueries({ queryKey: ["notification-unread-count", userId] });
+        },
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [userId, qc]);
 
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between gap-3 bg-background/90 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-xl">
@@ -118,7 +150,11 @@ export function BrandBar() {
           className="relative text-secondary-foreground transition-colors hover:text-foreground"
         >
           <Bell className="h-5.5 w-5.5" strokeWidth={1.8} />
-          <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-cyan" />
+          {unread > 0 && (
+            <span className="absolute -right-2 -top-2 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-cyan px-1 text-[9px] font-bold text-background">
+              {unread > 99 ? "99+" : unread}
+            </span>
+          )}
         </Link>
         <Link to="/profile" aria-label="Your profile">
           <Avatar

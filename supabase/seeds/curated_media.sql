@@ -54,6 +54,44 @@ on conflict (slug) do update set
   is_approved = true,
   updated_at = now();
 
+
+-- A small guaranteed starter shelf of individual worship songs. These are
+-- metadata-only YouTube embeds; Nuru never downloads or re-hosts the media.
+with featured_song(source, external_id, title, creator_name, youtube_channel_id) as (
+  values
+    ('youtube', 'WzPtkplaPec', 'God Has Been Faithful', 'Mercy Masika', 'UCn9mRGNo0CYj7nE6MepnWOQ'),
+    ('youtube', '3By1DaJww9Y', 'Wonderful', 'Mercy Masika', 'UCn9mRGNo0CYj7nE6MepnWOQ'),
+    ('youtube', 'f2oxGYpuLkw', 'Praise', 'Elevation Worship', 'UCSf-NCzjwcnXErUBW_qeFvA'),
+    ('youtube', 'fEwDx8YJndU', 'What a Beautiful Name', 'Hillsong Worship', 'UC4q12NoPNySbVqwpw4iO5Vg'),
+    ('youtube', 'IvSuGyJQ6oM', 'Goodness of God', 'Bethel Music', 'UCbertc-gMbkkHuSmg0qwnxw'),
+    ('youtube', 'JblG0WgX3dY', 'Same God', 'Elevation Worship', 'UCSf-NCzjwcnXErUBW_qeFvA')
+)
+insert into public.media_items (
+  source, external_id, source_id, title, thumbnail_url, media_type, category,
+  creator_name, youtube_channel_id, can_download, is_featured, is_approved
+)
+select
+  fs.source,
+  fs.external_id,
+  ms.id,
+  fs.title,
+  'https://i.ytimg.com/vi/' || fs.external_id || '/hqdefault.jpg',
+  'music',
+  'worship',
+  fs.creator_name,
+  fs.youtube_channel_id,
+  false,
+  true,
+  true
+from featured_song fs
+left join public.media_sources ms
+  on ms.youtube_channel_id = fs.youtube_channel_id
+where not exists (
+  select 1
+  from public.media_items mi
+  where mi.source = fs.source and mi.external_id = fs.external_id
+);
+
 -- Test-only reels should never be visible in the public faith feed.
 update public.reels
 set status = 'draft',

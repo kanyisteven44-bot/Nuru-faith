@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Bell, BookOpen, Calendar, Home, User, Users } from "lucide-react";
@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchProfile, fetchUnreadNotificationCount } from "@/services/content";
 import { generatedAvatar } from "@/lib/avatar";
+import { recordNuruActivity } from "@/services/pilot";
 import { NuruMark } from "./Logo";
 
 const NAV = [
@@ -30,6 +31,10 @@ export function AppShell({
 }) {
   const maxWidth = wide === "xl" ? "max-w-7xl" : wide ? "max-w-5xl" : "max-w-xl";
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+
+  useEffect(() => {
+    void recordNuruActivity();
+  }, []);
 
   return (
     <div className={cn("relative bg-background", flush ? "h-dvh overflow-hidden" : "min-h-dvh")}>

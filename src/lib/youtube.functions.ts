@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { faithSearch, trustedChannel, trustRank } from "./content-policy";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { enforceNuruRateLimit } from "./rateLimit";
 
 /**
  * YouTube Data API v3 access.
@@ -167,6 +168,12 @@ export const youtubeSearch = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => searchInput.parse(data))
   .handler(async ({ data, context }): Promise<YouTubeSearchResult> => {
+    await enforceNuruRateLimit(
+      context.supabase,
+      "youtube_search",
+      "You have made many media searches quickly. Please wait a few minutes and try again.",
+    );
+
     const key = process.env["YOUTUBE_API_KEY"];
     if (!key) return emptyResult("not-configured");
     async function filterTrusted(result: YouTubeSearchResult): Promise<YouTubeSearchResult> {

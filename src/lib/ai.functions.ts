@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { APICallError, LoadAPIKeyError, generateText } from "ai";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { enforceNuruRateLimit } from "./rateLimit";
 
 // Routed through the Vercel AI Gateway's default global provider: authenticated
 // via Vercel OIDC in production, or AI_GATEWAY_API_KEY when running elsewhere.
@@ -82,7 +83,13 @@ function buildSystemPrompt(input: NuruAiInput) {
 export const askNuruAi = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => InputSchema.parse(input))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await enforceNuruRateLimit(
+      context.supabase,
+      "ai",
+      "You have reached Nuru AI's short-term limit. Please try again in a few minutes.",
+    );
+
     try {
       const result = await generateText({
         model: NURU_AI_MODEL,

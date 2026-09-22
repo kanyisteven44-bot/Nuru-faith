@@ -150,6 +150,18 @@ function RootComponent() {
   const router = useRouter();
 
   useEffect(() => {
+    if (!("serviceWorker" in navigator)) return;
+    const register = () => {
+      void navigator.serviceWorker.register("/sw.js").catch((error) => {
+        console.warn("[PWA] Service worker registration failed", error);
+      });
+    };
+    if (document.readyState === "complete") register();
+    else window.addEventListener("load", register, { once: true });
+    return () => window.removeEventListener("load", register);
+  }, []);
+
+  useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
       router.invalidate();

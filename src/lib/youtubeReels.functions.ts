@@ -11,6 +11,8 @@ const MAX_GROUPS_PER_REQUEST = 3;
 const MAX_PAGES_PER_CHANNEL = 40;
 const PAGE_CACHE_MS = 1000 * 60 * 60 * 6;
 const MAX_CACHED_PAGES = 160;
+const QUOTA_COOLDOWN_MS = 1000 * 60 * 60 * 6;
+let quotaCooldownUntil = 0;
 
 /**
  * Stable ordering mixes Bible teaching, church content and worship. The DB is
@@ -156,6 +158,8 @@ async function fetchPlayableUploadPage(
   channel: ApprovedChannel,
   pageToken?: string,
 ): Promise<PlayablePage> {
+  if (Date.now() < quotaCooldownUntil) throw new Error("quota");
+
   const pageKey = cacheKey(channel.id, pageToken);
   const cached = pageCache.get(pageKey);
   if (cached && Date.now() - cached.at < PAGE_CACHE_MS) return cached.value;
@@ -170,8 +174,14 @@ async function fetchPlayableUploadPage(
   const playlistResponse = await fetch(playlistUrl.toString(), { cache: "no-store" });
   if (!playlistResponse.ok) {
     const body = await playlistResponse.text().catch(() => "");
-    console.warn(`[youtube-reels] playlist ${channel.id} ${playlistResponse.status} ${body.slice(0, 180)}`);
-    if (playlistResponse.status === 403 || playlistResponse.status === 429) throw new Error("quota");
+    if (playlistResponse.status === 403 || playlistResponse.status === 429) {
+      quotaCooldownUntil = Date.now() + QUOTA_COOLDOWN_MS;
+      console.warn(`[youtube-reels] quota unavailable; pausing API calls for 6h (${playlistResponse.status})`);
+      throw new Error("quota");
+    }
+    console.warn(
+      `[youtube-reels] playlist ${channel.id} unavailable (${playlistResponse.status}) ${body.slice(0, 180)}`,
+    );
     return { videos: [], nextPageToken: null };
   }
 
@@ -230,7 +240,13 @@ async function fetchPlayableUploadPage(
 
   const detailsResponse = await fetch(detailsUrl.toString(), { cache: "no-store" });
   if (!detailsResponse.ok) {
-    if (detailsResponse.status === 403 || detailsResponse.status === 429) throw new Error("quota");
+    if (detailsResponse.status === 403 || detailsResponse.status === 429) {
+      quotaCooldownUntil = Date.now() + QUOTA_COOLDOWN_MS;
+      console.warn(
+        `[youtube-reels] quota unavailable; pausing API calls for 6h (${detailsResponse.status})`,
+      );
+      throw new Error("quota");
+    }
     return { videos: [], nextPageToken: playlist.nextPageToken ?? null };
   }
 
@@ -398,13 +414,15 @@ export const youtubeReelsFeed = createServerFn({ method: "GET" })
         error: null,
       };
     } catch (error) {
-      console.error("[youtube-reels] feed failed", error);
+      const message = error instanceof Error ? error.message : "unavailable";
+      if (message === "quota") console.warn("[youtube-reels] serving graceful quota fallback");
+      else console.error("[youtube-reels] feed failed", error);
       return {
         videos: [],
         playlists: [],
         channels: [],
         nextPageToken: null,
-        error: error instanceof Error ? error.message : "unavailable",
+        error: message,
       };
     }
   });

@@ -43,13 +43,19 @@ the build command, install command, or output directory — Nitro's `vercel`
 preset still emits a standard Build Output API v3 directory
 (`.vercel/output`) that Vercel picks up automatically.
 
+## Supabase project
+
+The production Supabase project ref is `qnqkcqywvqzfkickezxd`. The CLI config, client/server
+environment variables and OAuth callbacks must all point to this same project.
+Do not run migrations until the target ref has been checked against this value.
+
 ## Google sign-in
 
 Google OAuth requires configuration outside this repository. In the Google
 Cloud OAuth web client, add this exact **Authorized redirect URI**:
 
 ```text
-https://cafttwtlqdnglzlznltm.supabase.co/auth/v1/callback
+https://qnqkcqywvqzfkickezxd.supabase.co/auth/v1/callback
 ```
 
 Then enable Google under **Supabase → Authentication → Providers → Google**

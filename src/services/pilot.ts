@@ -33,8 +33,3 @@ export async function recordNuruActivity(): Promise<void> {
   window.localStorage.setItem(ACTIVITY_KEY, String(now));
 }
 
-export async function fetchPilotMetrics(): Promise<PilotMetrics> {
-  const { data, error } = await supabase.rpc("get_nuru_pilot_metrics");
-  if (error) throw new Error(error.message);
-  return data as unknown as PilotMetrics;
-}

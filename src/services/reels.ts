@@ -72,16 +72,29 @@ export type Reel = {
 
 export const REELS_PAGE_SIZE = 6;
 
-/** How many reels each feed considers per request before ranking + paginating client-side. */
-const CANDIDATE_POOL_SIZE = 500;
+/**
+ * Each page ranks only a bounded database window instead of re-downloading
+ * hundreds of rows. 48 candidates gives enough room for personalization while
+ * keeping feed reads predictable under large user counts.
+ */
+const CANDIDATE_WINDOW_SIZE = 48;
 
 /**
  * Reel ids the person has already watched (logged after ~2s of active view).
  * Watched reels are excluded from normal feeds; an intentional direct link can
  * still open one through fetchReelById.
  */
-export async function fetchViewedReelIds(userId: string): Promise<Set<string>> {
-  const { data, error } = await supabase.from("reel_views").select("reel_id").eq("user_id", userId);
+export async function fetchViewedReelIds(
+  userId: string,
+  candidateIds: string[],
+): Promise<Set<string>> {
+  if (candidateIds.length === 0) return new Set();
+
+  const { data, error } = await supabase
+    .from("reel_views")
+    .select("reel_id")
+    .eq("user_id", userId)
+    .in("reel_id", candidateIds);
   if (error) throw new Error(error.message);
   return new Set((data ?? []).map((row) => row.reel_id));
 }
@@ -104,14 +117,15 @@ export async function fetchReelPage(params: {
   followingIds: string[];
 }): Promise<Reel[]> {
   const { feed, page, userId, interests, churchId, followingIds } = params;
-  const from = page * REELS_PAGE_SIZE;
+  const candidateFrom = page * CANDIDATE_WINDOW_SIZE;
+  const candidateTo = candidateFrom + CANDIDATE_WINDOW_SIZE - 1;
 
   let q = supabase
     .from("reels")
     .select(REEL_SELECT)
     .eq("status", "published")
     .order("created_at", { ascending: false })
-    .limit(CANDIDATE_POOL_SIZE);
+    .range(candidateFrom, candidateTo);
 
   if (feed === "Following") {
     if (followingIds.length === 0) return [];
@@ -122,12 +136,17 @@ export async function fetchReelPage(params: {
     q = q.eq("church_id", churchId);
   }
 
-  const [{ data, error }, viewedIds] = await Promise.all([
-    q,
-    userId ? fetchViewedReelIds(userId) : Promise.resolve(new Set<string>()),
-  ]);
+  const { data, error } = await q;
   if (error) throw new Error(error.message);
-  const rows = ((data ?? []) as unknown as Reel[]).filter((reel) => !viewedIds.has(reel.id));
+
+  const candidates = (data ?? []) as unknown as Reel[];
+  const viewedIds = userId
+    ? await fetchViewedReelIds(
+        userId,
+        candidates.map((reel) => reel.id),
+      )
+    : new Set<string>();
+  const rows = candidates.filter((reel) => !viewedIds.has(reel.id));
 
   const score = (r: Reel) => {
     if (feed !== "For You") return 0;
@@ -147,7 +166,7 @@ export async function fetchReelPage(params: {
     return score(b) - score(a);
   });
 
-  return ranked.slice(from, from + REELS_PAGE_SIZE);
+  return ranked.slice(0, REELS_PAGE_SIZE);
 }
 
 /** Reels this person published, for the profile grid. */
@@ -212,7 +231,8 @@ export async function fetchReelComments(reelId: string) {
     .select("*, profiles(full_name, username, avatar_url, verified)")
     .eq("reel_id", reelId)
     .order("pinned", { ascending: false })
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: true })
+    .limit(100);
   if (error) throw new Error(error.message);
   return (data ?? []) as unknown as ReelComment[];
 }

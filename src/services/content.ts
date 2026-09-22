@@ -268,7 +268,8 @@ export const fetchComments = async (postId: string) => {
       .from("post_comments")
       .select("*, profiles(full_name, username, avatar_url)")
       .eq("post_id", postId)
-      .order("created_at", { ascending: true }),
+      .order("created_at", { ascending: true })
+      .limit(100),
   );
   return rows.map((row) => ({ ...row, ...authorFields(row.profiles) }));
 };
@@ -507,7 +508,8 @@ export const fetchConversations = async (userId: string) =>
       .from("ai_conversations")
       .select("*")
       .eq("user_id", userId)
-      .order("created_at", { ascending: false }),
+      .order("created_at", { ascending: false })
+      .limit(50),
   );
 
 export const fetchMessages = async (conversationId: string) =>
@@ -516,7 +518,8 @@ export const fetchMessages = async (conversationId: string) =>
       .from("ai_messages")
       .select("*")
       .eq("conversation_id", conversationId)
-      .order("created_at"),
+      .order("created_at")
+      .limit(150),
   );
 
 export async function startConversation(userId: string, title: string) {

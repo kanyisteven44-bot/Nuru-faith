@@ -44,8 +44,8 @@ export function PersonRow({
   return (
     <div className="flex items-center gap-3 border-b border-border/60 py-3 last:border-b-0">
       <Link
-        to="/profile/$id"
-        params={{ id: person.id }}
+        to="/discovery/$kind/$id"
+        params={{ kind: "profile", id: person.id }}
         aria-label={`View ${name}'s profile`}
         className="shrink-0"
       >
@@ -57,8 +57,8 @@ export function PersonRow({
       </Link>
 
       <Link
-        to="/profile/$id"
-        params={{ id: person.id }}
+        to="/discovery/$kind/$id"
+        params={{ kind: "profile", id: person.id }}
         className="min-w-0 flex-1 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
       >
         <p className="flex items-center gap-1 text-[14px] font-semibold">

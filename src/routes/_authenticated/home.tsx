@@ -11,6 +11,7 @@ import {
   Share2,
   Sparkles,
   Sunrise,
+  Target,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -234,23 +235,38 @@ function HomeScreen() {
           </div>
         </section>
 
-        {/* Today's Challenge */}
-        <section className="nuru-card p-4">
-          <h2 className="font-display text-[15px] font-semibold">Today's Challenge</h2>
-          <p className="mt-1.5 text-[13px] leading-relaxed text-secondary-foreground">
-            {challenge}
-          </p>
-          <button
-            type="button"
-            disabled={acceptedChallenge}
-            onClick={() => {
-              setAcceptedChallenge(true);
-              toast.success("You're in — one step at a time.");
-            }}
-            className="mt-3 inline-flex min-h-9 items-center justify-center rounded-lg bg-primary px-5 text-xs font-semibold text-primary-foreground nuru-glow-sm disabled:opacity-60 disabled:shadow-none"
+        {/* Today's Challenge — an amber badge beside the prompt, with the
+            accept control sitting to the trailing edge, per the reference. */}
+        <section className="nuru-card flex gap-3 p-4">
+          <span
+            aria-hidden="true"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-warning text-[#3a2206]"
           >
-            {acceptedChallenge ? "You're in 🙌" : "I'm In!"}
-          </button>
+            <Target className="h-5 w-5" strokeWidth={2.2} />
+          </span>
+
+          <div className="min-w-0 flex-1">
+            <h2 className="font-display text-[14px] font-semibold text-primary">
+              Today&apos;s Challenge
+            </h2>
+            <p className="mt-0.5 text-[13px] leading-snug text-secondary-foreground">
+              {challenge}
+            </p>
+
+            <div className="mt-2.5 flex justify-end">
+              <button
+                type="button"
+                disabled={acceptedChallenge}
+                onClick={() => {
+                  setAcceptedChallenge(true);
+                  toast.success("You're in — one step at a time.");
+                }}
+                className="inline-flex min-h-9 items-center justify-center rounded-lg bg-primary px-4 text-xs font-semibold text-primary-foreground nuru-glow-sm disabled:opacity-60 disabled:shadow-none"
+              >
+                {acceptedChallenge ? "You're in 🙌" : "Accept Challenge"}
+              </button>
+            </div>
+          </div>
         </section>
 
         {/* Upcoming Event */}

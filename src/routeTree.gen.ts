@@ -249,7 +249,7 @@ export interface FileRoutesByFullPath {
   '/create': typeof AuthenticatedCreateRoute
   '/devotionals': typeof AuthenticatedDevotionalsRoute
   '/events': typeof AuthenticatedEventsRoute
-  '/faith-courses': typeof AuthenticatedFaithCoursesIndexRoute
+  '/faith-courses/': typeof AuthenticatedFaithCoursesIndexRoute
   '/faith-courses/$slug': typeof AuthenticatedFaithCoursesSlugRoute
   '/explore': typeof AuthenticatedExploreRoute
   '/groups': typeof AuthenticatedGroupsRoute
@@ -286,8 +286,11 @@ export interface FileRoutesByTo {
   '/create': typeof AuthenticatedCreateRoute
   '/devotionals': typeof AuthenticatedDevotionalsRoute
   '/events': typeof AuthenticatedEventsRoute
+  '/faith-courses': typeof AuthenticatedFaithCoursesIndexRoute
+  '/faith-courses/$slug': typeof AuthenticatedFaithCoursesSlugRoute
   '/explore': typeof AuthenticatedExploreRoute
   '/groups': typeof AuthenticatedGroupsRoute
+  '/grow': typeof AuthenticatedGrowRoute
   '/home': typeof AuthenticatedHomeRoute
   '/hub': typeof AuthenticatedHubRoute
   '/messages': typeof AuthenticatedMessagesRoute
@@ -361,8 +364,6 @@ export interface FileRouteTypes {
     | '/create'
     | '/devotionals'
     | '/events'
-    | '/faith-courses'
-    | '/faith-courses/$slug'
     | '/faith-courses/'
     | '/faith-courses/$slug'
     | '/explore'
@@ -400,8 +401,11 @@ export interface FileRouteTypes {
     | '/create'
     | '/devotionals'
     | '/events'
+    | '/faith-courses'
+    | '/faith-courses/$slug'
     | '/explore'
     | '/groups'
+    | '/grow'
     | '/home'
     | '/hub'
     | '/messages'

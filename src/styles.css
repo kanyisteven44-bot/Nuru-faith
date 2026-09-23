@@ -382,7 +382,7 @@ a {
     color-mix(in oklab, var(--brand-cyan) 70%, transparent),
     transparent
   );
-  animation: splash-beam 900ms cubic-bezier(0.3, 0, 0.2, 1) both;
+  animation: splash-beam 760ms cubic-bezier(0.3, 0, 0.2, 1) both;
 }
 
 /* The mark assembles from two independently tumbling pieces (arch + cross)
@@ -401,13 +401,13 @@ a {
 }
 
 @utility splash-halo {
-  animation: splash-halo 400ms ease-out 120ms both;
+  animation: splash-halo 360ms ease-out 80ms both;
 }
 
 @keyframes splash-arch-tumble {
   0% {
     opacity: 0;
-    transform: translate3d(-46px, 0, -90px) rotateY(-100deg);
+    transform: translate3d(-54px, 0, -320px) rotateY(-100deg);
   }
   55% {
     opacity: 1;
@@ -422,13 +422,13 @@ a {
 }
 
 @utility splash-arch-tumble {
-  animation: splash-arch-tumble 500ms cubic-bezier(0.2, 0.7, 0.2, 1) 180ms both;
+  animation: splash-arch-tumble 430ms cubic-bezier(0.18, 0.75, 0.2, 1) 120ms both;
 }
 
 @keyframes splash-cross-tumble {
   0% {
     opacity: 0;
-    transform: translate3d(0, 34px, -70px) rotateX(85deg);
+    transform: translate3d(0, 40px, -280px) rotateX(85deg);
   }
   55% {
     opacity: 1;
@@ -443,7 +443,7 @@ a {
 }
 
 @utility splash-cross-tumble {
-  animation: splash-cross-tumble 500ms cubic-bezier(0.2, 0.7, 0.2, 1) 380ms both;
+  animation: splash-cross-tumble 430ms cubic-bezier(0.18, 0.75, 0.2, 1) 280ms both;
 }
 
 @keyframes splash-converge-flash {
@@ -461,7 +461,7 @@ a {
 }
 
 @utility splash-converge-flash {
-  animation: splash-converge-flash 350ms ease-out 880ms both;
+  animation: splash-converge-flash 340ms ease-out 640ms both;
 }
 
 @keyframes splash-sheen {
@@ -481,7 +481,116 @@ a {
 }
 
 @utility splash-sheen {
-  animation: splash-sheen 400ms ease-out 880ms both;
+  animation: splash-sheen 380ms ease-out 650ms both;
+}
+
+/* Points of light drift in from the dark and converge where the mark is about
+   to form — the "gathering" half of the opening. Each dot carries its own
+   --dx/--dy offset and delay, set inline in SplashScreen.tsx. */
+@keyframes splash-dust {
+  0% {
+    opacity: 0;
+    transform: translate3d(var(--dx), var(--dy), 0) scale(1.6);
+  }
+  35% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(0.3);
+  }
+}
+
+@utility splash-dust {
+  animation: splash-dust 660ms cubic-bezier(0.32, 0, 0.2, 1) both;
+}
+
+/* Rays burst outward at the instant the two pieces lock. Nuru is Swahili for
+   light; this is the beat the name asks for. */
+@keyframes splash-ray {
+  0% {
+    opacity: 0;
+    transform: rotate(var(--a)) scaleY(0.1);
+  }
+  28% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(var(--a)) scaleY(var(--len, 1));
+  }
+}
+
+@utility splash-ray {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 2px;
+  height: 30vh;
+  margin-left: -1px;
+  transform-origin: 50% 0;
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--brand-cyan) 70%, transparent),
+    transparent 76%
+  );
+  animation: splash-ray 900ms cubic-bezier(0.2, 0.6, 0.2, 1) 640ms both;
+}
+
+/* The ground warms from night to daybreak under the mark, matching the sunrise
+   photography the rest of the app is built on. */
+@keyframes splash-dawn {
+  0% {
+    opacity: 0;
+    transform: translateY(34%);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@utility splash-dawn {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    0deg,
+    color-mix(in oklab, #8a3f18 62%, transparent) 0%,
+    color-mix(in oklab, #6d3a21 40%, transparent) 9%,
+    color-mix(in oklab, #123661 52%, transparent) 30%,
+    transparent 62%
+  );
+  animation: splash-dawn 980ms cubic-bezier(0.3, 0, 0.2, 1) 660ms both;
+}
+
+@keyframes splash-rule {
+  from {
+    opacity: 0;
+    scale: 0 1;
+  }
+  to {
+    opacity: 1;
+    scale: 1 1;
+  }
+}
+
+@utility splash-rule {
+  animation: splash-rule 420ms cubic-bezier(0.2, 0.7, 0.2, 1) 980ms both;
+}
+
+@keyframes splash-tagline {
+  from {
+    opacity: 0;
+    translate: 0 5px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@utility splash-tagline {
+  animation: splash-tagline 340ms ease-out 1080ms both;
 }
 
 @keyframes splash-word-reveal {
@@ -496,7 +605,7 @@ a {
 }
 
 @utility splash-word-reveal {
-  animation: splash-word-reveal 400ms ease-out 1050ms both;
+  animation: splash-word-reveal 380ms ease-out 830ms both;
 }
 
 @keyframes splash-flash {
@@ -535,6 +644,11 @@ a {
 
 @media (prefers-reduced-motion: reduce) {
   .splash-beam,
+  .splash-dust,
+  .splash-ray,
+  .splash-dawn,
+  .splash-rule,
+  .splash-tagline,
   .splash-halo,
   .splash-arch-tumble,
   .splash-cross-tumble,

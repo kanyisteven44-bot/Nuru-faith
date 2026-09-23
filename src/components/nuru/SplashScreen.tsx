@@ -1,17 +1,51 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { playOpeningChime } from "@/lib/chime";
 import { NuruGlyph } from "./Logo";
 
 const SESSION_KEY = "nuru-splash-shown";
-/** Earliest the hold phase can end — long enough for the beam + logo reveal to read as intentional. */
-const HOLD_MIN_MS = 1700;
+/**
+ * Earliest the hold phase can end. The full sequence — dust, tumble, burst,
+ * daybreak, lockup — finishes at ~1420ms, so this is the moment it has
+ * actually completed, not a padded wait. It is 250ms shorter than the
+ * previous opening despite doing considerably more.
+ */
+const HOLD_MIN_MS = 1450;
 /** Hard cap so a slow auth check never turns the splash into a stall. */
 const HOLD_MAX_MS = 3600;
 /** Matches the splash-flash keyframe duration in styles.css. */
 const EXIT_MS = 480;
 const REDUCED_MOTION_MS = 220;
+
+/**
+ * Where each gathering point starts, relative to the mark. Spread round a ring
+ * at mixed radii so the drift reads as scattered light rather than a clock
+ * face. Computed once at module load — it is the same every open.
+ */
+const DUST = Array.from({ length: 24 }, (_, i) => {
+  const angle = (i / 24) * Math.PI * 2 + (i % 3) * 0.22;
+  const radius = 92 + (i % 5) * 34;
+  return {
+    dx: `${Math.round(Math.cos(angle) * radius)}px`,
+    dy: `${Math.round(Math.sin(angle) * radius)}px`,
+    delay: `${(i % 8) * 38}ms`,
+  };
+});
+
+/**
+ * The starburst thrown off at the moment the two pieces lock together. Rays go
+ * the whole way round rather than fanning one way, so it reads as light
+ * breaking out of the mark instead of a searchlight pointed somewhere.
+ */
+const RAY_COUNT = 16;
+const RAYS = Array.from({ length: RAY_COUNT }, (_, i) => ({
+  angle: `${(i * 360) / RAY_COUNT}deg`,
+  // Alternate long and short so the burst has texture instead of a flat wheel.
+  scale: i % 2 === 0 ? 1 : 0.62,
+  opacity: i % 2 === 0 ? 0.72 : 0.4,
+  delay: `${(i % 4) * 30}ms`,
+}));
 
 type Stage = "pending" | "playing" | "exiting" | "gone";
 
@@ -32,9 +66,12 @@ function wasSplashAlreadyShown(): boolean {
 }
 
 /**
- * The "Light / Nuru" app-open moment: near-black, a beam of light sweeps
- * across revealing the real Nuru mark, then the light itself expands into
- * the real interface underneath. Mounted once at the app root — it's an
+ * The "Light / Nuru" app-open moment, told as one gesture: out of the dark,
+ * points of light gather; they lock into the real Nuru mark and burst into
+ * rays; daybreak rises behind it; the lockup settles; then the light itself
+ * expands into the real interface underneath. Nuru is Swahili for light.
+ *
+ * Mounted once at the app root — it's an
  * overlay, not a route gate, so the destination screen (auth or home) keeps
  * loading normally underneath it and is simply ready by the time it's revealed.
  *
@@ -77,7 +114,7 @@ export function SplashScreen() {
       return () => clearTimeout(t);
     }
 
-    const chimeTimer = setTimeout(playOpeningChime, 520);
+    const chimeTimer = setTimeout(playOpeningChime, 640);
     const minTimer = setTimeout(() => {
       minElapsed.current = true;
       maybeExit();
@@ -115,11 +152,57 @@ export function SplashScreen() {
       className="fixed inset-0 z-[999] overflow-hidden bg-[#000814]"
     >
       {reducedMotion ? (
-        <div className="flex h-full items-center justify-center">
+        <div className="flex h-full flex-col items-center justify-center gap-4">
           <NuruGlyph className="h-20 w-20" />
+          <div className="flex flex-col items-center gap-2">
+            <span className="font-display text-xs font-bold tracking-[0.28em] text-white">
+              NURU FAITH
+            </span>
+            <span className="font-display text-[8px] tracking-[0.22em] text-white/65">
+              FAITH · GROWTH · PURPOSE
+            </span>
+          </div>
         </div>
       ) : (
         <>
+          {/* Daybreak rising behind everything. */}
+          <div aria-hidden="true" className="splash-dawn" />
+
+          {/* Points of light gathering to where the mark is about to form. */}
+          <div aria-hidden="true" className="absolute inset-0">
+            {DUST.map((d, i) => (
+              <span
+                key={i}
+                className="splash-dust absolute top-1/2 left-1/2 block h-[3px] w-[3px] rounded-full bg-[#bdefff]"
+                style={
+                  {
+                    "--dx": d.dx,
+                    "--dy": d.dy,
+                    animationDelay: d.delay,
+                  } as CSSProperties
+                }
+              />
+            ))}
+          </div>
+
+          {/* The burst thrown off as the two pieces lock. */}
+          <div aria-hidden="true" className="absolute inset-0 overflow-hidden">
+            {RAYS.map((r, i) => (
+              <span
+                key={i}
+                className="splash-ray"
+                style={
+                  {
+                    "--a": r.angle,
+                    "--len": r.scale,
+                    opacity: r.opacity,
+                    animationDelay: `calc(640ms + ${r.delay})`,
+                  } as CSSProperties
+                }
+              />
+            ))}
+          </div>
+
           <div className="splash-beam" />
           <div
             className={cn(
@@ -225,9 +308,18 @@ export function SplashScreen() {
                 <div className="splash-sheen absolute -inset-y-6 left-1/2 w-1/2 -translate-x-1/2 bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.85),transparent)]" />
               </div>
             </div>
-            <span className="splash-word-reveal font-display text-xs font-bold tracking-[0.28em] text-white">
-              NURU FAITH
-            </span>
+            <div className="flex flex-col items-center gap-2">
+              <span className="splash-word-reveal font-display text-xs font-bold tracking-[0.28em] text-white">
+                NURU FAITH
+              </span>
+              <span
+                aria-hidden="true"
+                className="splash-rule block h-px w-24 bg-[linear-gradient(90deg,transparent,var(--brand-cyan),transparent)]"
+              />
+              <span className="splash-tagline font-display text-[8px] tracking-[0.22em] text-white/65">
+                FAITH · GROWTH · PURPOSE
+              </span>
+            </div>
           </div>
           <div className={cn("splash-flash", stage === "exiting" && "splash-flash-play")} />
         </>

@@ -10,7 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { fetchEvents, fetchMyEventIds, toggleAttendance } from "@/services/content";
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
 import { CardSkeleton, EmptyState, PillTabs } from "@/components/nuru/Primitives";
-import heroBg from "@/assets/church-interior.jpg";
+import { NURU_PHOTO_POOLS, useRotatingMedia } from "@/lib/rotatingMedia";
 
 export const Route = createFileRoute("/_authenticated/events")({
   head: () => ({
@@ -34,6 +34,7 @@ function EventsScreen() {
   const { userId } = useAuth();
   const qc = useQueryClient();
   const [tab, setTab] = useState<Tab>("All");
+  const heroBg = useRotatingMedia(NURU_PHOTO_POOLS.eventsFallback, "events-fallback");
 
   const events = useQuery({ queryKey: ["events"], queryFn: fetchEvents });
   const mine = useQuery({

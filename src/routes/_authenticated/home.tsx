@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
+  ArrowRight,
   BookOpen,
+  Check,
   Church,
   Clapperboard,
   GraduationCap,
@@ -249,9 +251,7 @@ function HomeScreen() {
             <h2 className="font-display text-[14px] font-semibold text-primary">
               Today&apos;s Challenge
             </h2>
-            <p className="mt-0.5 text-[13px] leading-snug text-secondary-foreground">
-              {challenge}
-            </p>
+            <p className="mt-0.5 text-[13px] leading-snug text-secondary-foreground">{challenge}</p>
 
             <div className="mt-2.5 flex justify-end">
               <button
@@ -261,9 +261,29 @@ function HomeScreen() {
                   setAcceptedChallenge(true);
                   toast.success("You're in — one step at a time.");
                 }}
-                className="inline-flex min-h-9 items-center justify-center rounded-lg bg-primary px-4 text-xs font-semibold text-primary-foreground nuru-glow-sm disabled:opacity-60 disabled:shadow-none"
+                className={cn(
+                  "group inline-flex min-h-10 items-center justify-center gap-2 rounded-full px-5 text-[13px] font-semibold transition-all",
+                  "active:scale-[0.97] disabled:active:scale-100",
+                  acceptedChallenge
+                    ? // Done reads as its own state, not a greyed-out button.
+                      "border border-growth/50 bg-growth/12 text-growth"
+                    : "bg-[linear-gradient(100deg,var(--primary),var(--brand-violet))] text-primary-foreground shadow-[0_6px_20px_-6px_var(--brand-violet)] hover:brightness-110",
+                )}
               >
-                {acceptedChallenge ? "You're in 🙌" : "Accept Challenge"}
+                {acceptedChallenge ? (
+                  <>
+                    <Check className="h-4 w-4" strokeWidth={2.6} />
+                    Accepted
+                  </>
+                ) : (
+                  <>
+                    Accept Challenge
+                    <ArrowRight
+                      className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
+                      strokeWidth={2.4}
+                    />
+                  </>
+                )}
               </button>
             </div>
           </div>

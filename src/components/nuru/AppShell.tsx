@@ -1,7 +1,7 @@
 import { useEffect, type ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Bell, BookOpen, Calendar, Home, User, Users } from "lucide-react";
+import { ArrowLeft, Bell, Calendar, Home, User, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchProfile, fetchUnreadNotificationCount } from "@/services/content";
@@ -9,10 +9,10 @@ import { generatedAvatar } from "@/lib/avatar";
 import { recordNuruActivity } from "@/services/pilot";
 import { NuruMark } from "./Logo";
 
+/** Bible is reached from Quick Access on Home, so it is not in this bar. */
 const NAV = [
   { to: "/home", label: "Home", icon: Home },
   { to: "/community", label: "Community", icon: Users },
-  { to: "/bible", label: "Bible", icon: BookOpen },
   { to: "/events", label: "Events", icon: Calendar },
   { to: "/profile", label: "Profile", icon: User },
 ] as const;
@@ -51,7 +51,7 @@ export function AppShell({
         >
           <ul
             className={cn(
-              "mx-auto grid grid-cols-5 px-1 pb-[max(0.4rem,env(safe-area-inset-bottom))] pt-2",
+              "mx-auto grid grid-cols-4 px-1 pb-[max(0.4rem,env(safe-area-inset-bottom))] pt-2",
               maxWidth,
             )}
           >

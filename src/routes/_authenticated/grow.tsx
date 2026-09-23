@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { BookOpen, ChevronRight, GraduationCap, Sparkles, Sunrise } from "lucide-react";
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
 import { NURU_PHOTO_POOLS, useRotatingMedia } from "@/lib/rotatingMedia";
-import { resolveMedia } from "@/lib/media";
 
 export const Route = createFileRoute("/_authenticated/grow")({
   head: () => ({

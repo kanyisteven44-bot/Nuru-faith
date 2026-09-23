@@ -4,11 +4,14 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   BadgeCheck,
   BookMarked,
+  CalendarDays,
   ChevronRight,
   Flame,
   HandHeart,
   Heart,
   Loader2,
+  Pencil,
+  Plus,
   Settings,
   Sparkles,
   Users,
@@ -176,13 +179,18 @@ function ProfileScreen() {
         <div className="px-4 pt-1">
           {/* Cover, avatar and identity */}
           <section className="nuru-card overflow-hidden">
-            <div className="relative h-28">
+            <div className="relative h-36">
               <img src={coverArt} alt="" className="h-full w-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-card via-card/25 to-transparent" />
-              <p className="script absolute top-3 right-4 text-right text-[19px] leading-[1.15] text-white/90">
+              <div className="absolute inset-0 bg-gradient-to-t from-card via-card/20 to-transparent" />
+              <p className="absolute top-3 left-4 text-[9px] leading-[1.7] font-semibold tracking-[0.22em] text-white/85 uppercase">
+                A higher purpose
+                <span className="block">A brighter tomorrow</span>
+              </p>
+              <p className="script absolute top-3 right-4 text-right text-[17px] leading-[1.15] text-white/90">
                 Faith
-                <span className="block">Purpose</span>
-                <span className="block">Impact</span>
+                <span className="block">Changes</span>
+                <span className="block">Everything</span>
+                <span className="mt-1 ml-auto block h-px w-16 bg-gradient-to-l from-cyan to-transparent" />
               </p>
             </div>
 
@@ -190,17 +198,25 @@ function ProfileScreen() {
               {/* The avatar lifts into the cover; the identity column sits
                   beside it, as the design lays it out. */}
               <div className="flex gap-3">
-                <Avatar
-                  url={profile.data?.avatar_url ?? null}
-                  name={profile.data?.full_name ?? ""}
-                  seed={userId}
-                  size="lg"
-                  className="-mt-11 shrink-0 ring-4 ring-card"
-                />
+                <span className="relative -mt-11 block h-20 w-20 shrink-0">
+                  <Avatar
+                    url={profile.data?.avatar_url ?? null}
+                    name={profile.data?.full_name ?? ""}
+                    seed={userId}
+                    size="lg"
+                    className="h-20 w-20 text-xl ring-4 ring-card"
+                  />
+                  <span
+                    aria-hidden="true"
+                    className="absolute right-0 bottom-0 flex h-6 w-6 items-center justify-center rounded-full border-2 border-card bg-surface-2 text-cyan"
+                  >
+                    <Pencil className="h-3 w-3" strokeWidth={2.2} />
+                  </span>
+                </span>
                 <div className="min-w-0 flex-1 pt-2">
                   <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <h1 className="flex items-center gap-1.5 font-display text-[19px] leading-tight font-bold">
+                    <div className="min-w-0 flex-1">
+                      <h1 className="flex items-center gap-1.5 font-display text-[18px] leading-tight font-bold">
                         <span>{profile.data?.full_name ?? "Nuru member"}</span>
                         {profile.data?.verified && (
                           <BadgeCheck
@@ -220,15 +236,17 @@ function ProfileScreen() {
                         setBio(profile.data?.bio ?? "");
                         setEditing((v) => !v);
                       }}
-                      className="shrink-0 rounded-xl border border-border-strong bg-surface-2 px-3 py-1.5 text-[12px] font-semibold text-secondary-foreground"
+                      className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-cyan/60 px-3 py-1.5 text-[11.5px] font-semibold text-cyan"
                     >
+                      <Pencil className="h-3.5 w-3.5" strokeWidth={2.2} />
                       {editing ? "Cancel" : "Edit profile"}
                     </button>
                   </div>
+                  <p className="mt-1.5 text-[13px] font-semibold text-secondary-foreground">
+                    Faith • Purpose • Impact
+                  </p>
                   {profile.data?.bio && (
-                    <p className="mt-1.5 text-[13px] text-secondary-foreground">
-                      {profile.data.bio}
-                    </p>
+                    <p className="text-[13px] text-muted-foreground">{profile.data.bio}</p>
                   )}
                 </div>
               </div>
@@ -281,11 +299,75 @@ function ProfileScreen() {
             <Stat label="Groups" value={(myGroups.data ?? []).length} />
           </dl>
 
-          <Link to="/groups" className="nuru-card mt-3 flex items-center gap-3 px-4 py-3.5">
-            <Users className="h-4.5 w-4.5 shrink-0 text-cyan" strokeWidth={1.8} />
-            <span className="min-w-0 flex-1 truncate text-sm font-medium">My Groups</span>
-            <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-          </Link>
+          {/* Badges — circular, with the slot for what has not been earned yet. */}
+          <div className="mt-4 grid grid-cols-5 gap-2">
+            {BADGES.map(({ icon: Icon, label, tint }) => (
+              <div key={label} className="flex flex-col items-center gap-1.5 text-center">
+                <span
+                  className={cn(
+                    "flex h-13 w-13 items-center justify-center rounded-full border",
+                    tint,
+                  )}
+                >
+                  <Icon className="h-5.5 w-5.5" strokeWidth={1.8} />
+                </span>
+                <span className="text-[9.5px] leading-tight text-muted-foreground">{label}</span>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => toast("Keep your streak going — more badges are on the way.")}
+              className="flex flex-col items-center gap-1.5 text-center"
+            >
+              <span className="flex h-13 w-13 items-center justify-center rounded-full border border-border text-muted-foreground">
+                <Plus className="h-5.5 w-5.5" strokeWidth={1.8} />
+              </span>
+              <span className="text-[9.5px] leading-tight text-muted-foreground">New</span>
+            </button>
+          </div>
+
+          {/* Faith journey */}
+          <section className="nuru-card mt-4 p-4">
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-primary/35 bg-primary/12 text-cyan">
+                <Sparkles className="h-5 w-5" strokeWidth={1.8} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold">Growing Disciple</p>
+                <p className="text-[11px] text-muted-foreground">
+                  Level {level} · {LEVEL_STEP - intoLevel} to next level
+                </p>
+              </div>
+              <p className="shrink-0 text-right text-[11px] leading-tight text-muted-foreground">
+                Small steps.
+                <span className="block">A greater purpose.</span>
+              </p>
+            </div>
+            <ProgressBar value={(intoLevel / LEVEL_STEP) * 100} className="mt-3" />
+          </section>
+
+          {/* Saved Scripture and Events, side by side */}
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <Link to="/bible" className="nuru-card flex items-center gap-2 px-2.5 py-3">
+              <BookMarked className="h-4 w-4 shrink-0 text-cyan" strokeWidth={1.8} />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[12px] font-semibold">Saved Scripture</span>
+                <span className="block truncate text-[10px] text-muted-foreground">
+                  Your saved verses
+                </span>
+              </span>
+            </Link>
+            <Link to="/events" className="nuru-card flex items-center gap-2 px-2.5 py-3">
+              <CalendarDays className="h-4 w-4 shrink-0 text-cyan" strokeWidth={1.8} />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[12px] font-semibold">Events</span>
+                <span className="block truncate text-[10px] text-muted-foreground">
+                  {(myEvents.data ?? []).length} event
+                  {(myEvents.data ?? []).length === 1 ? "" : "s"} booked
+                </span>
+              </span>
+            </Link>
+          </div>
 
           {/* Grid tabs */}
           <div className="mt-6 flex gap-5 border-b border-border">
@@ -352,50 +434,6 @@ function ProfileScreen() {
           </section>
 
           {/* Faith journey */}
-          <section className="nuru-card mt-6 p-4">
-            <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-primary/35 bg-primary/12 text-cyan">
-                <Sparkles className="h-5 w-5" strokeWidth={1.8} />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold">Growing Disciple</p>
-                <p className="text-[11px] text-muted-foreground">
-                  Level {level} · {LEVEL_STEP - intoLevel} to next level
-                </p>
-              </div>
-            </div>
-            <ProgressBar value={(intoLevel / LEVEL_STEP) * 100} className="mt-3" />
-          </section>
-
-          <section className="pt-6">
-            <h2 className="mb-3 font-display text-[15px] font-semibold">My Badges</h2>
-            <div className="grid grid-cols-4 gap-x-2 gap-y-3">
-              {BADGES.map(({ icon: Icon, label, tint }) => (
-                <div key={label} className="flex flex-col items-center gap-1.5 text-center">
-                  <span
-                    className={cn(
-                      "flex h-14 w-14 items-center justify-center rounded-2xl border",
-                      tint,
-                    )}
-                  >
-                    <Icon className="h-6 w-6" strokeWidth={1.8} />
-                  </span>
-                  <span className="text-[10px] text-muted-foreground">{label}</span>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <Link to="/bible" className="nuru-card mt-6 flex items-center gap-3 px-4 py-3.5">
-            <BookMarked className="h-4.5 w-4.5 shrink-0 text-cyan" strokeWidth={1.8} />
-            <span className="min-w-0 flex-1 truncate text-sm font-medium">Saved Scripture</span>
-          </Link>
-
-          <p className="pt-3 text-center text-[11px] text-muted-foreground">
-            {(myEvents.data ?? []).length} event
-            {(myEvents.data ?? []).length === 1 ? "" : "s"} on your calendar
-          </p>
-
           <button
             type="button"
             onClick={() => void signOut()}

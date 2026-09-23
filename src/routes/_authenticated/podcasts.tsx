@@ -1,12 +1,9 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { Headphones, Search, X } from "lucide-react";
-import { resolveMedia } from "@/lib/media";
-import { fetchPodcasts } from "@/services/content";
+import { Search, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
-import { CardSkeleton, EmptyState, SectionHeader } from "@/components/nuru/Primitives";
+import { SectionHeader } from "@/components/nuru/Primitives";
 import { DiscoveryResults } from "@/components/nuru/DiscoveryResults";
 
 export const Route = createFileRoute("/_authenticated/podcasts")({
@@ -40,7 +37,6 @@ const TOPICS = [
 function PodcastsScreen() {
   const { userId } = useAuth();
   const [search, setSearch] = useState("");
-  const legacy = useQuery({ queryKey: ["podcasts", "legacy"], queryFn: fetchPodcasts });
 
   return (
     <AppShell>
@@ -96,41 +92,6 @@ function PodcastsScreen() {
 
       <DiscoveryResults kind="podcasts" query={search.trim()} userId={userId} />
 
-      <section className="space-y-3 px-4 pb-6">
-        <SectionHeader title="Nuru & church shows" />
-        {legacy.isLoading && <CardSkeleton count={2} height="h-32" />}
-        {!legacy.isLoading && (legacy.data ?? []).length === 0 && (
-          <EmptyState
-            title="No church shows yet"
-            description="Approved podcast feeds and church sermon series will appear here."
-          />
-        )}
-        {(legacy.data ?? []).slice(0, 12).map((podcast) => (
-          <article key={podcast.id} className="nuru-card flex gap-3 p-3">
-            <img
-              src={resolveMedia(podcast.cover_url)}
-              alt=""
-              width={96}
-              height={96}
-              loading="lazy"
-              className="h-20 w-20 shrink-0 rounded-xl object-cover"
-            />
-            <div className="min-w-0 flex-1">
-              <p className="line-clamp-2 text-sm font-semibold">{podcast.title}</p>
-              <p className="mt-0.5 truncate text-xs text-cyan">{podcast.host}</p>
-              {podcast.description && (
-                <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-                  {podcast.description}
-                </p>
-              )}
-              <p className="mt-2 flex items-center gap-1 text-[11px] text-muted-foreground">
-                <Headphones className="h-3.5 w-3.5" />
-                {(podcast.podcast_episodes ?? []).length} episodes
-              </p>
-            </div>
-          </article>
-        ))}
-      </section>
     </AppShell>
   );
 }

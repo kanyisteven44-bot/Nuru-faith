@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { resolveMedia } from "@/lib/media";
 
-const FOUR_HOURS_MS = 4 * 60 * 60 * 1000;
-
 function hashKey(value: string) {
   let hash = 0;
   for (let i = 0; i < value.length; i += 1) hash = (hash * 31 + value.charCodeAt(i)) >>> 0;

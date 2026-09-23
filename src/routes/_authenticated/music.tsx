@@ -19,7 +19,7 @@ import {
   ScreenHero,
   SectionHeader,
 } from "@/components/nuru/Primitives";
-import heroBg from "@/assets/worship-night.jpg";
+import { NURU_PHOTO_POOLS, useRotatingMedia } from "@/lib/rotatingMedia";
 import { YouTubePlayer, YouTubeNotice } from "@/components/youtube/YouTubePlayer";
 import { YouTubeSearchResults } from "@/components/youtube/YouTubeSearchResults";
 import { MediaCategoryRail } from "@/components/youtube/MediaCategoryRail";
@@ -59,6 +59,7 @@ function MusicScreen() {
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
   const [nowPlaying, setNowPlaying] = useState<NowPlaying | null>(null);
+  const heroBg = useRotatingMedia(NURU_PHOTO_POOLS.music, "music-hero");
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(search), 450);

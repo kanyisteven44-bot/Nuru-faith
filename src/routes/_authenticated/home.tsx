@@ -19,12 +19,11 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useShareSheet } from "@/hooks/useShareSheet";
-import { resolveMedia } from "@/lib/media";
 import { fetchVerseOfTheDay, verseOfTheDayRef } from "@/lib/bible";
 import { fetchDevotionals, fetchEvents, fetchProfile } from "@/services/content";
 import { AppShell, BrandBar } from "@/components/nuru/AppShell";
 import { CardSkeleton } from "@/components/nuru/Primitives";
-import verseBg from "@/assets/bible-candle.jpg";
+import { NURU_PHOTO_POOLS, useRotatingMedia } from "@/lib/rotatingMedia";
 
 export const Route = createFileRoute("/_authenticated/home")({
   head: () => ({
@@ -73,14 +72,14 @@ const QUICK_ACCESS = [
     tint: "bg-gradient-to-br from-amber-300 to-yellow-600",
   },
   {
-    to: "/devotionals",
-    label: "Devotions",
+    to: "/grow",
+    label: "Devotions + Series",
     icon: Sunrise,
     tint: "bg-gradient-to-br from-emerald-400 to-green-600",
   },
   {
-    to: "/series",
-    label: "Series",
+    to: "/faith-courses",
+    label: "Faith Courses",
     icon: GraduationCap,
     tint: "bg-gradient-to-br from-orange-400 to-amber-600",
   },
@@ -104,6 +103,7 @@ function HomeScreen() {
   const { userId } = useAuth();
   const shareSheet = useShareSheet();
   const [acceptedChallenge, setAcceptedChallenge] = useState(false);
+  const todayPhoto = useRotatingMedia(NURU_PHOTO_POOLS.home, "home-todays-light");
 
   const profile = useQuery({
     queryKey: ["profile", userId],
@@ -145,7 +145,7 @@ function HomeScreen() {
           <div className="nuru-card relative overflow-hidden">
             <div className="relative h-56 w-full">
               <img
-                src={devotional?.cover_url ? resolveMedia(devotional.cover_url) : verseBg}
+                src={todayPhoto}
                 alt=""
                 className="h-full w-full object-cover"
               />

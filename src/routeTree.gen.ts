@@ -23,8 +23,11 @@ import { Route as AuthenticatedCommunityRouteImport } from './routes/_authentica
 import { Route as AuthenticatedCreateRouteImport } from './routes/_authenticated/create'
 import { Route as AuthenticatedDevotionalsRouteImport } from './routes/_authenticated/devotionals'
 import { Route as AuthenticatedEventsRouteImport } from './routes/_authenticated/events'
+import { Route as AuthenticatedFaithCoursesIndexRouteImport } from './routes/_authenticated/faith-courses.index'
+import { Route as AuthenticatedFaithCoursesSlugRouteImport } from './routes/_authenticated/faith-courses.$slug'
 import { Route as AuthenticatedExploreRouteImport } from './routes/_authenticated/explore'
 import { Route as AuthenticatedGroupsRouteImport } from './routes/_authenticated/groups'
+import { Route as AuthenticatedGrowRouteImport } from './routes/_authenticated/grow'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
 import { Route as AuthenticatedHubRouteImport } from './routes/_authenticated/hub'
 import { Route as AuthenticatedMessagesRouteImport } from './routes/_authenticated/messages'
@@ -113,6 +116,18 @@ const AuthenticatedEventsRoute = AuthenticatedEventsRouteImport.update({
   path: '/events',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedFaithCoursesIndexRoute =
+  AuthenticatedFaithCoursesIndexRouteImport.update({
+    id: '/faith-courses/',
+    path: '/faith-courses/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedFaithCoursesSlugRoute =
+  AuthenticatedFaithCoursesSlugRouteImport.update({
+    id: '/faith-courses/$slug',
+    path: '/faith-courses/$slug',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedExploreRoute = AuthenticatedExploreRouteImport.update({
   id: '/explore',
   path: '/explore',
@@ -121,6 +136,11 @@ const AuthenticatedExploreRoute = AuthenticatedExploreRouteImport.update({
 const AuthenticatedGroupsRoute = AuthenticatedGroupsRouteImport.update({
   id: '/groups',
   path: '/groups',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedGrowRoute = AuthenticatedGrowRouteImport.update({
+  id: '/grow',
+  path: '/grow',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedHomeRoute = AuthenticatedHomeRouteImport.update({
@@ -229,8 +249,11 @@ export interface FileRoutesByFullPath {
   '/create': typeof AuthenticatedCreateRoute
   '/devotionals': typeof AuthenticatedDevotionalsRoute
   '/events': typeof AuthenticatedEventsRoute
+  '/faith-courses': typeof AuthenticatedFaithCoursesIndexRoute
+  '/faith-courses/$slug': typeof AuthenticatedFaithCoursesSlugRoute
   '/explore': typeof AuthenticatedExploreRoute
   '/groups': typeof AuthenticatedGroupsRoute
+  '/grow': typeof AuthenticatedGrowRoute
   '/home': typeof AuthenticatedHomeRoute
   '/hub': typeof AuthenticatedHubRoute
   '/messages': typeof AuthenticatedMessagesRoute
@@ -299,8 +322,11 @@ export interface FileRoutesById {
   '/_authenticated/create': typeof AuthenticatedCreateRoute
   '/_authenticated/devotionals': typeof AuthenticatedDevotionalsRoute
   '/_authenticated/events': typeof AuthenticatedEventsRoute
+  '/_authenticated/faith-courses/': typeof AuthenticatedFaithCoursesIndexRoute
+  '/_authenticated/faith-courses/$slug': typeof AuthenticatedFaithCoursesSlugRoute
   '/_authenticated/explore': typeof AuthenticatedExploreRoute
   '/_authenticated/groups': typeof AuthenticatedGroupsRoute
+  '/_authenticated/grow': typeof AuthenticatedGrowRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/hub': typeof AuthenticatedHubRoute
   '/_authenticated/messages': typeof AuthenticatedMessagesRoute
@@ -335,8 +361,13 @@ export interface FileRouteTypes {
     | '/create'
     | '/devotionals'
     | '/events'
+    | '/faith-courses'
+    | '/faith-courses/$slug'
+    | '/faith-courses/'
+    | '/faith-courses/$slug'
     | '/explore'
     | '/groups'
+    | '/grow'
     | '/home'
     | '/hub'
     | '/messages'
@@ -404,8 +435,11 @@ export interface FileRouteTypes {
     | '/_authenticated/create'
     | '/_authenticated/devotionals'
     | '/_authenticated/events'
+    | '/_authenticated/faith-courses/'
+    | '/_authenticated/faith-courses/$slug'
     | '/_authenticated/explore'
     | '/_authenticated/groups'
+    | '/_authenticated/grow'
     | '/_authenticated/home'
     | '/_authenticated/hub'
     | '/_authenticated/messages'
@@ -534,6 +568,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEventsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/faith-courses/': {
+      id: '/_authenticated/faith-courses/'
+      path: '/faith-courses'
+      fullPath: '/faith-courses/'
+      preLoaderRoute: typeof AuthenticatedFaithCoursesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/faith-courses/$slug': {
+      id: '/_authenticated/faith-courses/$slug'
+      path: '/faith-courses/$slug'
+      fullPath: '/faith-courses/$slug'
+      preLoaderRoute: typeof AuthenticatedFaithCoursesSlugRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/explore': {
       id: '/_authenticated/explore'
       path: '/explore'
@@ -546,6 +594,13 @@ declare module '@tanstack/react-router' {
       path: '/groups'
       fullPath: '/groups'
       preLoaderRoute: typeof AuthenticatedGroupsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/grow': {
+      id: '/_authenticated/grow'
+      path: '/grow'
+      fullPath: '/grow'
+      preLoaderRoute: typeof AuthenticatedGrowRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/home': {
@@ -679,8 +734,11 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCreateRoute: typeof AuthenticatedCreateRoute
   AuthenticatedDevotionalsRoute: typeof AuthenticatedDevotionalsRoute
   AuthenticatedEventsRoute: typeof AuthenticatedEventsRoute
+  AuthenticatedFaithCoursesIndexRoute: typeof AuthenticatedFaithCoursesIndexRoute
+  AuthenticatedFaithCoursesSlugRoute: typeof AuthenticatedFaithCoursesSlugRoute
   AuthenticatedExploreRoute: typeof AuthenticatedExploreRoute
   AuthenticatedGroupsRoute: typeof AuthenticatedGroupsRoute
+  AuthenticatedGrowRoute: typeof AuthenticatedGrowRoute
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedHubRoute: typeof AuthenticatedHubRoute
   AuthenticatedMessagesRoute: typeof AuthenticatedMessagesRoute
@@ -709,8 +767,11 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCreateRoute: AuthenticatedCreateRoute,
   AuthenticatedDevotionalsRoute: AuthenticatedDevotionalsRoute,
   AuthenticatedEventsRoute: AuthenticatedEventsRoute,
+  AuthenticatedFaithCoursesIndexRoute: AuthenticatedFaithCoursesIndexRoute,
+  AuthenticatedFaithCoursesSlugRoute: AuthenticatedFaithCoursesSlugRoute,
   AuthenticatedExploreRoute: AuthenticatedExploreRoute,
   AuthenticatedGroupsRoute: AuthenticatedGroupsRoute,
+  AuthenticatedGrowRoute: AuthenticatedGrowRoute,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedHubRoute: AuthenticatedHubRoute,
   AuthenticatedMessagesRoute: AuthenticatedMessagesRoute,

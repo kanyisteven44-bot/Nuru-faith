@@ -1,12 +1,13 @@
+import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Headphones } from "lucide-react";
-import { toast } from "sonner";
+import { Headphones, Search, X } from "lucide-react";
 import { resolveMedia } from "@/lib/media";
-import { duration } from "@/lib/format";
 import { fetchPodcasts } from "@/services/content";
+import { useAuth } from "@/hooks/useAuth";
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
-import { CardSkeleton, EmptyState } from "@/components/nuru/Primitives";
+import { CardSkeleton, EmptyState, SectionHeader } from "@/components/nuru/Primitives";
+import { DiscoveryResults } from "@/components/nuru/DiscoveryResults";
 
 export const Route = createFileRoute("/_authenticated/podcasts")({
   head: () => ({
@@ -14,72 +15,122 @@ export const Route = createFileRoute("/_authenticated/podcasts")({
       { title: "Podcasts & sermons — Nuru Faith" },
       {
         name: "description",
-        content: "Sermons, teaching series and Christian podcasts for young believers.",
+        content: "Discover Christian podcasts, sermons, Bible study and faith conversations.",
       },
       { property: "og:title", content: "Podcasts & sermons — Nuru Faith" },
-      { property: "og:description", content: "Sermons and Christian podcasts." },
+      { property: "og:description", content: "Search and play Christian podcasts and sermons." },
     ],
   }),
   component: PodcastsScreen,
 });
 
+const TOPICS = [
+  "Bible study",
+  "Prayer",
+  "Youth",
+  "Purpose",
+  "Relationships",
+  "Mental health",
+  "Leadership",
+  "Family",
+  "Theology",
+  "Christian living",
+] as const;
+
 function PodcastsScreen() {
-  const { data, isLoading } = useQuery({ queryKey: ["podcasts"], queryFn: fetchPodcasts });
+  const { userId } = useAuth();
+  const [search, setSearch] = useState("");
+  const legacy = useQuery({ queryKey: ["podcasts", "legacy"], queryFn: fetchPodcasts });
 
   return (
     <AppShell>
-      <ScreenHeader title="Podcasts" subtitle="Sermons and teaching, on the go" />
+      <ScreenHeader title="Podcasts" subtitle="Teaching, conversations and sermons for your walk" />
 
       <div className="space-y-4 px-4 py-3">
-        {isLoading && <CardSkeleton count={2} height="h-40" />}
-        {data?.length === 0 && (
+        <div className="nuru-card p-4">
+          <p className="text-sm font-semibold">A catalog built to grow</p>
+          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+            Nuru searches approved podcast metadata instead of downloading huge audio libraries.
+            Episodes stream from their original source, so the catalog can grow into the millions
+            while keeping the app fast and respectful of publisher rights.
+          </p>
+        </div>
+
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search podcasts, hosts, topics…"
+            aria-label="Search podcasts"
+            className="input-nuru pl-11 pr-11"
+          />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch("")}
+              aria-label="Clear podcast search"
+              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1.5 text-muted-foreground"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+
+        <div>
+          <SectionHeader title="Explore topics" />
+          <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
+            {TOPICS.map((topic) => (
+              <button
+                key={topic}
+                type="button"
+                onClick={() => setSearch(topic)}
+                className="shrink-0 rounded-full border border-border bg-surface-2 px-3 py-2 text-xs text-secondary-foreground"
+              >
+                {topic}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <DiscoveryResults kind="podcasts" query={search.trim()} userId={userId} />
+
+      <section className="space-y-3 px-4 pb-6">
+        <SectionHeader title="Nuru & church shows" />
+        {legacy.isLoading && <CardSkeleton count={2} height="h-32" />}
+        {!legacy.isLoading && (legacy.data ?? []).length === 0 && (
           <EmptyState
-            title="No shows yet"
-            description="Churches are uploading their sermon feeds."
+            title="No church shows yet"
+            description="Approved podcast feeds and church sermon series will appear here."
           />
         )}
-        {(data ?? []).map((p) => (
-          <section key={p.id} className="nuru-card overflow-hidden">
-            <div className="flex gap-3 p-4">
-              <img
-                src={resolveMedia(p.cover_url)}
-                alt=""
-                width={160}
-                height={160}
-                loading="lazy"
-                className="h-20 w-20 rounded-2xl object-cover"
-              />
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold">{p.title}</p>
-                <p className="text-xs text-muted-foreground">{p.host}</p>
-                {p.description && (
-                  <p className="mt-1 line-clamp-2 text-xs text-secondary-foreground">
-                    {p.description}
-                  </p>
-                )}
-              </div>
-            </div>
-            <ul className="border-t border-border/60">
-              {(p.podcast_episodes ?? []).map(
-                (e: { id: string; title: string; duration_seconds: number | null }) => (
-                  <li key={e.id}>
-                    <button
-                      onClick={() => toast("Audio playback is coming soon")}
-                      className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-surface-2"
-                    >
-                      <Headphones className="h-4 w-4 shrink-0 text-cyan" />
-                      <span className="min-w-0 flex-1 truncate text-sm">{e.title}</span>
-                      <span className="text-[11px] text-muted-foreground">
-                        {duration(e.duration_seconds)}
-                      </span>
-                    </button>
-                  </li>
-                ),
+        {(legacy.data ?? []).slice(0, 12).map((podcast) => (
+          <article key={podcast.id} className="nuru-card flex gap-3 p-3">
+            <img
+              src={resolveMedia(podcast.cover_url)}
+              alt=""
+              width={96}
+              height={96}
+              loading="lazy"
+              className="h-20 w-20 shrink-0 rounded-xl object-cover"
+            />
+            <div className="min-w-0 flex-1">
+              <p className="line-clamp-2 text-sm font-semibold">{podcast.title}</p>
+              <p className="mt-0.5 truncate text-xs text-cyan">{podcast.host}</p>
+              {podcast.description && (
+                <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                  {podcast.description}
+                </p>
               )}
-            </ul>
-          </section>
+              <p className="mt-2 flex items-center gap-1 text-[11px] text-muted-foreground">
+                <Headphones className="h-3.5 w-3.5" />
+                {(podcast.podcast_episodes ?? []).length} episodes
+              </p>
+            </div>
+          </article>
         ))}
-      </div>
+      </section>
     </AppShell>
   );
 }

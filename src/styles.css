@@ -73,12 +73,17 @@
      oversized bubbles. Keep one radius scale across every screen. */
   --radius: 0.75rem;
 
-  /* deep midnight surfaces — near-black navy climbing to a lifted card */
-  --background: #00132f;
-  --surface: #02244b;
-  --surface-2: #073565;
+  /* Near-black surfaces that keep the brand's blue in them.
+     The old ramp sat at 100% saturation, which is what made it read as navy
+     rather than as black — every step here holds the same hue (220) and the
+     same 7–9% lightness band, with the saturation pulled back so the ground
+     reads black while still belonging to the blue. Saturation eases off
+     further as each step lifts, so cards separate by tone, not by hue. */
+  --background: #0a111e;
+  --surface: #131d2f;
+  --surface-2: #243351;
   --foreground: oklch(0.99 0.004 250);
-  --card: #032955;
+  --card: #1a263d;
   --card-foreground: oklch(0.99 0.004 250);
   --popover: oklch(0.208 0.04 260);
   --popover-foreground: oklch(0.99 0.004 250);

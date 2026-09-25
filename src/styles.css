@@ -6,9 +6,8 @@
  * NURU FAITH DESIGN SYSTEM
  * "Light for This Generation"
  *
- * Soft charcoal-blue surfaces, electric-blue + cyan light, sparing violet.
- * Flat charcoal cards with a thin blue border and a soft shadow — not
- * glassmorphism, not a wall of glowing gradients.
+ * V2: warm charcoal, parchment type, and a lime highlight. The calmer
+ * editorial hierarchy lets photography and Scripture carry the screen.
  *
  * Never hardcode colours in components; use these semantic tokens.
  */
@@ -21,7 +20,7 @@
   --radius-2xl: calc(var(--radius) + 5px);
   --radius-3xl: calc(var(--radius) + 12px);
 
-  --font-display: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fraunces", Georgia, serif;
   --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
   --font-script: "Caveat", ui-serif, cursive;
 
@@ -69,65 +68,55 @@
 }
 
 :root {
-  /* The approved reference uses compact, structured panels rather than soft
-     oversized bubbles. Keep one radius scale across every screen. */
-  --radius: 0.75rem;
+  --radius: 1.125rem;
 
-  /* Near-black surfaces that keep the brand's blue in them.
-     The old ramp sat at 100% saturation, which is what made it read as navy
-     rather than as black — every step here holds the same hue (220) and the
-     same 7–9% lightness band, with the saturation pulled back so the ground
-     reads black while still belonging to the blue. Saturation eases off
-     further as each step lifts, so cards separate by tone, not by hue. */
-  --background: #0a111e;
-  --surface: #131d2f;
-  --surface-2: #243351;
-  --foreground: oklch(0.99 0.004 250);
-  --card: #1a263d;
-  --card-foreground: oklch(0.99 0.004 250);
-  --popover: oklch(0.208 0.04 260);
-  --popover-foreground: oklch(0.99 0.004 250);
+  --background: #181a1b;
+  --surface: #202426;
+  --surface-2: #303637;
+  --foreground: #f6f4eb;
+  --card: #252a2b;
+  --card-foreground: #f6f4eb;
+  --popover: #303637;
+  --popover-foreground: #f6f4eb;
 
-  /* brand light — electric blue lead, cyan accent, violet used sparingly */
-  --brand-cyan: #35d9ff;
-  --primary: #168cff;
-  --primary-foreground: oklch(0.99 0.004 250);
-  --brand-violet: #7e6cff;
-  --brand-magenta: #f257a7;
+  --brand-cyan: #d5ef8d;
+  --primary: #c9ed72;
+  --primary-foreground: #11190b;
+  --brand-violet: #b2a1d8;
+  --brand-magenta: #e5a89e;
 
-  --secondary: oklch(0.246 0.042 259);
-  --secondary-foreground: oklch(0.84 0.028 245);
-  --muted: oklch(0.246 0.042 259);
-  --muted-foreground: oklch(0.672 0.041 249);
-  --accent: oklch(0.32 0.09 265);
-  --accent-foreground: oklch(0.99 0.004 250);
+  --secondary: #303637;
+  --secondary-foreground: #d6d8d0;
+  --muted: #303637;
+  --muted-foreground: #aeb6af;
+  --accent: #39453a;
+  --accent-foreground: #f6f4eb;
 
-  --growth: #36e4b5;
-  --warning: #ffb546;
+  --growth: #a9dabe;
+  --warning: #eebd82;
   --destructive: oklch(0.68 0.2 15);
   --destructive-foreground: oklch(0.99 0.004 250);
 
-  /* quiet borders let cards separate without turning the ground navy */
-  --border: rgb(100 136 178 / 30%);
-  --border-strong: rgb(83 190 235 / 52%);
-  --input: oklch(0.7 0.12 254 / 22%);
-  --ring: oklch(0.66 0.19 264);
+  --border: rgb(224 232 214 / 22%);
+  --border-strong: rgb(213 239 141 / 42%);
+  --input: rgb(224 232 214 / 34%);
+  --ring: #c9ed72;
 
-  --sidebar: oklch(0.19 0.037 261);
-  --sidebar-foreground: oklch(0.84 0.028 245);
+  --sidebar: #202426;
+  --sidebar-foreground: #d6d8d0;
 
-  /* gradients — calm, blue-forward */
+  /* Keep the full button gradient bright enough for its dark label. */
   --gradient-brand: linear-gradient(
     118deg,
     var(--brand-cyan) 0%,
     var(--primary) 55%,
-    var(--brand-violet) 100%
+    #e2f6ae 100%
   );
   --gradient-button: linear-gradient(
     140deg,
     color-mix(in oklab, var(--primary) 88%, var(--brand-cyan)) 0%,
     var(--primary) 55%,
-    color-mix(in oklab, var(--primary) 82%, var(--brand-violet)) 100%
+    #e2f6ae 100%
   );
   --gradient-surface: linear-gradient(
     165deg,

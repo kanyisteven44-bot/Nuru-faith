@@ -1,13 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import {
-  BookOpen,
-  ChevronRight,
-  Clock3,
-  GraduationCap,
-  Search,
-  Sparkles,
-} from "lucide-react";
+import { BookOpen, ChevronRight, Clock3, GraduationCap, Search, Sparkles } from "lucide-react";
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
 import { Chip } from "@/components/nuru/Primitives";
 import { cn } from "@/lib/utils";
@@ -44,8 +37,7 @@ function FaithCoursesScreen() {
     return FAITH_COURSES.filter((item) => {
       const matchesCategory = !category || item.category === category;
       const matchesQuery =
-        !q ||
-        `${item.title} ${item.description} ${item.category}`.toLowerCase().includes(q);
+        !q || `${item.title} ${item.description} ${item.category}`.toLowerCase().includes(q);
       return matchesCategory && matchesQuery;
     });
   }, [query, category]);
@@ -54,17 +46,17 @@ function FaithCoursesScreen() {
     <AppShell>
       <ScreenHeader title="Faith Courses" subtitle="Learn deeply. Live faithfully." />
 
-      <div className="space-y-6 px-4 pb-6">
-        <section className="nuru-card relative h-52 overflow-hidden">
+      <div className="space-y-6 px-4 pb-6 lg:px-6">
+        <section className="nuru-card relative h-64 overflow-hidden lg:h-80">
           <img src={hero} alt="" className="absolute inset-0 h-full w-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-background/20" />
-          <div className="relative flex h-full max-w-[78%] flex-col justify-end p-4">
+          <div className="relative flex h-full max-w-[80%] flex-col justify-end p-6 lg:max-w-[55%] lg:p-9">
             <span className="mb-2 inline-flex w-fit items-center gap-1 rounded-full border border-cyan/25 bg-cyan/10 px-2.5 py-1 text-[10px] font-bold tracking-wide text-cyan uppercase">
               <GraduationCap className="h-3.5 w-3.5" />
               Nuru Learning
             </span>
-            <h1 className="font-display text-[27px] leading-tight font-bold text-white">
-              Build a faith you understand.
+            <h1 className="font-display text-[32px] leading-tight font-semibold text-white lg:text-[48px]">
+              Learn with depth. Live with purpose.
             </h1>
             <p className="mt-2 text-[12px] leading-relaxed text-white/75">
               60 structured courses from Christian foundations to deeper Bible study and everyday
@@ -144,7 +136,7 @@ function FaithCoursesScreen() {
             <span className="text-[11px] text-muted-foreground">{filtered.length} found</span>
           </div>
 
-          <div className="space-y-2.5">
+          <div className="grid gap-3 lg:grid-cols-2">
             {filtered.map((item) => (
               <CourseRow key={item.slug} course={item} />
             ))}

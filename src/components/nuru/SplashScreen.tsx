@@ -151,7 +151,7 @@ export function SplashScreen() {
                       gradientUnits="userSpaceOnUse"
                     >
                       <stop offset="0" stopColor="#7fe7ff" />
-                      <stop offset="1" stopColor="#168cff" />
+                      <stop offset="1" stopColor="#a9cf68" />
                     </linearGradient>
                     <filter
                       id="nuru-bloom-arch-splash"

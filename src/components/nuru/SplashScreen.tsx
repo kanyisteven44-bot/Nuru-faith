@@ -103,7 +103,7 @@ export function SplashScreen() {
       <div
         aria-hidden="true"
         data-testid="nuru-splash"
-        className="fixed inset-0 z-[999] bg-[#000814]"
+        className="fixed inset-0 z-[999] bg-[#070d18]"
       />
     ) : null;
   }
@@ -112,7 +112,7 @@ export function SplashScreen() {
     <div
       aria-hidden="true"
       data-testid="nuru-splash"
-      className="fixed inset-0 z-[999] overflow-hidden bg-[#000814]"
+      className="fixed inset-0 z-[999] overflow-hidden bg-[#070d18]"
     >
       {reducedMotion ? (
         <div className="flex h-full items-center justify-center">

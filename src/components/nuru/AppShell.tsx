@@ -29,7 +29,7 @@ export function AppShell({
   flush?: boolean;
   hideNav?: boolean;
 }) {
-  const maxWidth = wide === "xl" ? "max-w-7xl" : wide ? "max-w-5xl" : "max-w-xl";
+  const maxWidth = wide === "xl" ? "lg:max-w-7xl" : wide ? "lg:max-w-5xl" : "lg:max-w-6xl";
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   useEffect(() => {
@@ -37,9 +37,19 @@ export function AppShell({
   }, []);
 
   return (
-    <div className={cn("relative bg-background", flush ? "h-dvh overflow-hidden" : "min-h-dvh")}>
+    <div
+      className={cn(
+        "relative bg-background",
+        !hideNav && "lg:pl-60",
+        flush ? "h-dvh overflow-hidden" : "min-h-dvh",
+      )}
+    >
       <main
-        className={cn("relative z-10 mx-auto w-full", flush || hideNav ? "" : "pb-24", maxWidth)}
+        className={cn(
+          "relative z-10 mx-auto w-full max-w-xl lg:px-8",
+          flush || hideNav ? "" : "pb-24 lg:pb-10",
+          maxWidth,
+        )}
       >
         {children}
       </main>
@@ -47,14 +57,12 @@ export function AppShell({
       {!hideNav && (
         <nav
           aria-label="Main"
-          className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/95 backdrop-blur-xl"
+          className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/95 backdrop-blur-xl lg:inset-y-0 lg:right-auto lg:w-60 lg:border-r lg:border-t-0 lg:pt-8"
         >
-          <ul
-            className={cn(
-              "mx-auto grid grid-cols-4 px-1 pb-[max(0.4rem,env(safe-area-inset-bottom))] pt-2",
-              maxWidth,
-            )}
-          >
+          <Link to="/home" className="hidden px-6 pb-8 font-display text-xl font-semibold lg:block">
+            Nuru <span className="text-cyan">Faith</span>
+          </Link>
+          <ul className="mx-auto grid max-w-xl grid-cols-4 px-1 pb-[max(0.4rem,env(safe-area-inset-bottom))] pt-2 lg:flex lg:flex-col lg:gap-2 lg:px-3 lg:pt-0">
             {NAV.map((item) => (
               <NavItem key={item.to} {...item} active={pathname.startsWith(item.to)} />
             ))}
@@ -82,8 +90,10 @@ function NavItem({
         to={to}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl text-[10px] font-medium transition-colors",
-          active ? "text-cyan" : "text-muted-foreground hover:text-secondary-foreground",
+          "flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl text-[10px] font-medium transition-colors lg:flex-row lg:justify-start lg:gap-3 lg:px-4 lg:text-sm",
+          active
+            ? "text-cyan lg:bg-primary/10"
+            : "text-muted-foreground hover:text-secondary-foreground",
         )}
       >
         <Icon

@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowLeft,
@@ -15,6 +17,8 @@ import { AppShell } from "@/components/nuru/AppShell";
 import { Chip, ProgressBar } from "@/components/nuru/Primitives";
 import { faithCourseBySlug } from "@/data/faithCourses";
 import { resolveMedia } from "@/lib/media";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/faith-courses/$slug")({
   head: () => ({
@@ -25,9 +29,25 @@ export const Route = createFileRoute("/_authenticated/faith-courses/$slug")({
 
 function FaithCourseDetail() {
   const { slug } = Route.useParams();
+  const { userId } = useAuth();
+  const queryClient = useQueryClient();
   const course = faithCourseBySlug(slug);
   const [lessonIndex, setLessonIndex] = useState(0);
-  const [done, setDone] = useState<Set<number>>(() => new Set());
+  const [saving, setSaving] = useState(false);
+  const progressQuery = useQuery({
+    queryKey: ["faith-course-progress", userId, slug],
+    enabled: !!userId && !!course,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("faith_course_lesson_progress")
+        .select("lesson_index")
+        .eq("user_id", userId!)
+        .eq("course_slug", slug);
+      if (error) throw error;
+      return new Set((data ?? []).map((row) => row.lesson_index));
+    },
+  });
+  const done = progressQuery.data ?? new Set<number>();
 
   const progress = course ? Math.round((done.size / course.lessons.length) * 100) : 0;
   const lesson = course?.lessons[lessonIndex] ?? null;
@@ -61,13 +81,33 @@ function FaithCourseDetail() {
     );
   }
 
-  function toggleDone(index: number) {
-    setDone((current) => {
-      const next = new Set(current);
+  async function toggleDone(index: number) {
+    if (!userId || saving || !progressQuery.isSuccess) return;
+    setSaving(true);
+    try {
+      const request = done.has(index)
+        ? supabase
+            .from("faith_course_lesson_progress")
+            .delete()
+            .eq("user_id", userId)
+            .eq("course_slug", slug)
+            .eq("lesson_index", index)
+        : supabase.from("faith_course_lesson_progress").insert({
+            user_id: userId,
+            course_slug: slug,
+            lesson_index: index,
+          });
+      const { error } = await request;
+      if (error) throw error;
+      const next = new Set(done);
       if (next.has(index)) next.delete(index);
       else next.add(index);
-      return next;
-    });
+      queryClient.setQueryData(["faith-course-progress", userId, slug], next);
+    } catch {
+      toast.error("Could not save lesson progress. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -115,6 +155,19 @@ function FaithCourseDetail() {
               <span className="text-cyan">{progress}%</span>
             </div>
             <ProgressBar value={progress} />
+            {progressQuery.isError && (
+              <p role="alert" className="mt-2 text-xs text-warning">
+                Progress could not load. Check your connection and{" "}
+                <button
+                  type="button"
+                  className="underline"
+                  onClick={() => void progressQuery.refetch()}
+                >
+                  try again
+                </button>
+                .
+              </p>
+            )}
           </div>
         </section>
 
@@ -187,16 +240,8 @@ function FaithCourseDetail() {
               </p>
             </div>
 
-            <LessonSection
-              icon={Lightbulb}
-              title="Context"
-              body={teaching.context}
-            />
-            <LessonSection
-              icon={Sparkles}
-              title="What it means"
-              body={teaching.meaning}
-            />
+            <LessonSection icon={Lightbulb} title="Context" body={teaching.context} />
+            <LessonSection icon={Sparkles} title="What it means" body={teaching.meaning} />
 
             <div>
               <div className="mb-2 flex items-center gap-2">
@@ -205,7 +250,10 @@ function FaithCourseDetail() {
               </div>
               <ul className="space-y-2">
                 {course.examples.map((example) => (
-                  <li key={example} className="flex gap-2 text-[13px] leading-relaxed text-secondary-foreground">
+                  <li
+                    key={example}
+                    className="flex gap-2 text-[13px] leading-relaxed text-secondary-foreground"
+                  >
                     <Circle className="mt-1.5 h-2.5 w-2.5 shrink-0 fill-cyan text-cyan" />
                     {example}
                   </li>
@@ -224,21 +272,28 @@ function FaithCourseDetail() {
                 Reflect
               </p>
               <p className="mt-2 text-[13px] leading-relaxed text-secondary-foreground">
-                What does this lesson reveal about God? What does it expose or encourage in your
-                own life? What is one faithful response you can practise before the next lesson?
+                What does this lesson reveal about God? What does it expose or encourage in your own
+                life? What is one faithful response you can practise before the next lesson?
               </p>
             </div>
 
             <button
               type="button"
-              onClick={() => toggleDone(lessonIndex)}
+              onClick={() => void toggleDone(lessonIndex)}
+              disabled={!progressQuery.isSuccess || saving}
               className={`min-h-11 w-full rounded-xl text-sm font-semibold transition-colors ${
                 done.has(lessonIndex)
                   ? "border border-growth/50 bg-growth/12 text-growth"
                   : "bg-primary text-primary-foreground"
               }`}
             >
-              {done.has(lessonIndex) ? "Lesson completed ✓" : "Mark lesson complete"}
+              {saving
+                ? "Saving…"
+                : progressQuery.isLoading
+                  ? "Loading progress…"
+                  : done.has(lessonIndex)
+                    ? "Lesson completed ✓"
+                    : "Mark lesson complete"}
             </button>
           </div>
         </section>

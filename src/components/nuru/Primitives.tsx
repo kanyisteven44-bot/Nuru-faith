@@ -89,7 +89,7 @@ export function PillTabs<T extends string>({
   );
 }
 
-/** Primary action — solid electric blue with a soft glow. */
+/** Primary action with a clear dark label and visible keyboard focus. */
 export function GradientButton({
   children,
   className,
@@ -99,7 +99,7 @@ export function GradientButton({
     <button
       {...props}
       className={cn(
-        "inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-cyan/30 bg-primary px-5 text-sm font-semibold text-primary-foreground nuru-glow-sm transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-50 disabled:shadow-none",
+        "inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-primary bg-primary px-5 text-sm font-semibold text-primary-foreground nuru-glow-sm transition-all hover:bg-[#daf49a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-[0.98] disabled:opacity-50 disabled:shadow-none",
         className,
       )}
     >

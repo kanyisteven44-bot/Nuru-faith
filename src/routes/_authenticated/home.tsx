@@ -276,7 +276,7 @@ function HomeScreen() {
                   acceptedChallenge
                     ? // Done reads as its own state, not a greyed-out button.
                       "border border-growth/50 bg-growth/12 text-growth"
-                    : "bg-[linear-gradient(100deg,var(--primary),var(--brand-violet))] text-primary-foreground shadow-[0_6px_20px_-6px_var(--brand-violet)] hover:brightness-110",
+                    : "nuru-gradient-bg text-primary-foreground shadow-[0_6px_20px_-6px_var(--primary)] hover:brightness-110",
                 )}
               >
                 {acceptedChallenge ? (

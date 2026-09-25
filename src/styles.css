@@ -80,8 +80,8 @@
   --popover-foreground: #f6f4eb;
 
   --brand-cyan: #d5ef8d;
-  --primary: #c6e574;
-  --primary-foreground: #1b2119;
+  --primary: #c9ed72;
+  --primary-foreground: #11190b;
   --brand-violet: #b2a1d8;
   --brand-magenta: #e5a89e;
 
@@ -97,26 +97,26 @@
   --destructive: oklch(0.68 0.2 15);
   --destructive-foreground: oklch(0.99 0.004 250);
 
-  --border: rgb(224 232 214 / 12%);
+  --border: rgb(224 232 214 / 22%);
   --border-strong: rgb(213 239 141 / 42%);
-  --input: rgb(224 232 214 / 20%);
-  --ring: #c6e574;
+  --input: rgb(224 232 214 / 34%);
+  --ring: #c9ed72;
 
   --sidebar: #202426;
   --sidebar-foreground: #d6d8d0;
 
-  /* gradients — calm, blue-forward */
+  /* Keep the full button gradient bright enough for its dark label. */
   --gradient-brand: linear-gradient(
     118deg,
     var(--brand-cyan) 0%,
     var(--primary) 55%,
-    var(--brand-violet) 100%
+    #e2f6ae 100%
   );
   --gradient-button: linear-gradient(
     140deg,
     color-mix(in oklab, var(--primary) 88%, var(--brand-cyan)) 0%,
     var(--primary) 55%,
-    color-mix(in oklab, var(--primary) 82%, var(--brand-violet)) 100%
+    #e2f6ae 100%
   );
   --gradient-surface: linear-gradient(
     165deg,

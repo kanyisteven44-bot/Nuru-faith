@@ -132,23 +132,19 @@ function HomeScreen() {
     <AppShell>
       <BrandBar />
 
-      <div className="space-y-6 px-4 pt-2">
+      <div className="space-y-6 px-4 pt-2 lg:grid lg:grid-cols-12 lg:items-start lg:gap-6 lg:space-y-0 lg:px-6">
         {/* Greeting */}
-        <section>
+        <section className="lg:col-span-12">
           <h1 className="font-display text-[26px] font-bold tracking-tight">
             Shalom, {firstName}! <span className="align-middle">👋</span>
           </h1>
         </section>
 
         {/* Today's Light */}
-        <section>
+        <section className="lg:col-span-7 lg:row-span-3">
           <div className="nuru-card relative overflow-hidden">
-            <div className="relative h-56 w-full">
-              <img
-                src={todayPhoto}
-                alt=""
-                className="h-full w-full object-cover"
-              />
+            <div className="relative h-56 w-full lg:h-80">
+              <img src={todayPhoto} alt="" className="h-full w-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/25" />
               <div className="absolute inset-x-0 top-0 flex items-center justify-between p-3.5">
                 <span className="font-display text-base font-semibold drop-shadow">
@@ -213,9 +209,9 @@ function HomeScreen() {
         </section>
 
         {/* Quick Access */}
-        <section>
+        <section className="lg:col-span-5">
           <h2 className="mb-3 font-display text-[15px] font-semibold">Quick Access</h2>
-          <div className="grid grid-cols-4 gap-x-2 gap-y-4">
+          <div className="grid grid-cols-4 gap-x-2 gap-y-4 lg:gap-x-4">
             {QUICK_ACCESS.map(({ to, label, icon: Icon, tint }) => (
               <Link
                 key={to}
@@ -239,7 +235,7 @@ function HomeScreen() {
 
         {/* Today's Challenge — an amber badge beside the prompt, with the
             accept control sitting to the trailing edge, per the reference. */}
-        <section className="nuru-card flex gap-3 p-4">
+        <section className="nuru-card flex gap-3 p-4 lg:col-span-5">
           <span
             aria-hidden="true"
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-warning text-[#3a2206]"
@@ -290,7 +286,7 @@ function HomeScreen() {
         </section>
 
         {/* Upcoming Event */}
-        <section>
+        <section className="lg:col-span-5">
           <h2 className="mb-3 font-display text-[15px] font-semibold">Upcoming Event</h2>
           {events.isLoading ? (
             <CardSkeleton count={1} height="h-20" />

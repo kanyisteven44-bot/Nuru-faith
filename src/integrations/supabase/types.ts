@@ -383,6 +383,27 @@ export type Database = {
           },
         ]
       }
+      faith_course_lesson_progress: {
+        Row: {
+          user_id: string
+          course_slug: string
+          lesson_index: number
+          completed_at: string
+        }
+        Insert: {
+          user_id: string
+          course_slug: string
+          lesson_index: number
+          completed_at?: string
+        }
+        Update: {
+          user_id?: string
+          course_slug?: string
+          lesson_index?: number
+          completed_at?: string
+        }
+        Relationships: []
+      }
       courses: {
         Row: {
           category: string | null

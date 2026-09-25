@@ -238,7 +238,7 @@ function VerseOfTheDay({ onOpen }: { onOpen: (reference: string) => void }) {
   return (
     <section className="nuru-card relative mb-6 overflow-hidden">
       <img src={verseArt} alt="" className="absolute inset-y-0 right-0 h-full w-1/2 object-cover" />
-      <div className="absolute inset-0 bg-gradient-to-r from-[#04244d] via-[#04244d]/90 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-r from-[#1a263d] via-[#1a263d]/90 to-transparent" />
       <div className="relative max-w-[62%] p-4">
         <p className="text-[10px] font-semibold tracking-[0.18em] text-muted-foreground uppercase">
           Verse of the day

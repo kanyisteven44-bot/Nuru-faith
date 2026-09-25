@@ -176,25 +176,23 @@ function ProfileScreen() {
           <CardSkeleton count={3} height="h-20" />
         </div>
       ) : (
-        <div className="px-4 pt-1">
+        <div className="px-4 pt-4 lg:px-6">
           {/* Cover, avatar and identity */}
           <section className="nuru-card overflow-hidden">
-            <div className="relative h-36">
+            <div className="relative h-48 lg:h-64">
               <img src={coverArt} alt="" className="h-full w-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-card via-card/20 to-transparent" />
-              <p className="absolute top-3 left-4 text-[9px] leading-[1.7] font-semibold tracking-[0.22em] text-white/85 uppercase">
-                A higher purpose
-                <span className="block">A brighter tomorrow</span>
+              <p className="absolute top-5 left-6 text-[10px] leading-[1.7] font-semibold tracking-[0.24em] text-white/85 uppercase">
+                Your place in the story
+                <span className="block">Keep becoming</span>
               </p>
-              <p className="script absolute top-3 right-4 text-right text-[17px] leading-[1.15] text-white/90">
-                Faith
-                <span className="block">Changes</span>
-                <span className="block">Everything</span>
+              <p className="absolute right-5 bottom-6 max-w-[55%] text-right font-display text-2xl leading-[1.05] text-white/95 lg:text-4xl">
+                Faith grows in the everyday.
                 <span className="mt-1 ml-auto block h-px w-16 bg-gradient-to-l from-cyan to-transparent" />
               </p>
             </div>
 
-            <div className="relative px-4 pb-4">
+            <div className="relative px-5 pb-6 lg:px-8">
               {/* The avatar lifts into the cover; the identity column sits
                   beside it, as the design lays it out. */}
               <div className="flex gap-3">
@@ -216,7 +214,7 @@ function ProfileScreen() {
                 <div className="min-w-0 flex-1 pt-2">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
-                      <h1 className="flex items-center gap-1.5 font-display text-[18px] leading-tight font-bold">
+                      <h1 className="flex items-center gap-1.5 font-display text-[25px] leading-tight font-semibold lg:text-[32px]">
                         <span>{profile.data?.full_name ?? "Nuru member"}</span>
                         {profile.data?.verified && (
                           <BadgeCheck

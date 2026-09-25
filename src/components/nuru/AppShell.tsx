@@ -40,13 +40,13 @@ export function AppShell({
     <div
       className={cn(
         "relative bg-background",
-        !hideNav && "lg:pl-60",
+        !hideNav && "lg:pl-28",
         flush ? "h-dvh overflow-hidden" : "min-h-dvh",
       )}
     >
       <main
         className={cn(
-          "relative z-10 mx-auto w-full max-w-xl lg:px-8",
+          "relative z-10 mx-auto w-full max-w-xl lg:px-10",
           flush || hideNav ? "" : "pb-24 lg:pb-10",
           maxWidth,
         )}
@@ -57,12 +57,16 @@ export function AppShell({
       {!hideNav && (
         <nav
           aria-label="Main"
-          className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/95 backdrop-blur-xl lg:inset-y-0 lg:right-auto lg:w-60 lg:border-r lg:border-t-0 lg:pt-8"
+          className="fixed inset-x-3 bottom-3 z-40 rounded-3xl border border-border bg-surface/95 px-2 shadow-2xl shadow-black/40 backdrop-blur-xl lg:inset-y-4 lg:right-auto lg:left-4 lg:w-20 lg:rounded-[2rem] lg:px-0 lg:pt-5"
         >
-          <Link to="/home" className="hidden px-6 pb-8 font-display text-xl font-semibold lg:block">
-            Nuru <span className="text-cyan">Faith</span>
+          <Link
+            to="/home"
+            aria-label="Nuru Faith Home"
+            className="mx-auto mb-9 hidden h-11 w-11 items-center justify-center rounded-2xl bg-primary font-display text-2xl font-bold text-primary-foreground lg:flex"
+          >
+            N
           </Link>
-          <ul className="mx-auto grid max-w-xl grid-cols-4 px-1 pb-[max(0.4rem,env(safe-area-inset-bottom))] pt-2 lg:flex lg:flex-col lg:gap-2 lg:px-3 lg:pt-0">
+          <ul className="mx-auto grid max-w-xl grid-cols-4 pb-[max(0.3rem,env(safe-area-inset-bottom))] pt-1 lg:flex lg:flex-col lg:gap-3 lg:px-2 lg:pt-0">
             {NAV.map((item) => (
               <NavItem key={item.to} {...item} active={pathname.startsWith(item.to)} />
             ))}
@@ -90,16 +94,13 @@ function NavItem({
         to={to}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl text-[10px] font-medium transition-colors lg:flex-row lg:justify-start lg:gap-3 lg:px-4 lg:text-sm",
+          "flex min-h-12 flex-col items-center justify-center gap-1 rounded-2xl text-[10px] font-medium transition-colors lg:min-h-16 lg:w-full lg:text-[10px]",
           active
-            ? "text-cyan lg:bg-primary/10"
+            ? "bg-primary/12 text-cyan"
             : "text-muted-foreground hover:text-secondary-foreground",
         )}
       >
-        <Icon
-          className={cn("h-5.5 w-5.5", active && "drop-shadow-[0_0_10px_var(--brand-cyan)]")}
-          strokeWidth={active ? 2.3 : 1.8}
-        />
+        <Icon className="h-5.5 w-5.5" strokeWidth={active ? 2.3 : 1.8} />
         {label}
       </Link>
     </li>
@@ -129,10 +130,10 @@ export function BrandBar() {
   });
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between gap-3 bg-background/90 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-xl">
+    <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-border bg-background/92 px-5 py-4 pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur-xl lg:mb-6 lg:px-6">
       <span className="flex items-center gap-2">
         <NuruMark className="h-7 w-7" />
-        <span className="font-display text-[17px] font-semibold">
+        <span className="font-display text-[20px] font-semibold tracking-tight">
           Nuru <span className="text-cyan">Faith</span>
         </span>
       </span>
@@ -176,7 +177,7 @@ export function ScreenHeader({
 }) {
   const navigate = useNavigate();
   return (
-    <header className="sticky top-0 z-30 flex items-center gap-3 bg-background/90 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-xl">
+    <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-background/92 px-5 py-4 pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur-xl lg:mb-6 lg:px-6">
       {back && (
         <button
           type="button"
@@ -188,7 +189,7 @@ export function ScreenHeader({
         </button>
       )}
       <div className="min-w-0 flex-1">
-        <h1 className="truncate font-display text-[22px] font-semibold tracking-tight">{title}</h1>
+        <h1 className="truncate font-display text-[27px] font-semibold tracking-tight">{title}</h1>
         {subtitle && <p className="truncate text-xs text-muted-foreground">{subtitle}</p>}
       </div>
       {right && <div className="flex shrink-0 items-center gap-2">{right}</div>}

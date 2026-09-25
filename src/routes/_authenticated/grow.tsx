@@ -23,23 +23,26 @@ function GrowScreen() {
     <AppShell>
       <ScreenHeader title="Devotions & Series" subtitle="Read daily. Go deeper." />
 
-      <div className="space-y-5 px-4 pb-6">
-        <section className="nuru-card relative h-48 overflow-hidden">
+      <div className="grid gap-5 px-4 pb-6 lg:grid-cols-2 lg:px-6">
+        <section className="nuru-card relative h-64 overflow-hidden lg:col-span-2 lg:h-80">
           <img src={hero} alt="" className="absolute inset-0 h-full w-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-r from-background via-background/78 to-background/20" />
-          <div className="relative flex h-full max-w-[80%] flex-col justify-end p-4">
-            <p className="text-[10px] font-bold tracking-[0.15em] text-cyan uppercase">
-              Grow in Scripture
+          <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent" />
+          <div className="relative flex h-full max-w-[85%] flex-col justify-end p-6 lg:max-w-[55%] lg:p-9">
+            <p className="text-[10px] font-bold tracking-[0.24em] text-cyan uppercase">
+              The reading room
             </p>
-            <h1 className="mt-1 font-display text-2xl font-bold text-white">
-              One place for daily reflection and deeper study.
+            <h1 className="mt-3 font-display text-3xl leading-tight font-semibold text-white lg:text-5xl">
+              Make room for a deeper faith.
             </h1>
+            <p className="mt-3 text-sm leading-relaxed text-white/75">
+              Daily reflection, thoughtful study, and a path to keep growing.
+            </p>
           </div>
         </section>
 
         <Link
           to="/devotionals"
-          className="nuru-card flex items-center gap-4 p-4 active:opacity-90"
+          className="nuru-card flex min-h-40 items-center gap-5 p-5 transition-colors hover:border-primary/40 active:opacity-90 lg:p-7"
         >
           <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 to-green-600 text-white shadow-lg shadow-black/25">
             <Sunrise className="h-6 w-6" />
@@ -58,7 +61,7 @@ function GrowScreen() {
 
         <Link
           to="/series"
-          className="nuru-card flex items-center gap-4 p-4 active:opacity-90"
+          className="nuru-card flex min-h-40 items-center gap-5 p-5 transition-colors hover:border-primary/40 active:opacity-90 lg:p-7"
         >
           <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-400 to-amber-600 text-white shadow-lg shadow-black/25">
             <GraduationCap className="h-6 w-6" />
@@ -77,7 +80,7 @@ function GrowScreen() {
 
         <Link
           to="/faith-courses"
-          className="relative overflow-hidden rounded-2xl border border-primary/30 bg-primary/10 p-4 active:opacity-90"
+          className="relative overflow-hidden rounded-2xl border border-primary/30 bg-primary/10 p-5 active:opacity-90 lg:col-span-2 lg:p-7"
         >
           <div className="flex items-start gap-3">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-primary/30 bg-primary/10 text-cyan">
@@ -86,7 +89,8 @@ function GrowScreen() {
             <span className="min-w-0 flex-1">
               <span className="block text-sm font-semibold">Need structured learning?</span>
               <span className="mt-1 block text-[12px] leading-relaxed text-muted-foreground">
-                Faith Courses turns topics like baptism, prayer and discipleship into lesson-by-lesson learning.
+                Faith Courses turns topics like baptism, prayer and discipleship into
+                lesson-by-lesson learning.
               </span>
             </span>
             <BookOpen className="h-4 w-4 shrink-0 text-cyan" />

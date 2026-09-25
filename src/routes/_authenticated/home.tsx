@@ -132,39 +132,50 @@ function HomeScreen() {
     <AppShell>
       <BrandBar />
 
-      <div className="space-y-6 px-4 pt-2 lg:grid lg:grid-cols-12 lg:items-start lg:gap-6 lg:space-y-0 lg:px-6">
+      <div className="space-y-6 px-4 pt-5 lg:grid lg:grid-cols-12 lg:items-start lg:gap-6 lg:space-y-0 lg:px-6">
         {/* Greeting */}
         <section className="lg:col-span-12">
-          <h1 className="font-display text-[26px] font-bold tracking-tight">
-            Shalom, {firstName}! <span className="align-middle">👋</span>
+          <p className="mb-2 text-[10px] font-bold tracking-[0.28em] text-cyan uppercase">
+            {today.toLocaleDateString(undefined, {
+              weekday: "long",
+              month: "long",
+              day: "numeric",
+            })}{" "}
+            · Your daily space
+          </p>
+          <h1 className="font-display text-[34px] leading-[1.13] font-semibold tracking-tight lg:text-[48px]">
+            A little light for your day, <span className="text-cyan">{firstName}.</span>
           </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Pause, find your footing, and grow in faith today.
+          </p>
         </section>
 
         {/* Today's Light */}
-        <section className="lg:col-span-7 lg:row-span-3">
+        <section className="lg:col-span-8 lg:row-span-2">
           <div className="nuru-card relative overflow-hidden">
-            <div className="relative h-56 w-full lg:h-80">
+            <div className="relative h-72 w-full lg:h-[420px]">
               <img src={todayPhoto} alt="" className="h-full w-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/25" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/35 to-black/10" />
               <div className="absolute inset-x-0 top-0 flex items-center justify-between p-3.5">
-                <span className="font-display text-base font-semibold drop-shadow">
-                  Today's Light
+                <span className="rounded-full border border-white/30 bg-black/25 px-3 py-1.5 text-[10px] font-bold tracking-[0.18em] text-white uppercase backdrop-blur-sm">
+                  Today's Light · Scripture
                 </span>
                 <span className="rounded-full bg-background/65 px-2.5 py-1 text-[11px] font-medium backdrop-blur">
                   {today.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
                 </span>
               </div>
-              <div className="absolute inset-x-0 bottom-0 px-3.5 pb-3">
+              <div className="absolute inset-x-0 bottom-0 px-5 pb-6 lg:px-8 lg:pb-8">
                 {verse.isLoading ? (
                   <div className="h-10 animate-pulse rounded-lg bg-white/10" />
                 ) : (
                   <blockquote>
-                    <p className="line-clamp-3 text-[15px] leading-relaxed font-medium text-white italic drop-shadow-[0_2px_6px_rgba(0,0,0,0.85)]">
+                    <p className="line-clamp-3 font-display text-[23px] leading-snug text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.85)] lg:text-[32px]">
                       “
                       {verse.data?.text ?? "I can do all things through Christ who strengthens me."}
                       ”
                     </p>
-                    <cite className="mt-1 block text-[11px] font-semibold text-cyan not-italic drop-shadow-[0_2px_6px_rgba(0,0,0,0.85)]">
+                    <cite className="mt-3 block text-xs font-semibold tracking-wide text-cyan not-italic drop-shadow-[0_2px_6px_rgba(0,0,0,0.85)]">
                       {verse.data?.reference ?? verseOfTheDayRef()}
                       {verse.data?.translation ? ` (${verse.data.translation})` : ""}
                     </cite>
@@ -173,7 +184,7 @@ function HomeScreen() {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 p-3">
+            <div className="grid grid-cols-3 gap-2 border-t border-border p-3">
               <Link
                 to="/devotionals"
                 className="flex min-h-9 items-center justify-center gap-1.5 rounded-lg bg-primary text-xs font-semibold text-primary-foreground"
@@ -209,20 +220,22 @@ function HomeScreen() {
         </section>
 
         {/* Quick Access */}
-        <section className="lg:col-span-5">
-          <h2 className="mb-3 font-display text-[15px] font-semibold">Quick Access</h2>
+        <section className="lg:col-span-4">
+          <p className="text-[10px] font-bold tracking-[0.22em] text-cyan uppercase">
+            Explore Nuru
+          </p>
+          <h2 className="mb-4 mt-1 font-display text-2xl font-semibold">Where will you go?</h2>
           <div className="grid grid-cols-4 gap-x-2 gap-y-4 lg:gap-x-4">
-            {QUICK_ACCESS.map(({ to, label, icon: Icon, tint }) => (
+            {QUICK_ACCESS.map(({ to, label, icon: Icon }) => (
               <Link
                 key={to}
                 to={to}
                 {...(to === "/ai" ? { search: {} } : {})}
-                className="flex flex-col items-center gap-2 text-center"
+                className="group flex flex-col items-center gap-2 text-center"
               >
                 <span
                   className={cn(
-                    "flex h-14 w-14 items-center justify-center rounded-2xl text-white shadow-lg shadow-black/30",
-                    tint,
+                    "flex h-14 w-14 items-center justify-center rounded-[1.2rem] border border-border bg-card text-cyan transition-colors group-hover:border-primary/60 group-hover:bg-primary/10",
                   )}
                 >
                   <Icon className="h-6 w-6" strokeWidth={2} />
@@ -235,7 +248,7 @@ function HomeScreen() {
 
         {/* Today's Challenge — an amber badge beside the prompt, with the
             accept control sitting to the trailing edge, per the reference. */}
-        <section className="nuru-card flex gap-3 p-4 lg:col-span-5">
+        <section className="nuru-card flex gap-3 p-5 lg:col-span-4">
           <span
             aria-hidden="true"
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-warning text-[#3a2206]"
@@ -286,8 +299,8 @@ function HomeScreen() {
         </section>
 
         {/* Upcoming Event */}
-        <section className="lg:col-span-5">
-          <h2 className="mb-3 font-display text-[15px] font-semibold">Upcoming Event</h2>
+        <section className="lg:col-span-12">
+          <h2 className="mb-3 font-display text-xl font-semibold">Coming up</h2>
           {events.isLoading ? (
             <CardSkeleton count={1} height="h-20" />
           ) : nextEvent ? (

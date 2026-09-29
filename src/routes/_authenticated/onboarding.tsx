@@ -1,3 +1,4 @@
+import { resolveMedia as resolvePexelsMedia } from "@/lib/media";
 import { useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -9,7 +10,6 @@ import { COUNTRIES, DENOMINATIONS, INTERESTS } from "@/constants/nuru";
 import { fetchChurches, joinChurch, saveInterests, updateProfile } from "@/services/content";
 import { GradientButton } from "@/components/nuru/Primitives";
 import { NuruLogo } from "@/components/nuru/Logo";
-import hero from "@/assets/walk-purpose.jpg";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
   head: () => ({
@@ -87,7 +87,7 @@ function Onboarding() {
   return (
     <div className="relative min-h-dvh bg-background">
       <img
-        src={hero}
+        src={resolvePexelsMedia("asset:walk-purpose")}
         alt=""
         loading="eager"
         className="absolute inset-x-0 top-0 h-64 w-full object-cover opacity-30"

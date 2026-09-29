@@ -1,56 +1,42 @@
-import mountainDawn from "@/assets/mountain-dawn.jpg";
-import walkPurpose from "@/assets/walk-purpose.jpg";
-import friendsDusk from "@/assets/friends-dusk.jpg";
-import churchInterior from "@/assets/church-interior.jpg";
-import crossSunrise from "@/assets/cross-sunrise.jpg";
-import worshipNight from "@/assets/worship-night.jpg";
-import bibleCandle from "@/assets/bible-candle.jpg";
-import quietNight from "@/assets/quiet-night.jpg";
-import topicPrayer from "@/assets/topic-prayer.jpg";
-import topicPersonalGrowth from "@/assets/topic-personal-growth.jpg";
-import topicMentalHealth from "@/assets/topic-mental-health.jpg";
-import topicRelationships from "@/assets/topic-relationships.jpg";
-import topicLifeSkills from "@/assets/topic-life-skills.jpg";
-import topicFaith from "@/assets/topic-faith.jpg";
-import topicDiscipleship from "@/assets/topic-discipleship.jpg";
-import topicHopeHealing from "@/assets/topic-hope-healing.jpg";
-import topicFaithPurpose from "@/assets/topic-faith-purpose.jpg";
-import topicFriendsRelationships from "@/assets/topic-friends-relationships.jpg";
+/** Real Pexels photos for seeded content and API fallback. */
+export function pexelsImage(id: number, width = 1200): string {
+  return `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb&w=${width}`;
+}
 
 /**
- * Demo/library imagery is stored in the database as a stable token
- * ("asset:cross-sunrise") so seeded content never depends on an external URL.
- * Uploaded media is stored as a normal http(s) URL and passes straight through.
+ * Seeded imagery is stored in the database as a stable token
+ * ("asset:cross-sunrise") so older records keep resolving to curated Pexels photographs.
+ * User uploads and content-specific URLs pass straight through.
  */
 const LIBRARY: Record<string, string> = {
-  "mountain-dawn": mountainDawn,
-  "walk-purpose": walkPurpose,
-  "friends-dusk": friendsDusk,
-  "church-interior": churchInterior,
-  "cross-sunrise": crossSunrise,
-  "worship-night": worshipNight,
-  "bible-candle": bibleCandle,
-  "quiet-night": quietNight,
-  "topic-prayer": topicPrayer,
-  "topic-personal-growth": topicPersonalGrowth,
-  "topic-mental-health": topicMentalHealth,
-  "topic-relationships": topicRelationships,
-  "topic-life-skills": topicLifeSkills,
-  "topic-faith": topicFaith,
-  "topic-discipleship": topicDiscipleship,
-  "topic-hope-healing": topicHopeHealing,
-  "topic-faith-purpose": topicFaithPurpose,
-  "topic-friends-relationships": topicFriendsRelationships,
+  "mountain-dawn": pexelsImage(9407893),
+  "walk-purpose": pexelsImage(1105392),
+  "friends-dusk": pexelsImage(12825610),
+  "church-interior": pexelsImage(33494797),
+  "cross-sunrise": pexelsImage(253892),
+  "worship-night": pexelsImage(34611897),
+  "bible-candle": pexelsImage(11696719),
+  "quiet-night": pexelsImage(10615070),
+  "topic-prayer": pexelsImage(2258251),
+  "topic-personal-growth": pexelsImage(5206052),
+  "topic-mental-health": pexelsImage(5645328),
+  "topic-relationships": pexelsImage(1429881),
+  "topic-life-skills": pexelsImage(31951247),
+  "topic-faith": pexelsImage(34612053),
+  "topic-discipleship": pexelsImage(6860381),
+  "topic-hope-healing": pexelsImage(34533557),
+  "topic-faith-purpose": pexelsImage(9407893),
+  "topic-friends-relationships": pexelsImage(37353809),
   // Aliases for the 1,200-row library seed, which still references these
   // older keys — point them at real photos instead of a broken/fallback image.
-  "purpose-path": topicFaithPurpose,
-  "discipleship-book": topicDiscipleship,
-  "life-skills-growth": topicLifeSkills,
-  "relationships-bond": topicFriendsRelationships,
-  "calm-anchor": topicHopeHealing,
+  "purpose-path": pexelsImage(9407893),
+  "discipleship-book": pexelsImage(6860381),
+  "life-skills-growth": pexelsImage(31951247),
+  "relationships-bond": pexelsImage(37353809),
+  "calm-anchor": pexelsImage(34533557),
 };
 
-export const FALLBACK_IMAGE = mountainDawn;
+export const FALLBACK_IMAGE = pexelsImage(9407893);
 
 export function resolveMedia(value?: string | null): string {
   if (!value) return FALLBACK_IMAGE;

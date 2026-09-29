@@ -1,59 +1,60 @@
-import artGenesis from "@/assets/books/book-genesis.jpg";
-import artExodus from "@/assets/books/book-exodus.jpg";
-import artLeviticus from "@/assets/books/book-leviticus.jpg";
-import artNumbers from "@/assets/books/book-numbers.jpg";
-import artDeuteronomy from "@/assets/books/book-deuteronomy.jpg";
-import artJoshua from "@/assets/books/book-joshua.jpg";
-import artJudges from "@/assets/books/book-judges.jpg";
-import artRuth from "@/assets/books/book-ruth.jpg";
-import art1Samuel from "@/assets/books/book-1-samuel.jpg";
-import art2Samuel from "@/assets/books/book-2-samuel.jpg";
-import art1Kings from "@/assets/books/book-1-kings.jpg";
-import art2Kings from "@/assets/books/book-2-kings.jpg";
-import art1Chronicles from "@/assets/books/book-1-chronicles.jpg";
-import art2Chronicles from "@/assets/books/book-2-chronicles.jpg";
-import artEzra from "@/assets/books/book-ezra.jpg";
-import artNehemiah from "@/assets/books/book-nehemiah.jpg";
-import artEsther from "@/assets/books/book-esther.jpg";
-import artJob from "@/assets/books/book-job.jpg";
-import artPsalms from "@/assets/books/book-psalms.jpg";
-import artProverbs from "@/assets/books/book-proverbs.jpg";
-import artEcclesiastes from "@/assets/books/book-ecclesiastes.jpg";
-import artSongOfSolomon from "@/assets/books/book-song-of-solomon.jpg";
-import artIsaiah from "@/assets/books/book-isaiah.jpg";
-import artJeremiah from "@/assets/books/book-jeremiah.jpg";
-import artLamentations from "@/assets/books/book-lamentations.jpg";
-import artEzekiel from "@/assets/books/book-ezekiel.jpg";
-import artDaniel from "@/assets/books/book-daniel.jpg";
-import artHosea from "@/assets/books/book-hosea.jpg";
-import artJoel from "@/assets/books/book-joel.jpg";
-import artAmos from "@/assets/books/book-amos.jpg";
-import artObadiah from "@/assets/books/book-obadiah.jpg";
-import artJonah from "@/assets/books/book-jonah.jpg";
-import artMicah from "@/assets/books/book-micah.jpg";
-import artNahum from "@/assets/books/book-nahum.jpg";
-import artHabakkuk from "@/assets/books/book-habakkuk.jpg";
-import artZephaniah from "@/assets/books/book-zephaniah.jpg";
-import artHaggai from "@/assets/books/book-haggai.jpg";
-import artZechariah from "@/assets/books/book-zechariah.jpg";
-import artMalachi from "@/assets/books/book-malachi.jpg";
-import artMatthew from "@/assets/books/book-matthew.jpg";
-import artMark from "@/assets/books/book-mark.jpg";
-import artLuke from "@/assets/books/book-luke.jpg";
-import artJohn from "@/assets/books/book-john.jpg";
-import artActs from "@/assets/books/book-acts.jpg";
-import artRomans from "@/assets/books/book-romans.jpg";
-import art1Corinthians from "@/assets/books/book-1-corinthians.jpg";
-import art2Corinthians from "@/assets/books/book-2-corinthians.jpg";
-import artGalatians from "@/assets/books/book-galatians.jpg";
-import artEphesians from "@/assets/books/book-ephesians.jpg";
-import artPhilippians from "@/assets/books/book-philippians.jpg";
+import { pexelsImage } from "@/lib/media";
+
+const artGenesis = pexelsImage(11696719, 800);
+const artExodus = pexelsImage(34612053, 800);
+const artLeviticus = pexelsImage(5206052, 800);
+const artNumbers = pexelsImage(2258251, 800);
+const artDeuteronomy = pexelsImage(8955288, 800);
+const artJoshua = pexelsImage(6860381, 800);
+const artJudges = pexelsImage(34356171, 800);
+const artRuth = pexelsImage(9407893, 800);
+const art1Samuel = pexelsImage(1105392, 800);
+const art2Samuel = pexelsImage(34533557, 800);
+const art1Kings = pexelsImage(33494797, 800);
+const art2Kings = pexelsImage(34611897, 800);
+const art1Chronicles = pexelsImage(11696719, 800);
+const art2Chronicles = pexelsImage(34612053, 800);
+const artEzra = pexelsImage(5206052, 800);
+const artNehemiah = pexelsImage(2258251, 800);
+const artEsther = pexelsImage(8955288, 800);
+const artJob = pexelsImage(6860381, 800);
+const artPsalms = pexelsImage(34356171, 800);
+const artProverbs = pexelsImage(9407893, 800);
+const artEcclesiastes = pexelsImage(1105392, 800);
+const artSongOfSolomon = pexelsImage(34533557, 800);
+const artIsaiah = pexelsImage(33494797, 800);
+const artJeremiah = pexelsImage(34611897, 800);
+const artLamentations = pexelsImage(11696719, 800);
+const artEzekiel = pexelsImage(34612053, 800);
+const artDaniel = pexelsImage(5206052, 800);
+const artHosea = pexelsImage(2258251, 800);
+const artJoel = pexelsImage(8955288, 800);
+const artAmos = pexelsImage(6860381, 800);
+const artObadiah = pexelsImage(34356171, 800);
+const artJonah = pexelsImage(9407893, 800);
+const artMicah = pexelsImage(1105392, 800);
+const artNahum = pexelsImage(34533557, 800);
+const artHabakkuk = pexelsImage(33494797, 800);
+const artZephaniah = pexelsImage(34611897, 800);
+const artHaggai = pexelsImage(11696719, 800);
+const artZechariah = pexelsImage(34612053, 800);
+const artMalachi = pexelsImage(5206052, 800);
+const artMatthew = pexelsImage(2258251, 800);
+const artMark = pexelsImage(8955288, 800);
+const artLuke = pexelsImage(6860381, 800);
+const artJohn = pexelsImage(34356171, 800);
+const artActs = pexelsImage(9407893, 800);
+const artRomans = pexelsImage(1105392, 800);
+const art1Corinthians = pexelsImage(34533557, 800);
+const art2Corinthians = pexelsImage(33494797, 800);
+const artGalatians = pexelsImage(34611897, 800);
+const artEphesians = pexelsImage(11696719, 800);
+const artPhilippians = pexelsImage(34612053, 800);
 
 /**
  * Per-book cover art, badge colour and tagline, taken from the Bible page
- * design. Artwork was supplied for the first fifty books; the remaining
- * sixteen fall back to a neutral cover and show no tagline until art exists
- * for them, rather than being given invented copy.
+ * design. The first fifty books use curated Pexels photographs; the remaining
+ * sixteen use a neutral cover and retain their existing copy.
  */
 export type BookArt = { abbr: string; badge: string; tagline: string; art: string };
 

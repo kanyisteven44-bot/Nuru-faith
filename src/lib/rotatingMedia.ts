@@ -39,7 +39,7 @@ export function useRotatingMedia(
   }, [pool, slot, surfaceKey]);
 }
 
-/** Pexels enhances decorative slots only; bundled images remain the offline fallback. */
+/** Pexels enhances decorative slots only; curated Pexels photos remain the fallback. */
 export function usePexelsRotatingMedia(
   category: PexelsCategory,
   fallbackPool: readonly string[],

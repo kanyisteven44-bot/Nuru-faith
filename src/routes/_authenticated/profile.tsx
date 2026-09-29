@@ -1,3 +1,4 @@
+import { resolveMedia as resolvePexelsMedia } from "@/lib/media";
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -34,7 +35,6 @@ import { fetchMyReels } from "@/services/reels";
 import { AppShell, Avatar, ScreenHeader } from "@/components/nuru/AppShell";
 import { PeopleSheet, type PeopleKind } from "@/components/nuru/PeopleSheet";
 import { CardSkeleton, EmptyState, ProgressBar } from "@/components/nuru/Primitives";
-import coverArt from "@/assets/cross-sunrise.jpg";
 
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
@@ -180,7 +180,11 @@ function ProfileScreen() {
           {/* Cover, avatar and identity */}
           <section className="nuru-card overflow-hidden">
             <div className="relative h-48 lg:h-64">
-              <img src={coverArt} alt="" className="h-full w-full object-cover" />
+              <img
+                src={resolvePexelsMedia("asset:cross-sunrise")}
+                alt=""
+                className="h-full w-full object-cover"
+              />
               <div className="absolute inset-0 bg-gradient-to-t from-card via-card/20 to-transparent" />
               <p className="absolute top-5 left-6 text-[10px] leading-[1.7] font-semibold tracking-[0.24em] text-white/85 uppercase">
                 Your place in the story

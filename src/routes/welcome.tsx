@@ -1,7 +1,7 @@
+import { resolveMedia as resolvePexelsMedia } from "@/lib/media";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowRight, HandHeart, Sprout, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
-import forest from "@/assets/quiet-night.jpg";
 
 export const Route = createFileRoute("/welcome")({
   ssr: false,
@@ -29,7 +29,7 @@ function Welcome() {
   return (
     <div className="relative min-h-dvh overflow-hidden bg-background">
       <img
-        src={forest}
+        src={resolvePexelsMedia("asset:quiet-night")}
         alt=""
         width={1024}
         height={640}

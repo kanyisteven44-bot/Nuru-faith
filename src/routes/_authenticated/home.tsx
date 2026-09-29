@@ -23,7 +23,8 @@ import { fetchVerseOfTheDay, verseOfTheDayRef } from "@/lib/bible";
 import { fetchDevotionals, fetchEvents, fetchProfile } from "@/services/content";
 import { AppShell, BrandBar } from "@/components/nuru/AppShell";
 import { CardSkeleton } from "@/components/nuru/Primitives";
-import { NURU_PHOTO_POOLS, useRotatingMedia } from "@/lib/rotatingMedia";
+import { PhotoCredit } from "@/components/nuru/PhotoCredit";
+import { NURU_PHOTO_POOLS, usePexelsRotatingMedia } from "@/lib/rotatingMedia";
 
 export const Route = createFileRoute("/_authenticated/home")({
   head: () => ({
@@ -103,7 +104,7 @@ function HomeScreen() {
   const { userId } = useAuth();
   const shareSheet = useShareSheet();
   const [acceptedChallenge, setAcceptedChallenge] = useState(false);
-  const todayPhoto = useRotatingMedia(NURU_PHOTO_POOLS.home, "home-todays-light");
+  const todayPhoto = usePexelsRotatingMedia("home", NURU_PHOTO_POOLS.home, "home-todays-light");
 
   const profile = useQuery({
     queryKey: ["profile", userId],
@@ -155,7 +156,7 @@ function HomeScreen() {
         <section className="lg:col-span-8 lg:row-span-2">
           <div className="nuru-card relative overflow-hidden">
             <div className="relative h-72 w-full lg:h-[420px]">
-              <img src={todayPhoto} alt="" className="h-full w-full object-cover" />
+              <img src={todayPhoto.src} alt="" className="h-full w-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/35 to-black/10" />
               <div className="absolute inset-x-0 top-0 flex items-center justify-between p-3.5">
                 <span className="rounded-full border border-white/30 bg-black/25 px-3 py-1.5 text-[10px] font-bold tracking-[0.18em] text-white uppercase backdrop-blur-sm">
@@ -216,6 +217,11 @@ function HomeScreen() {
                 <Share2 className="h-3.5 w-3.5" /> Share
               </button>
             </div>
+            {todayPhoto.credit && (
+              <div className="px-3 pb-3 text-right">
+                <PhotoCredit photo={todayPhoto.credit} className="static inline-block" />
+              </div>
+            )}
           </div>
         </section>
 

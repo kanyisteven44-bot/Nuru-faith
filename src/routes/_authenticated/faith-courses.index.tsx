@@ -11,7 +11,8 @@ import {
   FEATURED_FAITH_COURSES,
   type FaithCourse,
 } from "@/data/faithCourses";
-import { NURU_PHOTO_POOLS, useRotatingMedia } from "@/lib/rotatingMedia";
+import { PhotoCredit } from "@/components/nuru/PhotoCredit";
+import { NURU_PHOTO_POOLS, usePexelsRotatingMedia } from "@/lib/rotatingMedia";
 
 export const Route = createFileRoute("/_authenticated/faith-courses/")({
   head: () => ({
@@ -30,7 +31,7 @@ export const Route = createFileRoute("/_authenticated/faith-courses/")({
 function FaithCoursesScreen() {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<string | null>(null);
-  const hero = useRotatingMedia(NURU_PHOTO_POOLS.courses, "faith-courses-hero");
+  const hero = usePexelsRotatingMedia("courses", NURU_PHOTO_POOLS.courses, "faith-courses-hero");
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -48,7 +49,7 @@ function FaithCoursesScreen() {
 
       <div className="space-y-6 px-4 pb-6 lg:px-6">
         <section className="nuru-card relative h-64 overflow-hidden lg:h-80">
-          <img src={hero} alt="" className="absolute inset-0 h-full w-full object-cover" />
+          <img src={hero.src} alt="" className="absolute inset-0 h-full w-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-background/20" />
           <div className="relative flex h-full max-w-[80%] flex-col justify-end p-6 lg:max-w-[55%] lg:p-9">
             <span className="mb-2 inline-flex w-fit items-center gap-1 rounded-full border border-cyan/25 bg-cyan/10 px-2.5 py-1 text-[10px] font-bold tracking-wide text-cyan uppercase">
@@ -63,6 +64,7 @@ function FaithCoursesScreen() {
               discipleship.
             </p>
           </div>
+          <PhotoCredit photo={hero.credit} />
         </section>
 
         <div className="relative">

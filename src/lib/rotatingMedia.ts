@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { resolveMedia } from "@/lib/media";
+import { getPexelsPhotos, type PexelsCategory, type PexelsPhoto } from "@/lib/pexels.functions";
 
 function hashKey(value: string) {
   let hash = 0;
@@ -35,6 +37,32 @@ export function useRotatingMedia(
     const offset = hashKey(surfaceKey) % pool.length;
     return resolveMedia(pool[(slot + offset) % pool.length]!);
   }, [pool, slot, surfaceKey]);
+}
+
+/** Pexels enhances decorative slots only; bundled images remain the offline fallback. */
+export function usePexelsRotatingMedia(
+  category: PexelsCategory,
+  fallbackPool: readonly string[],
+  surfaceKey: string,
+): { src: string; credit: PexelsPhoto | null } {
+  const fallback = useRotatingMedia(fallbackPool, surfaceKey);
+  const [slot, setSlot] = useState(0);
+  useEffect(() => {
+    const update = () => setSlot(Math.floor(Date.now() / (4 * 60 * 60 * 1000)));
+    update();
+    const timer = window.setInterval(update, 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
+  const photos = useQuery({
+    queryKey: ["pexels-approved", category],
+    queryFn: () => getPexelsPhotos({ data: { category } }),
+    staleTime: 24 * 60 * 60 * 1000,
+    retry: false,
+    refetchOnWindowFocus: false,
+  }).data;
+  if (!photos?.length) return { src: fallback, credit: null };
+  const photo = photos[(slot + hashKey(surfaceKey)) % photos.length]!;
+  return { src: photo.src, credit: photo };
 }
 
 export const NURU_PHOTO_POOLS = {

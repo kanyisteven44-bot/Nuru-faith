@@ -1,13 +1,24 @@
 import type { ComponentType, ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
+import { PhotoCredit } from "./PhotoCredit";
+import type { PexelsPhoto } from "@/lib/pexels.functions";
 
 /** Compact themed hero banner used under a screen's sticky header. */
-export function ScreenHero({ image, alt = "" }: { image: string; alt?: string }) {
+export function ScreenHero({
+  image,
+  alt = "",
+  credit,
+}: {
+  image: string;
+  alt?: string;
+  credit?: PexelsPhoto | null;
+}) {
   return (
-    <div className="relative h-28 w-full overflow-hidden" aria-hidden={alt === ""}>
+    <div className="relative h-28 w-full overflow-hidden">
       <img src={image} alt={alt} loading="eager" className="h-full w-full object-cover" />
       <div className="absolute inset-0 bg-gradient-to-b from-background/25 via-background/60 to-background" />
+      <PhotoCredit photo={credit ?? null} />
     </div>
   );
 }

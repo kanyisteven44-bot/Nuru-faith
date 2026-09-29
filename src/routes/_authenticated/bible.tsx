@@ -41,7 +41,8 @@ import { BOOK_ART, bookAbbr } from "@/lib/bookArt";
 import { AppShell } from "@/components/nuru/AppShell";
 import { CardSkeleton, EmptyState, PillTabs } from "@/components/nuru/Primitives";
 import { Sheet } from "@/components/nuru/Sheet";
-import { NURU_PHOTO_POOLS, useRotatingMedia } from "@/lib/rotatingMedia";
+import { PhotoCredit } from "@/components/nuru/PhotoCredit";
+import { NURU_PHOTO_POOLS, usePexelsRotatingMedia } from "@/lib/rotatingMedia";
 
 const ALL_BOOKS: BibleBook[] = [...OLD_TESTAMENT, ...NEW_TESTAMENT];
 
@@ -70,7 +71,7 @@ function BibleScreen() {
   const [reader, setReader] = useState<ReaderTarget | null>(null);
   const [book, setBook] = useState<BibleBook | null>(null);
   const [query, setQuery] = useState("");
-  const bibleHero = useRotatingMedia(NURU_PHOTO_POOLS.bible, "bible-hero");
+  const bibleHero = usePexelsRotatingMedia("bible", NURU_PHOTO_POOLS.bible, "bible-hero");
 
   if (reader)
     return (
@@ -96,7 +97,7 @@ function BibleScreen() {
   return (
     <AppShell>
       <header className="relative overflow-hidden">
-        <img src={bibleHero} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        <img src={bibleHero.src} alt="" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-r from-background via-background/85 to-background/30" />
         <div className="relative flex items-start justify-between gap-3 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-5">
           <div>
@@ -115,6 +116,7 @@ function BibleScreen() {
             <span className="block text-[17px]">in His Word</span>
           </p>
         </div>
+        <PhotoCredit photo={bibleHero.credit} className="bottom-1" />
       </header>
 
       <div className="space-y-3 px-4 pb-1">
@@ -234,10 +236,14 @@ async function fetchScripturePassage(reference: string) {
 /** The verse card the design puts above the book list. */
 function VerseOfTheDay({ onOpen }: { onOpen: (reference: string) => void }) {
   const reference = "Psalm 119:105";
-  const verseArt = useRotatingMedia(NURU_PHOTO_POOLS.bible, "bible-verse-card");
+  const verseArt = usePexelsRotatingMedia("bible", NURU_PHOTO_POOLS.bible, "bible-verse-card");
   return (
     <section className="nuru-card relative mb-6 overflow-hidden">
-      <img src={verseArt} alt="" className="absolute inset-y-0 right-0 h-full w-1/2 object-cover" />
+      <img
+        src={verseArt.src}
+        alt=""
+        className="absolute inset-y-0 right-0 h-full w-1/2 object-cover"
+      />
       <div className="absolute inset-0 bg-gradient-to-r from-[#1a263d] via-[#1a263d]/90 to-transparent" />
       <div className="relative max-w-[62%] p-4">
         <p className="text-[10px] font-semibold tracking-[0.18em] text-muted-foreground uppercase">
@@ -257,6 +263,7 @@ function VerseOfTheDay({ onOpen }: { onOpen: (reference: string) => void }) {
           Read Now <ArrowRight className="h-3.5 w-3.5" />
         </button>
       </div>
+      <PhotoCredit photo={verseArt.credit} className="top-2 bottom-auto" />
     </section>
   );
 }

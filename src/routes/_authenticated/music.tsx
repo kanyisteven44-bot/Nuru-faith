@@ -19,7 +19,7 @@ import {
   ScreenHero,
   SectionHeader,
 } from "@/components/nuru/Primitives";
-import { NURU_PHOTO_POOLS, useRotatingMedia } from "@/lib/rotatingMedia";
+import { NURU_PHOTO_POOLS, usePexelsRotatingMedia } from "@/lib/rotatingMedia";
 import { YouTubePlayer, YouTubeNotice } from "@/components/youtube/YouTubePlayer";
 import { YouTubeSearchResults } from "@/components/youtube/YouTubeSearchResults";
 import { MediaCategoryRail } from "@/components/youtube/MediaCategoryRail";
@@ -59,7 +59,7 @@ function MusicScreen() {
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
   const [nowPlaying, setNowPlaying] = useState<NowPlaying | null>(null);
-  const heroBg = useRotatingMedia(NURU_PHOTO_POOLS.music, "music-hero");
+  const heroBg = usePexelsRotatingMedia("music", NURU_PHOTO_POOLS.music, "music-hero");
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(search), 450);
@@ -101,7 +101,7 @@ function MusicScreen() {
   return (
     <AppShell>
       <ScreenHeader title="Music & media" subtitle="Worship, teaching and sound for your week" />
-      <ScreenHero image={heroBg} />
+      <ScreenHero image={heroBg.src} credit={heroBg.credit} />
 
       <div className="space-y-3 px-4 py-3">
         <div className="relative">

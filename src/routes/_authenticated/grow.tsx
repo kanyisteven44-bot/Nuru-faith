@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { BookOpen, ChevronRight, GraduationCap, Sparkles, Sunrise } from "lucide-react";
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
-import { NURU_PHOTO_POOLS, useRotatingMedia } from "@/lib/rotatingMedia";
+import { PhotoCredit } from "@/components/nuru/PhotoCredit";
+import { NURU_PHOTO_POOLS, usePexelsRotatingMedia } from "@/lib/rotatingMedia";
 
 export const Route = createFileRoute("/_authenticated/grow")({
   head: () => ({
@@ -17,7 +18,7 @@ export const Route = createFileRoute("/_authenticated/grow")({
 });
 
 function GrowScreen() {
-  const hero = useRotatingMedia(NURU_PHOTO_POOLS.courses, "grow-hub");
+  const hero = usePexelsRotatingMedia("courses", NURU_PHOTO_POOLS.courses, "grow-hub");
 
   return (
     <AppShell>
@@ -25,7 +26,7 @@ function GrowScreen() {
 
       <div className="grid gap-5 px-4 pb-6 lg:grid-cols-2 lg:px-6">
         <section className="nuru-card relative h-64 overflow-hidden lg:col-span-2 lg:h-80">
-          <img src={hero} alt="" className="absolute inset-0 h-full w-full object-cover" />
+          <img src={hero.src} alt="" className="absolute inset-0 h-full w-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent" />
           <div className="relative flex h-full max-w-[85%] flex-col justify-end p-6 lg:max-w-[55%] lg:p-9">
             <p className="text-[10px] font-bold tracking-[0.24em] text-cyan uppercase">
@@ -38,6 +39,7 @@ function GrowScreen() {
               Daily reflection, thoughtful study, and a path to keep growing.
             </p>
           </div>
+          <PhotoCredit photo={hero.credit} />
         </section>
 
         <Link

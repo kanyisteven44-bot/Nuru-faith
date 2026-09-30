@@ -70,40 +70,40 @@
 :root {
   --radius: 1.125rem;
 
-  --background: #181a1b;
-  --surface: #202426;
-  --surface-2: #303637;
-  --foreground: #f6f4eb;
-  --card: #252a2b;
-  --card-foreground: #f6f4eb;
-  --popover: #303637;
-  --popover-foreground: #f6f4eb;
+  --background: #111715;
+  --surface: #19201d;
+  --surface-2: #202923;
+  --foreground: #f1eee6;
+  --card: #19201d;
+  --card-foreground: #f1eee6;
+  --popover: #202923;
+  --popover-foreground: #f1eee6;
 
-  --brand-cyan: #d5ef8d;
-  --primary: #c9ed72;
-  --primary-foreground: #11190b;
-  --brand-violet: #b2a1d8;
-  --brand-magenta: #e5a89e;
+  --brand-cyan: #48bfff;
+  --primary: #3d6048;
+  --primary-foreground: #f1eee6;
+  --brand-violet: #86c29a;
+  --brand-magenta: #b96445;
 
-  --secondary: #303637;
-  --secondary-foreground: #d6d8d0;
-  --muted: #303637;
-  --muted-foreground: #aeb6af;
-  --accent: #39453a;
-  --accent-foreground: #f6f4eb;
+  --secondary: #202923;
+  --secondary-foreground: #e4e6df;
+  --muted: #202923;
+  --muted-foreground: #9ba79f;
+  --accent: #2b3c32;
+  --accent-foreground: #f1eee6;
 
-  --growth: #a9dabe;
-  --warning: #eebd82;
+  --growth: #86c29a;
+  --warning: #e6b566;
   --destructive: oklch(0.68 0.2 15);
   --destructive-foreground: oklch(0.99 0.004 250);
 
-  --border: rgb(224 232 214 / 22%);
-  --border-strong: rgb(213 239 141 / 42%);
-  --input: rgb(224 232 214 / 34%);
-  --ring: #c9ed72;
+  --border: rgb(241 238 230 / 12%);
+  --border-strong: rgb(72 191 255 / 35%);
+  --input: rgb(241 238 230 / 18%);
+  --ring: #48bfff;
 
-  --sidebar: #202426;
-  --sidebar-foreground: #d6d8d0;
+  --sidebar: #111715;
+  --sidebar-foreground: #e4e6df;
 
   /* Keep the full button gradient bright enough for its dark label. */
   --gradient-brand: linear-gradient(

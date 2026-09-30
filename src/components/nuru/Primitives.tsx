@@ -195,14 +195,15 @@ export function Chip({
   children: ReactNode;
   tone?: "muted" | "growth" | "brand" | "violet";
 }) {
+  // Design system v2 badges: each status sits on its own soft ground.
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium",
-        tone === "muted" && "bg-surface-2 text-muted-foreground",
-        tone === "growth" && "bg-growth/15 text-growth",
-        tone === "brand" && "bg-primary/18 text-cyan ring-1 ring-inset ring-primary/25",
-        tone === "violet" && "bg-violet/15 text-violet",
+        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold tracking-[0.04em]",
+        tone === "muted" && "bg-surface-2 text-ink-3",
+        tone === "growth" && "bg-olive-soft text-leaf",
+        tone === "brand" && "bg-olive-soft text-leaf",
+        tone === "violet" && "bg-[#34211A] text-terra-lt",
       )}
     >
       {children}

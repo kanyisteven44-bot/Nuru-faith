@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { resolveMedia } from "@/lib/media";
 import { useAuth } from "@/hooks/useAuth";
 import { useShareSheet } from "@/hooks/useShareSheet";
 import { fetchVerseOfTheDay, verseOfTheDayRef } from "@/lib/bible";
@@ -129,24 +130,39 @@ function HomeScreen() {
       .sort((a, b) => +new Date(a.starts_at) - +new Date(b.starts_at))[0] ?? null;
 
   return (
-    <AppShell>
+    <AppShell wide="xl">
       <BrandBar />
 
-      <div className="space-y-6 px-4 pt-2 lg:grid lg:grid-cols-12 lg:items-start lg:gap-6 lg:space-y-0 lg:px-6">
+      <div className="space-y-6 px-4 pt-2 lg:grid lg:grid-cols-12 lg:items-start lg:gap-6 lg:space-y-0 lg:px-4 xl:gap-7">
         {/* Greeting */}
-        <section className="lg:col-span-12">
-          <h1 className="font-display text-[26px] font-bold tracking-tight">
-            Shalom, {firstName}! <span className="align-middle">👋</span>
-          </h1>
+        <section className="lg:col-span-12 lg:flex lg:items-end lg:justify-between lg:gap-4">
+          <div>
+            <p className="mb-2 hidden text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan lg:block">
+              Your daily space
+            </p>
+            <h1 className="font-display text-[26px] font-bold tracking-tight lg:text-4xl">
+              Shalom, {firstName}! <span className="align-middle">👋</span>
+            </h1>
+            <p className="mt-2 hidden text-sm text-muted-foreground lg:block">
+              Take a moment. What does your heart need today?
+            </p>
+          </div>
+          <p className="hidden shrink-0 pb-1 text-xs text-muted-foreground xl:block">
+            {today.toLocaleDateString(undefined, {
+              weekday: "long",
+              month: "long",
+              day: "numeric",
+            })}
+          </p>
         </section>
 
         {/* Today's Light */}
-        <section className="lg:col-span-7 lg:row-span-3">
-          <div className="nuru-card relative overflow-hidden">
-            <div className="relative h-56 w-full lg:h-80">
+        <section className="min-w-0 lg:col-span-7 lg:row-span-3 lg:self-stretch">
+          <div className="nuru-card relative overflow-hidden lg:flex lg:h-full lg:flex-col">
+            <div className="relative h-56 w-full lg:h-auto lg:min-h-[400px] lg:flex-1">
               <img src={todayPhoto} alt="" className="h-full w-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/25" />
-              <div className="absolute inset-x-0 top-0 flex items-center justify-between p-3.5">
+              <div className="absolute inset-x-0 top-0 flex items-center justify-between p-3.5 lg:p-6">
                 <span className="font-display text-base font-semibold drop-shadow">
                   Today's Light
                 </span>
@@ -154,12 +170,12 @@ function HomeScreen() {
                   {today.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
                 </span>
               </div>
-              <div className="absolute inset-x-0 bottom-0 px-3.5 pb-3">
+              <div className="absolute inset-x-0 bottom-0 px-3.5 pb-3 lg:px-7 lg:pb-7">
                 {verse.isLoading ? (
                   <div className="h-10 animate-pulse rounded-lg bg-white/10" />
                 ) : (
                   <blockquote>
-                    <p className="line-clamp-3 text-[15px] leading-relaxed font-medium text-white italic drop-shadow-[0_2px_6px_rgba(0,0,0,0.85)]">
+                    <p className="line-clamp-3 text-[15px] leading-relaxed font-medium text-white italic drop-shadow-[0_2px_6px_rgba(0,0,0,0.85)] lg:line-clamp-none lg:font-display lg:text-2xl lg:leading-relaxed lg:not-italic">
                       “
                       {verse.data?.text ?? "I can do all things through Christ who strengthens me."}
                       ”
@@ -173,7 +189,7 @@ function HomeScreen() {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 p-3">
+            <div className="grid grid-cols-3 gap-2 p-3 lg:gap-3 lg:border-t lg:border-border lg:p-4">
               <Link
                 to="/devotionals"
                 className="nuru-tactile flex min-h-11 items-center justify-center gap-1.5 rounded-lg bg-primary text-xs font-semibold text-primary-foreground"
@@ -209,9 +225,11 @@ function HomeScreen() {
         </section>
 
         {/* Quick Access */}
-        <section className="lg:col-span-5">
-          <h2 className="mb-3 font-display text-[15px] font-semibold">Quick Access</h2>
-          <div className="grid grid-cols-4 gap-x-2 gap-y-4 lg:gap-x-4">
+        <section className="lg:col-span-5 lg:rounded-2xl lg:border lg:border-border lg:bg-surface/55 lg:p-5">
+          <h2 className="mb-3 font-display text-[15px] font-semibold lg:mb-5 lg:text-lg">
+            Quick Access
+          </h2>
+          <div className="grid grid-cols-4 gap-x-2 gap-y-4 lg:gap-x-2 lg:gap-y-5">
             {QUICK_ACCESS.map(({ to, label, icon: Icon, tint }) => (
               <Link
                 key={to}
@@ -286,8 +304,8 @@ function HomeScreen() {
         </section>
 
         {/* Upcoming Event */}
-        <section className="lg:col-span-5">
-          <h2 className="mb-3 font-display text-[15px] font-semibold">Upcoming Event</h2>
+        <section className="min-w-0 lg:col-span-5">
+          <h2 className="mb-3 font-display text-[15px] font-semibold lg:text-lg">Upcoming Event</h2>
           {events.isLoading ? (
             <CardSkeleton count={1} height="h-20" />
           ) : nextEvent ? (
@@ -318,6 +336,75 @@ function HomeScreen() {
               No upcoming events yet — your church can add them here.
             </p>
           )}
+        </section>
+        <section className="hidden lg:col-span-12 lg:block">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="font-display text-xl font-semibold">A little more for your day</h2>
+            <Link to="/grow" className="text-xs font-semibold text-cyan hover:underline">
+              Explore learning
+            </Link>
+          </div>
+          <div className="grid gap-5 xl:grid-cols-2">
+            <Link
+              to="/devotionals"
+              className="nuru-card group flex min-h-44 min-w-0 items-center gap-5 p-5 transition-colors hover:border-border-strong"
+            >
+              {devotional?.cover_url ? (
+                <img
+                  src={resolveMedia(devotional.cover_url)}
+                  alt=""
+                  loading="lazy"
+                  className="h-32 w-28 shrink-0 rounded-xl object-cover"
+                />
+              ) : (
+                <span className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-cyan">
+                  <BookOpen className="h-8 w-8" />
+                </span>
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-cyan">
+                  Daily devotional
+                </p>
+                <h3 className="font-display text-xl font-semibold">
+                  {devotionals.isLoading
+                    ? "Loading today’s reading…"
+                    : (devotional?.title ?? "Make time for Scripture")}
+                </h3>
+                <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+                  {devotional?.subtitle ?? "Explore devotionals and take a moment to reflect."}
+                </p>
+                <span className="mt-3 flex items-center gap-2 text-xs font-semibold text-cyan">
+                  {devotional
+                    ? `${devotional.read_minutes} min read · Browse devotionals`
+                    : "Browse devotionals"}
+                  <ArrowRight className="h-4 w-4" />
+                </span>
+              </div>
+            </Link>
+            <Link
+              to="/mentors"
+              className="nuru-card flex min-h-44 min-w-0 items-center gap-5 p-5 transition-colors hover:border-border-strong"
+            >
+              <span className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl border border-violet/30 bg-violet/10 text-violet">
+                <HandHeart className="h-8 w-8" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-violet">
+                  Someone to walk with
+                </p>
+                <h3 className="font-display text-xl font-semibold">
+                  You don’t have to grow alone.
+                </h3>
+                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                  Explore mentors for faith, relationships, leadership and everyday life.
+                </p>
+                <span className="mt-3 flex items-center gap-2 text-xs font-semibold text-cyan">
+                  Explore mentorship
+                  <ArrowRight className="h-4 w-4" />
+                </span>
+              </div>
+            </Link>
+          </div>
         </section>
       </div>
       {shareSheet.node}

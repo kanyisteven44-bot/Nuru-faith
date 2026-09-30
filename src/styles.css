@@ -21,9 +21,12 @@
   --radius-2xl: calc(var(--radius) + 5px);
   --radius-3xl: calc(var(--radius) + 12px);
 
-  --font-display: "Outfit", ui-sans-serif, system-ui, sans-serif;
-  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-script: "Caveat", ui-serif, cursive;
+  /* Editorial serif for Scripture, names and reflection; plain sans for
+     controls and details. Design system v2. */
+  --font-display: "Instrument Serif", Georgia, ui-serif, serif;
+  --font-serif: "Instrument Serif", Georgia, ui-serif, serif;
+  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-script: "Instrument Serif", Georgia, ui-serif, serif;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -45,6 +48,13 @@
   --color-violet: var(--brand-violet);
   --color-magenta: var(--brand-magenta);
   --color-growth: var(--growth);
+  /* v2 named accents — forest leads, terracotta warms, sand highlights. */
+  --color-leaf: var(--leaf);
+  --color-terra: var(--terra);
+  --color-terra-lt: var(--terra-lt);
+  --color-sand: var(--sand);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
   --color-growth-foreground: var(--background);
   --color-warning: var(--warning);
   --color-destructive: var(--destructive);
@@ -73,86 +83,87 @@
      oversized bubbles. Keep one radius scale across every screen. */
   --radius: 0.75rem;
 
-  /* deep midnight surfaces — near-black navy climbing to a lifted card */
-  --background: #00132f;
-  --surface: #02244b;
-  --surface-2: #073565;
-  --foreground: oklch(0.99 0.004 250);
-  --card: #032955;
-  --card-foreground: oklch(0.99 0.004 250);
-  --popover: oklch(0.208 0.04 260);
-  --popover-foreground: oklch(0.99 0.004 250);
+  /* warm dark surfaces — charcoal page climbing to a lifted card */
+  --background: #111715;
+  --surface: #19201d;
+  --surface-2: #222a26;
+  --foreground: #f1eee6;
+  --card: #19201d;
+  --card-foreground: #f1eee6;
+  --popover: #19201d;
+  --popover-foreground: #f1eee6;
 
-  /* brand light — electric blue lead, cyan accent, violet used sparingly */
-  --brand-cyan: #35d9ff;
-  --primary: #168cff;
-  --primary-foreground: oklch(0.99 0.004 250);
-  --brand-violet: #7e6cff;
-  --brand-magenta: #f257a7;
+  /* forest leads for anything selected or primary; terracotta carries the
+     warm moments; sand highlights; Nuru cyan is reserved for the logo and
+     focus light and must not be used as a general accent. */
+  --primary: #3d6048;
+  --primary-foreground: #f1eee6;
+  --forest-hi: #4a7457;
+  --forest-lo: #2e4a37;
+  --leaf: #86c29a;
+  --terra: #b96445;
+  --terra-hi: #c8704f;
+  --terra-lo: #a9573a;
+  --terra-lt: #e08e6d;
+  --sand: #e6b566;
+  --brand-cyan: #48bfff;
+  /* Legacy aliases kept so screens not yet rebuilt stay on-palette. */
+  --brand-violet: #b96445;
+  --brand-magenta: #e08e6d;
 
-  --secondary: oklch(0.246 0.042 259);
-  --secondary-foreground: oklch(0.84 0.028 245);
-  --muted: oklch(0.246 0.042 259);
-  --muted-foreground: oklch(0.672 0.041 249);
-  --accent: oklch(0.32 0.09 265);
-  --accent-foreground: oklch(0.99 0.004 250);
+  --secondary: #222a26;
+  --secondary-foreground: #c9ccc4;
+  --ink-2: #c9ccc4;
+  --ink-3: #949c95;
+  --muted: #222a26;
+  --muted-foreground: #949c95;
+  --accent: #2e4a37;
+  --accent-foreground: #f1eee6;
 
-  --growth: #36e4b5;
-  --warning: #ffb546;
-  --destructive: oklch(0.68 0.2 15);
-  --destructive-foreground: oklch(0.99 0.004 250);
+  --growth: #86c29a;
+  --warning: #e6b566;
+  --destructive: #b84a3c;
+  --destructive-foreground: #fff7f2;
 
-  /* thin electric-blue borders */
-  --border: rgb(36 154 255 / 34%);
-  --border-strong: rgb(53 217 255 / 58%);
-  --input: oklch(0.7 0.12 254 / 22%);
-  --ring: oklch(0.66 0.19 264);
+  /* quiet warm-grey borders, not glowing ones */
+  --border: #2a332f;
+  --border-strong: #3a4540;
+  --input: #3a4540;
+  --ring: #48bfff;
 
-  --sidebar: oklch(0.19 0.037 261);
-  --sidebar-foreground: oklch(0.84 0.028 245);
+  --sidebar: #19201d;
+  --sidebar-foreground: #c9ccc4;
 
-  /* gradients — calm, blue-forward */
-  --gradient-brand: linear-gradient(
-    118deg,
-    var(--brand-cyan) 0%,
-    var(--primary) 55%,
-    var(--brand-violet) 100%
-  );
-  --gradient-button: linear-gradient(
-    140deg,
-    color-mix(in oklab, var(--primary) 88%, var(--brand-cyan)) 0%,
-    var(--primary) 55%,
-    color-mix(in oklab, var(--primary) 82%, var(--brand-violet)) 100%
-  );
-  --gradient-surface: linear-gradient(
-    165deg,
-    color-mix(in oklab, var(--card) 88%, var(--primary)) 0%,
-    var(--card) 62%
-  );
-  --gradient-hero: linear-gradient(
-    160deg,
-    color-mix(in oklab, var(--primary) 34%, var(--surface)) 0%,
-    color-mix(in oklab, var(--brand-violet) 12%, var(--surface)) 55%,
-    var(--surface) 100%
+  /* gradients — warm and quiet; forest for primary, terracotta for warmth */
+  --gradient-brand: linear-gradient(118deg, var(--leaf) 0%, var(--primary) 60%, var(--forest-lo) 100%);
+  --gradient-button: linear-gradient(180deg, var(--forest-hi), var(--primary));
+  --gradient-warm: linear-gradient(180deg, var(--terra-hi), var(--terra-lo));
+  --gradient-surface: linear-gradient(180deg, #1c2420, #171e1b);
+  --gradient-hero: radial-gradient(
+    90% 120% at 75% 0%,
+    #2c4535 0%,
+    #1a2520 55%,
+    #141a17 100%
   );
   --gradient-veil: linear-gradient(
     to top,
-    oklch(0.13 0.03 262 / 0.96) 6%,
-    oklch(0.13 0.03 262 / 0.55) 42%,
-    oklch(0.13 0.03 262 / 0) 82%
+    rgb(17 23 21 / 0.96) 6%,
+    rgb(17 23 21 / 0.55) 42%,
+    rgb(17 23 21 / 0) 82%
   );
+  /* The pointed arch echoes the Nuru logo; used as a mask on media. */
+  --pointed: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0 100V46C0 22 22 6 50 0C78 6 100 22 100 46V100Z'/%3E%3C/svg%3E");
+  --halo: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M1 100V46C1 22 22 7 50 1C78 7 99 22 99 46V100' fill='none' stroke='%2348BFFF' stroke-opacity='.6' stroke-width='1.4' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
 
-  /* elevation + glow — soft shadows, restrained blue halo */
-  --shadow-card:
-    0 2px 6px -3px oklch(0.08 0.03 262 / 0.55), 0 12px 30px -18px oklch(0.06 0.03 262 / 0.7);
+  /* elevation — soft, tactile, bevelled; glow stays rare and small */
+  --shadow-card: inset 0 1px 0 rgb(255 255 255 / 4%), 0 10px 30px rgb(0 0 0 / 35%);
   --shadow-raised:
-    0 4px 12px -4px oklch(0.07 0.03 262 / 0.6), 0 20px 44px -20px oklch(0.05 0.03 262 / 0.75);
-  --shadow-glow:
-    0 0 0 1px color-mix(in oklab, var(--primary) 42%, transparent),
-    0 10px 34px -14px color-mix(in oklab, var(--primary) 55%, transparent);
-  --shadow-glow-sm:
-    0 0 0 1px color-mix(in oklab, var(--primary) 30%, transparent),
-    0 6px 20px -12px color-mix(in oklab, var(--primary) 45%, transparent);
+    inset 0 1px 0 rgb(255 255 255 / 7%), 0 1px 0 rgb(0 0 0 / 40%),
+    0 8px 22px rgb(0 0 0 / 32%);
+  /* Glow is reserved for the logo, focus rings and the one thing that
+     matters on a screen — never as general decoration. */
+  --shadow-glow: 0 0 0 1px rgb(72 191 255 / 30%), 0 0 22px rgb(72 191 255 / 22%);
+  --shadow-glow-sm: 0 0 0 1px rgb(72 191 255 / 25%), 0 0 18px rgb(72 191 255 / 18%);
 }
 
 .dark {
@@ -195,14 +206,16 @@
   }
 }
 
-/* Approved Nuru visual system: crisp illuminated panels, never soft generic cards. */
+/* Design system v2: soft warm-dark panels with a quiet warm-grey hairline.
+   No glowing borders — glow belongs to the logo and focus only. */
 .nuru-card,
 .nuru-card-hero {
-  border-radius: 0.65rem;
-  border-color: color-mix(in oklab, var(--brand-cyan) 28%, transparent);
-  box-shadow:
-    inset 0 1px 0 color-mix(in oklab, white 7%, transparent),
-    0 12px 34px -28px color-mix(in oklab, var(--brand-cyan) 85%, transparent);
+  border-radius: 1.5rem;
+  border-color: var(--border);
+}
+.nuru-card:hover,
+.nuru-card-hero:hover {
+  border-color: var(--border-strong);
 }
 
 button,
@@ -222,14 +235,12 @@ a {
   background-image: var(--gradient-button);
 }
 
-/* Flat dark-navy card with a thin blue border + soft shadow. */
+/* Warm-dark card with a quiet hairline + soft shadow. */
 @utility nuru-card {
-  background-color: var(--color-card);
+  background-image: var(--gradient-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-xl);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 3%),
-    var(--shadow-card);
+  border-radius: 1.5rem;
+  box-shadow: var(--shadow-card);
 }
 
 /* Card that leans into the brand — used for the one hero surface per screen. */
@@ -285,9 +296,76 @@ a {
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-sm);
-  background-color: color-mix(in oklab, var(--primary) 18%, var(--surface-2));
-  border: 1px solid color-mix(in oklab, var(--primary) 24%, transparent);
-  color: var(--brand-cyan);
+  background-color: color-mix(in oklab, var(--primary) 30%, var(--surface-2));
+  border: 1px solid color-mix(in oklab, var(--leaf) 24%, transparent);
+  color: var(--leaf);
+}
+
+/* ---------- Design system v2 motifs ---------- */
+
+/* The pointed arch echoes the Nuru logo. Used to mask hero media. */
+@utility nuru-arch {
+  overflow: hidden;
+  -webkit-mask: var(--pointed) center / 100% 100% no-repeat;
+  mask: var(--pointed) center / 100% 100% no-repeat;
+}
+
+/* The same arch as a drawn cyan outline — the "Nuru halo". */
+@utility nuru-halo {
+  background: var(--halo) center / 100% 100% no-repeat;
+  filter: drop-shadow(0 0 6px rgb(72 191 255 / 35%));
+}
+
+/* A hairline of light, fading out at both ends. */
+@utility nuru-light-rule {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    rgb(72 191 255 / 0),
+    rgb(72 191 255 / 70%),
+    rgb(72 191 255 / 0)
+  );
+}
+
+/* Soft raised circle — the tactile control the design is built around.
+   A quiet bevel: light on the top edge, shadow under it. */
+@utility nuru-disc {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 9999px;
+  background: radial-gradient(80% 80% at 35% 25%, #4f7a5d, #2e4a37);
+  color: #eaf5ec;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 18%),
+    inset 0 -2px 4px rgb(0 0 0 / 30%),
+    0 4px 10px rgb(0 0 0 / 35%);
+}
+
+@utility nuru-disc-terra {
+  background: radial-gradient(80% 80% at 35% 25%, #d07b5a, #9c4c31);
+  color: #fff1ea;
+}
+
+@utility nuru-disc-sand {
+  background: radial-gradient(80% 80% at 35% 25%, #f0c47a, #b9873c);
+  color: #2a1c08;
+}
+
+/* Small sand label above a heading. */
+@utility nuru-eyebrow {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--sand);
+}
+
+/* The raised, bevelled elevation used by buttons and selected nav. */
+@utility nuru-raise {
+  box-shadow: var(--shadow-raised);
 }
 
 @utility no-scrollbar {

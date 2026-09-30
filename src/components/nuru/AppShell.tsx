@@ -96,8 +96,12 @@ export function AppShell({
         flush ? "h-dvh overflow-hidden" : "min-h-dvh",
       )}
     >
+      <a href="#nuru-main" className="nuru-skip-link">
+        Skip to content
+      </a>
       <main
         id="nuru-main"
+        tabIndex={-1}
         className={cn(
           "relative z-10 mx-auto w-full max-w-xl lg:px-4 xl:px-8",
           flush || hideNav ? "" : "pb-24 lg:pb-10",
@@ -332,7 +336,7 @@ export function ScreenHeader({
 }) {
   const navigate = useNavigate();
   return (
-    <header className="sticky top-0 z-30 flex items-center gap-3 bg-background/90 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-xl">
+    <header className="sticky top-0 z-30 flex items-center gap-3 bg-background/90 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-xl lg:mb-6 lg:border-b lg:border-border lg:py-6">
       {back && (
         <button
           type="button"
@@ -344,8 +348,12 @@ export function ScreenHeader({
         </button>
       )}
       <div className="min-w-0 flex-1">
-        <h1 className="truncate font-display text-[22px] font-semibold tracking-tight">{title}</h1>
-        {subtitle && <p className="truncate text-xs text-muted-foreground">{subtitle}</p>}
+        <h1 className="truncate font-display text-[22px] font-semibold tracking-tight lg:text-3xl">
+          {title}
+        </h1>
+        {subtitle && (
+          <p className="truncate text-xs text-muted-foreground lg:mt-1.5 lg:text-sm">{subtitle}</p>
+        )}
       </div>
       {right && <div className="flex shrink-0 items-center gap-2">{right}</div>}
     </header>

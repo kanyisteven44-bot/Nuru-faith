@@ -1,13 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import {
-  BookOpen,
-  ChevronRight,
-  Clock3,
-  GraduationCap,
-  Search,
-  Sparkles,
-} from "lucide-react";
+import { BookOpen, ChevronRight, Clock3, GraduationCap, Search, Sparkles } from "lucide-react";
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
 import { Chip } from "@/components/nuru/Primitives";
 import { cn } from "@/lib/utils";
@@ -44,8 +37,7 @@ function FaithCoursesScreen() {
     return FAITH_COURSES.filter((item) => {
       const matchesCategory = !category || item.category === category;
       const matchesQuery =
-        !q ||
-        `${item.title} ${item.description} ${item.category}`.toLowerCase().includes(q);
+        !q || `${item.title} ${item.description} ${item.category}`.toLowerCase().includes(q);
       return matchesCategory && matchesQuery;
     });
   }, [query, category]);
@@ -128,7 +120,7 @@ function FaithCoursesScreen() {
               </span>
             </div>
 
-            <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
+            <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1 lg:mx-0 lg:grid lg:grid-cols-3 lg:overflow-visible lg:px-0">
               {FEATURED_FAITH_COURSES.map((item) => (
                 <FeaturedCourseCard key={item.slug} course={item} />
               ))}
@@ -144,7 +136,7 @@ function FaithCoursesScreen() {
             <span className="text-[11px] text-muted-foreground">{filtered.length} found</span>
           </div>
 
-          <div className="space-y-2.5">
+          <div className="space-y-2.5 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
             {filtered.map((item) => (
               <CourseRow key={item.slug} course={item} />
             ))}
@@ -173,7 +165,7 @@ function FeaturedCourseCard({ course }: { course: FaithCourse }) {
     <Link
       to="/faith-courses/$slug"
       params={{ slug: course.slug }}
-      className="nuru-card relative block h-52 w-64 shrink-0 overflow-hidden active:opacity-95"
+      className="nuru-card relative block h-52 w-64 shrink-0 overflow-hidden active:opacity-95 lg:w-full lg:transition-colors lg:hover:border-cyan/50"
     >
       <img
         src={resolveMedia(course.cover)}
@@ -203,13 +195,13 @@ function CourseRow({ course }: { course: FaithCourse }) {
     <Link
       to="/faith-courses/$slug"
       params={{ slug: course.slug }}
-      className="nuru-card flex items-center gap-3 p-2.5 active:opacity-90"
+      className="nuru-card flex items-center gap-3 p-2.5 active:opacity-90 lg:gap-4 lg:p-4 lg:transition-colors lg:hover:border-cyan/50"
     >
       <img
         src={resolveMedia(course.cover)}
         alt=""
         loading="lazy"
-        className="h-16 w-16 shrink-0 rounded-xl object-cover"
+        className="h-16 w-16 shrink-0 rounded-xl object-cover lg:h-20 lg:w-20"
       />
       <span className="min-w-0 flex-1">
         <span className="block text-[10px] font-bold tracking-wide text-cyan uppercase">

@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 import { resolveMedia } from "@/lib/media";
 import { useAuth } from "@/hooks/useAuth";
 import { useShareSheet } from "@/hooks/useShareSheet";
-import { fetchVerseOfTheDay, verseOfTheDayRef } from "@/lib/bible";
+import { fetchVerseOfTheDay } from "@/lib/bible";
 import { fetchDevotionals, fetchEvents, fetchProfile } from "@/services/content";
 import { AppShell, BrandBar } from "@/components/nuru/AppShell";
 import { CardSkeleton } from "@/components/nuru/Primitives";
@@ -160,7 +160,11 @@ function HomeScreen() {
         <section className="min-w-0 lg:col-span-7 lg:row-span-3 lg:self-stretch">
           <div className="nuru-card relative overflow-hidden lg:flex lg:h-full lg:flex-col">
             <div className="relative h-56 w-full lg:h-auto lg:min-h-[400px] lg:flex-1">
-              <img src={todayPhoto} alt="" className="h-full w-full object-cover" />
+              <img
+                src={todayPhoto}
+                alt=""
+                className="absolute inset-0 h-full w-full object-cover"
+              />
               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/25" />
               <div className="absolute inset-x-0 top-0 flex items-center justify-between p-3.5 lg:p-6">
                 <span className="font-display text-base font-semibold drop-shadow">
@@ -173,34 +177,51 @@ function HomeScreen() {
               <div className="absolute inset-x-0 bottom-0 px-3.5 pb-3 lg:px-7 lg:pb-7">
                 {verse.isLoading ? (
                   <div className="h-10 animate-pulse rounded-lg bg-white/10" />
-                ) : (
+                ) : verse.data ? (
                   <blockquote>
                     <p className="line-clamp-3 text-[15px] leading-relaxed font-medium text-white italic drop-shadow-[0_2px_6px_rgba(0,0,0,0.85)] lg:line-clamp-none lg:font-display lg:text-2xl lg:leading-relaxed lg:not-italic">
-                      “
-                      {verse.data?.text ?? "I can do all things through Christ who strengthens me."}
-                      ”
+                      “{verse.data.text}”
                     </p>
                     <cite className="mt-1 block text-[11px] font-semibold text-cyan not-italic drop-shadow-[0_2px_6px_rgba(0,0,0,0.85)]">
-                      {verse.data?.reference ?? verseOfTheDayRef()}
+                      {verse.data.reference}
                       {verse.data?.translation ? ` (${verse.data.translation})` : ""}
                     </cite>
                   </blockquote>
+                ) : (
+                  <div
+                    role="status"
+                    className="rounded-xl border border-white/15 bg-background/65 p-4 backdrop-blur"
+                  >
+                    <p className="text-sm text-white/90">
+                      Today’s verse couldn’t load. Take a moment with your Bible instead.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => void verse.refetch()}
+                      disabled={verse.isFetching}
+                      className="mt-3 min-h-10 text-sm font-semibold text-cyan disabled:opacity-50"
+                    >
+                      {verse.isFetching ? "Trying again…" : "Try again"}
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
 
             <div className="grid grid-cols-3 gap-2 p-3 lg:gap-3 lg:border-t lg:border-border lg:p-4">
               <Link
-                to="/devotionals"
+                to="/bible"
                 className="nuru-tactile flex min-h-11 items-center justify-center gap-1.5 rounded-lg bg-primary text-xs font-semibold text-primary-foreground"
               >
-                <BookOpen className="h-3.5 w-3.5" /> Read
+                <BookOpen className="h-3.5 w-3.5" /> Read Bible
               </Link>
               <Link
                 to="/ai"
                 search={{
-                  contextType: "devotional",
-                  contextLabel: devotional?.title ?? "Today's Light",
+                  contextType: "verse",
+                  contextLabel: verse.data
+                    ? `${verse.data.reference}: ${verse.data.text.trim()}`
+                    : "Reflect on Scripture",
                 }}
                 className="nuru-tactile flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-border bg-surface-2 text-xs font-semibold text-secondary-foreground"
               >
@@ -209,11 +230,13 @@ function HomeScreen() {
               <button
                 type="button"
                 onClick={() => {
-                  const text = devotional?.title ?? "Today's Light on Nuru Faith";
+                  const text = verse.data
+                    ? `${verse.data.text.trim()} — ${verse.data.reference}`
+                    : "Take a moment with Scripture on Nuru Faith.";
                   void shareSheet.share({
-                    title: text,
+                    title: "Today's Light — Nuru Faith",
                     text,
-                    url: `${window.location.origin}/devotionals`,
+                    url: `${window.location.origin}/bible`,
                   });
                 }}
                 className="nuru-tactile flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-border bg-surface-2 text-xs font-semibold text-secondary-foreground"
@@ -225,7 +248,7 @@ function HomeScreen() {
         </section>
 
         {/* Quick Access */}
-        <section className="lg:col-span-5 lg:rounded-2xl lg:border lg:border-border lg:bg-surface/55 lg:p-5">
+        <section className="lg:col-span-5 lg:rounded-2xl lg:border lg:border-border lg:bg-surface/55 lg:p-5 xl:p-6">
           <h2 className="mb-3 font-display text-[15px] font-semibold lg:mb-5 lg:text-lg">
             Quick Access
           </h2>
@@ -262,7 +285,7 @@ function HomeScreen() {
           </span>
 
           <div className="min-w-0 flex-1">
-            <h2 className="font-display text-[14px] font-semibold text-primary">
+            <h2 className="font-display text-[14px] font-semibold text-warning">
               Today&apos;s Challenge
             </h2>
             <p className="mt-0.5 text-[13px] leading-snug text-secondary-foreground">{challenge}</p>

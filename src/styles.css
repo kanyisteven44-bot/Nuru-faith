@@ -593,3 +593,28 @@ a {
     transform: none;
   }
 }
+
+/* Clear keyboard navigation throughout the desktop workspace. */
+:where(a, button, input, textarea, select):focus-visible {
+  outline: 2px solid var(--brand-cyan);
+  outline-offset: 4px;
+}
+.nuru-skip-link {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 100;
+  transform: translateY(-200%);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--surface-2);
+  color: var(--foreground);
+}
+.nuru-skip-link:focus {
+  transform: translateY(0);
+}
+@media (min-width: 1024px) {
+  .nuru-card {
+    border-radius: 1rem;
+  }
+}

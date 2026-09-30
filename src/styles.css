@@ -149,16 +149,16 @@
   --sidebar-foreground: #c9ccc4;
 
   /* gradients — warm and quiet; forest for primary, terracotta for warmth */
-  --gradient-brand: linear-gradient(118deg, var(--leaf) 0%, var(--primary) 60%, var(--forest-lo) 100%);
+  --gradient-brand: linear-gradient(
+    118deg,
+    var(--leaf) 0%,
+    var(--primary) 60%,
+    var(--forest-lo) 100%
+  );
   --gradient-button: linear-gradient(180deg, var(--forest-hi), var(--primary));
   --gradient-warm: linear-gradient(180deg, var(--terra-hi), var(--terra-lo));
   --gradient-surface: linear-gradient(180deg, #1c2420, #171e1b);
-  --gradient-hero: radial-gradient(
-    90% 120% at 75% 0%,
-    #2c4535 0%,
-    #1a2520 55%,
-    #141a17 100%
-  );
+  --gradient-hero: radial-gradient(90% 120% at 75% 0%, #2c4535 0%, #1a2520 55%, #141a17 100%);
   --gradient-veil: linear-gradient(
     to top,
     rgb(17 23 21 / 0.96) 6%,
@@ -172,8 +172,7 @@
   /* elevation — soft, tactile, bevelled; glow stays rare and small */
   --shadow-card: inset 0 1px 0 rgb(255 255 255 / 4%), 0 10px 30px rgb(0 0 0 / 35%);
   --shadow-raised:
-    inset 0 1px 0 rgb(255 255 255 / 7%), 0 1px 0 rgb(0 0 0 / 40%),
-    0 8px 22px rgb(0 0 0 / 32%);
+    inset 0 1px 0 rgb(255 255 255 / 7%), 0 1px 0 rgb(0 0 0 / 40%), 0 8px 22px rgb(0 0 0 / 32%);
   /* Glow is reserved for the logo, focus rings and the one thing that
      matters on a screen — never as general decoration. */
   --shadow-glow: 0 0 0 1px rgb(72 191 255 / 30%), 0 0 22px rgb(72 191 255 / 22%);
@@ -451,47 +450,106 @@ a {
    unchanged. See SplashScreen.tsx.
    --------------------------------------------------------------------------- */
 @keyframes nuru-open-draw {
-  from { stroke-dashoffset: 1; }
-  to { stroke-dashoffset: 0; }
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
 }
 @keyframes nuru-open-fade {
-  from { opacity: 0; transform: translateY(16px); }
-  to { opacity: 1; transform: none; }
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 @keyframes nuru-open-beam {
-  from { opacity: 0; transform: scaleY(0.15); }
-  to { opacity: 1; transform: scaleY(1); }
+  from {
+    opacity: 0;
+    transform: scaleY(0.15);
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1);
+  }
 }
 @keyframes nuru-open-pulse {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 @keyframes nuru-open-spark {
-  0% { opacity: 0; transform: scale(0.2); }
-  60% { opacity: 1; transform: scale(1.4); }
-  100% { opacity: 0.9; transform: scale(1); }
+  0% {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.4);
+  }
+  100% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
 }
 @keyframes nuru-open-rise {
-  from { opacity: 0; transform: translateY(40px); }
-  to { opacity: 0.5; transform: none; }
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 0.5;
+    transform: none;
+  }
 }
 @keyframes nuru-open-float {
-  0% { transform: translateY(0) scale(0.6); opacity: 0; }
-  15% { opacity: 0.9; }
-  70% { opacity: 0.6; }
-  100% { transform: translateY(-460px) scale(1); opacity: 0; }
+  0% {
+    transform: translateY(0) scale(0.6);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.9;
+  }
+  70% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateY(-460px) scale(1);
+    opacity: 0;
+  }
 }
 @keyframes nuru-open-sway {
-  0%, 100% { margin-left: 0; }
-  50% { margin-left: 14px; }
+  0%,
+  100% {
+    margin-left: 0;
+  }
+  50% {
+    margin-left: 14px;
+  }
 }
 @keyframes nuru-open-rays-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 @keyframes nuru-open-spin {
-  from { transform: translate(-50%, -50%) rotate(0deg); }
-  to { transform: translate(-50%, -50%) rotate(360deg); }
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
 }
 
 .nuru-open-draw {
@@ -511,11 +569,25 @@ a {
   opacity: 0;
   animation: nuru-open-spark 0.8s ease-out 2s forwards;
 }
-.nuru-open-f1 { opacity: 0; animation: nuru-open-fade 0.9s ease-out 2.3s forwards; }
-.nuru-open-f2 { opacity: 0; animation: nuru-open-fade 0.9s ease-out 2.7s forwards; }
-.nuru-open-f3 { opacity: 0; animation: nuru-open-fade 0.9s ease-out 3.1s forwards; }
-.nuru-open-glow { animation: nuru-open-pulse 3.6s ease-in-out 3.2s infinite; }
-.nuru-open-side { opacity: 0; animation: nuru-open-rise 1.6s ease-out 2.4s forwards; }
+.nuru-open-f1 {
+  opacity: 0;
+  animation: nuru-open-fade 0.9s ease-out 2.3s forwards;
+}
+.nuru-open-f2 {
+  opacity: 0;
+  animation: nuru-open-fade 0.9s ease-out 2.7s forwards;
+}
+.nuru-open-f3 {
+  opacity: 0;
+  animation: nuru-open-fade 0.9s ease-out 3.1s forwards;
+}
+.nuru-open-glow {
+  animation: nuru-open-pulse 3.6s ease-in-out 3.2s infinite;
+}
+.nuru-open-side {
+  opacity: 0;
+  animation: nuru-open-rise 1.6s ease-out 2.4s forwards;
+}
 
 .nuru-open-rays {
   opacity: 0;
@@ -560,8 +632,14 @@ a {
 
 /* Exit: the whole opening lifts away and lets the app through. */
 @keyframes nuru-open-exit {
-  from { opacity: 1; transform: scale(1); }
-  to { opacity: 0; transform: scale(1.06); }
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.06);
+  }
 }
 .nuru-open-exit {
   animation: nuru-open-exit 520ms cubic-bezier(0.3, 0, 0.15, 1) forwards;
@@ -573,8 +651,13 @@ a {
     opacity: 0.8;
     transform: translate(-50%, -50%);
   }
-  .nuru-open-p { display: none; }
-  .nuru-open-draw { animation: none; stroke-dashoffset: 0; }
+  .nuru-open-p {
+    display: none;
+  }
+  .nuru-open-draw {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
   .nuru-open-beam,
   .nuru-open-spark,
   .nuru-open-f1,
@@ -584,7 +667,14 @@ a {
     opacity: 1;
     transform: none;
   }
-  .nuru-open-side { animation: none; opacity: 0.5; }
-  .nuru-open-glow { animation: none; }
-  .nuru-open-exit { animation-duration: 160ms; }
+  .nuru-open-side {
+    animation: none;
+    opacity: 0.5;
+  }
+  .nuru-open-glow {
+    animation: none;
+  }
+  .nuru-open-exit {
+    animation-duration: 160ms;
+  }
 }

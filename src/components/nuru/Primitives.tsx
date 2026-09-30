@@ -74,11 +74,13 @@ export function PillTabs<T extends string>({
             role="tab"
             aria-selected={active}
             onClick={() => onChange(tab)}
+            // Design system v2 chip: a rounded capsule with a quiet bevel;
+            // the selected one fills with forest and lifts.
             className={cn(
-              "min-h-9 shrink-0 rounded-lg px-4 text-[13px] font-semibold transition-all",
+              "h-9 shrink-0 rounded-full border px-3.5 text-[13px] font-semibold transition-all",
               active
-                ? "bg-primary text-primary-foreground nuru-glow-sm"
-                : "border border-border bg-surface-2/60 text-muted-foreground hover:text-secondary-foreground",
+                ? "nuru-raise border-leaf/30 bg-[linear-gradient(180deg,var(--forest-hi),var(--primary))] text-foreground"
+                : "border-border-strong bg-[linear-gradient(180deg,#212A26,#1A211E)] text-ink-2 shadow-[inset_0_1px_0_rgb(255_255_255/5%)] hover:text-foreground",
             )}
           >
             {tab}

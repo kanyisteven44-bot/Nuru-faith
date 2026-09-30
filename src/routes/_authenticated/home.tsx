@@ -1,14 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
-  ArrowRight,
-  BookOpen,
-  CalendarDays,
-  ChevronRight,
-  HandHeart,
-  Users,
-} from "lucide-react";
+import { ArrowRight, BookOpen, CalendarDays, ChevronRight, HandHeart, Users } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchVerseOfTheDay, verseOfTheDayRef } from "@/lib/bible";
 import { fetchEvents, fetchPostPage, fetchProfile } from "@/services/content";
@@ -144,10 +137,7 @@ function HomeScreen() {
         {/* Next church gathering — real events only. */}
         <section className="mt-3.5">
           {nextEvent ? (
-            <Link
-              to="/events"
-              className="nuru-card flex items-center gap-3 p-3 transition-colors"
-            >
+            <Link to="/events" className="nuru-card flex items-center gap-3 p-3 transition-colors">
               <span className="nuru-disc nuru-disc-terra h-9 w-9">
                 <CalendarDays className="h-4 w-4" strokeWidth={1.9} />
               </span>

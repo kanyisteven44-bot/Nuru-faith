@@ -139,9 +139,7 @@ export function BrandBar({ centered = false }: { centered?: boolean }) {
         <Link to="/home" aria-label="Nuru Faith">
           <NuruLockup />
         </Link>
-        <div className="absolute top-[max(0.75rem,env(safe-area-inset-top))] right-4">
-          {avatar}
-        </div>
+        <div className="absolute top-[max(0.75rem,env(safe-area-inset-top))] right-4">{avatar}</div>
       </header>
     );
   }

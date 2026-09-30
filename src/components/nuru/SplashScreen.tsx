@@ -155,9 +155,7 @@ export function SplashScreen() {
       )}
     >
       {/* Soft cyan bloom behind the mark */}
-      <div
-        className="nuru-open-glow pointer-events-none absolute left-1/2 top-10 h-[900px] w-[900px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(72,191,255,.18),rgba(72,191,255,0))]"
-      />
+      <div className="nuru-open-glow pointer-events-none absolute left-1/2 top-10 h-[900px] w-[900px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(72,191,255,.18),rgba(72,191,255,0))]" />
       {/* Two ray fields, cool and warm, turning in opposite directions */}
       <div className="nuru-open-rays absolute left-1/2 top-[134px] h-[1300px] w-[1300px]" />
       <div className="nuru-open-rays nuru-open-rays-warm absolute left-1/2 top-[134px] h-[1040px] w-[1040px]" />

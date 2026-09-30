@@ -1,13 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import {
-  BookOpen,
-  ChevronRight,
-  Clock3,
-  GraduationCap,
-  Search,
-  Sparkles,
-} from "lucide-react";
+import { BookOpen, ChevronRight, Clock3, GraduationCap, Search, Sparkles } from "lucide-react";
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
 import { Chip } from "@/components/nuru/Primitives";
 import { cn } from "@/lib/utils";
@@ -44,8 +37,7 @@ function FaithCoursesScreen() {
     return FAITH_COURSES.filter((item) => {
       const matchesCategory = !category || item.category === category;
       const matchesQuery =
-        !q ||
-        `${item.title} ${item.description} ${item.category}`.toLowerCase().includes(q);
+        !q || `${item.title} ${item.description} ${item.category}`.toLowerCase().includes(q);
       return matchesCategory && matchesQuery;
     });
   }, [query, category]);
@@ -59,7 +51,7 @@ function FaithCoursesScreen() {
           <img src={hero} alt="" className="absolute inset-0 h-full w-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-background/20" />
           <div className="relative flex h-full max-w-[78%] flex-col justify-end p-4">
-            <span className="mb-2 inline-flex w-fit items-center gap-1 rounded-full border border-cyan/25 bg-cyan/10 px-2.5 py-1 text-[10px] font-bold tracking-wide text-cyan uppercase">
+            <span className="mb-2 inline-flex w-fit items-center gap-1 rounded-full border border-leaf/25 bg-leaf/10 px-2.5 py-1 text-[10px] font-bold tracking-wide text-leaf uppercase">
               <GraduationCap className="h-3.5 w-3.5" />
               Nuru Learning
             </span>
@@ -118,7 +110,7 @@ function FaithCoursesScreen() {
           <section>
             <div className="mb-3 flex items-end justify-between gap-4">
               <div>
-                <p className="text-[10px] font-bold tracking-[0.15em] text-cyan uppercase">
+                <p className="text-[10px] font-bold tracking-[0.15em] text-leaf uppercase">
                   Start here
                 </p>
                 <h2 className="font-display text-lg font-bold">Foundational courses</h2>
@@ -152,7 +144,7 @@ function FaithCoursesScreen() {
         </section>
 
         <section className="nuru-card flex items-start gap-3 p-4">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-primary/30 bg-primary/10 text-cyan">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-primary/30 bg-primary/10 text-leaf">
             <Sparkles className="h-5 w-5" />
           </span>
           <div>
@@ -212,7 +204,7 @@ function CourseRow({ course }: { course: FaithCourse }) {
         className="h-16 w-16 shrink-0 rounded-xl object-cover"
       />
       <span className="min-w-0 flex-1">
-        <span className="block text-[10px] font-bold tracking-wide text-cyan uppercase">
+        <span className="block text-[10px] font-bold tracking-wide text-leaf uppercase">
           {course.category} · {course.level}
         </span>
         <span className="mt-0.5 block truncate font-display text-sm font-semibold">

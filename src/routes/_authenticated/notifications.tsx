@@ -113,7 +113,7 @@ function NotificationsScreen() {
                 !n.read && "border-primary/45 bg-primary/8",
               )}
             >
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-primary/35 bg-primary/12 text-cyan">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-primary/35 bg-primary/12 text-leaf">
                 <Icon className="h-4 w-4" strokeWidth={1.8} />
               </span>
               <span className="min-w-0 flex-1">
@@ -141,7 +141,7 @@ function NotificationsScreen() {
                   {timeAgo(n.created_at)}
                 </span>
               </span>
-              {!n.read && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-cyan" />}
+              {!n.read && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-leaf" />}
             </button>
           );
         })}
@@ -218,10 +218,10 @@ function PushControl() {
       <div
         className={cn(
           "nuru-card flex items-center gap-3 p-3",
-          enabled && "border-cyan/35 bg-cyan/5",
+          enabled && "border-leaf/35 bg-leaf/5",
         )}
       >
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-primary/30 bg-primary/10 text-cyan">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-primary/30 bg-primary/10 text-leaf">
           {blocked ? <BellOff className="h-4.5 w-4.5" /> : <BellRing className="h-4.5 w-4.5" />}
         </span>
 

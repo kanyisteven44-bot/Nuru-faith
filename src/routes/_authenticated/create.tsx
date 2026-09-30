@@ -189,7 +189,7 @@ function CreateScreen() {
                 <span
                   className={cn(
                     "h-4 w-4 rounded-full border",
-                    audience === a ? "border-cyan bg-cyan" : "border-border-strong",
+                    audience === a ? "border-leaf bg-leaf" : "border-border-strong",
                   )}
                 />
               </button>

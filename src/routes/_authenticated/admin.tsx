@@ -25,12 +25,7 @@ import {
   updateModerationStatus,
   type ModerationItem,
 } from "@/services/content";
-import {
-  CardSkeleton,
-  ComingSoon,
-  EmptyState,
-  SectionHeader,
-} from "@/components/nuru/Primitives";
+import { CardSkeleton, ComingSoon, EmptyState, SectionHeader } from "@/components/nuru/Primitives";
 import { NuruLogo } from "@/components/nuru/Logo";
 import { getPilotMetrics } from "@/lib/pilot.functions";
 
@@ -101,9 +96,10 @@ function AdminScreen() {
   });
 
   const myChurchIds = (roles.data ?? []).map((r) => r.church_id).filter(Boolean);
-  const scoped = isSuper || isModerator
-    ? (churches.data ?? [])
-    : (churches.data ?? []).filter((c) => myChurchIds.includes(c.id));
+  const scoped =
+    isSuper || isModerator
+      ? (churches.data ?? [])
+      : (churches.data ?? []).filter((c) => myChurchIds.includes(c.id));
 
   if (roles.isLoading) {
     return (
@@ -120,7 +116,7 @@ function AdminScreen() {
           title="Admin access only"
           description="This dashboard is for church admins and Nuru moderation staff."
           action={
-            <Link to="/home" className="mt-2 text-sm font-semibold text-cyan">
+            <Link to="/home" className="mt-2 text-sm font-semibold text-leaf">
               Back to Nuru Faith
             </Link>
           }
@@ -149,11 +145,11 @@ function AdminScreen() {
       <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-surface/90 px-6 py-4 backdrop-blur-xl">
         <div className="flex items-center gap-4">
           <NuruLogo compact />
-          <span className="hidden items-center gap-1.5 rounded-full bg-surface-2 px-3 py-1 text-xs text-cyan sm:flex">
+          <span className="hidden items-center gap-1.5 rounded-full bg-surface-2 px-3 py-1 text-xs text-leaf sm:flex">
             <ShieldCheck className="h-3.5 w-3.5" /> {roleLabel}
           </span>
         </div>
-        <Link to="/home" className="text-sm font-medium text-cyan">
+        <Link to="/home" className="text-sm font-medium text-leaf">
           Back to app
         </Link>
       </header>
@@ -191,11 +187,17 @@ function AdminScreen() {
                   <Metric label="Members" value={pilotMetrics.profiles} icon={Users} />
                   <Metric label="Active today" value={pilotMetrics.active_today} icon={Activity} />
                   <Metric label="7-day active" value={pilotMetrics.active_7d} icon={UserCheck} />
-                  <Metric label="Push enabled" value={pilotMetrics.push_enabled_users} icon={BellRing} />
+                  <Metric
+                    label="Push enabled"
+                    value={pilotMetrics.push_enabled_users}
+                    icon={BellRing}
+                  />
                 </div>
                 <div className="mt-3 grid gap-3 md:grid-cols-2">
                   <div className="nuru-card p-4">
-                    <p className="text-xs font-medium text-muted-foreground">Onboarding completion</p>
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Onboarding completion
+                    </p>
                     <p className="mt-1 font-display text-2xl font-semibold">{onboardingRate}%</p>
                     <p className="mt-1 text-[11px] text-muted-foreground">
                       {pilotMetrics.onboarded} of {pilotMetrics.profiles} profiles onboarded
@@ -205,7 +207,8 @@ function AdminScreen() {
                     <p className="text-xs font-medium text-muted-foreground">Core activation</p>
                     <p className="mt-1 font-display text-2xl font-semibold">{activationRate}%</p>
                     <p className="mt-1 text-[11px] text-muted-foreground">
-                      A user counts as activated after a Reel view, follow, post or mentorship request.
+                      A user counts as activated after a Reel view, follow, post or mentorship
+                      request.
                     </p>
                   </div>
                 </div>
@@ -234,7 +237,7 @@ function AdminScreen() {
                 <p className="text-xs text-muted-foreground">
                   {[c.denomination, c.city].filter(Boolean).join(" · ")}
                 </p>
-                <p className="mt-2 text-[11px] text-cyan">
+                <p className="mt-2 text-[11px] text-leaf">
                   {c.verified ? "Verified" : "Pending verification"}
                 </p>
               </article>
@@ -268,7 +271,7 @@ function AdminScreen() {
                         {item.target}
                       </p>
                     </div>
-                    <span className="rounded-full border border-border-strong bg-surface-2 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-cyan">
+                    <span className="rounded-full border border-border-strong bg-surface-2 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-leaf">
                       {item.status}
                     </span>
                   </div>
@@ -333,7 +336,7 @@ function AdminScreen() {
                   <p className="truncate text-sm font-semibold">{e.title}</p>
                   <p className="text-xs text-muted-foreground">{eventDate(e.starts_at)}</p>
                 </div>
-                <span className="text-[11px] text-cyan">{e.churches?.name}</span>
+                <span className="text-[11px] text-leaf">{e.churches?.name}</span>
               </div>
             ))}
           </div>
@@ -377,7 +380,7 @@ function Metric({
 }) {
   return (
     <div className="nuru-card p-4">
-      <Icon className="h-4 w-4 text-cyan" />
+      <Icon className="h-4 w-4 text-leaf" />
       <p className="mt-2 font-display text-2xl font-semibold">{value}</p>
       <p className="text-xs text-muted-foreground">{label}</p>
     </div>
@@ -387,7 +390,7 @@ function Metric({
 function Panel({ title, icon: Icon }: { title: string; icon: typeof Users }) {
   return (
     <div className="nuru-card flex items-center gap-3 p-4">
-      <Icon className="h-4 w-4 text-cyan" />
+      <Icon className="h-4 w-4 text-leaf" />
       <span className="flex-1 text-sm font-semibold">{title}</span>
       <ComingSoon label="Soon" />
     </div>

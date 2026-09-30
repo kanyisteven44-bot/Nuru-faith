@@ -86,7 +86,7 @@ function GroupsScreen() {
           const isMember = joined.has(g.id);
           return (
             <div key={g.id} className="nuru-card flex items-center gap-3 p-3">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-primary/35 bg-primary/12 text-cyan">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-primary/35 bg-primary/12 text-leaf">
                 <Users className="h-5 w-5" strokeWidth={1.8} />
               </span>
               <span className="min-w-0 flex-1">

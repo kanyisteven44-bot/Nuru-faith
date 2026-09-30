@@ -52,7 +52,7 @@ function Welcome() {
           <h1 className="font-display text-[34px] leading-[1.15] font-bold tracking-tight">
             Welcome to
             <br />
-            Nuru <span className="text-cyan">Faith</span>
+            Nuru <span className="text-leaf">Faith</span>
           </h1>
           <p className="mt-3 max-w-[17rem] text-sm leading-relaxed text-secondary-foreground">
             A safe, Christ-centered community for young people.
@@ -62,7 +62,7 @@ function Welcome() {
         <ul className="space-y-4 pt-10">
           {VALUES.map(({ icon: Icon, title, copy }) => (
             <li key={title} className="flex items-center gap-4">
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-primary/40 bg-primary/12 text-cyan">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-primary/40 bg-primary/12 text-leaf">
                 <Icon className="h-5.5 w-5.5" strokeWidth={1.8} />
               </span>
               <span>
@@ -80,7 +80,7 @@ function Welcome() {
                 key={i}
                 className={cn(
                   "h-1.5 rounded-full transition-all",
-                  i === 0 ? "w-5 bg-cyan" : "w-1.5 bg-surface-2",
+                  i === 0 ? "w-5 bg-leaf" : "w-1.5 bg-surface-2",
                 )}
               />
             ))}

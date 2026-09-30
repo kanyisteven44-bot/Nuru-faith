@@ -211,10 +211,7 @@ function AuthPage() {
   if (mode === "mfa-setup") {
     return (
       <AuthSecurityShell>
-        <MfaSecurityPanel
-          required
-          onReady={() => void navigate({ to: "/home", replace: true })}
-        />
+        <MfaSecurityPanel required onReady={() => void navigate({ to: "/home", replace: true })} />
       </AuthSecurityShell>
     );
   }
@@ -225,7 +222,7 @@ function AuthPage() {
         <div className="flex flex-col items-center pt-4 text-center">
           <NuruMark className="h-16 w-16" />
           <h1 className="mt-4 font-display text-[26px] leading-none font-bold tracking-tight">
-            Nuru <span className="text-cyan">Faith</span>
+            Nuru <span className="text-leaf">Faith</span>
           </h1>
           <p className="mt-2 text-[12px] tracking-wide text-secondary-foreground">
             Connect • Grow • Live Your Faith
@@ -289,12 +286,12 @@ function AuthPage() {
           <div className="nuru-card mt-6 space-y-3 p-5 text-sm text-secondary-foreground">
             <p className="font-display text-base font-semibold text-foreground">Check your email</p>
             <p>
-              We sent a link to <span className="text-cyan">{email}</span>. Open it on this device
+              We sent a link to <span className="text-leaf">{email}</span>. Open it on this device
               to continue.
             </p>
             <button
               type="button"
-              className="text-cyan hover:underline"
+              className="text-leaf hover:underline"
               onClick={() => {
                 setSent(false);
                 void navigate({ to: "/auth", search: { mode: "login" } });
@@ -320,7 +317,7 @@ function AuthPage() {
             <Link
               to="/auth"
               search={{ mode: "login" }}
-              className="block pt-1 text-center text-[13px] text-cyan hover:underline"
+              className="block pt-1 text-center text-[13px] text-leaf hover:underline"
             >
               Back to sign in
             </Link>
@@ -362,7 +359,7 @@ function AuthPage() {
                       : "text-muted-foreground hover:text-secondary-foreground",
                   )}
                 >
-                  <m.icon className="h-4 w-4 text-cyan" /> {m.label}
+                  <m.icon className="h-4 w-4 text-leaf" /> {m.label}
                 </button>
               ))}
             </div>
@@ -416,7 +413,7 @@ function AuthPage() {
                   <Link
                     to="/auth"
                     search={{ mode: "forgot" }}
-                    className="block pt-1 text-center text-[13px] text-cyan hover:underline"
+                    className="block pt-1 text-center text-[13px] text-leaf hover:underline"
                   >
                     Forgot password?
                   </Link>
@@ -476,7 +473,7 @@ function AuthPage() {
                       setOtpSent(false);
                       setOtp("");
                     }}
-                    className="block w-full pt-1 text-center text-[13px] text-cyan hover:underline"
+                    className="block w-full pt-1 text-center text-[13px] text-leaf hover:underline"
                   >
                     Use a different number
                   </button>
@@ -556,7 +553,6 @@ function GoogleGlyph() {
     </svg>
   );
 }
-
 
 function AuthSecurityShell({ children }: { children: React.ReactNode }) {
   return (

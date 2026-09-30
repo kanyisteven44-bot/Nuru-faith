@@ -47,7 +47,7 @@ function FaithCourseDetail() {
     return (
       <AppShell>
         <div className="px-4 pt-8">
-          <Link to="/faith-courses" className="inline-flex items-center gap-2 text-sm text-cyan">
+          <Link to="/faith-courses" className="inline-flex items-center gap-2 text-sm text-leaf">
             <ArrowLeft className="h-4 w-4" /> Faith Courses
           </Link>
           <div className="nuru-card mt-6 p-5">
@@ -90,7 +90,7 @@ function FaithCourseDetail() {
           <Chip tone="brand">{course.level}</Chip>
         </div>
         <div className="absolute inset-x-0 bottom-0 p-4">
-          <p className="text-[10px] font-bold tracking-[0.15em] text-cyan uppercase">
+          <p className="text-[10px] font-bold tracking-[0.15em] text-leaf uppercase">
             {course.category}
           </p>
           <h1 className="mt-1 max-w-[88%] font-display text-[28px] leading-tight font-bold text-white">
@@ -112,7 +112,7 @@ function FaithCourseDetail() {
           <div className="mt-4">
             <div className="mb-1.5 flex items-center justify-between text-[11px]">
               <span className="font-semibold text-secondary-foreground">Course progress</span>
-              <span className="text-cyan">{progress}%</span>
+              <span className="text-leaf">{progress}%</span>
             </div>
             <ProgressBar value={progress} />
           </div>
@@ -138,7 +138,7 @@ function FaithCourseDetail() {
                       completed
                         ? "border-growth/50 bg-growth/15 text-growth"
                         : active
-                          ? "border-primary/60 bg-primary/15 text-cyan"
+                          ? "border-primary/60 bg-primary/15 text-leaf"
                           : "border-border text-muted-foreground"
                     }`}
                   >
@@ -159,7 +159,7 @@ function FaithCourseDetail() {
 
         <section className="nuru-card overflow-hidden">
           <div className="border-b border-border px-4 py-3">
-            <p className="text-[10px] font-bold tracking-[0.14em] text-cyan uppercase">
+            <p className="text-[10px] font-bold tracking-[0.14em] text-leaf uppercase">
               Lesson {lessonIndex + 1}
             </p>
             <h2 className="mt-1 font-display text-xl font-bold">{lesson.title}</h2>
@@ -168,14 +168,14 @@ function FaithCourseDetail() {
           <div className="space-y-5 p-4">
             <div>
               <div className="mb-2 flex items-center gap-2">
-                <BookOpen className="h-4 w-4 text-cyan" />
+                <BookOpen className="h-4 w-4 text-leaf" />
                 <h3 className="text-sm font-semibold">Read first</h3>
               </div>
               <div className="flex flex-wrap gap-2">
                 {lesson.references.map((reference) => (
                   <span
                     key={reference}
-                    className="rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-[11px] font-semibold text-cyan"
+                    className="rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-[11px] font-semibold text-leaf"
                   >
                     {reference}
                   </span>
@@ -187,26 +187,21 @@ function FaithCourseDetail() {
               </p>
             </div>
 
-            <LessonSection
-              icon={Lightbulb}
-              title="Context"
-              body={teaching.context}
-            />
-            <LessonSection
-              icon={Sparkles}
-              title="What it means"
-              body={teaching.meaning}
-            />
+            <LessonSection icon={Lightbulb} title="Context" body={teaching.context} />
+            <LessonSection icon={Sparkles} title="What it means" body={teaching.meaning} />
 
             <div>
               <div className="mb-2 flex items-center gap-2">
-                <MessageCircleQuestion className="h-4 w-4 text-cyan" />
+                <MessageCircleQuestion className="h-4 w-4 text-leaf" />
                 <h3 className="text-sm font-semibold">Real-life examples</h3>
               </div>
               <ul className="space-y-2">
                 {course.examples.map((example) => (
-                  <li key={example} className="flex gap-2 text-[13px] leading-relaxed text-secondary-foreground">
-                    <Circle className="mt-1.5 h-2.5 w-2.5 shrink-0 fill-cyan text-cyan" />
+                  <li
+                    key={example}
+                    className="flex gap-2 text-[13px] leading-relaxed text-secondary-foreground"
+                  >
+                    <Circle className="mt-1.5 h-2.5 w-2.5 shrink-0 fill-leaf text-leaf" />
                     {example}
                   </li>
                 ))}
@@ -224,8 +219,8 @@ function FaithCourseDetail() {
                 Reflect
               </p>
               <p className="mt-2 text-[13px] leading-relaxed text-secondary-foreground">
-                What does this lesson reveal about God? What does it expose or encourage in your
-                own life? What is one faithful response you can practise before the next lesson?
+                What does this lesson reveal about God? What does it expose or encourage in your own
+                life? What is one faithful response you can practise before the next lesson?
               </p>
             </div>
 
@@ -259,7 +254,7 @@ function LessonSection({
   return (
     <div>
       <div className="mb-2 flex items-center gap-2">
-        <Icon className="h-4 w-4 text-cyan" />
+        <Icon className="h-4 w-4 text-leaf" />
         <h3 className="text-sm font-semibold">{title}</h3>
       </div>
       <p className="text-[13px] leading-relaxed text-secondary-foreground">{body}</p>

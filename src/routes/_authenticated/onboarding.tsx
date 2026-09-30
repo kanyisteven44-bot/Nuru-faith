@@ -307,14 +307,14 @@ function SelectCard({
       aria-pressed={selected}
       className={cn(
         "flex min-h-14 w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-colors",
-        selected ? "border-cyan bg-surface-2" : "border-border bg-surface hover:bg-surface-2",
+        selected ? "border-leaf bg-surface-2" : "border-border bg-surface hover:bg-surface-2",
       )}
     >
       <span className="flex-1">
         <span className="block text-sm font-semibold">{title}</span>
         {hint && <span className="block text-xs text-muted-foreground">{hint}</span>}
       </span>
-      {selected && <Check className="h-4 w-4 text-cyan" />}
+      {selected && <Check className="h-4 w-4 text-leaf" />}
     </button>
   );
 }

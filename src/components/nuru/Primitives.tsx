@@ -27,7 +27,7 @@ export function SectionHeader({
     <div className="mb-3 flex items-end justify-between gap-3">
       <div className="min-w-0">
         {eyebrow && (
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan/80">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-sand">
             {eyebrow}
           </p>
         )}
@@ -37,7 +37,7 @@ export function SectionHeader({
         (to ? (
           <Link
             to={to}
-            className="shrink-0 text-xs font-semibold text-cyan transition-opacity hover:opacity-80"
+            className="shrink-0 text-xs font-semibold text-leaf transition-opacity hover:opacity-80"
           >
             {action}
           </Link>
@@ -101,7 +101,7 @@ export function GradientButton({
     <button
       {...props}
       className={cn(
-        "inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-cyan/30 bg-primary px-5 text-sm font-semibold text-primary-foreground nuru-glow-sm transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-50 disabled:shadow-none",
+        "inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-leaf/30 bg-primary px-5 text-sm font-semibold text-primary-foreground nuru-glow-sm transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-50 disabled:shadow-none",
         className,
       )}
     >
@@ -131,9 +131,9 @@ export function GhostButton({
 }
 
 const ICON_TONES = {
-  brand: "border-primary/45 bg-primary/24 text-cyan",
-  cyan: "border-cyan/40 bg-cyan/18 text-cyan",
-  violet: "border-violet/40 bg-violet/20 text-violet",
+  brand: "border-primary/45 bg-primary/24 text-leaf",
+  cyan: "border-leaf/40 bg-leaf/18 text-leaf",
+  violet: "border-terra/40 bg-terra/20 text-terra-lt",
   growth: "border-growth/40 bg-growth/18 text-growth",
   warning: "border-warning/45 bg-warning/18 text-warning",
 } as const;

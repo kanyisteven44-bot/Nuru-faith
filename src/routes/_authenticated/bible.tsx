@@ -181,7 +181,7 @@ function BibleScreen() {
               >
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-semibold">{t.title}</span>
-                  <span className="block truncate text-[11px] text-cyan">{t.reference}</span>
+                  <span className="block truncate text-[11px] text-leaf">{t.reference}</span>
                 </span>
               </button>
             </li>
@@ -901,7 +901,7 @@ function SavedVerses({ onOpen }: { onOpen: (ref: string) => void }) {
             onClick={() => onOpen(s.reference)}
             className="min-w-0 flex-1 text-left"
           >
-            <span className="block truncate text-sm font-semibold text-cyan">{s.reference}</span>
+            <span className="block truncate text-sm font-semibold text-leaf">{s.reference}</span>
             <span className="block text-[11px] text-muted-foreground">
               Saved {new Date(s.created_at).toLocaleDateString()}
             </span>
@@ -910,7 +910,7 @@ function SavedVerses({ onOpen }: { onOpen: (ref: string) => void }) {
             to="/ai"
             search={{ contextType: "verse", contextLabel: s.reference }}
             aria-label={`Ask Nuru AI about ${s.reference}`}
-            className="shrink-0 rounded-full p-2 text-cyan"
+            className="shrink-0 rounded-full p-2 text-leaf"
           >
             <Sparkles className="h-4 w-4" />
           </Link>
@@ -978,7 +978,7 @@ function MyHighlights({ onOpen }: { onOpen: (ref: string) => void }) {
               onClick={() => onOpen(h.reference)}
               className="min-w-0 flex-1 text-left"
             >
-              <span className="block truncate text-sm font-semibold text-cyan">
+              <span className="block truncate text-sm font-semibold text-leaf">
                 {h.reference}:{h.verse}
               </span>
               <span className="block truncate text-[11px] text-muted-foreground">

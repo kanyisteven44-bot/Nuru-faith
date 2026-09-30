@@ -86,7 +86,7 @@ export function ReelCaption({
             type="button"
             onClick={onOpenScripture}
             aria-label={`Open ${reel.scripture_ref}`}
-            className="inline-flex items-center gap-1 rounded-full bg-primary/30 px-2.5 py-1 font-semibold text-cyan ring-1 ring-inset ring-cyan/30 backdrop-blur-md"
+            className="inline-flex items-center gap-1 rounded-full bg-primary/30 px-2.5 py-1 font-semibold text-leaf ring-1 ring-inset ring-leaf/30 backdrop-blur-md"
           >
             <BookOpen className="h-3 w-3" /> {reel.scripture_ref}
           </button>

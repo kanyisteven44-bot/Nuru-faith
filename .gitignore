@@ -43,3 +43,6 @@ dist-ssr
 .browser-qa/
 *-validation.json
 lint-baseline.json
+
+# Screenshots from scripts/ui-preview.mjs
+.preview/

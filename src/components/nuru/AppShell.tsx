@@ -1,7 +1,7 @@
 import { useEffect, type ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Bell, Calendar, Home, User, Users } from "lucide-react";
+import { ArrowLeft, Bell, BookOpen, Clapperboard, Home, User, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchProfile, fetchUnreadNotificationCount } from "@/services/content";
@@ -9,12 +9,12 @@ import { generatedAvatar } from "@/lib/avatar";
 import { recordNuruActivity } from "@/services/pilot";
 import { NuruMark } from "./Logo";
 
-/** Bible is reached from Quick Access on Home, so it is not in this bar. */
 const NAV = [
   { to: "/home", label: "Home", icon: Home },
+  { to: "/bible", label: "Bible", icon: BookOpen },
   { to: "/community", label: "Community", icon: Users },
-  { to: "/events", label: "Events", icon: Calendar },
-  { to: "/profile", label: "Profile", icon: User },
+  { to: "/reels", label: "Reels", icon: Clapperboard },
+  { to: "/profile", label: "More", icon: User },
 ] as const;
 
 export function AppShell({
@@ -57,7 +57,7 @@ export function AppShell({
       {!hideNav && (
         <nav
           aria-label="Main"
-          className="fixed inset-x-3 bottom-3 z-40 rounded-3xl border border-border bg-surface/95 px-2 shadow-2xl shadow-black/40 backdrop-blur-xl lg:inset-y-4 lg:right-auto lg:left-4 lg:w-20 lg:rounded-[2rem] lg:px-0 lg:pt-5"
+          className="fixed inset-x-3 bottom-3 z-40 rounded-[1.5rem] border border-border bg-surface/96 px-2 shadow-2xl shadow-black/40 backdrop-blur-xl lg:inset-y-4 lg:right-auto lg:left-4 lg:w-20 lg:rounded-[2rem] lg:px-0 lg:pt-5"
         >
           <Link
             to="/home"
@@ -66,7 +66,7 @@ export function AppShell({
           >
             N
           </Link>
-          <ul className="mx-auto grid max-w-xl grid-cols-4 pb-[max(0.3rem,env(safe-area-inset-bottom))] pt-1 lg:flex lg:flex-col lg:gap-3 lg:px-2 lg:pt-0">
+          <ul className="mx-auto grid max-w-xl grid-cols-5 pb-[max(0.3rem,env(safe-area-inset-bottom))] pt-1 lg:flex lg:flex-col lg:gap-3 lg:px-2 lg:pt-0">
             {NAV.map((item) => (
               <NavItem key={item.to} {...item} active={pathname.startsWith(item.to)} />
             ))}
@@ -96,7 +96,7 @@ function NavItem({
         className={cn(
           "flex min-h-12 flex-col items-center justify-center gap-1 rounded-2xl text-[10px] font-medium transition-colors lg:min-h-16 lg:w-full lg:text-[10px]",
           active
-            ? "bg-primary/12 text-cyan"
+            ? "bg-primary/30 text-[#86c29a]"
             : "text-muted-foreground hover:text-secondary-foreground",
         )}
       >
@@ -133,7 +133,7 @@ export function BrandBar() {
     <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-border bg-background/92 px-5 py-4 pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur-xl lg:mb-6 lg:px-6">
       <span className="flex items-center gap-2">
         <NuruMark className="h-7 w-7" />
-        <span className="font-display text-[20px] font-semibold tracking-tight">
+        <span className="font-display text-[20px] font-semibold tracking-tight text-foreground">
           Nuru <span className="text-cyan">Faith</span>
         </span>
       </span>

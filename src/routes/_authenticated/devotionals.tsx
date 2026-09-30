@@ -1,19 +1,8 @@
-import { useState, type ComponentType } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import {
-  Bookmark,
-  Compass,
-  Heart,
-  Leaf,
-  Moon,
-  Mountain,
-  Search,
-  SlidersHorizontal,
-  Sun,
-  User,
-  Waves,
-} from "lucide-react";
+import { ArrowRight, Bookmark, Flame } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { resolveMedia } from "@/lib/media";
 import { fetchProfile, fetchDevotionals } from "@/services/content";
@@ -35,64 +24,34 @@ export const Route = createFileRoute("/_authenticated/devotionals")({
   component: DevotionalsScreen,
 });
 
-const TOPICS: {
-  label: string;
-  subtitle: string;
-  dbSubtitle: string;
-  asset: string;
-  icon: ComponentType<{ className?: string }>;
-}[] = [
-  {
-    label: "Faith",
-    subtitle: "Trust deeper",
-    dbSubtitle: "Faith",
-    asset: "topic-faith",
-    icon: Mountain,
-  },
-  {
-    label: "Anxiety",
-    subtitle: "Find peace",
-    dbSubtitle: "Anxiety & Peace",
-    asset: "topic-mental-health",
-    icon: Waves,
-  },
-  {
-    label: "Prayer",
-    subtitle: "Talk to God",
-    dbSubtitle: "Prayer",
-    asset: "topic-prayer",
-    icon: Compass,
-  },
-  {
-    label: "Relationships",
-    subtitle: "Love well",
-    dbSubtitle: "Relationships",
-    asset: "topic-relationships",
-    icon: Heart,
-  },
-  {
-    label: "Purpose",
-    subtitle: "Live with intention",
-    dbSubtitle: "Purpose",
-    asset: "topic-faith-purpose",
-    icon: Leaf,
-  },
-  {
-    label: "Identity",
-    subtitle: "Know who you are",
-    dbSubtitle: "Identity",
-    asset: "topic-personal-growth",
-    icon: User,
-  },
-];
+/** How many dots the streak row shows — one week at a glance, as on the board. */
+const STREAK_DOTS = 7;
+
+/** "Today", "Yesterday", then a short date — the board's own labelling. */
+function dayLabel(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const startOfDay = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const days = Math.round((startOfDay(new Date()) - startOfDay(d)) / 86400000);
+  if (days <= 0) return "Today";
+  if (days === 1) return "Yesterday";
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+type DevotionalRow = {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  scripture_ref: string | null;
+  cover_url: string | null;
+  publish_date: string | null;
+  read_minutes: number | null;
+};
 
 function DevotionalsScreen() {
   const { userId } = useAuth();
-  const navigate = useNavigate();
-  const [query, setQuery] = useState("");
-  const [savedIds, setSavedIds] = useState<Set<string>>(() =>
-    readSavedDevotionalIds(userId ?? null),
-  );
+  const [savedIds, setSavedIds] = useState<Set<string>>(() => readSavedDevotionalIds(null));
 
   const profile = useQuery({
     queryKey: ["profile", userId],
@@ -100,12 +59,8 @@ function DevotionalsScreen() {
     enabled: !!userId,
   });
   const devotionals = useQuery({ queryKey: ["devotionals"], queryFn: fetchDevotionals });
-  const rows = devotionals.data ?? [];
-  const firstName = profile.data?.full_name?.split(" ")[0];
-
-  function search(q: string) {
-    void navigate({ to: "/explore", search: { q, kind: "all" } });
-  }
+  const rows = (devotionals.data ?? []) as DevotionalRow[];
+  const streak = profile.data?.faith_streak ?? 0;
 
   function toggleSave(id: string) {
     setSavedIds(toggleSavedDevotional(userId ?? null, id));
@@ -115,110 +70,84 @@ function DevotionalsScreen() {
     <AppShell>
       <FeatureHeaderBar />
 
-      <div className="space-y-6 px-4 pt-4 pb-6">
-        <div>
-          <h1 className="font-display text-2xl font-bold">
-            Hey there{firstName ? `, ${firstName}` : ""} <span className="align-middle">👋</span>
-          </h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">New day. Same faithful God.</p>
-        </div>
+      <div className="px-4 pb-6">
+        <h1 className="font-display text-[40px] leading-none">Devotionals</h1>
 
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            search(query);
-          }}
-          className="relative"
-        >
-          <Search className="absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search devotionals, topics, or Scripture..."
-            aria-label="Search devotionals"
-            className="input-nuru pr-11 pl-11"
-          />
-          <button
-            type="button"
-            onClick={() => search(query)}
-            aria-label="Filter"
-            className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground"
-          >
-            <SlidersHorizontal className="h-4 w-4" />
-          </button>
-        </form>
-
-        <section>
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="font-display text-[15px] font-semibold">Explore by Topic</h2>
-            <Link
-              to="/explore"
-              search={{ q: "", kind: "all" }}
-              className="text-xs font-semibold text-cyan"
-            >
-              See all
-            </Link>
-          </div>
-          <div className="grid grid-cols-2 gap-2.5">
-            {TOPICS.map((t) => (
-              <button
-                key={t.label}
-                type="button"
-                onClick={() => search(t.dbSubtitle)}
-                className="nuru-card relative block h-28 overflow-hidden text-left active:opacity-90"
-              >
-                <img
-                  src={resolveMedia(`asset:${t.asset}`)}
-                  alt=""
-                  className="absolute inset-0 h-full w-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/10" />
-                <div className="absolute inset-x-0 bottom-0 p-2.5">
-                  <t.icon className="mb-1 h-4 w-4 text-white drop-shadow" />
-                  <p className="font-display text-[15px] leading-tight font-bold text-white">
-                    {t.label}
-                  </p>
-                  <p className="text-[11px] text-white/75">{t.subtitle}</p>
-                </div>
-              </button>
+        {/* Streak — driven by the profile's real streak, not a fixed number. */}
+        <section className="nuru-card mt-4 flex items-center gap-3 p-3">
+          <span className="nuru-disc nuru-disc-terra h-11 w-11">
+            <Flame className="h-5 w-5" strokeWidth={1.9} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block font-display text-[19px] leading-tight">
+              {streak} day streak
+            </span>
+            <span className="block text-[12px] text-ink-3">
+              {streak > 0 ? "Keep going. God is with you." : "Read today to start your streak."}
+            </span>
+          </span>
+          <span className="flex shrink-0 items-center gap-1.5" aria-hidden="true">
+            {Array.from({ length: STREAK_DOTS }, (_, i) => (
+              <span
+                key={i}
+                className={cn(
+                  "h-2 w-2 rounded-full",
+                  i < Math.min(streak, STREAK_DOTS) ? "bg-terra-lt" : "bg-surface-2",
+                )}
+              />
             ))}
-          </div>
+          </span>
         </section>
 
-        <section>
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="font-display text-[15px] font-semibold">Recommended for You</h2>
-            <Link
-              to="/explore"
-              search={{ q: "", kind: "all" }}
-              className="text-xs font-semibold text-cyan"
-            >
-              See all
-            </Link>
-          </div>
-          {devotionals.isLoading && <CardSkeleton count={1} height="h-44" />}
-          {!devotionals.isLoading && rows.length === 0 && (
-            <EmptyState
-              title="No devotionals yet"
-              description="Daily readings will appear here as they're published."
-            />
-          )}
-          {rows.length > 0 && (
-            <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
-              {rows.slice(0, 8).map((d) => {
-                const saved = savedIds.has(d.id);
-                return (
+        <h2 className="mt-6 mb-3 font-display text-[22px] leading-none">Daily devotionals</h2>
+
+        {devotionals.isLoading && <CardSkeleton count={3} height="h-[120px]" />}
+
+        {!devotionals.isLoading && rows.length === 0 && (
+          <EmptyState
+            title="No devotionals yet"
+            description="Daily readings will appear here as they're published."
+          />
+        )}
+
+        {rows.length > 0 && (
+          <ul className="space-y-3">
+            {rows.map((d) => {
+              const saved = savedIds.has(d.id);
+              const label = dayLabel(d.publish_date);
+              return (
+                <li key={d.id}>
                   <Link
-                    key={d.id}
                     to="/bible"
-                    className="nuru-card relative block w-36 shrink-0 overflow-hidden active:opacity-90"
+                    className="relative block overflow-hidden rounded-2xl border border-border"
                   >
-                    <img
-                      src={resolveMedia(d.cover_url)}
-                      alt=""
-                      loading="lazy"
-                      className="h-24 w-full object-cover"
-                    />
+                    {d.cover_url ? (
+                      <img
+                        src={resolveMedia(d.cover_url)}
+                        alt=""
+                        loading="lazy"
+                        className="h-[120px] w-full object-cover"
+                      />
+                    ) : (
+                      <span className="block h-[120px] w-full bg-[linear-gradient(120deg,#22302a,#19201d)]" />
+                    )}
+                    <span className="absolute inset-0 bg-[linear-gradient(to_right,rgba(17,23,21,0.94),rgba(17,23,21,0.6)_62%,rgba(17,23,21,0.28))]" />
+                    <span className="absolute inset-0 flex items-end gap-3 p-4">
+                      <span className="min-w-0 flex-1">
+                        {label && <span className="nuru-eyebrow block">{label}</span>}
+                        <span className="mt-1 block truncate font-display text-[22px] leading-tight">
+                          {d.title}
+                        </span>
+                        {d.scripture_ref && (
+                          <span className="mt-0.5 block truncate text-[12px] text-ink-2">
+                            {d.scripture_ref}
+                          </span>
+                        )}
+                      </span>
+                      <span className="nuru-disc nuru-disc-terra h-10 w-10 shrink-0">
+                        <ArrowRight className="h-[18px] w-[18px]" strokeWidth={2.2} />
+                      </span>
+                    </span>
                     <button
                       type="button"
                       onClick={(e) => {
@@ -227,66 +156,16 @@ function DevotionalsScreen() {
                       }}
                       aria-label={saved ? "Remove bookmark" : "Save devotional"}
                       aria-pressed={saved}
-                      className="absolute top-2 right-2 rounded-full bg-black/45 p-1.5 text-white backdrop-blur-sm"
+                      className="absolute top-3 right-3 rounded-full bg-background/60 p-2 text-ink-2 backdrop-blur-sm"
                     >
                       <Bookmark className="h-3.5 w-3.5" fill={saved ? "currentColor" : "none"} />
                     </button>
-                    <div className="space-y-0.5 p-2.5">
-                      <p className="line-clamp-2 font-display text-[13px] leading-tight font-semibold">
-                        {d.title}
-                      </p>
-                      <p className="text-[11px] text-muted-foreground">
-                        {d.read_minutes ?? 3} min read
-                      </p>
-                      <p className="text-[10px] font-semibold text-cyan">{d.subtitle}</p>
-                    </div>
                   </Link>
-                );
-              })}
-            </div>
-          )}
-        </section>
-
-        <section>
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="font-display text-[15px] font-semibold">Quick Devotions</h2>
-            <Link
-              to="/explore"
-              search={{ q: "", kind: "all" }}
-              className="text-xs font-semibold text-cyan"
-            >
-              See all
-            </Link>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <Link to="/bible" className="nuru-card flex items-center gap-2.5 p-3">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-warning/18 text-warning">
-                <Sun className="h-4.5 w-4.5" />
-              </span>
-              <span className="min-w-0">
-                <span className="block text-sm font-semibold">Morning Grace</span>
-                <span className="block truncate text-[11px] text-muted-foreground">
-                  Start your day right
-                </span>
-              </span>
-            </Link>
-            <button
-              type="button"
-              onClick={() => search("Peace")}
-              className="nuru-card flex items-center gap-2.5 p-3 text-left"
-            >
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-violet/18 text-violet">
-                <Moon className="h-4.5 w-4.5" />
-              </span>
-              <span className="min-w-0">
-                <span className="block text-sm font-semibold">Night Peace</span>
-                <span className="block truncate text-[11px] text-muted-foreground">
-                  End with Him
-                </span>
-              </span>
-            </button>
-          </div>
-        </section>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </div>
     </AppShell>
   );

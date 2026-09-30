@@ -24,6 +24,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { NEW_TESTAMENT, OLD_TESTAMENT, type BibleBook } from "@/lib/bible";
 import { fetchChapterPassage } from "@/lib/bibleChapter";
 import { BIBLE_TOPICS } from "@/lib/content-policy";
+import { fetchReadingPlans } from "@/services/content";
 import {
   fetchAllHighlights,
   fetchHighlights,
@@ -294,14 +295,49 @@ function Segmented({
  * Scripture Series that already exist in the library — real multi-session
  * studies — in the board's photo-card treatment.
  */
+/** The columns the plan strip needs from a reading_plans row. */
+type ReadingPlanRow = {
+  id: string;
+  title: string;
+  description: string | null;
+  days: number | null;
+  cover_url: string | null;
+};
+
 function ReadingPlans() {
+  // The real reading plans lead; published series fill the strip out. Both
+  // are actual library rows — nothing here is a placeholder plan.
+  const plans = useQuery({ queryKey: ["reading-plans"], queryFn: fetchReadingPlans });
   const series = useQuery({
     queryKey: ["series", "reading-plans"],
     queryFn: () => fetchSeries(undefined, undefined, 0, 2),
   });
-  const plans = series.data ?? [];
-  if (series.isLoading) return <CardSkeleton count={2} height="h-[104px]" />;
-  if (plans.length === 0) return null;
+
+  const cards: {
+    key: string;
+    title: string;
+    caption: string | null;
+    cover: string | null;
+    to: { to: "/devotionals" } | { to: "/series/$slug"; params: { slug: string } };
+  }[] = [
+    ...(plans.data ?? []).map((p: ReadingPlanRow) => ({
+      key: `plan-${p.id}`,
+      title: p.title,
+      caption: p.days ? `A ${p.days}-day journey` : p.description,
+      cover: p.cover_url,
+      to: { to: "/devotionals" as const },
+    })),
+    ...(series.data ?? []).map((s: SeriesRow) => ({
+      key: `series-${s.id}`,
+      title: s.title,
+      caption: s.description,
+      cover: s.cover_image,
+      to: { to: "/series/$slug" as const, params: { slug: s.slug } },
+    })),
+  ].slice(0, 2);
+
+  if (plans.isLoading || series.isLoading) return <CardSkeleton count={2} height="h-[104px]" />;
+  if (cards.length === 0) return null;
 
   return (
     <section className="mb-6">
@@ -316,27 +352,26 @@ function ReadingPlans() {
         </Link>
       </div>
       <ul className="space-y-2.5">
-        {plans.map((s: SeriesRow) => (
-          <li key={s.id}>
+        {cards.map((c) => (
+          <li key={c.key}>
             <Link
-              to="/series/$slug"
-              params={{ slug: s.slug }}
+              {...c.to}
               className="relative block overflow-hidden rounded-2xl border border-border"
             >
-              {s.cover_image ? (
-                <img src={s.cover_image} alt="" className="h-[104px] w-full object-cover" />
+              {c.cover ? (
+                <img src={c.cover} alt="" className="h-[104px] w-full object-cover" />
               ) : (
-                <span className="block h-[104px] w-full bg-surface-2" />
+                <span className="block h-[104px] w-full bg-[linear-gradient(120deg,#22302a,#19201d)]" />
               )}
               <span className="absolute inset-0 bg-[linear-gradient(to_right,rgba(17,23,21,0.92),rgba(17,23,21,0.55)_65%,rgba(17,23,21,0.25))]" />
               <span className="absolute inset-0 flex items-center gap-3 px-4">
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-display text-[21px] leading-tight">
-                    {s.title}
+                    {c.title}
                   </span>
-                  {s.description && (
+                  {c.caption && (
                     <span className="mt-0.5 block truncate text-[12px] text-ink-2">
-                      {s.description}
+                      {c.caption}
                     </span>
                   )}
                 </span>

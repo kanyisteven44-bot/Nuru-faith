@@ -37,11 +37,12 @@ export const FIXTURES = {
   devotionals: Array.from({ length: 6 }, (_, i) => ({
     id: `dev-${i}`,
     title: ["A Light in the Darkness", "Faith in the Waiting", "Renewed Every Morning"][i % 3],
+    subtitle: "Faith",
     scripture_ref: ["Psalm 27:1-3", "Isaiah 40:31", "Lamentations 3:22-23"][i % 3],
     body: "Placeholder devotional body used to check how the reading column wraps across several lines of serif text.",
-    cover_image: [PHOTO, PHOTO2, PHOTO3][i % 3],
-    published_at: new Date(Date.now() - i * 86400000).toISOString(),
-    topic: "Faith",
+    cover_url: [PHOTO, PHOTO2, PHOTO3][i % 3],
+    publish_date: new Date(Date.now() - i * 86400000).toISOString(),
+    read_minutes: 3,
   })),
 
   scripture_series: Array.from({ length: 5 }, (_, i) => ({
@@ -103,6 +104,18 @@ export const FIXTURES = {
     created_by: `user-${(i % 3) + 1}`,
     duration_seconds: 45,
   })),
+
+  reading_plans: [
+    {
+      id: "plan-1",
+      title: "Nuru 365 — Trust Jesus Every Day",
+      slug: "nuru-365",
+      description: "A placeholder description for layout review.",
+      days: 365,
+      cover_url: PHOTO,
+      accent: "cyan",
+    },
+  ],
 
   churches: [
     {

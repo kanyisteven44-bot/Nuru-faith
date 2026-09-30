@@ -26,9 +26,9 @@ export function OfflineNotice() {
     <div
       role="status"
       aria-live="polite"
-      className="fixed inset-x-3 top-[max(0.75rem,env(safe-area-inset-top))] z-[70] mx-auto flex max-w-md items-center gap-3 rounded-2xl border border-amber-300/30 bg-surface/95 px-4 py-3 shadow-xl backdrop-blur-xl"
+      className="fixed inset-x-3 top-[max(0.75rem,env(safe-area-inset-top))] z-[70] mx-auto flex max-w-md items-center gap-3 rounded-2xl border border-sand/30 bg-surface/95 px-4 py-3 shadow-xl backdrop-blur-xl"
     >
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-300/10 text-amber-200">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sand/10 text-sand">
         <WifiOff className="h-4.5 w-4.5" strokeWidth={1.8} />
       </span>
       <div className="min-w-0">

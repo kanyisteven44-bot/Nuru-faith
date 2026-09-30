@@ -238,7 +238,7 @@ function VerseOfTheDay({ onOpen }: { onOpen: (reference: string) => void }) {
   return (
     <section className="nuru-card relative mb-6 overflow-hidden">
       <img src={verseArt} alt="" className="absolute inset-y-0 right-0 h-full w-1/2 object-cover" />
-      <div className="absolute inset-0 bg-gradient-to-r from-[#04244d] via-[#04244d]/90 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-r from-card via-card/90 to-transparent" />
       <div className="relative max-w-[62%] p-4">
         <p className="text-[10px] font-semibold tracking-[0.18em] text-muted-foreground uppercase">
           Verse of the day
@@ -395,8 +395,8 @@ function ChapterTile({
       className={cn(
         "flex h-12 items-center justify-center rounded-xl border text-sm font-bold transition-colors",
         active
-          ? "border-transparent bg-[#f4c453] text-[#2a2314] shadow-[0_4px_14px_-6px_rgba(244,196,83,0.7)]"
-          : "border-black/[0.08] bg-[#f8f2e2] text-[#2a2314] hover:bg-[#f2e9d1]",
+          ? "nuru-raise border-leaf/25 bg-[linear-gradient(180deg,var(--forest-hi),var(--primary))] text-foreground"
+          : "border-border-strong bg-[linear-gradient(180deg,#212A26,#1A211E)] text-ink-2 hover:text-foreground",
       )}
     >
       {label}
@@ -581,14 +581,14 @@ function Reader({
           />
         )}
         {passage.data && (
-          <div className="rounded-3xl bg-[#f8f2e2] p-5 text-[#2a2314] shadow-lg shadow-black/20">
+          <div className="nuru-card p-5">
             <ol className="space-y-3.5">
               {passage.data.verses.map((v) => {
                 const activeColor = highlightByVerse.get(v.verse);
                 const swatch = HIGHLIGHT_COLORS.find((c) => c.key === activeColor);
                 return (
                   <li key={`${v.chapter}:${v.verse}`} className="flex gap-2.5">
-                    <span className="mt-0.5 shrink-0 text-[11px] font-bold text-amber-700">
+                    <span className="mt-0.5 shrink-0 text-[11px] font-bold text-terra-lt">
                       {v.verse}
                     </span>
                     <button
@@ -602,7 +602,7 @@ function Reader({
                       }}
                       className={cn(
                         "flex-1 rounded px-1 text-left font-serif text-[15px] leading-relaxed transition-colors",
-                        swatch ? swatch.bgClass : "hover:bg-black/[0.03]",
+                        swatch ? swatch.bgClass : "hover:bg-white/[0.05]",
                       )}
                     >
                       {v.text}
@@ -611,13 +611,13 @@ function Reader({
                 );
               })}
             </ol>
-            <p className="pt-5 text-[11px] text-[#8a7a52]">{passage.data.translation}</p>
+            <p className="pt-5 text-[11px] text-ink-3">{passage.data.translation}</p>
           </div>
         )}
       </div>
 
       <div className="fixed inset-x-0 bottom-20 z-30 mx-auto max-w-xl px-4">
-        <div className="flex items-center justify-around rounded-2xl border border-black/10 bg-[#f8f2e2] py-2 shadow-lg shadow-black/20 backdrop-blur-xl">
+        <div className="flex items-center justify-around nuru-card border border-border py-2 backdrop-blur-xl">
           <ReaderAction
             icon={Highlighter}
             label="Highlight"
@@ -744,7 +744,7 @@ function ReaderAction({
     </>
   );
   const cls =
-    "flex flex-1 flex-col items-center gap-1 text-[#5a4d2f] transition-colors hover:text-[#2a2314]";
+    "flex flex-1 flex-col items-center gap-1 text-ink-3 transition-colors hover:text-foreground";
   if (to)
     return (
       <Link to={to.to} search={to.search} className={cls}>
@@ -869,7 +869,7 @@ function MyHighlights({ onOpen }: { onOpen: (ref: string) => void }) {
           <li key={h.id} className="nuru-card flex items-center gap-3 px-4 py-3">
             <span
               className="mt-0.5 h-3 w-3 shrink-0 rounded-full"
-              style={{ backgroundColor: swatch?.swatch ?? "#f4c453" }}
+              style={{ backgroundColor: swatch?.swatch ?? "#e6b566" }}
               aria-hidden
             />
             <button

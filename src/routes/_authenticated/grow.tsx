@@ -41,7 +41,7 @@ function GrowScreen() {
           to="/devotionals"
           className="nuru-card flex items-center gap-4 p-4 active:opacity-90"
         >
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 to-green-600 text-white shadow-lg shadow-black/25">
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl nuru-disc">
             <Sunrise className="h-6 w-6" />
           </span>
           <span className="min-w-0 flex-1">
@@ -60,7 +60,7 @@ function GrowScreen() {
           to="/series"
           className="nuru-card flex items-center gap-4 p-4 active:opacity-90"
         >
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-400 to-amber-600 text-white shadow-lg shadow-black/25">
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl nuru-disc nuru-disc-sand">
             <GraduationCap className="h-6 w-6" />
           </span>
           <span className="min-w-0 flex-1">

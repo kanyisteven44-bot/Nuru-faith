@@ -236,7 +236,7 @@ export function MfaSecurityPanel({
             Protect your account with Google Authenticator, Microsoft Authenticator, Authy, 1Password, or another TOTP app.
           </p>
           {required && (
-            <p className="mt-2 text-xs font-medium text-amber-200">
+            <p className="mt-2 text-xs font-medium text-sand">
               MFA is required for Nuru administrative accounts.
             </p>
           )}
@@ -256,7 +256,7 @@ export function MfaSecurityPanel({
                 <p className="truncate text-xs font-semibold">
                   {factor.friendly_name || `Authenticator ${index + 1}`}
                 </p>
-                <p className="text-[10px] text-emerald-300">Verified</p>
+                <p className="text-[10px] text-leaf">Verified</p>
               </div>
               {!required || verified.length > 1 ? (
                 <button

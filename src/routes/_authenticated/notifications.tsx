@@ -124,8 +124,8 @@ function NotificationsScreen() {
                       className={cn(
                         "rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide",
                         n.priority === "critical"
-                          ? "bg-red-500/15 text-red-200"
-                          : "bg-amber-400/15 text-amber-200",
+                          ? "bg-rose-soft text-rose"
+                          : "bg-sand-soft text-sand",
                       )}
                     >
                       {n.priority}

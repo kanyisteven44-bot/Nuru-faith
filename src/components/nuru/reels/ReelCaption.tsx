@@ -39,7 +39,7 @@ export function ReelCaption({
         <p className="flex min-w-0 items-center gap-1 truncate text-sm font-semibold drop-shadow">
           <span className="truncate">{reel.creator_name}</span>
           {reel.churches?.verified && (
-            <BadgeCheck className="h-3.5 w-3.5 shrink-0 fill-cyan text-[#05203f]" />
+            <BadgeCheck className="h-3.5 w-3.5 shrink-0 fill-leaf text-background" />
           )}
         </p>
         {canFollow && (

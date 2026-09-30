@@ -53,18 +53,18 @@ const BADGES = [
   {
     icon: HandHeart,
     label: "Prayer Life",
-    tint: "text-rose-300 bg-rose-500/15 border-rose-400/30",
+    tint: "text-rose bg-rose-soft border-rose/30",
   },
   {
     icon: Heart,
     label: "Kindness",
-    tint: "text-emerald-300 bg-emerald-500/15 border-emerald-400/30",
+    tint: "text-leaf bg-olive-soft border-leaf/30",
   },
   { icon: Users, label: "Community", tint: "text-cyan bg-primary/15 border-primary/30" },
   {
     icon: Flame,
     label: "Bible Streak",
-    tint: "text-amber-300 bg-amber-500/15 border-amber-400/30",
+    tint: "text-sand bg-sand-soft border-sand/30",
   },
 ] as const;
 
@@ -422,7 +422,7 @@ function ProfileScreen() {
                           </span>
                         )}
                         <span className="mt-1 flex items-center gap-1 text-[11px] text-white/85">
-                          <Heart className="h-3 w-3 fill-current text-rose-400" />
+                          <Heart className="h-3 w-3 fill-current text-terra-lt" />
                           {compactCount(item.likes)}
                         </span>
                       </span>

@@ -23,8 +23,8 @@ export function NuruGlyph({ className }: { className?: string }) {
           y2="58"
           gradientUnits="userSpaceOnUse"
         >
-          <stop offset="0" stopColor="#7fe7ff" />
-          <stop offset="1" stopColor="#168cff" />
+          <stop offset="0" stopColor="#BDEBFF" />
+          <stop offset="1" stopColor="#48BFFF" />
         </linearGradient>
         <linearGradient
           id="nuru-cross"
@@ -35,7 +35,7 @@ export function NuruGlyph({ className }: { className?: string }) {
           gradientUnits="userSpaceOnUse"
         >
           <stop offset="0" stopColor="#ffffff" />
-          <stop offset="1" stopColor="#8ad9ff" />
+          <stop offset="1" stopColor="#C9E9FA" />
         </linearGradient>
         <filter id="nuru-bloom" x="-60%" y="-60%" width="220%" height="220%">
           <feGaussianBlur stdDeviation="2.2" result="blur" />
@@ -120,7 +120,7 @@ export function NuruMark({ className }: { className?: string }) {
     <span
       aria-hidden="true"
       className={cn(
-        "relative inline-flex items-center justify-center overflow-hidden rounded-2xl bg-[#040d24] nuru-glow-sm",
+        "relative inline-flex items-center justify-center overflow-hidden rounded-2xl bg-[#06182A] nuru-glow-sm",
         className,
       )}
     >

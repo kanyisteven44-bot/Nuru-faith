@@ -239,7 +239,7 @@ function HomeScreen() {
               >
                 <span
                   className={cn(
-                    "nuru-tactile nuru-quick-tile flex h-14 w-14 items-center justify-center rounded-2xl text-white",
+                    "nuru-tactile nuru-quick-tile flex h-14 w-14 items-center justify-center rounded-2xl text-white lg:h-12 lg:w-12 xl:h-14 xl:w-14",
                     tint,
                   )}
                 >

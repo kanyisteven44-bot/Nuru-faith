@@ -15,11 +15,14 @@ export type DiscoveryItem = {
   source: string | null;
   externalId: string | null;
   audioUrl: string | null;
+  creatorName: string | null;
+  durationSeconds: number | null;
+  category: string | null;
 };
 const input = z.object({
   kind: z.enum(DISCOVERY_KINDS),
   query: z.string().trim().max(120).default(""),
-  page: z.number().int().min(0).max(100).default(0),
+  page: z.number().int().min(0).max(125000).default(0),
   id: z.string().max(80).optional(),
 });
 const PAGE_SIZE = 8;
@@ -54,6 +57,9 @@ export const searchDiscovery = createServerFn({ method: "POST" })
       source: null,
       externalId: null,
       audioUrl: null,
+      creatorName: null,
+      durationSeconds: null,
+      category: null,
     });
     let items: DiscoveryItem[] = [];
     if (kind === "bible") {
@@ -86,6 +92,7 @@ export const searchDiscovery = createServerFn({ method: "POST" })
         items = (rows ?? []).map((r) => ({
           ...base(r.id, r.caption ?? "Reel", r.creator_name, r.poster_url),
           reference: r.scripture_ref,
+          creatorName: r.creator_name,
         }));
         break;
       }
@@ -167,7 +174,7 @@ export const searchDiscovery = createServerFn({ method: "POST" })
       default: {
         let q = supabase
           .from("media_items")
-          .select("id,title,description,thumbnail_url,scripture_ref,source,external_id,audio_url")
+          .select("id,title,description,thumbnail_url,scripture_ref,source,external_id,audio_url,creator_name,duration_seconds,category")
           .eq("is_approved", true);
         q =
           kind === "music"
@@ -194,6 +201,9 @@ export const searchDiscovery = createServerFn({ method: "POST" })
           source: r.source,
           externalId: r.external_id,
           audioUrl: r.audio_url,
+          creatorName: r.creator_name,
+          durationSeconds: r.duration_seconds,
+          category: r.category,
         }));
       }
     }

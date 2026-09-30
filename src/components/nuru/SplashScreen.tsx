@@ -103,7 +103,7 @@ export function SplashScreen() {
       <div
         aria-hidden="true"
         data-testid="nuru-splash"
-        className="fixed inset-0 z-[999] bg-[#070d18]"
+        className="fixed inset-0 z-[999] bg-[#000814]"
       />
     ) : null;
   }
@@ -112,7 +112,7 @@ export function SplashScreen() {
     <div
       aria-hidden="true"
       data-testid="nuru-splash"
-      className="fixed inset-0 z-[999] overflow-hidden bg-[#070d18]"
+      className="fixed inset-0 z-[999] overflow-hidden bg-[#000814]"
     >
       {reducedMotion ? (
         <div className="flex h-full items-center justify-center">
@@ -151,7 +151,7 @@ export function SplashScreen() {
                       gradientUnits="userSpaceOnUse"
                     >
                       <stop offset="0" stopColor="#7fe7ff" />
-                      <stop offset="1" stopColor="#a9cf68" />
+                      <stop offset="1" stopColor="#168cff" />
                     </linearGradient>
                     <filter
                       id="nuru-bloom-arch-splash"

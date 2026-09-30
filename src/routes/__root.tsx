@@ -93,7 +93,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content:
           "Nuru Faith is a Christian platform for young people: Scripture, devotionals, community, mentorship, music and events.",
       },
-      { name: "theme-color", content: "#06152A" },
+      { name: "theme-color", content: "#0a111e" },
       { name: "mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },

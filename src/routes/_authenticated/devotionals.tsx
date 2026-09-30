@@ -1,3 +1,4 @@
+import { CoverImage } from "@/components/nuru/CoverImage";
 import { useState, type ComponentType } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -167,7 +168,7 @@ function DevotionalsScreen() {
                 onClick={() => search(t.dbSubtitle)}
                 className="nuru-card relative block h-28 overflow-hidden text-left active:opacity-90"
               >
-                <img
+                <CoverImage
                   src={resolveMedia(`asset:${t.asset}`)}
                   alt=""
                   className="absolute inset-0 h-full w-full object-cover"
@@ -213,7 +214,7 @@ function DevotionalsScreen() {
                     to="/bible"
                     className="nuru-card relative block w-36 shrink-0 overflow-hidden active:opacity-90"
                   >
-                    <img
+                    <CoverImage
                       src={resolveMedia(d.cover_url)}
                       alt=""
                       loading="lazy"

@@ -1,3 +1,4 @@
+import { CoverImage } from "@/components/nuru/CoverImage";
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -160,8 +161,10 @@ function HomeScreen() {
         <section className="min-w-0 lg:col-span-7 lg:row-span-3 lg:self-stretch">
           <div className="nuru-card relative overflow-hidden lg:flex lg:h-full lg:flex-col">
             <div className="relative h-56 w-full lg:h-auto lg:min-h-[400px] lg:flex-1">
-              <img
+              <CoverImage
                 src={todayPhoto}
+                loading="eager"
+                fetchPriority="high"
                 alt=""
                 className="absolute inset-0 h-full w-full object-cover"
               />
@@ -373,7 +376,7 @@ function HomeScreen() {
               className="nuru-card group flex min-h-44 min-w-0 items-center gap-5 p-5 transition-colors hover:border-border-strong"
             >
               {devotional?.cover_url ? (
-                <img
+                <CoverImage
                   src={resolveMedia(devotional.cover_url)}
                   alt=""
                   loading="lazy"

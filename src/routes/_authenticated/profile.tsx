@@ -1,3 +1,4 @@
+import { CoverImage } from "@/components/nuru/CoverImage";
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -180,7 +181,7 @@ function ProfileScreen() {
           {/* Cover, avatar and identity */}
           <section className="nuru-card overflow-hidden">
             <div className="relative h-36">
-              <img src={coverArt} alt="" className="h-full w-full object-cover" />
+              <CoverImage src={coverArt} alt="" className="h-full w-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-card via-card/20 to-transparent" />
               <p className="absolute top-3 left-4 text-[9px] leading-[1.7] font-semibold tracking-[0.22em] text-white/85 uppercase">
                 A higher purpose
@@ -405,7 +406,7 @@ function ProfileScreen() {
                   <li key={item.id}>
                     <div className="relative aspect-[3/4] overflow-hidden rounded-xl border border-border">
                       {item.cover ? (
-                        <img
+                        <CoverImage
                           src={resolveMedia(item.cover)}
                           alt=""
                           loading="lazy"

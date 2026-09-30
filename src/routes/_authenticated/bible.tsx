@@ -1,3 +1,4 @@
+import { CoverImage } from "@/components/nuru/CoverImage";
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -96,7 +97,12 @@ function BibleScreen() {
   return (
     <AppShell>
       <header className="relative overflow-hidden">
-        <img src={bibleHero} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        <CoverImage
+          src={bibleHero}
+          loading="eager"
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover"
+        />
         <div className="absolute inset-0 bg-gradient-to-r from-background via-background/85 to-background/30" />
         <div className="relative flex items-start justify-between gap-3 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-5">
           <div>
@@ -237,7 +243,11 @@ function VerseOfTheDay({ onOpen }: { onOpen: (reference: string) => void }) {
   const verseArt = useRotatingMedia(NURU_PHOTO_POOLS.bible, "bible-verse-card");
   return (
     <section className="nuru-card relative mb-6 overflow-hidden">
-      <img src={verseArt} alt="" className="absolute inset-y-0 right-0 h-full w-1/2 object-cover" />
+      <CoverImage
+        src={verseArt}
+        alt=""
+        className="absolute inset-y-0 right-0 h-full w-1/2 object-cover"
+      />
       <div className="absolute inset-0 bg-gradient-to-r from-[#04244d] via-[#04244d]/90 to-transparent" />
       <div className="relative max-w-[62%] p-4">
         <p className="text-[10px] font-semibold tracking-[0.18em] text-muted-foreground uppercase">
@@ -311,7 +321,7 @@ function Testament({
               >
                 <span className="relative h-14 w-20 shrink-0 overflow-hidden rounded-xl">
                   {art ? (
-                    <img
+                    <CoverImage
                       src={art.art}
                       alt=""
                       loading="lazy"

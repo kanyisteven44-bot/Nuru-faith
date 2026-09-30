@@ -1,3 +1,4 @@
+import { CoverImage } from "@/components/nuru/CoverImage";
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { BookOpen, ChevronRight, Clock3, GraduationCap, Search, Sparkles } from "lucide-react";
@@ -47,8 +48,13 @@ function FaithCoursesScreen() {
       <ScreenHeader title="Faith Courses" subtitle="Learn deeply. Live faithfully." />
 
       <div className="space-y-6 px-4 pb-6">
-        <section className="nuru-card relative h-52 overflow-hidden">
-          <img src={hero} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        <section className="nuru-card relative h-52 overflow-hidden lg:h-80">
+          <CoverImage
+            src={hero}
+            loading="eager"
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover"
+          />
           <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-background/20" />
           <div className="relative flex h-full max-w-[78%] flex-col justify-end p-4">
             <span className="mb-2 inline-flex w-fit items-center gap-1 rounded-full border border-cyan/25 bg-cyan/10 px-2.5 py-1 text-[10px] font-bold tracking-wide text-cyan uppercase">
@@ -167,7 +173,7 @@ function FeaturedCourseCard({ course }: { course: FaithCourse }) {
       params={{ slug: course.slug }}
       className="nuru-card relative block h-52 w-64 shrink-0 overflow-hidden active:opacity-95 lg:w-full lg:transition-colors lg:hover:border-cyan/50"
     >
-      <img
+      <CoverImage
         src={resolveMedia(course.cover)}
         alt=""
         className="absolute inset-0 h-full w-full object-cover"
@@ -197,7 +203,7 @@ function CourseRow({ course }: { course: FaithCourse }) {
       params={{ slug: course.slug }}
       className="nuru-card flex items-center gap-3 p-2.5 active:opacity-90 lg:gap-4 lg:p-4 lg:transition-colors lg:hover:border-cyan/50"
     >
-      <img
+      <CoverImage
         src={resolveMedia(course.cover)}
         alt=""
         loading="lazy"

@@ -1,3 +1,4 @@
+import { CoverImage } from "@/components/nuru/CoverImage";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -199,7 +200,7 @@ function MusicScreen() {
                       className="w-36 shrink-0 text-left"
                     >
                       <div className="relative overflow-hidden rounded-2xl border border-border bg-surface-2">
-                        <img
+                        <CoverImage
                           src={resolveMedia(song.thumbnail_url)}
                           alt=""
                           width={320}
@@ -263,7 +264,7 @@ function MusicScreen() {
                 {(playlists.data ?? []).map((p) => (
                   <article key={p.id} className="w-40 shrink-0">
                     <div className="relative">
-                      <img
+                      <CoverImage
                         src={resolveMedia(p.cover_url)}
                         alt=""
                         width={320}

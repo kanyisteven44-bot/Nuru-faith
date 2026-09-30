@@ -1,3 +1,4 @@
+import { CoverImage } from "@/components/nuru/CoverImage";
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -195,7 +196,7 @@ function MadeForYouCard({ series, percent }: { series: SeriesRow; percent?: numb
       params={{ slug: series.slug }}
       className="nuru-card relative block h-52 w-60 shrink-0 overflow-hidden active:opacity-95"
     >
-      <img
+      <CoverImage
         src={resolveMedia(series.cover_image)}
         alt=""
         loading="lazy"
@@ -228,7 +229,7 @@ function ContinueCard({ series, percent }: { series: SeriesRow; percent: number 
       className="block w-36 shrink-0 active:opacity-90"
     >
       <div className="relative h-24 overflow-hidden rounded-xl">
-        <img
+        <CoverImage
           src={resolveMedia(series.cover_image)}
           alt=""
           loading="lazy"
@@ -256,7 +257,7 @@ function SeriesRowCard({ series, percent }: { series: SeriesRow; percent?: numbe
       params={{ slug: series.slug }}
       className="nuru-card flex items-center gap-3 p-2.5 active:opacity-90"
     >
-      <img
+      <CoverImage
         src={resolveMedia(series.cover_image)}
         alt=""
         loading="lazy"

@@ -6,8 +6,9 @@
  * NURU FAITH DESIGN SYSTEM
  * "Light for This Generation"
  *
- * V2: warm charcoal, parchment type, and a lime highlight. The calmer
- * editorial hierarchy lets photography and Scripture carry the screen.
+ * Deep midnight-navy surfaces, electric-blue + cyan light, sparing violet.
+ * Flat dark-navy cards with a thin blue border and a soft shadow — not
+ * glassmorphism, not a wall of glowing gradients.
  *
  * Never hardcode colours in components; use these semantic tokens.
  */
@@ -20,7 +21,7 @@
   --radius-2xl: calc(var(--radius) + 5px);
   --radius-3xl: calc(var(--radius) + 12px);
 
-  --font-display: "Fraunces", Georgia, serif;
+  --font-display: "Outfit", ui-sans-serif, system-ui, sans-serif;
   --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
   --font-script: "Caveat", ui-serif, cursive;
 
@@ -68,55 +69,60 @@
 }
 
 :root {
-  --radius: 1.125rem;
+  /* The approved reference uses compact, structured panels rather than soft
+     oversized bubbles. Keep one radius scale across every screen. */
+  --radius: 0.75rem;
 
-  --background: #181a1b;
-  --surface: #202426;
-  --surface-2: #303637;
-  --foreground: #f6f4eb;
-  --card: #252a2b;
-  --card-foreground: #f6f4eb;
-  --popover: #303637;
-  --popover-foreground: #f6f4eb;
+  /* deep midnight surfaces — near-black navy climbing to a lifted card */
+  --background: #00132f;
+  --surface: #02244b;
+  --surface-2: #073565;
+  --foreground: oklch(0.99 0.004 250);
+  --card: #032955;
+  --card-foreground: oklch(0.99 0.004 250);
+  --popover: oklch(0.208 0.04 260);
+  --popover-foreground: oklch(0.99 0.004 250);
 
-  --brand-cyan: #d5ef8d;
-  --primary: #c9ed72;
-  --primary-foreground: #11190b;
-  --brand-violet: #b2a1d8;
-  --brand-magenta: #e5a89e;
+  /* brand light — electric blue lead, cyan accent, violet used sparingly */
+  --brand-cyan: #35d9ff;
+  --primary: #0874d5;
+  --primary-foreground: oklch(0.99 0.004 250);
+  --brand-violet: #7e6cff;
+  --brand-magenta: #f257a7;
 
-  --secondary: #303637;
-  --secondary-foreground: #d6d8d0;
-  --muted: #303637;
-  --muted-foreground: #aeb6af;
-  --accent: #39453a;
-  --accent-foreground: #f6f4eb;
+  --secondary: oklch(0.246 0.042 259);
+  --secondary-foreground: oklch(0.84 0.028 245);
+  --muted: oklch(0.246 0.042 259);
+  --muted-foreground: oklch(0.672 0.041 249);
+  --accent: oklch(0.32 0.09 265);
+  --accent-foreground: oklch(0.99 0.004 250);
 
-  --growth: #a9dabe;
-  --warning: #eebd82;
+  --growth: #36e4b5;
+  --warning: #ffb546;
   --destructive: oklch(0.68 0.2 15);
   --destructive-foreground: oklch(0.99 0.004 250);
 
-  --border: rgb(224 232 214 / 22%);
-  --border-strong: rgb(213 239 141 / 42%);
-  --input: rgb(224 232 214 / 34%);
-  --ring: #c9ed72;
+  /* thin electric-blue borders */
+  --border: rgb(36 154 255 / 34%);
+  --border-strong: rgb(53 217 255 / 58%);
+  --input: oklch(0.7 0.12 254 / 22%);
+  --ring: oklch(0.66 0.19 264);
 
-  --sidebar: #202426;
-  --sidebar-foreground: #d6d8d0;
+  --sidebar: oklch(0.19 0.037 261);
+  --sidebar-foreground: oklch(0.84 0.028 245);
 
-  /* Keep the full button gradient bright enough for its dark label. */
+  /* gradients — calm, blue-forward */
   --gradient-brand: linear-gradient(
     118deg,
     var(--brand-cyan) 0%,
     var(--primary) 55%,
-    #e2f6ae 100%
+    var(--brand-violet) 100%
   );
   --gradient-button: linear-gradient(
     140deg,
-    color-mix(in oklab, var(--primary) 88%, var(--brand-cyan)) 0%,
+    var(--primary) 0%,
     var(--primary) 55%,
-    #e2f6ae 100%
+    color-mix(in oklab, var(--primary) 85%, var(--background)) 100%
   );
   --gradient-surface: linear-gradient(
     165deg,
@@ -537,5 +543,53 @@ a {
   .splash-word-reveal,
   .splash-flash-play {
     animation: none !important;
+  }
+}
+
+/* Raised controls inspired by the supplied music-player reference.
+   Explicit classes keep this effect off content cards and text-only links. */
+.nuru-tactile {
+  box-shadow:
+    -3px -3px 7px rgb(82 161 235 / 13%),
+    4px 5px 10px rgb(0 5 18 / 55%),
+    inset 0 1px 1px rgb(255 255 255 / 23%),
+    inset 0 -1px 2px rgb(0 8 30 / 35%);
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    filter 160ms ease;
+}
+.nuru-tactile-primary {
+  background-image: var(--gradient-button);
+}
+.nuru-quick-tile {
+  border: 1px solid rgb(255 255 255 / 28%);
+}
+@media (hover: hover) {
+  .nuru-tactile:not(:disabled):hover,
+  .group:hover .nuru-quick-tile {
+    transform: translateY(-2px);
+    filter: brightness(1.08);
+  }
+}
+.nuru-tactile:not(:disabled):active,
+.group:active .nuru-quick-tile {
+  transform: translateY(1px) scale(0.97);
+  box-shadow:
+    inset 3px 3px 7px rgb(0 5 18 / 50%),
+    inset -2px -2px 5px rgb(82 161 235 / 15%);
+}
+.nuru-tactile:disabled {
+  box-shadow: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nuru-tactile {
+    transition: none;
+  }
+  .nuru-tactile:not(:disabled):hover,
+  .nuru-tactile:not(:disabled):active,
+  .group:hover .nuru-quick-tile,
+  .group:active .nuru-quick-tile {
+    transform: none;
   }
 }

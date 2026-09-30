@@ -207,7 +207,7 @@ function MusicScreen() {
                           loading="lazy"
                           className="h-36 w-36 object-cover"
                         />
-                        <span className="absolute bottom-2 right-2 flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground nuru-glow-sm">
+                        <span className="absolute bottom-2 right-2 nuru-tactile nuru-tactile-primary flex h-11 w-11 items-center justify-center rounded-full bg-primary text-primary-foreground nuru-glow-sm">
                           <Play className="h-4 w-4 fill-current" />
                         </span>
                       </div>
@@ -271,7 +271,7 @@ function MusicScreen() {
                         loading="lazy"
                         className="h-40 w-40 rounded-2xl border border-border object-cover"
                       />
-                      <span className="absolute bottom-2 right-2 flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground nuru-glow-sm">
+                      <span className="absolute bottom-2 right-2 nuru-tactile nuru-tactile-primary flex h-11 w-11 items-center justify-center rounded-full bg-primary text-primary-foreground nuru-glow-sm">
                         <Play className="h-4 w-4 fill-current" />
                       </span>
                     </div>
@@ -547,7 +547,7 @@ function NuruAudioSection({
                   setPlaying(isPlaying ? null : t.id);
                 }}
                 className={cn(
-                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border-strong transition-colors",
+                  "nuru-tactile flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border-strong bg-surface-2 transition-colors",
                   isPlaying
                     ? "border-primary bg-primary/15 text-cyan"
                     : "text-secondary-foreground",

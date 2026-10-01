@@ -678,3 +678,69 @@ a {
     animation-duration: 160ms;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   HOME CONCEPT 01 — scoped palette
+   The Home concept board uses a navy-and-blue palette that deliberately
+   differs from the charcoal/forest foundations the rest of the app runs on.
+   Rather than change the global tokens (which would repaint every screen),
+   this class redefines them for its own subtree only, so Home can use the
+   ordinary semantic utilities and still come out navy.
+   Remove this class and Home falls back to the app palette.
+   --------------------------------------------------------------------------- */
+.home-concept {
+  --background: #071a30;
+  --surface: #0c2440;
+  --surface-2: #143254;
+  --card: #0f2a49;
+  --card-foreground: #eaf1fa;
+  --foreground: #eaf1fa;
+
+  --primary: #2f9fe0;
+  --primary-foreground: #04172b;
+  --forest-hi: #3fb0ef;
+  --leaf: #7fd3ff;
+
+  --sand: #f5b731;
+  --warning: #f5b731;
+  --terra: #e0763f;
+  --terra-lt: #f2a173;
+
+  --secondary-foreground: #c3d4e8;
+  --ink-2: #c3d4e8;
+  --ink-3: #8ba4c2;
+  --muted-foreground: #8ba4c2;
+
+  --border: rgb(255 255 255 / 10%);
+  --border-strong: rgb(127 211 255 / 34%);
+
+  --gradient-surface: linear-gradient(180deg, #12304f, #0d2541);
+  --shadow-card: inset 0 1px 0 rgb(255 255 255 / 5%), 0 10px 30px rgb(2 10 20 / 45%);
+  --shadow-raised:
+    inset 0 1px 0 rgb(255 255 255 / 14%), 0 1px 0 rgb(2 10 20 / 50%), 0 8px 22px rgb(2 10 20 / 40%);
+
+  /* This board sets its headings in bold sans and keeps Scripture serif.
+     Font stacks are inlined by `@theme inline`, so a scoped --font-display
+     override would not reach the utility; Home states font-sans/font-serif
+     on the elements themselves instead. */
+
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+/* The eyebrow on this board is a cool grey, not sand. */
+.home-concept .nuru-eyebrow {
+  color: var(--ink-3);
+}
+
+/* Quick Access tiles: a saturated rounded square per destination. */
+.home-tile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  color: #fff;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 25%),
+    0 6px 14px rgb(2 10 20 / 45%);
+}

@@ -21,12 +21,9 @@
   --radius-2xl: calc(var(--radius) + 5px);
   --radius-3xl: calc(var(--radius) + 12px);
 
-  /* Editorial serif for Scripture, names and reflection; plain sans for
-     controls and details. Design system v2. */
-  --font-display: "Instrument Serif", Georgia, ui-serif, serif;
-  --font-serif: "Instrument Serif", Georgia, ui-serif, serif;
-  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
-  --font-script: "Instrument Serif", Georgia, ui-serif, serif;
+  --font-display: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-script: "Caveat", ui-serif, cursive;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -48,19 +45,6 @@
   --color-violet: var(--brand-violet);
   --color-magenta: var(--brand-magenta);
   --color-growth: var(--growth);
-  /* v2 named accents — forest leads, terracotta warms, sand highlights. */
-  --color-leaf: var(--leaf);
-  --color-terra: var(--terra);
-  --color-terra-lt: var(--terra-lt);
-  --color-sand: var(--sand);
-  --color-ink-2: var(--ink-2);
-  --color-ink-3: var(--ink-3);
-  --color-rose: var(--rose);
-  --color-rose-soft: var(--rose-soft);
-  --color-sky: var(--sky);
-  --color-sky-soft: var(--sky-soft);
-  --color-olive-soft: var(--olive-soft);
-  --color-sand-soft: var(--sand-soft);
   --color-growth-foreground: var(--background);
   --color-warning: var(--warning);
   --color-destructive: var(--destructive);
@@ -89,94 +73,86 @@
      oversized bubbles. Keep one radius scale across every screen. */
   --radius: 0.75rem;
 
-  /* warm dark surfaces — charcoal page climbing to a lifted card */
-  --background: #111715;
-  --surface: #19201d;
-  --surface-2: #222a26;
-  --foreground: #f1eee6;
-  --card: #19201d;
-  --card-foreground: #f1eee6;
-  --popover: #19201d;
-  --popover-foreground: #f1eee6;
+  /* deep midnight surfaces — near-black navy climbing to a lifted card */
+  --background: #00132f;
+  --surface: #02244b;
+  --surface-2: #073565;
+  --foreground: oklch(0.99 0.004 250);
+  --card: #032955;
+  --card-foreground: oklch(0.99 0.004 250);
+  --popover: oklch(0.208 0.04 260);
+  --popover-foreground: oklch(0.99 0.004 250);
 
-  /* forest leads for anything selected or primary; terracotta carries the
-     warm moments; sand highlights; Nuru cyan is reserved for the logo and
-     focus light and must not be used as a general accent. */
-  --primary: #3d6048;
-  --primary-foreground: #f1eee6;
-  --forest-hi: #4a7457;
-  --forest-lo: #2e4a37;
-  --leaf: #86c29a;
-  --terra: #b96445;
-  --terra-hi: #c8704f;
-  --terra-lo: #a9573a;
-  --terra-lt: #e08e6d;
-  --sand: #e6b566;
-  --brand-cyan: #48bfff;
-  /* Legacy aliases kept so screens not yet rebuilt stay on-palette. */
-  --brand-violet: #b96445;
-  --brand-magenta: #e08e6d;
+  /* brand light — electric blue lead, cyan accent, violet used sparingly */
+  --brand-cyan: #35d9ff;
+  --primary: #0874d5;
+  --primary-foreground: oklch(0.99 0.004 250);
+  --brand-violet: #7e6cff;
+  --brand-magenta: #f257a7;
 
-  --secondary: #222a26;
-  --secondary-foreground: #c9ccc4;
-  --ink-2: #c9ccc4;
-  --ink-3: #949c95;
-  --muted: #222a26;
-  --muted-foreground: #949c95;
-  --accent: #2e4a37;
-  --accent-foreground: #f1eee6;
+  --secondary: oklch(0.246 0.042 259);
+  --secondary-foreground: oklch(0.84 0.028 245);
+  --muted: oklch(0.246 0.042 259);
+  --muted-foreground: oklch(0.672 0.041 249);
+  --accent: oklch(0.32 0.09 265);
+  --accent-foreground: oklch(0.99 0.004 250);
 
-  --growth: #86c29a;
-  --warning: #e6b566;
-  --destructive: #b84a3c;
-  --destructive-foreground: #fff7f2;
+  --growth: #36e4b5;
+  --warning: #ffb546;
+  --destructive: oklch(0.68 0.2 15);
+  --destructive-foreground: oklch(0.99 0.004 250);
 
-  /* The foundations' remaining status tints, each with its own soft ground. */
-  --rose: #ee8b7b;
-  --rose-soft: #2a1512;
-  --sky: #7fd3ff;
-  --sky-soft: #0f2a3a;
-  --olive-soft: #1c3024;
-  --sand-soft: #2a2419;
+  /* thin electric-blue borders */
+  --border: rgb(36 154 255 / 34%);
+  --border-strong: rgb(53 217 255 / 58%);
+  --input: oklch(0.7 0.12 254 / 22%);
+  --ring: oklch(0.66 0.19 264);
 
-  /* quiet warm-grey borders, not glowing ones */
-  --border: #2a332f;
-  --border-strong: #3a4540;
-  --input: #3a4540;
-  --ring: #48bfff;
+  --sidebar: oklch(0.19 0.037 261);
+  --sidebar-foreground: oklch(0.84 0.028 245);
 
-  --sidebar: #19201d;
-  --sidebar-foreground: #c9ccc4;
-
-  /* gradients — warm and quiet; forest for primary, terracotta for warmth */
+  /* gradients — calm, blue-forward */
   --gradient-brand: linear-gradient(
     118deg,
-    var(--leaf) 0%,
-    var(--primary) 60%,
-    var(--forest-lo) 100%
+    var(--brand-cyan) 0%,
+    var(--primary) 55%,
+    var(--brand-violet) 100%
   );
-  --gradient-button: linear-gradient(180deg, var(--forest-hi), var(--primary));
-  --gradient-warm: linear-gradient(180deg, var(--terra-hi), var(--terra-lo));
-  --gradient-surface: linear-gradient(180deg, #1c2420, #171e1b);
-  --gradient-hero: radial-gradient(90% 120% at 75% 0%, #2c4535 0%, #1a2520 55%, #141a17 100%);
+  --gradient-button: linear-gradient(
+    140deg,
+    var(--primary) 0%,
+    var(--primary) 55%,
+    color-mix(in oklab, var(--primary) 85%, var(--background)) 100%
+  );
+  --gradient-surface: linear-gradient(
+    165deg,
+    color-mix(in oklab, var(--card) 88%, var(--primary)) 0%,
+    var(--card) 62%
+  );
+  --gradient-hero: linear-gradient(
+    160deg,
+    color-mix(in oklab, var(--primary) 34%, var(--surface)) 0%,
+    color-mix(in oklab, var(--brand-violet) 12%, var(--surface)) 55%,
+    var(--surface) 100%
+  );
   --gradient-veil: linear-gradient(
     to top,
-    rgb(17 23 21 / 0.96) 6%,
-    rgb(17 23 21 / 0.55) 42%,
-    rgb(17 23 21 / 0) 82%
+    oklch(0.13 0.03 262 / 0.96) 6%,
+    oklch(0.13 0.03 262 / 0.55) 42%,
+    oklch(0.13 0.03 262 / 0) 82%
   );
-  /* The pointed arch echoes the Nuru logo; used as a mask on media. */
-  --pointed: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0 100V46C0 22 22 6 50 0C78 6 100 22 100 46V100Z'/%3E%3C/svg%3E");
-  --halo: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M1 100V46C1 22 22 7 50 1C78 7 99 22 99 46V100' fill='none' stroke='%2348BFFF' stroke-opacity='.6' stroke-width='1.4' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
 
-  /* elevation — soft, tactile, bevelled; glow stays rare and small */
-  --shadow-card: inset 0 1px 0 rgb(255 255 255 / 4%), 0 10px 30px rgb(0 0 0 / 35%);
+  /* elevation + glow — soft shadows, restrained blue halo */
+  --shadow-card:
+    0 2px 6px -3px oklch(0.08 0.03 262 / 0.55), 0 12px 30px -18px oklch(0.06 0.03 262 / 0.7);
   --shadow-raised:
-    inset 0 1px 0 rgb(255 255 255 / 7%), 0 1px 0 rgb(0 0 0 / 40%), 0 8px 22px rgb(0 0 0 / 32%);
-  /* Glow is reserved for the logo, focus rings and the one thing that
-     matters on a screen — never as general decoration. */
-  --shadow-glow: 0 0 0 1px rgb(72 191 255 / 30%), 0 0 22px rgb(72 191 255 / 22%);
-  --shadow-glow-sm: 0 0 0 1px rgb(72 191 255 / 25%), 0 0 18px rgb(72 191 255 / 18%);
+    0 4px 12px -4px oklch(0.07 0.03 262 / 0.6), 0 20px 44px -20px oklch(0.05 0.03 262 / 0.75);
+  --shadow-glow:
+    0 0 0 1px color-mix(in oklab, var(--primary) 42%, transparent),
+    0 10px 34px -14px color-mix(in oklab, var(--primary) 55%, transparent);
+  --shadow-glow-sm:
+    0 0 0 1px color-mix(in oklab, var(--primary) 30%, transparent),
+    0 6px 20px -12px color-mix(in oklab, var(--primary) 45%, transparent);
 }
 
 .dark {
@@ -219,16 +195,14 @@
   }
 }
 
-/* Design system v2: soft warm-dark panels with a quiet warm-grey hairline.
-   No glowing borders — glow belongs to the logo and focus only. */
+/* Approved Nuru visual system: crisp illuminated panels, never soft generic cards. */
 .nuru-card,
 .nuru-card-hero {
-  border-radius: 1.5rem;
-  border-color: var(--border);
-}
-.nuru-card:hover,
-.nuru-card-hero:hover {
-  border-color: var(--border-strong);
+  border-radius: 0.65rem;
+  border-color: color-mix(in oklab, var(--brand-cyan) 28%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, white 7%, transparent),
+    0 12px 34px -28px color-mix(in oklab, var(--brand-cyan) 85%, transparent);
 }
 
 button,
@@ -248,12 +222,14 @@ a {
   background-image: var(--gradient-button);
 }
 
-/* Warm-dark card with a quiet hairline + soft shadow. */
+/* Flat dark-navy card with a thin blue border + soft shadow. */
 @utility nuru-card {
-  background-image: var(--gradient-surface);
+  background-color: var(--color-card);
   border: 1px solid var(--color-border);
-  border-radius: 1.5rem;
-  box-shadow: var(--shadow-card);
+  border-radius: var(--radius-xl);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 3%),
+    var(--shadow-card);
 }
 
 /* Card that leans into the brand — used for the one hero surface per screen. */
@@ -309,76 +285,9 @@ a {
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-sm);
-  background-color: color-mix(in oklab, var(--primary) 30%, var(--surface-2));
-  border: 1px solid color-mix(in oklab, var(--leaf) 24%, transparent);
-  color: var(--leaf);
-}
-
-/* ---------- Design system v2 motifs ---------- */
-
-/* The pointed arch echoes the Nuru logo. Used to mask hero media. */
-@utility nuru-arch {
-  overflow: hidden;
-  -webkit-mask: var(--pointed) center / 100% 100% no-repeat;
-  mask: var(--pointed) center / 100% 100% no-repeat;
-}
-
-/* The same arch as a drawn cyan outline — the "Nuru halo". */
-@utility nuru-halo {
-  background: var(--halo) center / 100% 100% no-repeat;
-  filter: drop-shadow(0 0 6px rgb(72 191 255 / 35%));
-}
-
-/* A hairline of light, fading out at both ends. */
-@utility nuru-light-rule {
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    rgb(72 191 255 / 0),
-    rgb(72 191 255 / 70%),
-    rgb(72 191 255 / 0)
-  );
-}
-
-/* Soft raised circle — the tactile control the design is built around.
-   A quiet bevel: light on the top edge, shadow under it. */
-@utility nuru-disc {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  border-radius: 9999px;
-  background: radial-gradient(80% 80% at 35% 25%, #4f7a5d, #2e4a37);
-  color: #eaf5ec;
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 18%),
-    inset 0 -2px 4px rgb(0 0 0 / 30%),
-    0 4px 10px rgb(0 0 0 / 35%);
-}
-
-@utility nuru-disc-terra {
-  background: radial-gradient(80% 80% at 35% 25%, #d07b5a, #9c4c31);
-  color: #fff1ea;
-}
-
-@utility nuru-disc-sand {
-  background: radial-gradient(80% 80% at 35% 25%, #f0c47a, #b9873c);
-  color: #2a1c08;
-}
-
-/* Small sand label above a heading. */
-@utility nuru-eyebrow {
-  font-family: var(--font-sans);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--sand);
-}
-
-/* The raised, bevelled elevation used by buttons and selected nav. */
-@utility nuru-raise {
-  box-shadow: var(--shadow-raised);
+  background-color: color-mix(in oklab, var(--primary) 18%, var(--surface-2));
+  border: 1px solid color-mix(in oklab, var(--primary) 24%, transparent);
+  color: var(--brand-cyan);
 }
 
 @utility no-scrollbar {
@@ -439,242 +348,273 @@ a {
   }
 }
 
-/* ---------------------------------------------------------------------------
-   THE OPENING
-   Matches the supplied "Opening — desktop" board exactly: the arch draws
-   itself in light, a beam falls through it, a spark lands on the apex, then
-   the wordmark, the line and the scripture fade up in sequence. Two ray
-   fields turn slowly behind it and embers drift upward.
-
-   Every duration, delay, easing and colour below is taken from that board
-   unchanged. See SplashScreen.tsx.
-   --------------------------------------------------------------------------- */
-@keyframes nuru-open-draw {
-  from {
-    stroke-dashoffset: 1;
-  }
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-@keyframes nuru-open-fade {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-@keyframes nuru-open-beam {
-  from {
-    opacity: 0;
-    transform: scaleY(0.15);
-  }
-  to {
-    opacity: 1;
-    transform: scaleY(1);
-  }
-}
-@keyframes nuru-open-pulse {
-  0%,
-  100% {
-    opacity: 0.6;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-@keyframes nuru-open-spark {
+/* App-open splash: a beam of light sweeps across the dark, reveals the mark,
+   then flashes and expands into the real interface. See SplashScreen.tsx. */
+@keyframes splash-beam {
   0% {
-    opacity: 0;
-    transform: scale(0.2);
-  }
-  60% {
-    opacity: 1;
-    transform: scale(1.4);
-  }
-  100% {
-    opacity: 0.9;
-    transform: scale(1);
-  }
-}
-@keyframes nuru-open-rise {
-  from {
-    opacity: 0;
-    transform: translateY(40px);
-  }
-  to {
-    opacity: 0.5;
-    transform: none;
-  }
-}
-@keyframes nuru-open-float {
-  0% {
-    transform: translateY(0) scale(0.6);
+    translate: -30% 0;
     opacity: 0;
   }
-  15% {
-    opacity: 0.9;
-  }
-  70% {
-    opacity: 0.6;
-  }
-  100% {
-    transform: translateY(-460px) scale(1);
-    opacity: 0;
-  }
-}
-@keyframes nuru-open-sway {
-  0%,
-  100% {
-    margin-left: 0;
-  }
-  50% {
-    margin-left: 14px;
-  }
-}
-@keyframes nuru-open-rays-in {
-  from {
-    opacity: 0;
-  }
-  to {
+  10% {
     opacity: 1;
   }
-}
-@keyframes nuru-open-spin {
-  from {
-    transform: translate(-50%, -50%) rotate(0deg);
+  75% {
+    opacity: 1;
   }
-  to {
-    transform: translate(-50%, -50%) rotate(360deg);
+  100% {
+    translate: 230% 0;
+    opacity: 0;
   }
 }
 
-.nuru-open-draw {
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-  animation: nuru-open-draw 1.9s cubic-bezier(0.6, 0, 0.2, 1) 0.3s forwards;
-}
-.nuru-open-beam {
-  transform-origin: 50% 0;
-  transform-box: fill-box;
-  opacity: 0;
-  animation: nuru-open-beam 1.4s ease-out 1.8s forwards;
-}
-.nuru-open-spark {
-  transform-origin: center;
-  transform-box: fill-box;
-  opacity: 0;
-  animation: nuru-open-spark 0.8s ease-out 2s forwards;
-}
-.nuru-open-f1 {
-  opacity: 0;
-  animation: nuru-open-fade 0.9s ease-out 2.3s forwards;
-}
-.nuru-open-f2 {
-  opacity: 0;
-  animation: nuru-open-fade 0.9s ease-out 2.7s forwards;
-}
-.nuru-open-f3 {
-  opacity: 0;
-  animation: nuru-open-fade 0.9s ease-out 3.1s forwards;
-}
-.nuru-open-glow {
-  animation: nuru-open-pulse 3.6s ease-in-out 3.2s infinite;
-}
-.nuru-open-side {
-  opacity: 0;
-  animation: nuru-open-rise 1.6s ease-out 2.4s forwards;
-}
-
-.nuru-open-rays {
-  opacity: 0;
-  border-radius: 50%;
-  pointer-events: none;
-  background: repeating-conic-gradient(
-    from 0deg,
-    rgb(159 224 255 / 11%) 0deg 2.5deg,
-    rgb(72 191 255 / 0) 2.5deg 11deg
-  );
-  -webkit-mask: radial-gradient(closest-side, #000 18%, rgb(0 0 0 / 50%) 50%, transparent 100%);
-  mask: radial-gradient(closest-side, #000 18%, rgb(0 0 0 / 50%) 50%, transparent 100%);
-  animation:
-    nuru-open-rays-in 2.4s ease-out 1.8s forwards,
-    nuru-open-spin 120s linear infinite;
-}
-.nuru-open-rays-warm {
-  background: repeating-conic-gradient(
-    from 5deg,
-    rgb(230 181 102 / 6%) 0deg 1.5deg,
-    rgb(230 181 102 / 0) 1.5deg 17deg
-  );
-  animation:
-    nuru-open-rays-in 2.4s ease-out 2.2s forwards,
-    nuru-open-spin 180s linear infinite reverse;
-}
-
-/* One drifting ember. Position, size, colour and timing come from the
-   component so the field is deterministic rather than random per render. */
-.nuru-open-p {
+@utility splash-beam {
   position: absolute;
-  border-radius: 50%;
-  opacity: 0;
-  pointer-events: none;
+  top: -50%;
+  left: -55%;
+  width: 55%;
+  height: 200%;
+  rotate: 18deg;
+  filter: blur(7px);
+  background: linear-gradient(
+    100deg,
+    transparent,
+    color-mix(in oklab, white 92%, transparent),
+    color-mix(in oklab, var(--brand-cyan) 70%, transparent),
+    transparent
+  );
+  animation: splash-beam 900ms cubic-bezier(0.3, 0, 0.2, 1) both;
 }
 
-/* The arch drawn as a standing outline, used either side of the mark. */
-.nuru-open-archline {
-  background: var(--halo) center / 100% 100% no-repeat;
-  filter: drop-shadow(0 0 6px rgb(72 191 255 / 35%));
+/* The mark assembles from two independently tumbling pieces (arch + cross)
+   rather than fading in as one unit — each turns face-on in 3D space, catches
+   an overshoot/settle like something physically landing, then the whole mark
+   flashes and catches a light sheen the instant both pieces lock together. */
+@keyframes splash-halo {
+  0% {
+    opacity: 0;
+    scale: 0.55;
+  }
+  100% {
+    opacity: 0.5;
+    scale: 1;
+  }
 }
 
-/* Exit: the whole opening lifts away and lets the app through. */
-@keyframes nuru-open-exit {
-  from {
+@utility splash-halo {
+  animation: splash-halo 400ms ease-out 120ms both;
+}
+
+@keyframes splash-arch-tumble {
+  0% {
+    opacity: 0;
+    transform: translate3d(-46px, 0, -90px) rotateY(-100deg);
+  }
+  55% {
     opacity: 1;
-    transform: scale(1);
+  }
+  75% {
+    transform: translate3d(4px, 0, 4px) rotateY(8deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotateY(0deg);
+  }
+}
+
+@utility splash-arch-tumble {
+  animation: splash-arch-tumble 500ms cubic-bezier(0.2, 0.7, 0.2, 1) 180ms both;
+}
+
+@keyframes splash-cross-tumble {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 34px, -70px) rotateX(85deg);
+  }
+  55% {
+    opacity: 1;
+  }
+  75% {
+    transform: translate3d(0, -3px, 3px) rotateX(-7deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotateX(0deg);
+  }
+}
+
+@utility splash-cross-tumble {
+  animation: splash-cross-tumble 500ms cubic-bezier(0.2, 0.7, 0.2, 1) 380ms both;
+}
+
+@keyframes splash-converge-flash {
+  0% {
+    opacity: 0;
+    scale: 0.6;
+  }
+  20% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+    scale: 1.8;
+  }
+}
+
+@utility splash-converge-flash {
+  animation: splash-converge-flash 350ms ease-out 880ms both;
+}
+
+@keyframes splash-sheen {
+  0% {
+    translate: -140% 0;
+    rotate: -18deg;
+    opacity: 0;
+  }
+  45% {
+    opacity: 0.9;
+  }
+  100% {
+    translate: 140% 0;
+    rotate: -18deg;
+    opacity: 0;
+  }
+}
+
+@utility splash-sheen {
+  animation: splash-sheen 400ms ease-out 880ms both;
+}
+
+@keyframes splash-word-reveal {
+  from {
+    opacity: 0;
+    translate: 0 8px;
   }
   to {
-    opacity: 0;
-    transform: scale(1.06);
+    opacity: 1;
+    translate: 0 0;
   }
 }
-.nuru-open-exit {
-  animation: nuru-open-exit 520ms cubic-bezier(0.3, 0, 0.15, 1) forwards;
+
+@utility splash-word-reveal {
+  animation: splash-word-reveal 400ms ease-out 1050ms both;
+}
+
+@keyframes splash-flash {
+  0% {
+    scale: 1;
+    opacity: 0;
+  }
+  22% {
+    opacity: 1;
+  }
+  100% {
+    scale: 46;
+    opacity: 1;
+  }
+}
+
+@utility splash-flash {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  scale: 1;
+  opacity: 0;
+  background: radial-gradient(circle, #ffffff 0%, var(--brand-cyan) 45%, var(--background) 72%);
+}
+
+/* Applied only once the JS state machine decides to exit — the hold phase
+   before it can last anywhere from ~1.7s to ~3.6s (it waits for auth to
+   resolve), so this can't be a fixed on-mount keyframe. */
+@utility splash-flash-play {
+  animation: splash-flash 480ms cubic-bezier(0.3, 0, 0.15, 1) forwards;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .nuru-open-rays {
-    animation: none;
-    opacity: 0.8;
-    transform: translate(-50%, -50%);
+  .splash-beam,
+  .splash-halo,
+  .splash-arch-tumble,
+  .splash-cross-tumble,
+  .splash-converge-flash,
+  .splash-sheen,
+  .splash-word-reveal,
+  .splash-flash-play {
+    animation: none !important;
   }
-  .nuru-open-p {
-    display: none;
+}
+
+/* Raised controls inspired by the supplied music-player reference.
+   Explicit classes keep this effect off content cards and text-only links. */
+.nuru-tactile {
+  box-shadow:
+    -3px -3px 7px rgb(82 161 235 / 13%),
+    4px 5px 10px rgb(0 5 18 / 55%),
+    inset 0 1px 1px rgb(255 255 255 / 23%),
+    inset 0 -1px 2px rgb(0 8 30 / 35%);
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    filter 160ms ease;
+}
+.nuru-tactile-primary {
+  background-image: var(--gradient-button);
+}
+.nuru-quick-tile {
+  border: 1px solid rgb(255 255 255 / 28%);
+}
+@media (hover: hover) {
+  .nuru-tactile:not(:disabled):hover,
+  .group:hover .nuru-quick-tile {
+    transform: translateY(-2px);
+    filter: brightness(1.08);
   }
-  .nuru-open-draw {
-    animation: none;
-    stroke-dashoffset: 0;
+}
+.nuru-tactile:not(:disabled):active,
+.group:active .nuru-quick-tile {
+  transform: translateY(1px) scale(0.97);
+  box-shadow:
+    inset 3px 3px 7px rgb(0 5 18 / 50%),
+    inset -2px -2px 5px rgb(82 161 235 / 15%);
+}
+.nuru-tactile:disabled {
+  box-shadow: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nuru-tactile {
+    transition: none;
   }
-  .nuru-open-beam,
-  .nuru-open-spark,
-  .nuru-open-f1,
-  .nuru-open-f2,
-  .nuru-open-f3 {
-    animation: none;
-    opacity: 1;
+  .nuru-tactile:not(:disabled):hover,
+  .nuru-tactile:not(:disabled):active,
+  .group:hover .nuru-quick-tile,
+  .group:active .nuru-quick-tile {
     transform: none;
   }
-  .nuru-open-side {
-    animation: none;
-    opacity: 0.5;
-  }
-  .nuru-open-glow {
-    animation: none;
-  }
-  .nuru-open-exit {
-    animation-duration: 160ms;
+}
+
+/* Clear keyboard navigation throughout the desktop workspace. */
+:where(a, button, input, textarea, select):focus-visible {
+  outline: 2px solid var(--brand-cyan);
+  outline-offset: 4px;
+}
+.nuru-skip-link {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 100;
+  transform: translateY(-200%);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--surface-2);
+  color: var(--foreground);
+}
+.nuru-skip-link:focus {
+  transform: translateY(0);
+}
+@media (min-width: 1024px) {
+  .nuru-card {
+    border-radius: 1rem;
   }
 }

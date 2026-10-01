@@ -67,7 +67,7 @@ function SettingsScreen() {
         {ROWS.map(({ icon: Icon, label, to, value }) => {
           const inner = (
             <>
-              <Icon className="h-4.5 w-4.5 shrink-0 text-leaf" strokeWidth={1.8} />
+              <Icon className="h-4.5 w-4.5 shrink-0 text-cyan" strokeWidth={1.8} />
               <span className="min-w-0 flex-1 truncate text-sm font-medium">{label}</span>
               {value && <span className="shrink-0 text-[12px] text-muted-foreground">{value}</span>}
               <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />

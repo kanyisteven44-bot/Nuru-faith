@@ -67,7 +67,7 @@ function PodcastsScreen() {
                       onClick={() => toast("Audio playback is coming soon")}
                       className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-surface-2"
                     >
-                      <Headphones className="h-4 w-4 shrink-0 text-leaf" />
+                      <Headphones className="h-4 w-4 shrink-0 text-cyan" />
                       <span className="min-w-0 flex-1 truncate text-sm">{e.title}</span>
                       <span className="text-[11px] text-muted-foreground">
                         {duration(e.duration_seconds)}

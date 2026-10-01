@@ -66,7 +66,7 @@ export function PersonRow({
           {person.verified && (
             <BadgeCheck
               aria-label="Verified"
-              className="h-3.5 w-3.5 shrink-0 text-leaf"
+              className="h-3.5 w-3.5 shrink-0 text-cyan"
               strokeWidth={2}
             />
           )}

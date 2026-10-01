@@ -48,7 +48,7 @@ function ServeScreen() {
               <IconTile icon={HandHeart} tone="growth" className="shrink-0" />
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold">{o.title}</p>
-                {o.churches?.name && <p className="text-[11px] text-leaf">{o.churches.name}</p>}
+                {o.churches?.name && <p className="text-[11px] text-cyan">{o.churches.name}</p>}
                 {o.description && (
                   <p className="mt-1 text-xs text-secondary-foreground">{o.description}</p>
                 )}

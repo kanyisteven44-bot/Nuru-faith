@@ -35,7 +35,7 @@ export function MediaActions({
           aria-pressed={saved}
           className={cn(
             "inline-flex min-h-9 items-center gap-1.5 rounded-full border border-border px-3 text-xs font-medium",
-            saved ? "bg-surface-2 text-leaf" : "text-secondary-foreground",
+            saved ? "bg-surface-2 text-cyan" : "text-secondary-foreground",
           )}
         >
           <Bookmark className={cn("h-3.5 w-3.5", saved && "fill-current")} />

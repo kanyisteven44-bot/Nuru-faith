@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, ChevronDown, Church, Image as ImageIcon, Search, Users } from "lucide-react";
+import { Check, Plus, Search, Users } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchFollowingIds } from "@/services/reels";
@@ -15,11 +15,10 @@ import {
   fetchMyPostLikes,
   fetchMySavedPosts,
   fetchPostPage,
-  fetchProfile,
   joinGroup,
   leaveGroup,
 } from "@/services/content";
-import { AppShell, Avatar, BrandBar } from "@/components/nuru/AppShell";
+import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
 import { PersonRow } from "@/components/nuru/PersonRow";
 import { PostCard, type PostRow } from "@/components/nuru/PostCard";
 import { CardSkeleton, EmptyState, ErrorState, PillTabs } from "@/components/nuru/Primitives";
@@ -39,31 +38,12 @@ export const Route = createFileRoute("/_authenticated/community")({
   component: CommunityScreen,
 });
 
-/**
- * The board's four content filters lead, then the two directories the app
- * already had. "All" is what the board calls the unfiltered feed.
- */
-const TABS = ["All", "Prayer", "Testimony", "News", "Following", "People", "Groups"] as const;
+const TABS = ["For You", "Following", "People", "Groups"] as const;
 type Tab = (typeof TABS)[number];
-
-/** Which post `kind` each content chip narrows the feed to. */
-const KIND_FOR_TAB: Partial<Record<Tab, string>> = {
-  Prayer: "prayer",
-  Testimony: "testimony",
-  News: "news",
-};
 
 function CommunityScreen() {
   const { userId } = useAuth();
-  const [tab, setTab] = useState<Tab>("All");
-
-  const profile = useQuery({
-    queryKey: ["profile", userId],
-    queryFn: () => fetchProfile(userId!),
-    enabled: !!userId,
-  });
-  // Named only when the person actually belongs to one.
-  const churchName = profile.data?.church_id ? "My church" : "All of Nuru";
+  const [tab, setTab] = useState<Tab>("For You");
 
   const following = useQuery({
     queryKey: ["following", userId],
@@ -80,9 +60,8 @@ function CommunityScreen() {
     getNextPageParam: (lastPage, pages) =>
       lastPage.length === COMMUNITY_PAGE_SIZE ? pages.length : undefined,
     enabled:
-      tab !== "People" &&
-      tab !== "Groups" &&
-      (tab !== "Following" || (!!userId && following.isSuccess)),
+      tab === "For You" ||
+      (tab === "Following" && !!userId && following.isSuccess),
   });
   const likes = useQuery({
     queryKey: ["post-likes", userId],
@@ -97,64 +76,26 @@ function CommunityScreen() {
 
   const likedIds = new Set(likes.data ?? []);
   const savedIds = new Set(saves.data ?? []);
-  const allRows = (posts.data?.pages.flat() ?? []) as PostRow[];
-  // The kind chips narrow what has already loaded; the query itself is shared
-  // across them so switching a chip does not refetch the feed.
-  const kind = KIND_FOR_TAB[tab];
-  const rows = kind ? allRows.filter((r) => r.kind === kind) : allRows;
+  const rows = (posts.data?.pages.flat() ?? []) as PostRow[];
 
   return (
     <AppShell>
-      <BrandBar />
-
-      <div className="px-4">
-        <div className="flex items-center justify-between gap-3">
-          <h1 className="font-display text-[36px] leading-none">Community</h1>
+      <ScreenHeader
+        title="Community"
+        right={
           <Link
             to="/explore"
             search={{ q: "", kind: "all" }}
             aria-label="Search community"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border-strong bg-[linear-gradient(180deg,#212A26,#1A211E)] text-ink-2"
+            className="p-1 text-secondary-foreground"
           >
-            <Search className="h-4 w-4" />
+            <Search className="h-5 w-5" />
           </Link>
-        </div>
+        }
+      />
 
-        {/* Which church's people you are looking at. */}
-        <div className="mt-3 flex justify-center">
-          <Link
-            to="/church"
-            className="inline-flex max-w-full items-center gap-2 rounded-full border border-border-strong bg-[linear-gradient(180deg,#212A26,#1A211E)] py-1.5 pr-3 pl-1.5 text-[13px] font-semibold"
-          >
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface-2 text-ink-2">
-              <Church className="h-3.5 w-3.5" strokeWidth={1.9} />
-            </span>
-            <span className="truncate">{churchName}</span>
-            <ChevronDown className="h-4 w-4 shrink-0 text-ink-3" strokeWidth={2} />
-          </Link>
-        </div>
-
-        {/* Composer — opens the real Create screen rather than editing here. */}
-        <Link
-          to="/create"
-          className="mt-3 flex items-center gap-2.5 rounded-full border border-border-strong bg-[#151B18] py-2 pr-2 pl-2"
-        >
-          <Avatar
-            url={profile.data?.avatar_url ?? null}
-            name={profile.data?.full_name ?? ""}
-            seed={userId}
-            size="sm"
-            className="h-9 w-9"
-          />
-          <span className="min-w-0 flex-1 truncate text-[13px] text-ink-3">
-            Share an update, prayer or encouragement…
-          </span>
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-2 text-ink-2">
-            <ImageIcon className="h-4 w-4" strokeWidth={1.9} />
-          </span>
-        </Link>
-
-        <PillTabs className="mt-3" tabs={TABS} value={tab} onChange={setTab} />
+      <div className="px-4 pb-1">
+        <PillTabs tabs={TABS} value={tab} onChange={setTab} />
       </div>
 
       {tab === "Groups" ? (
@@ -199,13 +140,21 @@ function CommunityScreen() {
               type="button"
               disabled={posts.isFetchingNextPage}
               onClick={() => void posts.fetchNextPage()}
-              className="nuru-card flex min-h-11 w-full items-center justify-center text-sm font-semibold text-leaf disabled:opacity-50"
+              className="nuru-card flex min-h-11 w-full items-center justify-center text-sm font-semibold text-cyan disabled:opacity-50"
             >
               {posts.isFetchingNextPage ? "Loading…" : "Load more posts"}
             </button>
           )}
         </div>
       )}
+
+      <Link
+        to="/create"
+        aria-label="Create a post"
+        className="fixed bottom-24 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground nuru-glow transition-transform active:scale-95"
+      >
+        <Plus className="h-6 w-6" />
+      </Link>
     </AppShell>
   );
 }
@@ -260,7 +209,7 @@ function PeopleTab({ userId }: { userId: string | null }) {
           type="button"
           disabled={people.isFetchingNextPage}
           onClick={() => void people.fetchNextPage()}
-          className="mt-3 flex min-h-11 w-full items-center justify-center rounded-xl border border-border-strong bg-surface-2 text-sm font-semibold text-leaf disabled:opacity-50"
+          className="mt-3 flex min-h-11 w-full items-center justify-center rounded-xl border border-border-strong bg-surface-2 text-sm font-semibold text-cyan disabled:opacity-50"
         >
           {people.isFetchingNextPage ? "Loading…" : "Load more people"}
         </button>
@@ -303,7 +252,7 @@ function GroupsTab({ userId }: { userId: string | null }) {
         const isMember = joined.has(g.id);
         return (
           <div key={g.id} className="nuru-card flex items-center gap-3 p-3">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-primary/35 bg-primary/12 text-leaf">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-primary/35 bg-primary/12 text-cyan">
               <Users className="h-5 w-5" strokeWidth={1.8} />
             </span>
             <span className="min-w-0 flex-1">

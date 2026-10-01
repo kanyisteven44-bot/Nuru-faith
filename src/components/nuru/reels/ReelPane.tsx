@@ -226,7 +226,7 @@ export function ReelPane(props: ReelPaneProps) {
           />
         ) : (
           <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-gradient-to-b from-surface-2 via-surface to-background px-8 text-center">
-            <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/35 bg-primary/12 text-leaf">
+            <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/35 bg-primary/12 text-cyan">
               <Clapperboard className="h-6 w-6" strokeWidth={1.7} />
             </span>
             <p className="text-sm font-semibold text-foreground">No video on this Reel yet</p>

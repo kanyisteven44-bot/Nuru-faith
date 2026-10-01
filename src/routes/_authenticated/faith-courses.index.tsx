@@ -1,3 +1,4 @@
+import { CoverImage } from "@/components/nuru/CoverImage";
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { BookOpen, ChevronRight, Clock3, GraduationCap, Search, Sparkles } from "lucide-react";
@@ -47,11 +48,16 @@ function FaithCoursesScreen() {
       <ScreenHeader title="Faith Courses" subtitle="Learn deeply. Live faithfully." />
 
       <div className="space-y-6 px-4 pb-6">
-        <section className="nuru-card relative h-52 overflow-hidden">
-          <img src={hero} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        <section className="nuru-card relative h-52 overflow-hidden lg:h-80">
+          <CoverImage
+            src={hero}
+            loading="eager"
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover"
+          />
           <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-background/20" />
           <div className="relative flex h-full max-w-[78%] flex-col justify-end p-4">
-            <span className="mb-2 inline-flex w-fit items-center gap-1 rounded-full border border-leaf/25 bg-leaf/10 px-2.5 py-1 text-[10px] font-bold tracking-wide text-leaf uppercase">
+            <span className="mb-2 inline-flex w-fit items-center gap-1 rounded-full border border-cyan/25 bg-cyan/10 px-2.5 py-1 text-[10px] font-bold tracking-wide text-cyan uppercase">
               <GraduationCap className="h-3.5 w-3.5" />
               Nuru Learning
             </span>
@@ -110,7 +116,7 @@ function FaithCoursesScreen() {
           <section>
             <div className="mb-3 flex items-end justify-between gap-4">
               <div>
-                <p className="text-[10px] font-bold tracking-[0.15em] text-leaf uppercase">
+                <p className="text-[10px] font-bold tracking-[0.15em] text-cyan uppercase">
                   Start here
                 </p>
                 <h2 className="font-display text-lg font-bold">Foundational courses</h2>
@@ -120,7 +126,7 @@ function FaithCoursesScreen() {
               </span>
             </div>
 
-            <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
+            <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1 lg:mx-0 lg:grid lg:grid-cols-3 lg:overflow-visible lg:px-0">
               {FEATURED_FAITH_COURSES.map((item) => (
                 <FeaturedCourseCard key={item.slug} course={item} />
               ))}
@@ -136,7 +142,7 @@ function FaithCoursesScreen() {
             <span className="text-[11px] text-muted-foreground">{filtered.length} found</span>
           </div>
 
-          <div className="space-y-2.5">
+          <div className="space-y-2.5 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
             {filtered.map((item) => (
               <CourseRow key={item.slug} course={item} />
             ))}
@@ -144,7 +150,7 @@ function FaithCoursesScreen() {
         </section>
 
         <section className="nuru-card flex items-start gap-3 p-4">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-primary/30 bg-primary/10 text-leaf">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-primary/30 bg-primary/10 text-cyan">
             <Sparkles className="h-5 w-5" />
           </span>
           <div>
@@ -165,9 +171,9 @@ function FeaturedCourseCard({ course }: { course: FaithCourse }) {
     <Link
       to="/faith-courses/$slug"
       params={{ slug: course.slug }}
-      className="nuru-card relative block h-52 w-64 shrink-0 overflow-hidden active:opacity-95"
+      className="nuru-card relative block h-52 w-64 shrink-0 overflow-hidden active:opacity-95 lg:w-full lg:transition-colors lg:hover:border-cyan/50"
     >
-      <img
+      <CoverImage
         src={resolveMedia(course.cover)}
         alt=""
         className="absolute inset-0 h-full w-full object-cover"
@@ -195,16 +201,16 @@ function CourseRow({ course }: { course: FaithCourse }) {
     <Link
       to="/faith-courses/$slug"
       params={{ slug: course.slug }}
-      className="nuru-card flex items-center gap-3 p-2.5 active:opacity-90"
+      className="nuru-card flex items-center gap-3 p-2.5 active:opacity-90 lg:gap-4 lg:p-4 lg:transition-colors lg:hover:border-cyan/50"
     >
-      <img
+      <CoverImage
         src={resolveMedia(course.cover)}
         alt=""
         loading="lazy"
-        className="h-16 w-16 shrink-0 rounded-xl object-cover"
+        className="h-16 w-16 shrink-0 rounded-xl object-cover lg:h-20 lg:w-20"
       />
       <span className="min-w-0 flex-1">
-        <span className="block text-[10px] font-bold tracking-wide text-leaf uppercase">
+        <span className="block text-[10px] font-bold tracking-wide text-cyan uppercase">
           {course.category} · {course.level}
         </span>
         <span className="mt-0.5 block truncate font-display text-sm font-semibold">

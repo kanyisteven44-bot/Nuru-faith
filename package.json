@@ -11,8 +11,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "test": "node --experimental-strip-types --test tests/*.test.mjs",
-    "typecheck": "tsc --noEmit",
-    "shots": "node scripts/ui-shots.mjs"
+    "typecheck": "tsc --noEmit"
   },
   "overrides": {
     "rolldown": "1.2.1"

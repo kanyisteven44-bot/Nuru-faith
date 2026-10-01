@@ -1,3 +1,4 @@
+import { CoverImage } from "@/components/nuru/CoverImage";
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -82,11 +83,13 @@ function EventsScreen() {
 
   return (
     <AppShell>
-      <BrandBar centered />
+      <BrandBar />
 
       <div className="px-4 pb-6">
         <h1 className="font-display text-[40px] leading-none">Events</h1>
-        <p className="mt-1.5 text-[14px] text-ink-2">Gather, grow, and make a difference.</p>
+        <p className="mt-1.5 text-[14px] text-secondary-foreground">
+          Gather, grow, and make a difference.
+        </p>
 
         {/* Month strip */}
         <div className="mt-4 flex items-center gap-1.5">
@@ -95,7 +98,7 @@ function EventsScreen() {
             onClick={() => setMonthIndex((i) => Math.max(0, i - 1))}
             disabled={monthIndex === 0}
             aria-label="Earlier month"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-3 disabled:opacity-35"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground disabled:opacity-35"
           >
             <ChevronLeft className="h-4.5 w-4.5" strokeWidth={2} />
           </button>
@@ -111,8 +114,8 @@ function EventsScreen() {
                   className={cn(
                     "h-9 shrink-0 rounded-full px-4 text-[13px] font-bold transition-colors",
                     active
-                      ? "nuru-raise bg-[linear-gradient(180deg,var(--forest-hi),var(--primary))] text-foreground"
-                      : "border border-border-strong bg-[linear-gradient(180deg,#212A26,#1A211E)] text-ink-2",
+                      ? "nuru-tactile bg-primary text-foreground"
+                      : "border border-border bg-surface-2 text-secondary-foreground",
                   )}
                 >
                   {m.toLocaleDateString(undefined, { month: "short" })}
@@ -125,7 +128,7 @@ function EventsScreen() {
             onClick={() => setMonthIndex((i) => Math.min(months.length - 1, i + 1))}
             disabled={monthIndex === months.length - 1}
             aria-label="Later month"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-3 disabled:opacity-35"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground disabled:opacity-35"
           >
             <ChevronRight className="h-4.5 w-4.5" strokeWidth={2} />
           </button>
@@ -133,7 +136,9 @@ function EventsScreen() {
 
         <PillTabs className="mt-3" tabs={TABS} value={tab} onChange={setTab} />
 
-        <h2 className="nuru-eyebrow mt-5 mb-3">Upcoming events</h2>
+        <h2 className="mt-5 mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Upcoming events
+        </h2>
 
         {events.isLoading && <CardSkeleton count={3} height="h-[150px]" />}
         {!events.isLoading && rows.length === 0 && (
@@ -143,22 +148,22 @@ function EventsScreen() {
           />
         )}
 
-        <ul className="space-y-3">
+        <ul className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-5 lg:space-y-0">
           {rows.map((e, i) => {
             const isGoing = going.has(e.id);
             const when = new Date(e.starts_at);
             return (
               <li key={e.id}>
                 <article className="nuru-card overflow-hidden">
-                  <div className="flex h-[78px]">
+                  <div className="flex h-[78px] lg:h-36">
                     {/* The board alternates the date block between terracotta
                         and forest down the list. */}
                     <span
                       className={cn(
                         "flex w-[78px] shrink-0 flex-col items-center justify-center",
                         i % 2 === 0
-                          ? "bg-[linear-gradient(180deg,var(--terra-hi),var(--terra-lo))] text-[#FFF1EA]"
-                          : "bg-[linear-gradient(180deg,var(--forest-hi),var(--primary))] text-foreground",
+                          ? "bg-gradient-to-br from-violet-500 to-indigo-700 text-white"
+                          : "bg-primary text-foreground",
                       )}
                     >
                       <span className="text-[10px] font-extrabold tracking-[0.14em] uppercase opacity-90">
@@ -169,26 +174,27 @@ function EventsScreen() {
                       </span>
                     </span>
                     <span className="relative min-w-0 flex-1">
-                      <img
+                      <CoverImage
                         src={e.cover_url ? resolveMedia(e.cover_url) : heroBg}
                         alt=""
                         loading="lazy"
                         className="h-full w-full object-cover"
                       />
-                      <span className="absolute inset-0 bg-[linear-gradient(to_right,rgba(25,32,29,0.55),rgba(25,32,29,0.15))]" />
+                      <span className="absolute inset-0 bg-[linear-gradient(to_right,rgba(0,19,47,0.55),rgba(0,19,47,0.15))]" />
                     </span>
                   </div>
 
                   <div className="flex items-center gap-3 p-3">
                     <div className="min-w-0 flex-1">
-                      <h3 className="truncate font-display text-[20px] leading-tight">
-                        {e.title}
-                      </h3>
-                      <p className="mt-1 flex items-center gap-1.5 text-[12px] text-ink-2">
-                        <Clock className="h-3.5 w-3.5 shrink-0 text-ink-3" strokeWidth={1.9} />
+                      <h3 className="truncate font-display text-[20px] leading-tight">{e.title}</h3>
+                      <p className="mt-1 flex items-center gap-1.5 text-[12px] text-secondary-foreground">
+                        <Clock
+                          className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
+                          strokeWidth={1.9}
+                        />
                         <span className="truncate">{eventDate(e.starts_at)}</span>
                       </p>
-                      <p className="mt-0.5 flex items-center gap-1.5 text-[12px] text-ink-3">
+                      <p className="mt-0.5 flex items-center gap-1.5 text-[12px] text-muted-foreground">
                         <MapPin className="h-3.5 w-3.5 shrink-0" strokeWidth={1.9} />
                         <span className="truncate">
                           {e.is_online ? "Online" : (e.location ?? e.host ?? "In person")}
@@ -201,8 +207,8 @@ function EventsScreen() {
                       className={cn(
                         "h-9 shrink-0 rounded-full px-4 text-[12px] font-bold transition-colors",
                         isGoing
-                          ? "border border-leaf/40 bg-olive-soft text-leaf"
-                          : "nuru-raise bg-[linear-gradient(180deg,var(--forest-hi),var(--primary))] text-foreground",
+                          ? "border border-growth/40 bg-growth/10 text-growth"
+                          : "nuru-tactile bg-primary text-foreground",
                       )}
                     >
                       {isGoing ? "Going" : "RSVP"}

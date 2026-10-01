@@ -64,13 +64,13 @@ function Splash() {
         <NuruMark className="h-24 w-24" />
 
         <h1 className="mt-6 font-display text-[40px] leading-none font-bold tracking-tight">
-          Nuru <span className="text-leaf">Faith</span>
+          Nuru <span className="text-cyan">Faith</span>
         </h1>
         <p className="mt-3 text-[13px] tracking-wide text-secondary-foreground">
           Connect • Grow • Live Your Faith
         </p>
 
-        <p className="script mt-10 text-3xl leading-snug text-leaf/95">
+        <p className="script mt-10 text-3xl leading-snug text-cyan/95">
           Faith Today
           <br />A Brighter Tomorrow
         </p>

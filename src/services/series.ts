@@ -289,19 +289,12 @@ export async function removeSavedScripture(userId: string, reference: string) {
 
 /* ---------- verse highlights ---------- */
 
-/**
- * Highlight colours, retuned onto the design system v2 palette.
- *
- * The `key` of each is what is stored against a verse, so the keys must not
- * change or every saved highlight would stop resolving. Only the swatch,
- * the label and the wash over the text are new.
- */
 export const HIGHLIGHT_COLORS = [
-  { key: "yellow", label: "Sand", swatch: "#e6b566", bgClass: "bg-[rgba(230,181,102,0.28)]" },
-  { key: "green", label: "Leaf", swatch: "#86c29a", bgClass: "bg-[rgba(134,194,154,0.26)]" },
-  { key: "blue", label: "Sky", swatch: "#7fd3ff", bgClass: "bg-[rgba(127,211,255,0.22)]" },
-  { key: "pink", label: "Rose", swatch: "#ee8b7b", bgClass: "bg-[rgba(238,139,123,0.26)]" },
-  { key: "purple", label: "Clay", swatch: "#b96445", bgClass: "bg-[rgba(185,100,69,0.32)]" },
+  { key: "yellow", label: "Yellow", swatch: "#f4c453", bgClass: "bg-amber-300/50" },
+  { key: "green", label: "Green", swatch: "#86efac", bgClass: "bg-green-300/50" },
+  { key: "blue", label: "Blue", swatch: "#93c5fd", bgClass: "bg-blue-300/50" },
+  { key: "pink", label: "Pink", swatch: "#f9a8d4", bgClass: "bg-pink-300/50" },
+  { key: "purple", label: "Purple", swatch: "#d8b4fe", bgClass: "bg-purple-300/50" },
 ] as const;
 export type HighlightColor = (typeof HIGHLIGHT_COLORS)[number]["key"];
 

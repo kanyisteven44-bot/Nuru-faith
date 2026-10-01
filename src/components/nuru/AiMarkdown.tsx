@@ -30,7 +30,7 @@ export function AiMarkdown({ content }: { content: string }) {
         {list.map((item, i) => (
           <li
             key={i}
-            className="list-disc text-sm leading-relaxed text-secondary-foreground marker:text-leaf"
+            className="list-disc text-sm leading-relaxed text-secondary-foreground marker:text-cyan"
           >
             {inline(item, `li-${key}-${i}`)}
           </li>

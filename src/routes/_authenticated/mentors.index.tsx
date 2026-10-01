@@ -85,7 +85,7 @@ function MentorsScreen() {
                   className="h-12 w-12 shrink-0 rounded-full object-cover"
                 />
               ) : (
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-border-strong bg-surface-2 text-leaf">
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-border-strong bg-surface-2 text-cyan">
                   <UserRound className="h-5 w-5" />
                 </span>
               )}
@@ -93,7 +93,7 @@ function MentorsScreen() {
                 <span className="flex items-center gap-1.5">
                   <span className="truncate text-sm font-semibold">{m.display_name}</span>
                   {m.verified && (
-                    <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-leaf" aria-label="Verified" />
+                    <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-cyan" aria-label="Verified" />
                   )}
                 </span>
                 <span className="block truncate text-[11px] text-muted-foreground">
@@ -101,7 +101,7 @@ function MentorsScreen() {
                 </span>
               </span>
               {pending && (
-                <span className="shrink-0 rounded-lg bg-surface-2 px-2.5 py-1 text-[10px] font-semibold text-leaf">
+                <span className="shrink-0 rounded-lg bg-surface-2 px-2.5 py-1 text-[10px] font-semibold text-cyan">
                   Requested
                 </span>
               )}

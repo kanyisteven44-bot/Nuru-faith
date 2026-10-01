@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowLeft,
@@ -15,6 +17,8 @@ import { AppShell } from "@/components/nuru/AppShell";
 import { Chip, ProgressBar } from "@/components/nuru/Primitives";
 import { faithCourseBySlug } from "@/data/faithCourses";
 import { resolveMedia } from "@/lib/media";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/faith-courses/$slug")({
   head: () => ({
@@ -25,9 +29,25 @@ export const Route = createFileRoute("/_authenticated/faith-courses/$slug")({
 
 function FaithCourseDetail() {
   const { slug } = Route.useParams();
+  const { userId } = useAuth();
+  const queryClient = useQueryClient();
   const course = faithCourseBySlug(slug);
   const [lessonIndex, setLessonIndex] = useState(0);
-  const [done, setDone] = useState<Set<number>>(() => new Set());
+  const [saving, setSaving] = useState(false);
+  const progressQuery = useQuery({
+    queryKey: ["faith-course-progress", userId, slug],
+    enabled: !!userId && !!course,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("faith_course_lesson_progress")
+        .select("lesson_index")
+        .eq("user_id", userId!)
+        .eq("course_slug", slug);
+      if (error) throw error;
+      return new Set((data ?? []).map((row) => row.lesson_index));
+    },
+  });
+  const done = progressQuery.data ?? new Set<number>();
 
   const progress = course ? Math.round((done.size / course.lessons.length) * 100) : 0;
   const lesson = course?.lessons[lessonIndex] ?? null;
@@ -47,7 +67,7 @@ function FaithCourseDetail() {
     return (
       <AppShell>
         <div className="px-4 pt-8">
-          <Link to="/faith-courses" className="inline-flex items-center gap-2 text-sm text-leaf">
+          <Link to="/faith-courses" className="inline-flex items-center gap-2 text-sm text-cyan">
             <ArrowLeft className="h-4 w-4" /> Faith Courses
           </Link>
           <div className="nuru-card mt-6 p-5">
@@ -61,13 +81,33 @@ function FaithCourseDetail() {
     );
   }
 
-  function toggleDone(index: number) {
-    setDone((current) => {
-      const next = new Set(current);
+  async function toggleDone(index: number) {
+    if (!userId || saving || !progressQuery.isSuccess) return;
+    setSaving(true);
+    try {
+      const request = done.has(index)
+        ? supabase
+            .from("faith_course_lesson_progress")
+            .delete()
+            .eq("user_id", userId)
+            .eq("course_slug", slug)
+            .eq("lesson_index", index)
+        : supabase.from("faith_course_lesson_progress").insert({
+            user_id: userId,
+            course_slug: slug,
+            lesson_index: index,
+          });
+      const { error } = await request;
+      if (error) throw error;
+      const next = new Set(done);
       if (next.has(index)) next.delete(index);
       else next.add(index);
-      return next;
-    });
+      queryClient.setQueryData(["faith-course-progress", userId, slug], next);
+    } catch {
+      toast.error("Could not save lesson progress. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -90,7 +130,7 @@ function FaithCourseDetail() {
           <Chip tone="brand">{course.level}</Chip>
         </div>
         <div className="absolute inset-x-0 bottom-0 p-4">
-          <p className="text-[10px] font-bold tracking-[0.15em] text-leaf uppercase">
+          <p className="text-[10px] font-bold tracking-[0.15em] text-cyan uppercase">
             {course.category}
           </p>
           <h1 className="mt-1 max-w-[88%] font-display text-[28px] leading-tight font-bold text-white">
@@ -112,9 +152,22 @@ function FaithCourseDetail() {
           <div className="mt-4">
             <div className="mb-1.5 flex items-center justify-between text-[11px]">
               <span className="font-semibold text-secondary-foreground">Course progress</span>
-              <span className="text-leaf">{progress}%</span>
+              <span className="text-cyan">{progress}%</span>
             </div>
             <ProgressBar value={progress} />
+            {progressQuery.isError && (
+              <p role="alert" className="mt-2 text-xs text-warning">
+                Progress could not load. Check your connection and{" "}
+                <button
+                  type="button"
+                  className="underline"
+                  onClick={() => void progressQuery.refetch()}
+                >
+                  try again
+                </button>
+                .
+              </p>
+            )}
           </div>
         </section>
 
@@ -138,7 +191,7 @@ function FaithCourseDetail() {
                       completed
                         ? "border-growth/50 bg-growth/15 text-growth"
                         : active
-                          ? "border-primary/60 bg-primary/15 text-leaf"
+                          ? "border-primary/60 bg-primary/15 text-cyan"
                           : "border-border text-muted-foreground"
                     }`}
                   >
@@ -159,7 +212,7 @@ function FaithCourseDetail() {
 
         <section className="nuru-card overflow-hidden">
           <div className="border-b border-border px-4 py-3">
-            <p className="text-[10px] font-bold tracking-[0.14em] text-leaf uppercase">
+            <p className="text-[10px] font-bold tracking-[0.14em] text-cyan uppercase">
               Lesson {lessonIndex + 1}
             </p>
             <h2 className="mt-1 font-display text-xl font-bold">{lesson.title}</h2>
@@ -168,14 +221,14 @@ function FaithCourseDetail() {
           <div className="space-y-5 p-4">
             <div>
               <div className="mb-2 flex items-center gap-2">
-                <BookOpen className="h-4 w-4 text-leaf" />
+                <BookOpen className="h-4 w-4 text-cyan" />
                 <h3 className="text-sm font-semibold">Read first</h3>
               </div>
               <div className="flex flex-wrap gap-2">
                 {lesson.references.map((reference) => (
                   <span
                     key={reference}
-                    className="rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-[11px] font-semibold text-leaf"
+                    className="rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-[11px] font-semibold text-cyan"
                   >
                     {reference}
                   </span>
@@ -192,7 +245,7 @@ function FaithCourseDetail() {
 
             <div>
               <div className="mb-2 flex items-center gap-2">
-                <MessageCircleQuestion className="h-4 w-4 text-leaf" />
+                <MessageCircleQuestion className="h-4 w-4 text-cyan" />
                 <h3 className="text-sm font-semibold">Real-life examples</h3>
               </div>
               <ul className="space-y-2">
@@ -201,7 +254,7 @@ function FaithCourseDetail() {
                     key={example}
                     className="flex gap-2 text-[13px] leading-relaxed text-secondary-foreground"
                   >
-                    <Circle className="mt-1.5 h-2.5 w-2.5 shrink-0 fill-leaf text-leaf" />
+                    <Circle className="mt-1.5 h-2.5 w-2.5 shrink-0 fill-cyan text-cyan" />
                     {example}
                   </li>
                 ))}
@@ -226,14 +279,21 @@ function FaithCourseDetail() {
 
             <button
               type="button"
-              onClick={() => toggleDone(lessonIndex)}
+              onClick={() => void toggleDone(lessonIndex)}
+              disabled={!progressQuery.isSuccess || saving}
               className={`min-h-11 w-full rounded-xl text-sm font-semibold transition-colors ${
                 done.has(lessonIndex)
                   ? "border border-growth/50 bg-growth/12 text-growth"
                   : "bg-primary text-primary-foreground"
               }`}
             >
-              {done.has(lessonIndex) ? "Lesson completed ✓" : "Mark lesson complete"}
+              {saving
+                ? "Saving…"
+                : progressQuery.isLoading
+                  ? "Loading progress…"
+                  : done.has(lessonIndex)
+                    ? "Lesson completed ✓"
+                    : "Mark lesson complete"}
             </button>
           </div>
         </section>
@@ -254,7 +314,7 @@ function LessonSection({
   return (
     <div>
       <div className="mb-2 flex items-center gap-2">
-        <Icon className="h-4 w-4 text-leaf" />
+        <Icon className="h-4 w-4 text-cyan" />
         <h3 className="text-sm font-semibold">{title}</h3>
       </div>
       <p className="text-[13px] leading-relaxed text-secondary-foreground">{body}</p>

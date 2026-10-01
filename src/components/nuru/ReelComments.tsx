@@ -140,7 +140,7 @@ export function ReelComments({
               <span className="text-muted-foreground">
                 Replying to {replyTo.profiles?.full_name ?? replyTo.profiles?.username ?? "member"}
               </span>
-              <button type="button" onClick={() => setReplyTo(null)} className="text-leaf">
+              <button type="button" onClick={() => setReplyTo(null)} className="text-cyan">
                 Cancel
               </button>
             </div>
@@ -214,9 +214,9 @@ function CommentRow({
       <div className="min-w-0 flex-1">
         <p className="flex flex-wrap items-center gap-1.5 text-xs">
           <span className="font-semibold">{name}</span>
-          {comment.profiles?.verified && <span className="text-leaf">✓</span>}
+          {comment.profiles?.verified && <span className="text-cyan">✓</span>}
           {comment.pinned && (
-            <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[10px] text-leaf">
+            <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[10px] text-cyan">
               Pinned
             </span>
           )}

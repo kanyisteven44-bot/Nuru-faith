@@ -113,7 +113,7 @@ function ExploreScreen() {
             <button
               key={kind}
               aria-pressed={search.kind === kind}
-              className={`min-h-11 shrink-0 rounded-lg border px-4 text-xs ${search.kind === kind ? "border-leaf/40 bg-primary/30 text-foreground" : "border-border bg-surface-2/60"}`}
+              className={`min-h-11 shrink-0 rounded-lg border px-4 text-xs ${search.kind === kind ? "border-cyan bg-primary/20 text-cyan" : "border-border bg-surface-2/60"}`}
               onClick={() => void navigate({ search: { ...search, kind } })}
             >
               {kind === "all" ? "All" : DISCOVERY_LABELS[kind]}
@@ -141,7 +141,7 @@ function ExploreScreen() {
             <div className="flex items-center justify-between">
               <p className="text-xs text-muted-foreground">Recent searches on this device</p>
               <button
-                className="min-h-11 px-2 text-xs text-leaf"
+                className="min-h-11 px-2 text-xs text-cyan"
                 onClick={() => {
                   setRecent([]);
                   try {

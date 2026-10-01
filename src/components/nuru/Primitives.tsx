@@ -27,7 +27,7 @@ export function SectionHeader({
     <div className="mb-3 flex items-end justify-between gap-3">
       <div className="min-w-0">
         {eyebrow && (
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-sand">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan/80">
             {eyebrow}
           </p>
         )}
@@ -37,7 +37,7 @@ export function SectionHeader({
         (to ? (
           <Link
             to={to}
-            className="shrink-0 text-xs font-semibold text-leaf transition-opacity hover:opacity-80"
+            className="shrink-0 text-xs font-semibold text-cyan transition-opacity hover:opacity-80"
           >
             {action}
           </Link>
@@ -74,13 +74,11 @@ export function PillTabs<T extends string>({
             role="tab"
             aria-selected={active}
             onClick={() => onChange(tab)}
-            // Design system v2 chip: a rounded capsule with a quiet bevel;
-            // the selected one fills with forest and lifts.
             className={cn(
-              "h-9 shrink-0 rounded-full border px-3.5 text-[13px] font-semibold transition-all",
+              "nuru-tactile min-h-11 shrink-0 rounded-lg px-4 text-[13px] font-semibold transition-all",
               active
-                ? "nuru-raise border-leaf/30 bg-[linear-gradient(180deg,var(--forest-hi),var(--primary))] text-foreground"
-                : "border-border-strong bg-[linear-gradient(180deg,#212A26,#1A211E)] text-ink-2 shadow-[inset_0_1px_0_rgb(255_255_255/5%)] hover:text-foreground",
+                ? "bg-primary text-primary-foreground nuru-glow-sm"
+                : "border border-border bg-surface-2/60 text-muted-foreground hover:text-secondary-foreground",
             )}
           >
             {tab}
@@ -91,7 +89,7 @@ export function PillTabs<T extends string>({
   );
 }
 
-/** Primary action — solid electric blue with a soft glow. */
+/** Raised blue action with a visible pressed state and keyboard focus. */
 export function GradientButton({
   children,
   className,
@@ -101,7 +99,7 @@ export function GradientButton({
     <button
       {...props}
       className={cn(
-        "inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-leaf/30 bg-primary px-5 text-sm font-semibold text-primary-foreground nuru-glow-sm transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-50 disabled:shadow-none",
+        "nuru-tactile nuru-tactile-primary inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-cyan/30 bg-primary px-5 text-sm font-semibold text-primary-foreground nuru-glow-sm transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-50 disabled:shadow-none",
         className,
       )}
     >
@@ -121,7 +119,7 @@ export function GhostButton({
     <button
       {...props}
       className={cn(
-        "inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-border-strong bg-surface-2 px-5 text-sm font-medium text-secondary-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50",
+        "nuru-tactile inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border-strong bg-surface-2 px-5 text-sm font-medium text-secondary-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50",
         className,
       )}
     >
@@ -131,9 +129,9 @@ export function GhostButton({
 }
 
 const ICON_TONES = {
-  brand: "border-primary/45 bg-primary/24 text-leaf",
-  cyan: "border-leaf/40 bg-leaf/18 text-leaf",
-  violet: "border-terra/40 bg-terra/20 text-terra-lt",
+  brand: "border-primary/45 bg-primary/24 text-cyan",
+  cyan: "border-cyan/40 bg-cyan/18 text-cyan",
+  violet: "border-violet/40 bg-violet/20 text-violet",
   growth: "border-growth/40 bg-growth/18 text-growth",
   warning: "border-warning/45 bg-warning/18 text-warning",
 } as const;
@@ -195,15 +193,14 @@ export function Chip({
   children: ReactNode;
   tone?: "muted" | "growth" | "brand" | "violet";
 }) {
-  // Design system v2 badges: each status sits on its own soft ground.
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold tracking-[0.04em]",
-        tone === "muted" && "bg-surface-2 text-ink-3",
-        tone === "growth" && "bg-olive-soft text-leaf",
-        tone === "brand" && "bg-olive-soft text-leaf",
-        tone === "violet" && "bg-[#34211A] text-terra-lt",
+        "inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium",
+        tone === "muted" && "bg-surface-2 text-muted-foreground",
+        tone === "growth" && "bg-growth/15 text-growth",
+        tone === "brand" && "bg-primary/18 text-cyan ring-1 ring-inset ring-primary/25",
+        tone === "violet" && "bg-violet/15 text-violet",
       )}
     >
       {children}

@@ -1,51 +1,111 @@
+import { CoverImage } from "@/components/nuru/CoverImage";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, BookOpen, CalendarDays, ChevronRight, HandHeart, Users } from "lucide-react";
+import {
+  ArrowRight,
+  BookOpen,
+  Check,
+  Church,
+  Clapperboard,
+  GraduationCap,
+  HandHeart,
+  Music2,
+  Share2,
+  Sparkles,
+  Sunrise,
+  Target,
+} from "lucide-react";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import { resolveMedia } from "@/lib/media";
 import { useAuth } from "@/hooks/useAuth";
-import { fetchVerseOfTheDay, verseOfTheDayRef } from "@/lib/bible";
-import { fetchEvents, fetchPostPage, fetchProfile } from "@/services/content";
-import { AppShell, Avatar, BrandBar } from "@/components/nuru/AppShell";
+import { useShareSheet } from "@/hooks/useShareSheet";
+import { fetchVerseOfTheDay } from "@/lib/bible";
+import { fetchDevotionals, fetchEvents, fetchProfile } from "@/services/content";
+import { AppShell, BrandBar } from "@/components/nuru/AppShell";
+import { CardSkeleton } from "@/components/nuru/Primitives";
 import { NURU_PHOTO_POOLS, useRotatingMedia } from "@/lib/rotatingMedia";
 
 export const Route = createFileRoute("/_authenticated/home")({
   head: () => ({
     meta: [
-      { title: "Home — Nuru Faith" },
+      { title: "Today — Nuru Faith" },
       {
         name: "description",
-        content: "Your daily reading, church updates and the people around you.",
+        content: "Your daily verse, devotional, church events and community in one place.",
       },
-      { property: "og:title", content: "Home — Nuru Faith" },
-      { property: "og:description", content: "Your daily reading and your church community." },
+      { property: "og:title", content: "Today — Nuru Faith" },
+      { property: "og:description", content: "Your daily verse, devotional and community." },
     ],
   }),
   component: HomeScreen,
 });
 
-/**
- * The four quick actions from the design. There is no Prayer wall screen in
- * the app yet, so Prayer opens the Community feed, whose own design carries a
- * Prayer filter — rather than inventing a page that does not exist.
- */
-const QUICK_ACTIONS = [
-  { to: "/bible", label: "Bible", icon: BookOpen, tone: "" },
-  { to: "/community", label: "Prayer", icon: HandHeart, tone: "nuru-disc-terra" },
-  { to: "/events", label: "Events", icon: CalendarDays, tone: "nuru-disc-sand" },
-  { to: "/mentors", label: "Mentorship", icon: Users, tone: "" },
+const QUICK_ACCESS = [
+  {
+    to: "/reels",
+    label: "Reels",
+    icon: Clapperboard,
+    tint: "bg-gradient-to-br from-fuchsia-400 to-pink-600",
+  },
+  {
+    to: "/ai",
+    label: "Nuru AI",
+    icon: Sparkles,
+    tint: "bg-gradient-to-br from-cyan-300 to-blue-600",
+  },
+  {
+    to: "/church",
+    label: "My Church",
+    icon: Church,
+    tint: "bg-gradient-to-br from-indigo-400 to-violet-600",
+  },
+  {
+    to: "/bible",
+    label: "Bible",
+    icon: BookOpen,
+    tint: "bg-gradient-to-br from-blue-500 to-indigo-600",
+  },
+  {
+    to: "/music",
+    label: "Music",
+    icon: Music2,
+    tint: "bg-gradient-to-br from-amber-300 to-yellow-600",
+  },
+  {
+    to: "/grow",
+    label: "Devotions + Series",
+    icon: Sunrise,
+    tint: "bg-gradient-to-br from-emerald-400 to-green-600",
+  },
+  {
+    to: "/faith-courses",
+    label: "Faith Courses",
+    icon: GraduationCap,
+    tint: "bg-gradient-to-br from-orange-400 to-amber-600",
+  },
+  {
+    to: "/mentors",
+    label: "Mentors",
+    icon: HandHeart,
+    tint: "bg-gradient-to-br from-rose-400 to-red-600",
+  },
 ] as const;
 
-function greetingFor(date: Date) {
-  const h = date.getHours();
-  if (h < 12) return "Good morning";
-  if (h < 17) return "Good afternoon";
-  return "Good evening";
-}
+const CHALLENGES = [
+  "Spend 10 minutes in prayer today and write one thing you're thankful for.",
+  "Send an encouraging message to someone who needs it today.",
+  "Read one chapter slowly and note a single verse to carry with you.",
+  "Thank God for three specific things before you sleep tonight.",
+];
 
 function HomeScreen() {
   const navigate = useNavigate();
   const { userId } = useAuth();
-  const readingPhoto = useRotatingMedia(NURU_PHOTO_POOLS.home, "home-todays-reading");
+  const shareSheet = useShareSheet();
+  const [acceptedChallenge, setAcceptedChallenge] = useState(false);
+  const todayPhoto = useRotatingMedia(NURU_PHOTO_POOLS.home, "home-todays-light");
 
   const profile = useQuery({
     queryKey: ["profile", userId],
@@ -53,8 +113,8 @@ function HomeScreen() {
     enabled: !!userId,
   });
   const verse = useQuery({ queryKey: ["verse-of-day"], queryFn: fetchVerseOfTheDay });
+  const devotionals = useQuery({ queryKey: ["devotionals"], queryFn: fetchDevotionals });
   const events = useQuery({ queryKey: ["events"], queryFn: fetchEvents });
-  const feed = useQuery({ queryKey: ["posts", 0], queryFn: () => fetchPostPage(0) });
 
   useEffect(() => {
     if (profile.data && profile.data.onboarded === false)
@@ -62,170 +122,318 @@ function HomeScreen() {
   }, [profile.data, navigate]);
 
   const firstName = profile.data?.full_name?.split(" ")[0] ?? "friend";
-  const reference = verse.data?.reference ?? verseOfTheDayRef();
-  const verseText = verse.data?.text ?? "";
-
+  const today = new Date();
+  const challenge = CHALLENGES[Math.floor(Date.now() / 86400000) % CHALLENGES.length]!;
+  const devotional = devotionals.data?.[0] ?? null;
   const nextEvent =
     (events.data ?? [])
       .filter((e) => new Date(e.starts_at).getTime() >= Date.now() - 3600_000)
       .sort((a, b) => +new Date(a.starts_at) - +new Date(b.starts_at))[0] ?? null;
-  const latestPost = feed.data?.[0] ?? null;
 
   return (
-    <AppShell>
-      <BrandBar centered />
+    <AppShell wide="xl">
+      <BrandBar />
 
-      <div className="px-5 pt-3">
-        {/* Greeting — the one place a serif name carries the screen. */}
-        <section>
-          <p className="nuru-eyebrow text-ink-3">{greetingFor(new Date())},</p>
-          <h1 className="mt-1 font-display text-[46px] leading-[0.95] tracking-[-0.01em]">
-            {firstName}
-          </h1>
-          {verseText && (
-            <p className="mt-2 line-clamp-2 font-display text-[16px] leading-snug text-ink-2">
-              {verseText}
+      <div className="space-y-6 px-4 pt-2 lg:grid lg:grid-cols-12 lg:items-start lg:gap-6 lg:space-y-0 lg:px-4 xl:gap-7">
+        {/* Greeting */}
+        <section className="lg:col-span-12 lg:flex lg:items-end lg:justify-between lg:gap-4">
+          <div>
+            <p className="mb-2 hidden text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan lg:block">
+              Your daily space
+            </p>
+            <h1 className="font-display text-[26px] font-bold tracking-tight lg:text-4xl">
+              Shalom, {firstName}! <span className="align-middle">👋</span>
+            </h1>
+            <p className="mt-2 hidden text-sm text-muted-foreground lg:block">
+              Take a moment. What does your heart need today?
+            </p>
+          </div>
+          <p className="hidden shrink-0 pb-1 text-xs text-muted-foreground xl:block">
+            {today.toLocaleDateString(undefined, {
+              weekday: "long",
+              month: "long",
+              day: "numeric",
+            })}
+          </p>
+        </section>
+
+        {/* Today's Light */}
+        <section className="min-w-0 lg:col-span-7 lg:row-span-3 lg:self-stretch">
+          <div className="nuru-card relative overflow-hidden lg:flex lg:h-full lg:flex-col">
+            <div className="relative h-56 w-full lg:h-auto lg:min-h-[400px] lg:flex-1">
+              <CoverImage
+                src={todayPhoto}
+                loading="eager"
+                fetchPriority="high"
+                alt=""
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/25" />
+              <div className="absolute inset-x-0 top-0 flex items-center justify-between p-3.5 lg:p-6">
+                <span className="font-display text-base font-semibold drop-shadow">
+                  Today's Light
+                </span>
+                <span className="rounded-full bg-background/65 px-2.5 py-1 text-[11px] font-medium backdrop-blur">
+                  {today.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                </span>
+              </div>
+              <div className="absolute inset-x-0 bottom-0 px-3.5 pb-3 lg:px-7 lg:pb-7">
+                {verse.isLoading ? (
+                  <div className="h-10 animate-pulse rounded-lg bg-white/10" />
+                ) : verse.data ? (
+                  <blockquote>
+                    <p className="line-clamp-3 text-[15px] leading-relaxed font-medium text-white italic drop-shadow-[0_2px_6px_rgba(0,0,0,0.85)] lg:line-clamp-none lg:font-display lg:text-2xl lg:leading-relaxed lg:not-italic">
+                      “{verse.data.text}”
+                    </p>
+                    <cite className="mt-1 block text-[11px] font-semibold text-cyan not-italic drop-shadow-[0_2px_6px_rgba(0,0,0,0.85)]">
+                      {verse.data.reference}
+                      {verse.data?.translation ? ` (${verse.data.translation})` : ""}
+                    </cite>
+                  </blockquote>
+                ) : (
+                  <div
+                    role="status"
+                    className="rounded-xl border border-white/15 bg-background/65 p-4 backdrop-blur"
+                  >
+                    <p className="text-sm text-white/90">
+                      Today’s verse couldn’t load. Take a moment with your Bible instead.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => void verse.refetch()}
+                      disabled={verse.isFetching}
+                      className="mt-3 min-h-10 text-sm font-semibold text-cyan disabled:opacity-50"
+                    >
+                      {verse.isFetching ? "Trying again…" : "Try again"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 p-3 lg:gap-3 lg:border-t lg:border-border lg:p-4">
+              <Link
+                to="/bible"
+                className="nuru-tactile flex min-h-11 items-center justify-center gap-1.5 rounded-lg bg-primary text-xs font-semibold text-primary-foreground"
+              >
+                <BookOpen className="h-3.5 w-3.5" /> Read Bible
+              </Link>
+              <Link
+                to="/ai"
+                search={{
+                  contextType: "verse",
+                  contextLabel: verse.data
+                    ? `${verse.data.reference}: ${verse.data.text.trim()}`
+                    : "Reflect on Scripture",
+                }}
+                className="nuru-tactile flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-border bg-surface-2 text-xs font-semibold text-secondary-foreground"
+              >
+                <Sparkles className="h-3.5 w-3.5" /> Reflect
+              </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  const text = verse.data
+                    ? `${verse.data.text.trim()} — ${verse.data.reference}`
+                    : "Take a moment with Scripture on Nuru Faith.";
+                  void shareSheet.share({
+                    title: "Today's Light — Nuru Faith",
+                    text,
+                    url: `${window.location.origin}/bible`,
+                  });
+                }}
+                className="nuru-tactile flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-border bg-surface-2 text-xs font-semibold text-secondary-foreground"
+              >
+                <Share2 className="h-3.5 w-3.5" /> Share
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* Quick Access */}
+        <section className="lg:col-span-5 lg:rounded-2xl lg:border lg:border-border lg:bg-surface/55 lg:p-5 xl:p-6">
+          <h2 className="mb-3 font-display text-[15px] font-semibold lg:mb-5 lg:text-lg">
+            Quick Access
+          </h2>
+          <div className="grid grid-cols-4 gap-x-2 gap-y-4 lg:gap-x-2 lg:gap-y-5">
+            {QUICK_ACCESS.map(({ to, label, icon: Icon, tint }) => (
+              <Link
+                key={to}
+                to={to}
+                {...(to === "/ai" ? { search: {} } : {})}
+                className="group flex flex-col items-center gap-2 text-center"
+              >
+                <span
+                  className={cn(
+                    "nuru-tactile nuru-quick-tile flex h-14 w-14 items-center justify-center rounded-2xl text-white lg:h-12 lg:w-12 xl:h-14 xl:w-14",
+                    tint,
+                  )}
+                >
+                  <Icon className="h-6 w-6" strokeWidth={2} />
+                </span>
+                <span className="text-[11px] font-medium text-secondary-foreground">{label}</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* Today's Challenge — an amber badge beside the prompt, with the
+            accept control sitting to the trailing edge, per the reference. */}
+        <section className="nuru-card flex gap-3 p-4 lg:col-span-5">
+          <span
+            aria-hidden="true"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-warning text-[#3a2206]"
+          >
+            <Target className="h-5 w-5" strokeWidth={2.2} />
+          </span>
+
+          <div className="min-w-0 flex-1">
+            <h2 className="font-display text-[14px] font-semibold text-warning">
+              Today&apos;s Challenge
+            </h2>
+            <p className="mt-0.5 text-[13px] leading-snug text-secondary-foreground">{challenge}</p>
+
+            <div className="mt-2.5 flex justify-end">
+              <button
+                type="button"
+                disabled={acceptedChallenge}
+                onClick={() => {
+                  setAcceptedChallenge(true);
+                  toast.success("You're in — one step at a time.");
+                }}
+                className={cn(
+                  "nuru-tactile group inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-5 text-[13px] font-semibold transition-all",
+                  "active:scale-[0.97] disabled:active:scale-100",
+                  acceptedChallenge
+                    ? // Done reads as its own state, not a greyed-out button.
+                      "border border-growth/50 bg-growth/12 text-growth"
+                    : "bg-[linear-gradient(100deg,var(--primary),var(--brand-violet))] text-primary-foreground shadow-[0_6px_20px_-6px_var(--brand-violet)] hover:brightness-110",
+                )}
+              >
+                {acceptedChallenge ? (
+                  <>
+                    <Check className="h-4 w-4" strokeWidth={2.6} />
+                    Accepted
+                  </>
+                ) : (
+                  <>
+                    Accept Challenge
+                    <ArrowRight
+                      className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
+                      strokeWidth={2.4}
+                    />
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* Upcoming Event */}
+        <section className="min-w-0 lg:col-span-5">
+          <h2 className="mb-3 font-display text-[15px] font-semibold lg:text-lg">Upcoming Event</h2>
+          {events.isLoading ? (
+            <CardSkeleton count={1} height="h-20" />
+          ) : nextEvent ? (
+            <div className="nuru-card flex items-center gap-3 p-3">
+              <span className="flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-xl border border-primary/35 bg-primary/12">
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-cyan">
+                  {new Date(nextEvent.starts_at).toLocaleDateString(undefined, { month: "short" })}
+                </span>
+                <span className="font-display text-lg leading-none font-bold">
+                  {new Date(nextEvent.starts_at).getDate()}
+                </span>
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-semibold">{nextEvent.title}</span>
+                <span className="block truncate text-[11px] text-muted-foreground">
+                  {nextEvent.host ?? nextEvent.location ?? "Nuru Faith"}
+                </span>
+              </span>
+              <Link
+                to="/events"
+                className="nuru-tactile shrink-0 rounded-xl bg-primary px-3.5 py-2 text-[11px] font-semibold text-primary-foreground"
+              >
+                RSVP
+              </Link>
+            </div>
+          ) : (
+            <p className="nuru-card p-4 text-[13px] text-muted-foreground">
+              No upcoming events yet — your church can add them here.
             </p>
           )}
         </section>
-
-        {/* Four quick actions, two by two, above everything else. */}
-        <section className="mt-5 grid grid-cols-2 gap-2.5">
-          {QUICK_ACTIONS.map(({ to, label, icon: Icon, tone }) => (
+        <section className="hidden lg:col-span-12 lg:block">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="font-display text-xl font-semibold">A little more for your day</h2>
+            <Link to="/grow" className="text-xs font-semibold text-cyan hover:underline">
+              Explore learning
+            </Link>
+          </div>
+          <div className="grid gap-5 xl:grid-cols-2">
             <Link
-              key={label}
-              to={to}
-              className="flex items-center gap-2 rounded-2xl border border-border bg-[linear-gradient(180deg,#1E2A23,#18211C)] py-2.5 pr-2 pl-2.5 transition-colors hover:border-border-strong"
+              to="/devotionals"
+              className="nuru-card group flex min-h-44 min-w-0 items-center gap-5 p-5 transition-colors hover:border-border-strong"
             >
-              <span className={`nuru-disc h-9 w-9 ${tone}`}>
-                <Icon className="h-[17px] w-[17px]" strokeWidth={1.9} />
-              </span>
-              {/* "Mentorship" is the longest label — it must not truncate. */}
-              <span className="min-w-0 flex-1 font-display text-[16px] leading-none">{label}</span>
-              <ChevronRight className="h-3.5 w-3.5 shrink-0 text-ink-3" strokeWidth={2} />
+              {devotional?.cover_url ? (
+                <CoverImage
+                  src={resolveMedia(devotional.cover_url)}
+                  alt=""
+                  loading="lazy"
+                  className="h-32 w-28 shrink-0 rounded-xl object-cover"
+                />
+              ) : (
+                <span className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-cyan">
+                  <BookOpen className="h-8 w-8" />
+                </span>
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-cyan">
+                  Daily devotional
+                </p>
+                <h3 className="font-display text-xl font-semibold">
+                  {devotionals.isLoading
+                    ? "Loading today’s reading…"
+                    : (devotional?.title ?? "Make time for Scripture")}
+                </h3>
+                <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+                  {devotional?.subtitle ?? "Explore devotionals and take a moment to reflect."}
+                </p>
+                <span className="mt-3 flex items-center gap-2 text-xs font-semibold text-cyan">
+                  {devotional
+                    ? `${devotional.read_minutes} min read · Browse devotionals`
+                    : "Browse devotionals"}
+                  <ArrowRight className="h-4 w-4" />
+                </span>
+              </div>
             </Link>
-          ))}
-        </section>
-
-        {/* Today's reading */}
-        <section className="mt-3.5">
-          <Link
-            to="/bible"
-            className="relative block overflow-hidden rounded-2xl border border-border"
-          >
-            <img src={readingPhoto} alt="" className="h-[206px] w-full object-cover" />
-            <span className="absolute inset-0 bg-[linear-gradient(to_top,rgba(17,23,21,0.94)_18%,rgba(17,23,21,0.45)_58%,rgba(17,23,21,0.12))]" />
-            <span className="absolute inset-x-0 bottom-0 flex items-end gap-3 p-4">
-              <span className="min-w-0 flex-1">
-                <span className="nuru-eyebrow block">Today's reading</span>
-                <span className="mt-1.5 block font-display text-[30px] leading-none">
-                  {reference}
-                </span>
-                {verseText && (
-                  <span className="mt-1.5 line-clamp-2 block font-display text-[19px] leading-tight text-[#E8E4D9]">
-                    {verseText}
-                  </span>
-                )}
-              </span>
-              <span className="nuru-disc nuru-disc-sand h-11 w-11 shrink-0">
-                <ArrowRight className="h-[18px] w-[18px]" strokeWidth={2.2} />
-              </span>
-            </span>
-          </Link>
-        </section>
-
-        {/* Next church gathering — real events only. */}
-        <section className="mt-3.5">
-          {nextEvent ? (
-            <Link to="/events" className="nuru-card flex items-center gap-3 p-3 transition-colors">
-              <span className="nuru-disc nuru-disc-terra h-9 w-9">
-                <CalendarDays className="h-4 w-4" strokeWidth={1.9} />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="nuru-eyebrow block">Upcoming service</span>
-                <span className="mt-0.5 block truncate font-display text-[20px] leading-tight">
-                  {nextEvent.title}
-                </span>
-                <span className="mt-0.5 block truncate text-[12px] text-ink-2">
-                  {new Date(nextEvent.starts_at).toLocaleDateString(undefined, {
-                    weekday: "short",
-                    month: "short",
-                    day: "numeric",
-                  })}
-                  {" · "}
-                  {new Date(nextEvent.starts_at).toLocaleTimeString(undefined, {
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })}
-                </span>
-                {(nextEvent.location || nextEvent.host) && (
-                  <span className="mt-0.5 block truncate text-[12px] text-ink-3">
-                    {nextEvent.location ?? nextEvent.host}
-                  </span>
-                )}
-              </span>
-              <ChevronRight className="h-4 w-4 shrink-0 text-ink-3" strokeWidth={2} />
-            </Link>
-          ) : (
-            <div className="nuru-card flex items-center gap-3 p-3.5">
-              <span className="nuru-disc nuru-disc-terra h-9 w-9">
-                <CalendarDays className="h-4 w-4" strokeWidth={1.9} />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="nuru-eyebrow block">Upcoming service</span>
-                <span className="mt-1 block text-[13px] leading-snug text-ink-3">
-                  Nothing scheduled yet — your church can add services and gatherings here.
-                </span>
-              </span>
-            </div>
-          )}
-        </section>
-
-        {/* From the community — real posts only. */}
-        <section className="mt-3.5">
-          {latestPost ? (
             <Link
-              to="/community"
-              className="nuru-card flex items-start gap-3 p-3 transition-colors"
+              to="/mentors"
+              className="nuru-card flex min-h-44 min-w-0 items-center gap-5 p-5 transition-colors hover:border-border-strong"
             >
-              <span className="nuru-disc h-9 w-9">
-                <Users className="h-4 w-4" strokeWidth={1.9} />
+              <span className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl border border-violet/30 bg-violet/10 text-violet">
+                <HandHeart className="h-8 w-8" />
               </span>
-              <span className="min-w-0 flex-1">
-                <span className="nuru-eyebrow block">From our community</span>
-                <span className="mt-1 line-clamp-3 block text-[13px] leading-snug text-ink-2">
-                  {latestPost.body}
+              <div className="min-w-0 flex-1">
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-violet">
+                  Someone to walk with
+                </p>
+                <h3 className="font-display text-xl font-semibold">
+                  You don’t have to grow alone.
+                </h3>
+                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                  Explore mentors for faith, relationships, leadership and everyday life.
+                </p>
+                <span className="mt-3 flex items-center gap-2 text-xs font-semibold text-cyan">
+                  Explore mentorship
+                  <ArrowRight className="h-4 w-4" />
                 </span>
-                <span className="mt-2 flex items-center gap-2">
-                  <Avatar
-                    url={latestPost.author_avatar_url}
-                    name={latestPost.author_name ?? ""}
-                    seed={latestPost.author_id}
-                    size="sm"
-                    className="h-6 w-6"
-                  />
-                  <span className="truncate text-[11px] text-ink-3">
-                    {latestPost.author_name ?? "A member"}
-                  </span>
-                </span>
-              </span>
-              <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-ink-3" strokeWidth={2} />
+              </div>
             </Link>
-          ) : (
-            <div className="nuru-card flex items-center gap-3 p-3.5">
-              <span className="nuru-disc h-9 w-9">
-                <Users className="h-4 w-4" strokeWidth={1.9} />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="nuru-eyebrow block">From our community</span>
-                <span className="mt-1 block text-[13px] leading-snug text-ink-3">
-                  No posts yet — be the first to share an update, prayer or encouragement.
-                </span>
-              </span>
-            </div>
-          )}
+          </div>
         </section>
       </div>
+      {shareSheet.node}
     </AppShell>
   );
 }

@@ -167,7 +167,7 @@ function SeriesDetail() {
             }}
             className="inline-flex min-h-11 items-center gap-2 rounded-full border border-border bg-surface-2 px-5 text-sm font-medium"
           >
-            <Sparkles className="h-4 w-4 text-leaf" /> Ask Nuru AI
+            <Sparkles className="h-4 w-4 text-cyan" /> Ask Nuru AI
           </Link>
         </div>
 
@@ -216,7 +216,7 @@ function SeriesDetail() {
         </section>
 
         <div className="nuru-card flex items-start gap-3 px-4 py-4">
-          <MessageCircle className="mt-0.5 h-4 w-4 shrink-0 text-leaf" />
+          <MessageCircle className="mt-0.5 h-4 w-4 shrink-0 text-cyan" />
           <p className="text-xs text-muted-foreground">
             Studying with others? Share a session in Community or with your group and use the
             discussion prompt at the end of each session.

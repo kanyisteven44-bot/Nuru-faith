@@ -1,0 +1,32 @@
+import { useState, type ImgHTMLAttributes } from "react";
+import { FALLBACK_IMAGE } from "@/lib/media";
+import { cn } from "@/lib/utils";
+
+/** Content covers keep their source; a failed request falls back to bundled art. */
+export function CoverImage({
+  src,
+  alt,
+  className,
+  loading = "lazy",
+  decoding = "async",
+  onError,
+  ...props
+}: ImgHTMLAttributes<HTMLImageElement> & { alt: string }) {
+  const [failedSource, setFailedSource] = useState<string | undefined>();
+  const source = !src || failedSource === src ? FALLBACK_IMAGE : src;
+
+  return (
+    <img
+      {...props}
+      src={source}
+      alt={alt}
+      loading={loading}
+      decoding={decoding}
+      className={cn("bg-surface-2 object-cover object-[50%_45%]", className)}
+      onError={(event) => {
+        if (source !== FALLBACK_IMAGE) setFailedSource(src);
+        onError?.(event);
+      }}
+    />
+  );
+}

@@ -81,7 +81,7 @@ export function PostCard({
   }
 
   return (
-    <article className="nuru-card p-3.5">
+    <article className="border-b border-border pb-4 last:border-b-0">
       <div className="flex items-center gap-3 px-1 pb-3">
         <Avatar src={avatar} name={name} seed={post.author_id} />
         <div className="min-w-0 flex-1">
@@ -98,7 +98,7 @@ export function PostCard({
       )}
 
       {post.scripture_ref && (
-        <p className="px-1 pb-3 text-xs font-semibold text-leaf">{post.scripture_ref}</p>
+        <p className="px-1 pb-3 text-xs font-semibold text-cyan">{post.scripture_ref}</p>
       )}
 
       {post.media_url && (
@@ -113,7 +113,7 @@ export function PostCard({
       )}
 
       {post.hashtags?.length ? (
-        <p className="px-1 pt-3 text-xs text-leaf">{post.hashtags.join(" ")}</p>
+        <p className="px-1 pt-3 text-xs text-cyan">{post.hashtags.join(" ")}</p>
       ) : null}
 
       <div className="flex items-center gap-1 pt-1">
@@ -164,7 +164,7 @@ export function PostCard({
             })
           }
         >
-          <Bookmark className={cn("h-4.5 w-4.5", saved && "fill-leaf text-leaf")} />
+          <Bookmark className={cn("h-4.5 w-4.5", saved && "fill-cyan text-cyan")} />
         </ActionButton>
 
         <ActionButton
@@ -291,7 +291,7 @@ function ActionButton({
       onClick={onClick}
       className={cn(
         "inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-full px-3 text-xs font-medium transition-colors hover:bg-surface-2",
-        active ? "text-leaf" : "text-ink-3",
+        active ? "text-cyan" : "text-muted-foreground",
       )}
     >
       {children}

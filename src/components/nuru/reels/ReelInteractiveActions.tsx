@@ -245,7 +245,7 @@ function ExternalCommentsSheet({
           )}
           {(comments.data ?? []).map((comment) => (
             <article key={comment.id} className="flex gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-2 text-xs font-bold text-leaf">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-2 text-xs font-bold text-cyan">
                 {comment.user_id === userId ? "You" : "N"}
               </div>
               <div className="min-w-0 flex-1">

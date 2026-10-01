@@ -45,7 +45,7 @@ function ContentDetail({ kindParam, id }: { kindParam: string; id: string }) {
         <Link
           to="/explore"
           search={{ q: "", kind: "all" }}
-          className="inline-flex min-h-11 items-center text-sm text-leaf"
+          className="inline-flex min-h-11 items-center text-sm text-cyan"
         >
           Back to Explore
         </Link>
@@ -79,7 +79,7 @@ function ContentDetail({ kindParam, id }: { kindParam: string; id: string }) {
             )}
             {item.kind === "series" && item.slug && (
               <Link
-                className="inline-flex min-h-11 items-center text-leaf"
+                className="inline-flex min-h-11 items-center text-cyan"
                 to="/series/$slug"
                 params={{ slug: item.slug }}
               >
@@ -88,7 +88,7 @@ function ContentDetail({ kindParam, id }: { kindParam: string; id: string }) {
             )}
             {item.kind === "reels" && (
               <a
-                className="inline-flex min-h-11 items-center text-leaf"
+                className="inline-flex min-h-11 items-center text-cyan"
                 href={`/reels?reel=${item.id}`}
               >
                 Watch this Reel
@@ -182,20 +182,21 @@ function PublicProfileDetail({ id }: { id: string }) {
               <h1 className="flex items-center gap-1.5 font-display text-xl font-bold">
                 <span className="truncate">{name}</span>
                 {p.verified && (
-                  <BadgeCheck aria-label="Verified" className="h-4.5 w-4.5 shrink-0 text-leaf" />
+                  <BadgeCheck
+                    aria-label="Verified"
+                    className="h-4.5 w-4.5 shrink-0 text-cyan"
+                  />
                 )}
               </h1>
               {p.username && (
                 <p className="mt-0.5 truncate text-[13px] text-muted-foreground">@{p.username}</p>
               )}
               {p.bio && (
-                <p className="mt-3 text-[13px] leading-relaxed text-secondary-foreground">
-                  {p.bio}
-                </p>
+                <p className="mt-3 text-[13px] leading-relaxed text-secondary-foreground">{p.bio}</p>
               )}
               {p.churches?.name && (
                 <p className="mt-3 flex items-center gap-1.5 text-[12px] text-muted-foreground">
-                  <Church className="h-3.5 w-3.5 text-leaf" />
+                  <Church className="h-3.5 w-3.5 text-cyan" />
                   {p.churches.name}
                 </p>
               )}

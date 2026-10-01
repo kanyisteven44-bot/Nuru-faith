@@ -45,7 +45,7 @@ function MessagesScreen() {
                 search={{}}
                 className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-border-strong bg-surface-2 px-4 text-sm font-semibold text-secondary-foreground"
               >
-                <Sparkles className="h-4 w-4 text-leaf" /> Ask Nuru AI
+                <Sparkles className="h-4 w-4 text-cyan" /> Ask Nuru AI
               </Link>
             </div>
           }

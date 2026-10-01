@@ -43,6 +43,3 @@ dist-ssr
 .browser-qa/
 *-validation.json
 lint-baseline.json
-
-# Design preview screenshots
-.preview/

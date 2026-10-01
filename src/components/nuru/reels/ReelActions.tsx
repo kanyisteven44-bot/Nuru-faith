@@ -28,7 +28,7 @@ function RailButton({
         className={cn(
           "flex h-9 w-9 items-center justify-center rounded-full bg-black/25 backdrop-blur-sm",
           tint === "destructive" && "bg-destructive/25",
-          tint === "cyan" && "bg-leaf/20",
+          tint === "cyan" && "bg-cyan/20",
         )}
       >
         {icon}
@@ -102,7 +102,7 @@ export function ReelActions({
         aria={saved ? "Remove Reel from saved" : "Save Reel"}
         onClick={onSave}
         tint={saved ? "cyan" : undefined}
-        icon={<Bookmark className={cn("h-5.5 w-5.5", saved && "fill-leaf text-leaf")} />}
+        icon={<Bookmark className={cn("h-5.5 w-5.5", saved && "fill-cyan text-cyan")} />}
       />
       <RailButton
         aria="More options for this Reel"

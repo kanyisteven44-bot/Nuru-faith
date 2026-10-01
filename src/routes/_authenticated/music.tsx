@@ -1,3 +1,4 @@
+import { CoverImage } from "@/components/nuru/CoverImage";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -162,7 +163,7 @@ function MusicScreen() {
                         }
                         className="nuru-card w-48 shrink-0 p-4 text-left"
                       >
-                        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/12 text-leaf">
+                        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/12 text-cyan">
                           <Music2 className="h-5 w-5" />
                         </span>
                         <span className="mt-3 block line-clamp-2 text-sm font-semibold">
@@ -171,7 +172,7 @@ function MusicScreen() {
                         <span className="mt-1 block line-clamp-2 text-[11px] text-muted-foreground">
                           {playlist.description}
                         </span>
-                        <span className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold text-leaf">
+                        <span className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold text-cyan">
                           <Play className="h-3.5 w-3.5 fill-current" /> Play latest
                         </span>
                       </button>
@@ -199,7 +200,7 @@ function MusicScreen() {
                       className="w-36 shrink-0 text-left"
                     >
                       <div className="relative overflow-hidden rounded-2xl border border-border bg-surface-2">
-                        <img
+                        <CoverImage
                           src={resolveMedia(song.thumbnail_url)}
                           alt=""
                           width={320}
@@ -207,7 +208,7 @@ function MusicScreen() {
                           loading="lazy"
                           className="h-36 w-36 object-cover"
                         />
-                        <span className="absolute bottom-2 right-2 flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground nuru-glow-sm">
+                        <span className="absolute bottom-2 right-2 nuru-tactile nuru-tactile-primary flex h-11 w-11 items-center justify-center rounded-full bg-primary text-primary-foreground nuru-glow-sm">
                           <Play className="h-4 w-4 fill-current" />
                         </span>
                       </div>
@@ -263,7 +264,7 @@ function MusicScreen() {
                 {(playlists.data ?? []).map((p) => (
                   <article key={p.id} className="w-40 shrink-0">
                     <div className="relative">
-                      <img
+                      <CoverImage
                         src={resolveMedia(p.cover_url)}
                         alt=""
                         width={320}
@@ -271,7 +272,7 @@ function MusicScreen() {
                         loading="lazy"
                         className="h-40 w-40 rounded-2xl border border-border object-cover"
                       />
-                      <span className="absolute bottom-2 right-2 flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground nuru-glow-sm">
+                      <span className="absolute bottom-2 right-2 nuru-tactile nuru-tactile-primary flex h-11 w-11 items-center justify-center rounded-full bg-primary text-primary-foreground nuru-glow-sm">
                         <Play className="h-4 w-4 fill-current" />
                       </span>
                     </div>
@@ -312,7 +313,7 @@ function MusicScreen() {
                           {p.description}
                         </span>
                       </span>
-                      <Play className="h-4 w-4 text-leaf" />
+                      <Play className="h-4 w-4 text-cyan" />
                     </button>
                   ))}
                 </div>
@@ -339,7 +340,7 @@ function MusicScreen() {
                         <span className="truncate text-sm font-semibold">{a.name}</span>
                         {a.is_verified && (
                           <BadgeCheck
-                            className="h-3.5 w-3.5 shrink-0 text-leaf"
+                            className="h-3.5 w-3.5 shrink-0 text-cyan"
                             aria-label="Verified"
                           />
                         )}
@@ -427,7 +428,7 @@ function MusicScreen() {
                         {m.creator_name}
                       </span>
                     </span>
-                    <Play className="h-4 w-4 text-leaf" />
+                    <Play className="h-4 w-4 text-cyan" />
                   </button>
                 ))}
               </div>
@@ -547,9 +548,9 @@ function NuruAudioSection({
                   setPlaying(isPlaying ? null : t.id);
                 }}
                 className={cn(
-                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border-strong transition-colors",
+                  "nuru-tactile flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border-strong bg-surface-2 transition-colors",
                   isPlaying
-                    ? "border-primary bg-primary/15 text-leaf"
+                    ? "border-primary bg-primary/15 text-cyan"
                     : "text-secondary-foreground",
                 )}
               >

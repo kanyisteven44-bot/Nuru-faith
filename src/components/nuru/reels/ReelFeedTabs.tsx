@@ -30,7 +30,7 @@ export function ReelFeedTabs({
               className={cn(
                 "min-h-9 rounded-full px-3.5 text-[12px] transition-colors",
                 active
-                  ? "nuru-gradient-bg font-bold text-[#F1EEE6]"
+                  ? "nuru-gradient-bg font-bold text-[#05203f]"
                   : "font-semibold text-white/65",
               )}
             >

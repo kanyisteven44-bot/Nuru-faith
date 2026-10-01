@@ -25,7 +25,17 @@ import { resolveMedia } from "@/lib/media";
 import { fetchVerseOfTheDay, verseOfTheDayRef } from "@/lib/bible";
 import { fetchDevotionals, fetchProfile } from "@/services/content";
 import { HomeShell } from "@/components/nuru/HomeShell";
-import { NURU_PHOTO_POOLS, useRotatingMedia } from "@/lib/rotatingMedia";
+
+/**
+ * Today's Light is pinned to one photo rather than rotating.
+ *
+ * The verse is set over this image, and the shared Home pool rotates through
+ * night and candle shots that leave the type unreadable. The warm golden
+ * sunrise in the concept board is not in the asset library; this is the
+ * closest the library has — mountains at dawn, no figure. Swap this one
+ * constant when a photo closer to the board is uploaded.
+ */
+const TODAYS_LIGHT_PHOTO = "asset:mountain-dawn";
 
 export const Route = createFileRoute("/_authenticated/home")({
   head: () => ({
@@ -75,7 +85,7 @@ function HomeScreen() {
   const { userId } = useAuth();
   const shareSheet = useShareSheet();
   const [acceptedChallenge, setAcceptedChallenge] = useState(false);
-  const lightPhoto = useRotatingMedia(NURU_PHOTO_POOLS.home, "home-todays-light");
+  const lightPhoto = resolveMedia(TODAYS_LIGHT_PHOTO);
 
   const profile = useQuery({
     queryKey: ["profile", userId],
@@ -107,75 +117,77 @@ function HomeScreen() {
       <div className="px-4 lg:px-0">
         {/* Greeting */}
         <section>
-          <h1 className="font-sans text-[30px] leading-tight font-extrabold tracking-tight lg:text-[40px]">
+          <h1 className="font-sans text-[25px] leading-tight font-extrabold tracking-tight lg:text-[40px]">
             Shalom, {firstName}!
           </h1>
-          <p className="mt-1 text-[14px] text-ink-2 lg:text-[16px]">
+          <p className="mt-0.5 text-[13px] leading-snug text-ink-2 lg:mt-1 lg:text-[16px]">
             Take a moment. What does your heart need today?
           </p>
         </section>
 
         {/* Today's Light beside Quick Access + the challenge */}
-        <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
+        <div className="mt-3 grid gap-3 lg:mt-4 lg:gap-4 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
           {/* Today's Light */}
-          <section className="relative overflow-hidden rounded-2xl border border-border">
-            <img src={lightPhoto} alt="" className="h-[300px] w-full object-cover lg:h-[470px]" />
-            <span className="absolute inset-0 bg-[linear-gradient(to_top,rgba(5,20,38,0.95)_22%,rgba(5,20,38,0.35)_60%,rgba(5,20,38,0.18))]" />
+          <section className="overflow-hidden rounded-2xl border border-border bg-card">
+            <div className="relative">
+              <img src={lightPhoto} alt="" className="h-[184px] w-full object-cover lg:h-[404px]" />
+              <span className="absolute inset-0 bg-[linear-gradient(to_top,rgba(5,20,38,0.92)_6%,rgba(5,20,38,0.26)_46%,rgba(5,20,38,0.12))]" />
 
-            <span className="absolute top-4 left-4 text-[15px] font-bold lg:text-[17px]">
-              Today&apos;s Light
-            </span>
+              <span className="absolute top-3 left-3.5 text-[14px] font-bold lg:top-4 lg:left-4 lg:text-[17px]">
+                Today&apos;s Light
+              </span>
 
-            <div className="absolute inset-x-0 bottom-0 p-4 lg:p-6">
-              {verseText && (
-                <p className="font-serif text-[22px] leading-snug text-white lg:text-[30px]">
-                  {verseText}
+              <div className="absolute inset-x-0 bottom-0 p-3.5 lg:p-6">
+                {verseText && (
+                  <p className="font-serif text-[19px] leading-snug text-white lg:text-[30px]">
+                    {verseText}
+                  </p>
+                )}
+                <p className="mt-1.5 text-[11px] font-semibold tracking-[0.18em] text-white/75 uppercase lg:text-[12px]">
+                  {reference}
                 </p>
-              )}
-              <p className="mt-1.5 text-[11px] font-semibold tracking-[0.18em] text-white/75 uppercase lg:text-[12px]">
-                {reference}
-              </p>
-
-              {/* Three actions, each doing what its label says. */}
-              <div className="mt-3.5 grid grid-cols-3 gap-2 lg:mt-5 lg:max-w-[560px]">
-                <Link
-                  to="/bible"
-                  className="nuru-raise flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary text-[13px] font-bold text-primary-foreground lg:text-[14px]"
-                >
-                  <BookOpen className="h-4 w-4 shrink-0" strokeWidth={2} />
-                  Read Bible
-                </Link>
-                <Link
-                  to="/ai"
-                  search={{ contextType: "verse", contextLabel: reference }}
-                  className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border bg-[rgba(7,26,48,0.72)] text-[13px] font-bold text-foreground backdrop-blur-sm lg:text-[14px]"
-                >
-                  <Pencil className="h-4 w-4 shrink-0" strokeWidth={2} />
-                  Reflect
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => {
-                    void shareSheet.share({
-                      title: reference,
-                      text: verseText ? `“${verseText}” — ${reference}` : reference,
-                      url: `${window.location.origin}/bible`,
-                    });
-                  }}
-                  className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border bg-[rgba(7,26,48,0.72)] text-[13px] font-bold text-foreground backdrop-blur-sm lg:text-[14px]"
-                >
-                  <Share2 className="h-4 w-4 shrink-0" strokeWidth={2} />
-                  Share
-                </button>
               </div>
+            </div>
+
+            {/* Three actions on the card base, as the board has them. */}
+            <div className="grid grid-cols-3 gap-2 p-2.5 lg:gap-3 lg:p-4">
+              <Link
+                to="/bible"
+                className="nuru-raise flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary text-[13px] font-bold text-primary-foreground lg:text-[14px]"
+              >
+                <BookOpen className="h-4 w-4 shrink-0" strokeWidth={2} />
+                Read Bible
+              </Link>
+              <Link
+                to="/ai"
+                search={{ contextType: "verse", contextLabel: reference }}
+                className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border bg-surface-2 text-[13px] font-bold text-foreground lg:text-[14px]"
+              >
+                <Pencil className="h-4 w-4 shrink-0" strokeWidth={2} />
+                Reflect
+              </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  void shareSheet.share({
+                    title: reference,
+                    text: verseText ? `“${verseText}” — ${reference}` : reference,
+                    url: `${window.location.origin}/bible`,
+                  });
+                }}
+                className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border bg-surface-2 text-[13px] font-bold text-foreground lg:text-[14px]"
+              >
+                <Share2 className="h-4 w-4 shrink-0" strokeWidth={2} />
+                Share
+              </button>
             </div>
           </section>
 
-          <div className="grid gap-4 lg:content-start">
+          <div className="grid gap-3 lg:gap-4 lg:content-start">
             {/* Quick Access */}
-            <section className="rounded-2xl border border-border bg-card p-4">
+            <section className="rounded-2xl border border-border bg-card p-3.5 lg:p-4">
               <h2 className="font-sans text-[17px] font-bold">Quick Access</h2>
-              <div className="mt-3 grid grid-cols-4 gap-x-2 gap-y-3.5">
+              <div className="mt-2.5 grid grid-cols-4 gap-x-2 gap-y-3 lg:mt-3 lg:gap-y-3.5">
                 {QUICK_ACCESS.map(({ to, label, icon: Icon, tint }) => (
                   <Link
                     key={label}
@@ -183,7 +195,12 @@ function HomeScreen() {
                     {...(to === "/ai" ? { search: {} } : {})}
                     className="flex flex-col items-center gap-1.5 text-center"
                   >
-                    <span className={cn("home-tile h-[52px] w-[52px] bg-gradient-to-br", tint)}>
+                    <span
+                      className={cn(
+                        "home-tile h-[48px] w-[48px] bg-gradient-to-br lg:h-[52px] lg:w-[52px]",
+                        tint,
+                      )}
+                    >
                       <Icon className="h-[22px] w-[22px]" strokeWidth={2} />
                     </span>
                     <span className="text-[11px] leading-tight font-semibold text-ink-2">
@@ -195,7 +212,7 @@ function HomeScreen() {
             </section>
 
             {/* Today's Challenge */}
-            <section className="rounded-2xl border border-border bg-[#0a1f38] p-4">
+            <section className="rounded-2xl border border-border bg-[#0a1f38] p-3.5 lg:p-4">
               <div className="flex items-start gap-3">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[rgba(245,183,49,0.16)] text-sand">
                   <Sun className="h-5 w-5" strokeWidth={2} />
@@ -204,7 +221,7 @@ function HomeScreen() {
                   <h2 className="font-sans text-[16px] font-bold text-sand">
                     Today&apos;s Challenge
                   </h2>
-                  <p className="mt-1 text-[13.5px] leading-snug text-ink-2">{challenge}</p>
+                  <p className="mt-1 text-[13px] leading-snug text-ink-2">{challenge}</p>
                 </div>
               </div>
               <button
@@ -215,7 +232,7 @@ function HomeScreen() {
                   toast.success("You're in — one step at a time.");
                 }}
                 className={cn(
-                  "mt-3.5 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl text-[14px] font-bold transition-all",
+                  "mt-3 flex min-h-11 w-full items-center gap-2 rounded-xl px-4 text-[14px] font-bold transition-all lg:mt-3.5",
                   acceptedChallenge
                     ? "border border-sand/45 bg-[rgba(245,183,49,0.14)] text-sand"
                     : "nuru-raise bg-[linear-gradient(180deg,#f8c75a,#e9a814)] text-[#2a1c05] hover:brightness-105",
@@ -228,8 +245,8 @@ function HomeScreen() {
                   </>
                 ) : (
                   <>
-                    Accept challenge
-                    <ChevronRight className="h-4 w-4" strokeWidth={2.4} />
+                    <span className="flex-1 text-center">Accept challenge</span>
+                    <ChevronRight className="h-4 w-4 shrink-0" strokeWidth={2.4} />
                   </>
                 )}
               </button>
@@ -238,7 +255,7 @@ function HomeScreen() {
         </div>
 
         {/* Daily devotional and finding a church */}
-        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+        <div className="mt-3 grid gap-3 lg:mt-4 lg:gap-4 lg:grid-cols-2">
           <section className="flex overflow-hidden rounded-2xl border border-border bg-card">
             <span className="w-[38%] shrink-0">
               {devotional?.cover_url ? (

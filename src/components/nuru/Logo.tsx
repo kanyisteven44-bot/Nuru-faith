@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { cn } from "@/lib/utils";
 
 /**
@@ -7,6 +8,14 @@ import { cn } from "@/lib/utils";
  * an app-icon tile. `NuruMark` below is this glyph inside that tile.
  */
 export function NuruGlyph({ className }: { className?: string }) {
+  // Several marks can be on the page at once (the sidebar one and the mobile
+  // one, only one of them visible). With fixed ids the visible mark ends up
+  // pointing at defs inside a display:none subtree and paints nothing, so each
+  // instance gets its own ids.
+  const uid = useId().replace(/:/g, "");
+  const archId = `nuru-arch-${uid}`;
+  const crossId = `nuru-cross-${uid}`;
+  const bloomId = `nuru-bloom-${uid}`;
   return (
     <svg
       aria-hidden="true"
@@ -15,29 +24,15 @@ export function NuruGlyph({ className }: { className?: string }) {
       role="presentation"
     >
       <defs>
-        <linearGradient
-          id="nuru-arch"
-          x1="32"
-          y1="6"
-          x2="32"
-          y2="58"
-          gradientUnits="userSpaceOnUse"
-        >
+        <linearGradient id={archId} x1="32" y1="6" x2="32" y2="58" gradientUnits="userSpaceOnUse">
           <stop offset="0" stopColor="#BDEBFF" />
           <stop offset="1" stopColor="#48BFFF" />
         </linearGradient>
-        <linearGradient
-          id="nuru-cross"
-          x1="32"
-          y1="16"
-          x2="32"
-          y2="48"
-          gradientUnits="userSpaceOnUse"
-        >
+        <linearGradient id={crossId} x1="32" y1="16" x2="32" y2="48" gradientUnits="userSpaceOnUse">
           <stop offset="0" stopColor="#ffffff" />
           <stop offset="1" stopColor="#C9E9FA" />
         </linearGradient>
-        <filter id="nuru-bloom" x="-60%" y="-60%" width="220%" height="220%">
+        <filter id={bloomId} x="-60%" y="-60%" width="220%" height="220%">
           <feGaussianBlur stdDeviation="2.2" result="blur" />
           <feMerge>
             <feMergeNode in="blur" />
@@ -50,18 +45,18 @@ export function NuruGlyph({ className }: { className?: string }) {
       <path
         d="M17 52V29a15 15 0 0 1 30 0v23"
         fill="none"
-        stroke="url(#nuru-arch)"
+        stroke={`url(#${archId})`}
         strokeWidth="4"
         strokeLinecap="round"
-        filter="url(#nuru-bloom)"
+        filter={`url(#${bloomId})`}
       />
 
       {/* cross standing inside the arch */}
       <g
-        stroke="url(#nuru-cross)"
+        stroke={`url(#${crossId})`}
         strokeWidth="4.5"
         strokeLinecap="round"
-        filter="url(#nuru-bloom)"
+        filter={`url(#${bloomId})`}
       >
         <line x1="32" y1="20" x2="32" y2="45" />
         <line x1="23" y1="31" x2="41" y2="31" />

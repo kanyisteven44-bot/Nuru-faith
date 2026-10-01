@@ -199,7 +199,7 @@ export function HomeShell({ children }: { children: ReactNode }) {
           {/* Mobile top bar: logo, bell, avatar */}
           <header className="flex items-center justify-between gap-3 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-2 lg:hidden">
             <Link to="/home" className="flex items-center gap-2">
-              <NuruMark className="h-8 w-8" />
+              <NuruMark className="h-9 w-9" />
               <span className="font-sans text-[17px] font-bold tracking-tight">Nuru Faith</span>
             </Link>
             <div className="flex items-center gap-1">

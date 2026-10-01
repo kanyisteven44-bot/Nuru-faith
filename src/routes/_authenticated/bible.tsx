@@ -118,7 +118,7 @@ function BibleScreen() {
             onClick={() => setSearchOpen((v) => !v)}
             aria-label={searchOpen ? "Close search" : "Search the Bible"}
             aria-expanded={searchOpen}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border-strong bg-[linear-gradient(180deg,#212A26,#1A211E)] text-ink-2"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border-strong bg-[linear-gradient(180deg,#143254,#0C2440)] text-ink-2"
           >
             {searchOpen ? <X className="h-4.5 w-4.5" /> : <Search className="h-4.5 w-4.5" />}
           </button>
@@ -142,7 +142,7 @@ function BibleScreen() {
         <button
           type="button"
           onClick={() => setBook(lastBook)}
-          className="mt-4 flex w-full items-center gap-3 rounded-2xl border border-border bg-[linear-gradient(180deg,#1E2A23,#18211C)] p-2.5 text-left"
+          className="mt-4 flex w-full items-center gap-3 rounded-2xl border border-border bg-[linear-gradient(180deg,#12304F,#0D2541)] p-2.5 text-left"
         >
           <span className="nuru-disc h-10 w-10">
             <BookOpen className="h-[18px] w-[18px]" strokeWidth={1.9} />
@@ -262,7 +262,7 @@ function Segmented({
     <div
       role="tablist"
       className={cn(
-        "inline-flex w-full gap-0.5 rounded-full border border-border bg-[#1A211E] p-1",
+        "inline-flex w-full gap-0.5 rounded-full border border-border bg-[#0C2440] p-1",
         className,
       )}
     >
@@ -361,7 +361,7 @@ function ReadingPlans() {
               {c.cover ? (
                 <img src={c.cover} alt="" className="h-[104px] w-full object-cover" />
               ) : (
-                <span className="block h-[104px] w-full bg-[linear-gradient(120deg,#22302a,#19201d)]" />
+                <span className="block h-[104px] w-full bg-[linear-gradient(120deg,#143254,#0f2a49)]" />
               )}
               <span className="absolute inset-0 bg-[linear-gradient(to_right,rgba(17,23,21,0.92),rgba(17,23,21,0.55)_65%,rgba(17,23,21,0.25))]" />
               <span className="absolute inset-0 flex items-center gap-3 px-4">
@@ -444,7 +444,7 @@ function Testament({ books, onOpen }: { books: BibleBook[]; onOpen: (b: BibleBoo
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="mt-3 h-11 w-full rounded-full border border-border-strong bg-[linear-gradient(180deg,#232C28,#1A211E)] text-[13px] font-bold text-ink-2"
+          className="mt-3 h-11 w-full rounded-full border border-border-strong bg-[linear-gradient(180deg,#143254,#0C2440)] text-[13px] font-bold text-ink-2"
         >
           {expanded ? "Show fewer books" : `Show all ${books.length} books`}
         </button>
@@ -501,7 +501,7 @@ function ChapterTile({
         "flex h-12 items-center justify-center rounded-xl border text-sm font-bold transition-colors",
         active
           ? "nuru-raise border-leaf/25 bg-[linear-gradient(180deg,var(--forest-hi),var(--primary))] text-foreground"
-          : "border-border-strong bg-[linear-gradient(180deg,#212A26,#1A211E)] text-ink-2 hover:text-foreground",
+          : "border-border-strong bg-[linear-gradient(180deg,#143254,#0C2440)] text-ink-2 hover:text-foreground",
       )}
     >
       {label}

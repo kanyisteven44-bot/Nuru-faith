@@ -80,7 +80,7 @@ export function PillTabs<T extends string>({
               "h-9 shrink-0 rounded-full border px-3.5 text-[13px] font-semibold transition-all",
               active
                 ? "nuru-raise border-leaf/30 bg-[linear-gradient(180deg,var(--forest-hi),var(--primary))] text-foreground"
-                : "border-border-strong bg-[linear-gradient(180deg,#212A26,#1A211E)] text-ink-2 shadow-[inset_0_1px_0_rgb(255_255_255/5%)] hover:text-foreground",
+                : "border-border-strong bg-[linear-gradient(180deg,#143254,#0C2440)] text-ink-2 shadow-[inset_0_1px_0_rgb(255_255_255/5%)] hover:text-foreground",
             )}
           >
             {tab}
@@ -203,7 +203,7 @@ export function Chip({
         tone === "muted" && "bg-surface-2 text-ink-3",
         tone === "growth" && "bg-olive-soft text-leaf",
         tone === "brand" && "bg-olive-soft text-leaf",
-        tone === "violet" && "bg-[#34211A] text-terra-lt",
+        tone === "violet" && "bg-[#33280F] text-terra-lt",
       )}
     >
       {children}

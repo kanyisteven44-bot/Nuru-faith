@@ -21,9 +21,9 @@
   --radius-2xl: calc(var(--radius) + 5px);
   --radius-3xl: calc(var(--radius) + 12px);
 
-  /* Editorial serif for Scripture, names and reflection; plain sans for
-     controls and details. Design system v2. */
-  --font-display: "Instrument Serif", Georgia, ui-serif, serif;
+  /* Headings are bold sans; Scripture and reflection keep the editorial
+     serif via `font-serif`. Matches the approved Home concept. */
+  --font-display: "Manrope", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Instrument Serif", Georgia, ui-serif, serif;
   --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
   --font-script: "Instrument Serif", Georgia, ui-serif, serif;
@@ -89,60 +89,60 @@
      oversized bubbles. Keep one radius scale across every screen. */
   --radius: 0.75rem;
 
-  /* warm dark surfaces — charcoal page climbing to a lifted card */
-  --background: #111715;
-  --surface: #19201d;
-  --surface-2: #222a26;
-  --foreground: #f1eee6;
-  --card: #19201d;
-  --card-foreground: #f1eee6;
-  --popover: #19201d;
-  --popover-foreground: #f1eee6;
+  /* Deep navy surfaces climbing to a lifted card — the approved Home concept,
+     now the whole app's palette. */
+  --background: #071a30;
+  --surface: #0c2440;
+  --surface-2: #143254;
+  --foreground: #eaf1fa;
+  --card: #0f2a49;
+  --card-foreground: #eaf1fa;
+  --popover: #0f2a49;
+  --popover-foreground: #eaf1fa;
 
-  /* forest leads for anything selected or primary; terracotta carries the
-     warm moments; sand highlights; Nuru cyan is reserved for the logo and
-     focus light and must not be used as a general accent. */
-  --primary: #3d6048;
-  --primary-foreground: #f1eee6;
-  --forest-hi: #4a7457;
-  --forest-lo: #2e4a37;
-  --leaf: #86c29a;
-  --terra: #b96445;
-  --terra-hi: #c8704f;
-  --terra-lo: #a9573a;
-  --terra-lt: #e08e6d;
-  --sand: #e6b566;
+  /* Bright blue leads for anything selected or primary; amber carries the
+     warm moments; the brand cyan stays close to the blue. */
+  --primary: #2f9fe0;
+  --primary-foreground: #04172b;
+  --forest-hi: #3fb0ef;
+  --forest-lo: #1f7fba;
+  --leaf: #7fd3ff;
+  --terra: #e0763f;
+  --terra-hi: #ef8a52;
+  --terra-lo: #c75f2c;
+  --terra-lt: #f2a173;
+  --sand: #f5b731;
   --brand-cyan: #48bfff;
-  /* Legacy aliases kept so screens not yet rebuilt stay on-palette. */
-  --brand-violet: #b96445;
-  --brand-magenta: #e08e6d;
+  /* Legacy aliases, kept so nothing referencing them breaks. */
+  --brand-violet: #8b7bf5;
+  --brand-magenta: #ef5fb4;
 
-  --secondary: #222a26;
-  --secondary-foreground: #c9ccc4;
-  --ink-2: #c9ccc4;
-  --ink-3: #949c95;
-  --muted: #222a26;
-  --muted-foreground: #949c95;
-  --accent: #2e4a37;
-  --accent-foreground: #f1eee6;
+  --secondary: #143254;
+  --secondary-foreground: #c3d4e8;
+  --ink-2: #c3d4e8;
+  --ink-3: #8ba4c2;
+  --muted: #143254;
+  --muted-foreground: #8ba4c2;
+  --accent: #1f7fba;
+  --accent-foreground: #eaf1fa;
 
-  --growth: #86c29a;
-  --warning: #e6b566;
-  --destructive: #b84a3c;
-  --destructive-foreground: #fff7f2;
+  --growth: #3fcf74;
+  --warning: #f5b731;
+  --destructive: #e05a4a;
+  --destructive-foreground: #fff5f2;
 
-  /* The foundations' remaining status tints, each with its own soft ground. */
-  --rose: #ee8b7b;
-  --rose-soft: #2a1512;
+  /* Status tints, each on its own soft ground. */
+  --rose: #f2897c;
+  --rose-soft: #3a1b18;
   --sky: #7fd3ff;
   --sky-soft: #0f2a3a;
-  --olive-soft: #1c3024;
-  --sand-soft: #2a2419;
+  --olive-soft: #0f3350;
+  --sand-soft: #33280f;
 
-  /* quiet warm-grey borders, not glowing ones */
-  --border: #2a332f;
-  --border-strong: #3a4540;
-  --input: #3a4540;
+  /* Quiet borders that read against navy. */
+  --border: rgb(255 255 255 / 10%);
+  --border-strong: rgb(127 211 255 / 34%);
+  --input: rgb(255 255 255 / 16%);
   --ring: #48bfff;
 
   --sidebar: #19201d;
@@ -157,20 +157,20 @@
   );
   --gradient-button: linear-gradient(180deg, var(--forest-hi), var(--primary));
   --gradient-warm: linear-gradient(180deg, var(--terra-hi), var(--terra-lo));
-  --gradient-surface: linear-gradient(180deg, #1c2420, #171e1b);
+  --gradient-surface: linear-gradient(180deg, #12304f, #0d2541);
   --gradient-hero: radial-gradient(90% 120% at 75% 0%, #2c4535 0%, #1a2520 55%, #141a17 100%);
   --gradient-veil: linear-gradient(
     to top,
-    rgb(17 23 21 / 0.96) 6%,
-    rgb(17 23 21 / 0.55) 42%,
-    rgb(17 23 21 / 0) 82%
+    rgb(5 20 38 / 0.96) 6%,
+    rgb(5 20 38 / 0.55) 42%,
+    rgb(5 20 38 / 0) 82%
   );
   /* The pointed arch echoes the Nuru logo; used as a mask on media. */
   --pointed: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0 100V46C0 22 22 6 50 0C78 6 100 22 100 46V100Z'/%3E%3C/svg%3E");
   --halo: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M1 100V46C1 22 22 7 50 1C78 7 99 22 99 46V100' fill='none' stroke='%2348BFFF' stroke-opacity='.6' stroke-width='1.4' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
 
   /* elevation — soft, tactile, bevelled; glow stays rare and small */
-  --shadow-card: inset 0 1px 0 rgb(255 255 255 / 4%), 0 10px 30px rgb(0 0 0 / 35%);
+  --shadow-card: inset 0 1px 0 rgb(255 255 255 / 5%), 0 10px 30px rgb(2 10 20 / 45%);
   --shadow-raised:
     inset 0 1px 0 rgb(255 255 255 / 7%), 0 1px 0 rgb(0 0 0 / 40%), 0 8px 22px rgb(0 0 0 / 32%);
   /* Glow is reserved for the logo, focus rings and the one thing that
@@ -348,8 +348,8 @@ a {
   justify-content: center;
   flex-shrink: 0;
   border-radius: 9999px;
-  background: radial-gradient(80% 80% at 35% 25%, #4f7a5d, #2e4a37);
-  color: #eaf5ec;
+  background: radial-gradient(80% 80% at 35% 25%, #4fb4ee, #1f7fba);
+  color: #ecf6ff;
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 18%),
     inset 0 -2px 4px rgb(0 0 0 / 30%),
@@ -357,13 +357,13 @@ a {
 }
 
 @utility nuru-disc-terra {
-  background: radial-gradient(80% 80% at 35% 25%, #d07b5a, #9c4c31);
+  background: radial-gradient(80% 80% at 35% 25%, #f09a62, #c75f2c);
   color: #fff1ea;
 }
 
 @utility nuru-disc-sand {
-  background: radial-gradient(80% 80% at 35% 25%, #f0c47a, #b9873c);
-  color: #2a1c08;
+  background: radial-gradient(80% 80% at 35% 25%, #f8cd72, #d79a16);
+  color: #2a1c05;
 }
 
 /* Small sand label above a heading. */
@@ -679,60 +679,6 @@ a {
   }
 }
 
-/* ---------------------------------------------------------------------------
-   HOME CONCEPT 01 — scoped palette
-   The Home concept board uses a navy-and-blue palette that deliberately
-   differs from the charcoal/forest foundations the rest of the app runs on.
-   Rather than change the global tokens (which would repaint every screen),
-   this class redefines them for its own subtree only, so Home can use the
-   ordinary semantic utilities and still come out navy.
-   Remove this class and Home falls back to the app palette.
-   --------------------------------------------------------------------------- */
-.home-concept {
-  --background: #071a30;
-  --surface: #0c2440;
-  --surface-2: #143254;
-  --card: #0f2a49;
-  --card-foreground: #eaf1fa;
-  --foreground: #eaf1fa;
-
-  --primary: #2f9fe0;
-  --primary-foreground: #04172b;
-  --forest-hi: #3fb0ef;
-  --leaf: #7fd3ff;
-
-  --sand: #f5b731;
-  --warning: #f5b731;
-  --terra: #e0763f;
-  --terra-lt: #f2a173;
-
-  --secondary-foreground: #c3d4e8;
-  --ink-2: #c3d4e8;
-  --ink-3: #8ba4c2;
-  --muted-foreground: #8ba4c2;
-
-  --border: rgb(255 255 255 / 10%);
-  --border-strong: rgb(127 211 255 / 34%);
-
-  --gradient-surface: linear-gradient(180deg, #12304f, #0d2541);
-  --shadow-card: inset 0 1px 0 rgb(255 255 255 / 5%), 0 10px 30px rgb(2 10 20 / 45%);
-  --shadow-raised:
-    inset 0 1px 0 rgb(255 255 255 / 14%), 0 1px 0 rgb(2 10 20 / 50%), 0 8px 22px rgb(2 10 20 / 40%);
-
-  /* This board sets its headings in bold sans and keeps Scripture serif.
-     Font stacks are inlined by `@theme inline`, so a scoped --font-display
-     override would not reach the utility; Home states font-sans/font-serif
-     on the elements themselves instead. */
-
-  background-color: var(--background);
-  color: var(--foreground);
-}
-
-/* The eyebrow on this board is a cool grey, not sand. */
-.home-concept .nuru-eyebrow {
-  color: var(--ink-3);
-}
-
 /* Quick Access tiles: a saturated rounded square per destination. */
 .home-tile {
   display: inline-flex;
@@ -743,4 +689,11 @@ a {
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 25%),
     0 6px 14px rgb(2 10 20 / 45%);
+}
+
+/* Home still carries this class; the palette it used to scope is now global,
+   so it only keeps the page background explicit for the shell's own frame. */
+.home-concept {
+  background-color: var(--background);
+  color: var(--foreground);
 }

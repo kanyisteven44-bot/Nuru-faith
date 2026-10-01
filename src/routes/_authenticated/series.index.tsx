@@ -120,7 +120,7 @@ function SeriesCard({ series, percent }: { series: SeriesRow; percent: number })
           className="h-[164px] w-full object-cover"
         />
       ) : (
-        <span className="block h-[164px] w-full bg-[linear-gradient(120deg,#22302a,#19201d)]" />
+        <span className="block h-[164px] w-full bg-[linear-gradient(120deg,#143254,#0f2a49)]" />
       )}
       <span className="absolute inset-0 bg-[linear-gradient(to_top,rgba(17,23,21,0.95)_12%,rgba(17,23,21,0.45)_55%,rgba(17,23,21,0.15))]" />
 

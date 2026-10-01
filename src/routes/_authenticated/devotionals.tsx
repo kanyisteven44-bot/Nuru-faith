@@ -129,7 +129,7 @@ function DevotionalsScreen() {
                         className="h-[120px] w-full object-cover"
                       />
                     ) : (
-                      <span className="block h-[120px] w-full bg-[linear-gradient(120deg,#22302a,#19201d)]" />
+                      <span className="block h-[120px] w-full bg-[linear-gradient(120deg,#143254,#0f2a49)]" />
                     )}
                     <span className="absolute inset-0 bg-[linear-gradient(to_right,rgba(17,23,21,0.94),rgba(17,23,21,0.6)_62%,rgba(17,23,21,0.28))]" />
                     <span className="absolute inset-0 flex items-end gap-3 p-4">

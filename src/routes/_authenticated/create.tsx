@@ -31,7 +31,7 @@ const ATTACHMENTS = [
     icon: ImageIcon,
     tint: "text-leaf bg-olive-soft border-leaf/30",
   },
-  { label: "Video", icon: Video, tint: "text-terra-lt bg-[#34211A] border-terra-lt/30" },
+  { label: "Video", icon: Video, tint: "text-terra-lt bg-[#33280F] border-terra-lt/30" },
   { label: "Live", icon: Radio, tint: "text-rose bg-rose-soft border-rose/30" },
   { label: "Poll", icon: BarChart3, tint: "text-sand bg-sand-soft border-sand/30" },
 ] as const;

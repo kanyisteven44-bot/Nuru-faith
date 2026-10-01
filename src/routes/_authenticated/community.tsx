@@ -114,7 +114,7 @@ function CommunityScreen() {
             to="/explore"
             search={{ q: "", kind: "all" }}
             aria-label="Search community"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border-strong bg-[linear-gradient(180deg,#212A26,#1A211E)] text-ink-2"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border-strong bg-[linear-gradient(180deg,#143254,#0C2440)] text-ink-2"
           >
             <Search className="h-4 w-4" />
           </Link>
@@ -124,7 +124,7 @@ function CommunityScreen() {
         <div className="mt-3 flex justify-center">
           <Link
             to="/church"
-            className="inline-flex max-w-full items-center gap-2 rounded-full border border-border-strong bg-[linear-gradient(180deg,#212A26,#1A211E)] py-1.5 pr-3 pl-1.5 text-[13px] font-semibold"
+            className="inline-flex max-w-full items-center gap-2 rounded-full border border-border-strong bg-[linear-gradient(180deg,#143254,#0C2440)] py-1.5 pr-3 pl-1.5 text-[13px] font-semibold"
           >
             <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface-2 text-ink-2">
               <Church className="h-3.5 w-3.5" strokeWidth={1.9} />

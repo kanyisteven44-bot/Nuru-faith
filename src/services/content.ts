@@ -655,7 +655,6 @@ export async function fetchPeoplePage(userId: string, page: number): Promise<Per
   return (data ?? []) as PersonRow[];
 }
 
-
 /* ---------- moderation ---------- */
 
 export type ModerationItem = {
@@ -734,11 +733,7 @@ export async function updateModerationStatus(
   status: "reviewing" | "resolved" | "dismissed",
 ) {
   const table =
-    source === "report"
-      ? "reports"
-      : source === "reel"
-        ? "reel_reports"
-        : "external_reel_reports";
+    source === "report" ? "reports" : source === "reel" ? "reel_reports" : "external_reel_reports";
 
   const { error } = await supabase.from(table).update({ status }).eq("id", id);
   if (error) throw new Error(error.message);

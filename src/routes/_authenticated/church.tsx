@@ -115,7 +115,7 @@ function ChurchScreen() {
             {church.cover_url ? (
               <img src={church.cover_url} alt="" className="h-full w-full object-cover" />
             ) : (
-              <span className="block h-full w-full bg-[linear-gradient(140deg,#24332b,#19201d)]" />
+              <span className="block h-full w-full bg-[linear-gradient(140deg,#17456E,#0f2a49)]" />
             )}
             <span className="absolute inset-0 bg-[linear-gradient(to_top,var(--card),rgba(25,32,29,0.25)_62%,transparent)]" />
           </div>
@@ -148,13 +148,13 @@ function ChurchScreen() {
 
             <div className="mt-3 flex flex-wrap gap-2">
               {place && (
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-border-strong bg-[linear-gradient(180deg,#212A26,#1A211E)] px-3 py-1.5 text-[12px] font-semibold text-ink-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-border-strong bg-[linear-gradient(180deg,#143254,#0C2440)] px-3 py-1.5 text-[12px] font-semibold text-ink-2">
                   <MapPin className="h-3.5 w-3.5" strokeWidth={1.9} />
                   {place}
                 </span>
               )}
               {memberCount > 0 && (
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-border-strong bg-[linear-gradient(180deg,#212A26,#1A211E)] px-3 py-1.5 text-[12px] font-semibold text-ink-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-border-strong bg-[linear-gradient(180deg,#143254,#0C2440)] px-3 py-1.5 text-[12px] font-semibold text-ink-2">
                   <Users className="h-3.5 w-3.5" strokeWidth={1.9} />
                   {memberCount} members
                 </span>

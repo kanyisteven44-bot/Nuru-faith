@@ -137,7 +137,7 @@ export function SplashScreen() {
       <div
         aria-hidden="true"
         data-testid="nuru-splash"
-        className="fixed inset-0 z-[999] bg-[#111715]"
+        className="fixed inset-0 z-[999] bg-[#071a30]"
       />
     );
   }
@@ -150,7 +150,7 @@ export function SplashScreen() {
       className={cn(
         "fixed inset-0 z-[999] flex flex-col items-center overflow-hidden",
         // The board's own background: a blue night sky settling into charcoal.
-        "bg-[radial-gradient(900px_700px_at_50%_38%,#0B2A45_0%,#0A1C2C_38%,#0E1613_75%,#111715_100%)]",
+        "bg-[radial-gradient(900px_700px_at_50%_38%,#0B2A45_0%,#0A1C2C_38%,#08203a_75%,#071a30_100%)]",
         stage === "exiting" && "nuru-open-exit",
       )}
     >

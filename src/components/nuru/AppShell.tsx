@@ -1,29 +1,20 @@
 import { useEffect, type ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, BookOpen, Clapperboard, Home, Users } from "lucide-react";
+import { ArrowLeft, ChevronRight, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchProfile } from "@/services/content";
 import { generatedAvatar } from "@/lib/avatar";
 import { recordNuruActivity } from "@/services/pilot";
-import { NuruLockup } from "./Logo";
+import { NuruLockup, NuruMark } from "./Logo";
+import { MOBILE_NAV, SIDEBAR_GROUPS } from "./nav";
 
 /**
- * Design system v2 primary navigation. Events, Prayer and Mentorship are
- * reached from the four quick actions on Home instead of the bar.
- *
- * The boards disagree with themselves here — the "First steps" set shows
- * Church/Me — but the handoff states the Home board is the final direction,
- * and the design-language board lists these four.
+ * The app frame: a grouped sidebar from `lg:` up, and the five-item bar below
+ * that. Both read one shared definition in ./nav, so navigation can never
+ * drift between screens.
  */
-const NAV = [
-  { to: "/home", label: "Home", icon: Home },
-  { to: "/bible", label: "Bible", icon: BookOpen },
-  { to: "/community", label: "Community", icon: Users },
-  { to: "/reels", label: "Reels", icon: Clapperboard },
-] as const;
-
 export function AppShell({
   children,
   wide = false,
@@ -31,44 +22,133 @@ export function AppShell({
   hideNav = false,
 }: {
   children: ReactNode;
+  /** Kept for callers; the desktop frame is a fixed width now. */
   wide?: boolean | "xl";
-  /** Full-bleed screens (Reels) manage their own height and skip the bottom padding. */
+  /** Full-bleed screens (Reels) take the viewport whole and skip the frame. */
   flush?: boolean;
   hideNav?: boolean;
 }) {
-  const maxWidth = wide === "xl" ? "max-w-7xl" : wide ? "max-w-5xl" : "max-w-xl";
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   useEffect(() => {
     void recordNuruActivity();
   }, []);
 
-  return (
-    <div className={cn("relative bg-background", flush ? "h-dvh overflow-hidden" : "min-h-dvh")}>
-      <main
-        className={cn("relative z-10 mx-auto w-full", flush || hideNav ? "" : "pb-24", maxWidth)}
-      >
-        {children}
-      </main>
+  // Full-bleed screens (Reels) own the viewport, but they still need a way
+  // out on desktop — without the rail there is no navigation on the screen
+  // at all.
+  if (flush) {
+    return (
+      <div className="relative flex h-dvh overflow-hidden bg-background lg:gap-6 lg:p-6">
+        {!hideNav && <Sidebar pathname={pathname} />}
+        <main className="relative z-10 h-full min-w-0 flex-1 overflow-hidden lg:rounded-3xl">
+          {children}
+        </main>
+        {!hideNav && <MobileNav pathname={pathname} />}
+      </div>
+    );
+  }
 
-      {!hideNav && (
-        <nav
-          aria-label="Main"
-          className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur-xl"
+  return (
+    <div className="relative min-h-dvh bg-background">
+      <div className="mx-auto flex w-full max-w-[1480px] gap-6 lg:p-6">
+        {!hideNav && <Sidebar pathname={pathname} />}
+        <div
+          className={cn(
+            "min-w-0 flex-1",
+            !hideNav && "lg:rounded-3xl lg:border lg:border-border lg:bg-surface lg:p-6",
+            wide === "xl" && "max-w-none",
+          )}
         >
-          <ul
-            className={cn(
-              "mx-auto grid grid-cols-4 px-1 pb-[max(0.4rem,env(safe-area-inset-bottom))] pt-2",
-              maxWidth,
-            )}
-          >
-            {NAV.map((item) => (
-              <NavItem key={item.to} {...item} active={pathname.startsWith(item.to)} />
-            ))}
-          </ul>
-        </nav>
-      )}
+          <main className={cn("relative z-10 w-full", hideNav ? "" : "pb-28 lg:pb-0")}>
+            {children}
+          </main>
+        </div>
+      </div>
+      {!hideNav && <MobileNav pathname={pathname} />}
     </div>
+  );
+}
+
+/** Desktop navigation rail. */
+export function Sidebar({ pathname }: { pathname: string }) {
+  const { userId } = useAuth();
+  const { data: profile } = useQuery({
+    queryKey: ["profile", userId],
+    queryFn: () => fetchProfile(userId!),
+    enabled: !!userId,
+  });
+
+  return (
+    <aside className="hidden w-[232px] shrink-0 flex-col rounded-3xl border border-border bg-surface p-4 lg:flex">
+      <Link to="/home" className="mb-6 flex items-center gap-2.5 px-2">
+        <NuruMark className="h-9 w-9" />
+        <span className="font-sans text-[19px] font-bold tracking-tight">Nuru Faith</span>
+      </Link>
+
+      <nav aria-label="Main" className="flex-1 space-y-5">
+        {SIDEBAR_GROUPS.map((group) => (
+          <div key={group.heading}>
+            <p className="px-3 pb-1.5 text-[12px] font-semibold text-ink-3">{group.heading}</p>
+            <ul className="space-y-0.5">
+              {group.items.map((item) => {
+                const active = pathname.startsWith(item.to);
+                return (
+                  <li key={item.to}>
+                    <Link
+                      to={item.to}
+                      aria-current={active ? "page" : undefined}
+                      className={cn(
+                        "flex min-h-11 items-center gap-3 rounded-xl px-3 text-[14.5px] font-semibold transition-colors",
+                        active
+                          ? "bg-primary text-primary-foreground"
+                          : "text-ink-2 hover:bg-surface-2 hover:text-foreground",
+                      )}
+                    >
+                      <item.icon className="h-[18px] w-[18px] shrink-0" strokeWidth={1.9} />
+                      {item.label}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
+      </nav>
+
+      <Link
+        to="/profile"
+        className="mt-4 flex items-center gap-2.5 rounded-xl border-t border-border px-2 pt-4"
+      >
+        <Avatar
+          url={profile?.avatar_url ?? null}
+          name={profile?.full_name ?? ""}
+          seed={userId}
+          size="sm"
+          className="h-9 w-9"
+        />
+        <span className="min-w-0 flex-1 truncate text-[13.5px] font-semibold">
+          {profile?.full_name ?? "Your profile"}
+        </span>
+        <ChevronRight className="h-4 w-4 shrink-0 text-ink-3" strokeWidth={2} />
+      </Link>
+    </aside>
+  );
+}
+
+/** The five-item bar, below `lg:`. */
+export function MobileNav({ pathname }: { pathname: string }) {
+  return (
+    <nav
+      aria-label="Main"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/95 backdrop-blur-xl lg:hidden"
+    >
+      <ul className="mx-auto grid max-w-xl grid-cols-5 px-1 pt-2 pb-[max(0.4rem,env(safe-area-inset-bottom))]">
+        {MOBILE_NAV.map((item) => (
+          <NavItem key={item.to} {...item} active={pathname.startsWith(item.to)} />
+        ))}
+      </ul>
+    </nav>
   );
 }
 
@@ -80,7 +160,7 @@ function NavItem({
 }: {
   to: string;
   label: string;
-  icon: typeof Home;
+  icon: LucideIcon;
   active: boolean;
 }) {
   return (
@@ -145,7 +225,7 @@ export function BrandBar({ centered = false }: { centered?: boolean }) {
   }
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between gap-3 bg-background/90 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-xl">
+    <header className="sticky top-0 z-30 flex items-center justify-between gap-3 bg-background/90 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-xl lg:hidden">
       <Link to="/home" aria-label="Nuru Faith">
         <span className="font-display text-[20px] leading-none tracking-[0.16em]">NURU</span>
       </Link>

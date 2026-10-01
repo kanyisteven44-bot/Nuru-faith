@@ -22,7 +22,7 @@ export function FeatureHeaderBar({ right }: { right?: ReactNode }) {
   });
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between gap-3 bg-background/90 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-xl">
+    <header className="sticky top-0 z-30 flex items-center justify-between gap-3 bg-background/90 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-xl lg:hidden">
       <Link to="/home" aria-label="Nuru Faith">
         <span className="font-display text-[20px] leading-none tracking-[0.16em]">NURU</span>
       </Link>

@@ -256,7 +256,7 @@ function ProfileScreen() {
                   setBio(profile.data?.bio ?? "");
                   setEditing((v) => !v);
                 }}
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border-strong bg-[linear-gradient(180deg,#212A26,#1A211E)] px-3 py-1.5 text-[12px] font-bold text-ink-2"
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border-strong bg-[linear-gradient(180deg,#143254,#0C2440)] px-3 py-1.5 text-[12px] font-bold text-ink-2"
               >
                 <Pencil className="h-3.5 w-3.5" strokeWidth={2.1} />
                 {editing ? "Cancel" : "Edit"}

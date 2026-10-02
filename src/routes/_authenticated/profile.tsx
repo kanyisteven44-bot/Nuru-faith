@@ -37,7 +37,6 @@ import { fetchAllHighlights, fetchSavedScriptures } from "@/services/series";
 import { AppShell, Avatar, ScreenHeader } from "@/components/nuru/AppShell";
 import { PeopleSheet, type PeopleKind } from "@/components/nuru/PeopleSheet";
 import { CardSkeleton, EmptyState, ProgressBar } from "@/components/nuru/Primitives";
-import coverArt from "@/assets/cross-sunrise.jpg";
 
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({

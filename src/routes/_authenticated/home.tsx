@@ -6,6 +6,7 @@ import {
   Bell,
   BookOpen,
   ChevronRight,
+  Clapperboard,
   HandHeart,
   Music2,
   Sparkles,
@@ -41,11 +42,12 @@ export const Route = createFileRoute("/_authenticated/home")({
  */
 const HERO_PHOTO = "asset:mountain-dawn";
 
-/** The four tiles the board puts under Quick Access. Every one is a real route. */
+/** The quick-access tiles the board puts under Quick Access. Every one is a real route. */
 const QUICK_ACCESS: { to: string; label: string; icon: LucideIcon }[] = [
   { to: "/bible", label: "Bible", icon: BookOpen },
   { to: "/prayer", label: "Pray", icon: HandHeart },
   { to: "/music", label: "Music", icon: Music2 },
+  { to: "/reels", label: "Reels", icon: Clapperboard },
   // Matches the sidebar's Mentorship glyph, and stays distinct from Pray.
   { to: "/mentors", label: "Mentors", icon: UserRoundCheck },
 ];
@@ -215,7 +217,7 @@ function HomeScreen() {
               <h2 className="px-1 pb-2.5 text-[11px] font-semibold tracking-[0.14em] text-ink-3 uppercase">
                 Quick access
               </h2>
-              <ul className="grid grid-cols-4 gap-2.5">
+              <ul className="grid grid-cols-5 gap-2">
                 {QUICK_ACCESS.map(({ to, label, icon: Icon }) => (
                   <li key={label}>
                     <Link

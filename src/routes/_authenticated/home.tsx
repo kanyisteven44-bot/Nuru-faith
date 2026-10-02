@@ -131,73 +131,79 @@ function HomeScreen() {
       <div className="px-5 pb-8 lg:px-0">
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:items-start lg:gap-6">
           <div className="grid gap-5">
-            {/* Hero */}
-            <section className="relative overflow-hidden rounded-3xl">
+            {/* Daily Scripture lives inside the landscape, with room for long passages. */}
+            <section
+              className="relative isolate overflow-hidden rounded-3xl"
+              aria-label="Today's verse"
+            >
               <CoverImage
                 src={resolveMedia(HERO_PHOTO)}
                 alt=""
-                className="h-[320px] w-full object-cover lg:h-[400px]"
+                className="absolute inset-0 h-full w-full object-cover"
               />
-              {/* Keeps the headline readable over any part of the photo. */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
-              <div className="absolute inset-x-0 bottom-0 p-6 lg:p-8">
-                <h1 className="font-display text-[38px] leading-[1.05] font-semibold text-white lg:text-[48px]">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-black/20" />
+              <div className="relative flex min-h-[420px] flex-col justify-end p-6 lg:min-h-[480px] lg:p-8">
+                <h1 className="mb-8 font-display text-[36px] leading-tight font-semibold text-white lg:text-[44px]">
                   A Brighter You.
                 </h1>
-                <p className="mt-2 max-w-sm text-[14.5px] leading-snug text-white/85">
-                  A few quiet minutes with Scripture, every day.
-                </p>
-                <Link
-                  to="/devotionals"
-                  className="nuru-soft-control mt-5 inline-flex min-h-12 items-center justify-center rounded-full bg-white px-6 text-[14.5px] font-semibold text-[#111827] transition-colors hover:bg-white/90 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black/40 focus-visible:outline-none"
-                >
-                  Explore Devotionals
-                </Link>
-              </div>
-            </section>
-
-            {/* Today's Verse */}
-            <section className="rounded-2xl border border-border bg-card p-5">
-              <div className="flex items-start justify-between gap-3">
-                <p className="text-[11px] font-semibold tracking-[0.14em] text-ink-3 uppercase">
-                  Today&apos;s verse
-                </p>
-                <span className="shrink-0 text-[12.5px] font-semibold text-ink-3">
-                  {verse.data?.translation ?? ""}
-                </span>
-              </div>
-              {verse.isLoading ? (
-                <div className="mt-3 space-y-2" aria-busy="true" aria-label="Loading today's verse">
-                  <div className="h-5 w-full animate-pulse rounded bg-surface-2" />
-                  <div className="h-5 w-4/5 animate-pulse rounded bg-surface-2" />
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h2 className="text-[11px] font-semibold tracking-[0.14em] text-white/85 uppercase">
+                    Today's verse
+                  </h2>
+                  <span className="text-[11px] text-white/75">{verse.data?.translation ?? ""}</span>
                 </div>
-              ) : (
-                <>
-                  {verseText && (
-                    <blockquote className="mt-2.5 font-display text-[20px] leading-relaxed text-foreground lg:text-[22px]">
+                {verse.isLoading ? (
+                  <div
+                    className="mt-4 space-y-2"
+                    aria-busy="true"
+                    aria-label="Loading today's verse"
+                  >
+                    <div className="h-5 w-full animate-pulse rounded bg-white/20" />
+                    <div className="h-5 w-4/5 animate-pulse rounded bg-white/20" />
+                  </div>
+                ) : verse.isError ? (
+                  <div className="mt-4 text-white" role="alert">
+                    <p className="text-sm">Today's verse could not load.</p>
+                    <button
+                      type="button"
+                      className="mt-2 min-h-11 rounded-full border border-white/50 px-4 text-sm font-semibold"
+                      onClick={() => void verse.refetch()}
+                    >
+                      Try again
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <blockquote className="mt-3 font-display text-[22px] leading-relaxed text-white lg:text-[27px]">
                       &ldquo;{verseText}&rdquo;
                     </blockquote>
-                  )}
-                  <p className="mt-2.5 text-[13px] font-semibold tracking-[0.08em] text-ink-3 uppercase">
-                    {reference}
-                  </p>
-                </>
-              )}
-              <div className="mt-4 flex flex-wrap gap-2">
+                    <p className="mt-3 text-[12px] font-semibold tracking-[0.08em] text-white/85 uppercase">
+                      {reference}
+                    </p>
+                  </>
+                )}
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Link
+                    to="/bible"
+                    className="nuru-soft-control nuru-soft-primary inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full bg-primary px-4 text-[14px] font-semibold whitespace-nowrap text-primary-foreground transition-colors hover:brightness-105 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+                  >
+                    <BookOpen className="h-4 w-4 shrink-0" strokeWidth={2} />
+                    Read Bible
+                  </Link>
+                  <Link
+                    to="/ai"
+                    search={{ contextType: "verse", contextLabel: reference }}
+                    className="nuru-soft-control inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full border border-border bg-surface px-4 text-[14px] font-semibold whitespace-nowrap text-foreground transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                  >
+                    <Sparkles className="h-4 w-4 shrink-0" strokeWidth={2} />
+                    Reflect
+                  </Link>
+                </div>
                 <Link
-                  to="/bible"
-                  className="nuru-soft-control nuru-soft-primary inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full bg-primary px-4 text-[14px] font-semibold whitespace-nowrap text-primary-foreground transition-colors hover:brightness-105 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+                  to="/devotionals"
+                  className="mt-4 inline-flex min-h-11 items-center gap-1 text-[13px] font-semibold text-white underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
                 >
-                  <BookOpen className="h-4 w-4 shrink-0" strokeWidth={2} />
-                  Read Bible
-                </Link>
-                <Link
-                  to="/ai"
-                  search={{ contextType: "verse", contextLabel: reference }}
-                  className="nuru-soft-control inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full border border-border bg-surface px-4 text-[14px] font-semibold whitespace-nowrap text-foreground transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                >
-                  <Sparkles className="h-4 w-4 shrink-0" strokeWidth={2} />
-                  Reflect
+                  Explore Devotionals <ChevronRight className="h-4 w-4" />
                 </Link>
               </div>
             </section>

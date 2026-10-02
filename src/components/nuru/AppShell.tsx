@@ -90,7 +90,7 @@ export function Sidebar({ pathname }: { pathname: string }) {
         {SIDEBAR_GROUPS.map((group) => (
           <div key={group.heading}>
             <p className="px-3 pb-1.5 text-[12px] font-semibold text-ink-3">{group.heading}</p>
-            <ul className="space-y-0.5">
+            <ul className="space-y-2">
               {group.items.map((item) => {
                 const active = pathname.startsWith(item.to);
                 return (
@@ -99,14 +99,15 @@ export function Sidebar({ pathname }: { pathname: string }) {
                       to={item.to}
                       aria-current={active ? "page" : undefined}
                       className={cn(
-                        "flex min-h-11 items-center gap-3 rounded-xl px-3 text-[14.5px] font-semibold transition-colors",
-                        active
-                          ? "bg-primary text-primary-foreground"
-                          : "text-ink-2 hover:bg-surface-2 hover:text-foreground",
+                        "nuru-soft-control flex min-h-11 items-center gap-3 rounded-2xl px-3 text-[14px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                        active ? "nuru-soft-primary" : "text-ink-2 hover:text-foreground",
                       )}
                     >
                       <item.icon className="h-[18px] w-[18px] shrink-0" strokeWidth={1.9} />
-                      {item.label}
+                      <span className="flex-1">{item.label}</span>
+                      {active && (
+                        <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-current" />
+                      )}
                     </Link>
                   </li>
                 );
@@ -141,9 +142,9 @@ export function MobileNav({ pathname }: { pathname: string }) {
   return (
     <nav
       aria-label="Main"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/95 backdrop-blur-xl lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] lg:hidden"
     >
-      <ul className="mx-auto grid max-w-xl grid-cols-5 px-1 pt-2 pb-[max(0.4rem,env(safe-area-inset-bottom))]">
+      <ul className="nuru-nav-dock mx-auto grid max-w-xl grid-cols-5 gap-1 rounded-[26px] border border-border-strong p-1.5 backdrop-blur-xl">
         {MOBILE_NAV.map((item) => (
           <NavItem key={item.to} {...item} active={pathname.startsWith(item.to)} />
         ))}
@@ -169,13 +170,13 @@ function NavItem({
         to={to}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "flex min-h-12 flex-col items-center justify-center gap-1 rounded-lg text-[10.5px] font-medium transition-colors",
-          "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-          active ? "text-primary" : "text-ink-3 hover:text-ink-2",
+          "nuru-soft-control flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-[19px] px-0.5 text-[10px] font-semibold",
+          "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+          active ? "nuru-soft-primary" : "text-ink-2 hover:text-foreground",
         )}
       >
-        <Icon className="h-5.5 w-5.5" strokeWidth={active ? 2.2 : 1.8} />
-        {label}
+        <Icon className="h-5 w-5" strokeWidth={active ? 2.4 : 1.8} />
+        <span className={active ? "font-bold" : undefined}>{label}</span>
       </Link>
     </li>
   );

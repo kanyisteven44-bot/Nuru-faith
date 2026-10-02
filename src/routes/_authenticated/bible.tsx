@@ -684,6 +684,11 @@ function Reader({
           <EmptyState
             title="Couldn't load that passage"
             description="Check your connection and try again."
+            action={
+              <button type="button" className="btn-nuru" onClick={() => void passage.refetch()}>
+                Try again
+              </button>
+            }
           />
         )}
         {passage.data && (

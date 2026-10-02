@@ -72,9 +72,23 @@ export async function fetchInterests(userId: string) {
 /* ---------- churches & groups ---------- */
 
 export const fetchChurches = async (search?: string) => {
-  let q = supabase.from("churches").select("*").order("verified", { ascending: false }).limit(30);
-  if (search) q = q.ilike("name", `%${search}%`);
-  return unwrap(await q);
+  const rows: import("@/integrations/supabase/types").Database["public"]["Tables"]["churches"]["Row"][] =
+    [];
+  for (let start = 0; ; start += 500) {
+    let q = supabase
+      .from("churches")
+      .select("*")
+      .order("region", { nullsFirst: false })
+      .order("city", { nullsFirst: false })
+      .order("denomination", { nullsFirst: false })
+      .order("name")
+      .order("id");
+    if (search) q = q.ilike("name", `%${search}%`);
+    const page = unwrap(await q.range(start, start + 499));
+    rows.push(...page);
+    if (page.length < 500) break;
+  }
+  return rows;
 };
 
 export async function fetchChurchBySlug(slug: string) {

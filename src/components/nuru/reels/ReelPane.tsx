@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Clapperboard, ExternalLink, Heart, Pause, Play, Volume2, VolumeX } from "lucide-react";
+import { CoverImage } from "@/components/nuru/CoverImage";
+import { videoArtwork } from "@/lib/mediaPlayback";
 import { cn } from "@/lib/utils";
 import { resolveMedia } from "@/lib/media";
 import { compactNumber } from "@/lib/format";
@@ -55,6 +57,7 @@ export function ReelPane(props: ReelPaneProps) {
   const viewLogged = useRef(false);
   const wasPlaying = useRef(false);
 
+  const [playerAttempt, setPlayerAttempt] = useState(0);
   const [paused, setPaused] = useState(false);
   const [showIcon, setShowIcon] = useState(false);
   const [burst, setBurst] = useState<{ x: number; y: number; key: number } | null>(null);
@@ -167,8 +170,8 @@ export function ReelPane(props: ReelPaneProps) {
         aria-label={`Reel by ${reel.creator_name}`}
       >
         {reel.poster_url ? (
-          <img
-            src={resolveMedia(reel.poster_url)}
+          <CoverImage
+            src={videoArtwork(reel.source_type, reel.external_id, resolveMedia(reel.poster_url))}
             alt=""
             width={720}
             height={1280}
@@ -204,6 +207,7 @@ export function ReelPane(props: ReelPaneProps) {
           />
         ) : isYouTubeEmbed && shouldLoad ? (
           <YouTubePlayer
+            key={`${reel.id}:${playerAttempt}`}
             videoId={reel.external_id!}
             title={reel.caption || reel.creator_name}
             autoplay
@@ -215,8 +219,8 @@ export function ReelPane(props: ReelPaneProps) {
             className="h-full rounded-none"
           />
         ) : reel.poster_url ? (
-          <img
-            src={resolveMedia(reel.poster_url)}
+          <CoverImage
+            src={videoArtwork(reel.source_type, reel.external_id, resolveMedia(reel.poster_url))}
             alt=""
             width={720}
             height={1280}
@@ -254,7 +258,7 @@ export function ReelPane(props: ReelPaneProps) {
       )}
 
       {(isYouTubeEmbed || isLinkOutOnly) && (
-        <div className="absolute left-3 top-14 z-10 flex items-center gap-1.5 rounded-full bg-black/40 py-1.5 pl-1.5 pr-3 text-[11px] font-medium text-white backdrop-blur-md">
+        <div className="absolute left-3 top-3 z-10 flex items-center gap-1.5 rounded-full bg-black/40 py-1.5 pl-1.5 pr-3 text-[11px] font-medium text-white backdrop-blur-md">
           <span className="rounded-full bg-white/15 px-2 py-0.5">
             {SOURCE_LABEL[reel.source_type as ImportedSource]}
           </span>
@@ -265,6 +269,16 @@ export function ReelPane(props: ReelPaneProps) {
           >
             Open original <ExternalLink className="h-3 w-3" />
           </button>
+          {isYouTubeEmbed && (
+            <button
+              type="button"
+              onClick={() => setPlayerAttempt((value) => value + 1)}
+              className="min-h-9 rounded-full px-2 underline underline-offset-2"
+              aria-label="Reload Reel player"
+            >
+              Retry
+            </button>
+          )}
         </div>
       )}
 
@@ -330,16 +344,16 @@ export function ReelPane(props: ReelPaneProps) {
           type="button"
           onClick={props.onToggleMuted}
           aria-label={muted ? "Unmute Reel" : "Mute Reel"}
-          className="absolute right-3 top-14 z-10 rounded-full bg-black/40 p-2 text-white backdrop-blur-md transition-transform active:scale-90"
+          className="absolute right-3 top-3 z-10 rounded-full bg-black/40 p-2 text-white backdrop-blur-md transition-transform active:scale-90"
         >
           {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
         </button>
       )}
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0">
-        {/* Actions sit on the left; the caption fills the remaining width on the right. */}
+        {/* Keep the action rail on the right and leave the video centre clear. */}
         <div className="pointer-events-auto flex items-end gap-3 px-3 pb-1">
-          <div className="pb-1">
+          <div className="order-2 shrink-0 pb-1">
             <ReelInteractiveActions
               reel={reel}
               near={near}

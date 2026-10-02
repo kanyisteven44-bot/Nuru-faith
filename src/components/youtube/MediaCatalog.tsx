@@ -5,7 +5,7 @@ import { fetchMediaCatalog, type MediaItem } from "@/services/media";
 import { CoverImage } from "@/components/nuru/CoverImage";
 import { CardSkeleton, EmptyState, PrimaryButton } from "@/components/nuru/Primitives";
 import { resolveMedia } from "@/lib/media";
-import { playableAudioUrl, youtubeVideoId } from "@/lib/mediaPlayback";
+import { playableAudioUrl, videoArtwork, youtubeVideoId } from "@/lib/mediaPlayback";
 import { duration } from "@/lib/format";
 import { YouTubePlayer } from "./YouTubePlayer";
 
@@ -88,7 +88,7 @@ export function MediaCatalog({
           <button
             key={item.id}
             type="button"
-            className="nuru-card flex min-h-24 items-center gap-3 p-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="group nuru-card flex min-h-24 items-center gap-4 p-3 text-left transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             onClick={() => {
               if (onPlay) onPlay(item);
               else setSelected(item);
@@ -96,9 +96,9 @@ export function MediaCatalog({
             aria-label={`Play ${item.title}`}
           >
             <CoverImage
-              src={resolveMedia(item.thumbnail_url)}
+              src={videoArtwork(item.source, item.external_id, resolveMedia(item.thumbnail_url))}
               alt=""
-              className="h-16 w-16 shrink-0 rounded-xl"
+              className="h-20 w-20 shrink-0 rounded-xl"
               width={96}
               height={96}
             />
@@ -107,11 +107,15 @@ export function MediaCatalog({
               <span className="block truncate text-xs text-muted-foreground">
                 {item.creator_name}
               </span>
-              <span className="text-xs text-muted-foreground">
-                {duration(item.duration_seconds)}
-              </span>
+              {(item.duration_seconds ?? 0) > 0 && (
+                <span className="text-xs text-muted-foreground">
+                  {duration(item.duration_seconds)}
+                </span>
+              )}
             </span>
-            <Play className="h-4 w-4 shrink-0 text-primary" />
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground">
+              <Play className="h-4 w-4 fill-current" />
+            </span>
           </button>
         ))}
       </div>
@@ -152,7 +156,7 @@ export function MediaPlayback({ item, onClose }: { item: MediaItem; onClose: () 
   const audio = playableAudioUrl(item.audio_url);
   return (
     <div
-      className="fixed inset-x-0 bottom-0 z-50 max-h-[85dvh] overflow-y-auto border-t border-border bg-surface p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-xl"
+      className="fixed inset-x-0 bottom-0 z-50 md:inset-x-auto md:bottom-5 md:right-5 md:w-[420px] md:rounded-3xl md:border max-h-[85dvh] overflow-y-auto border-t border-border bg-surface p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-xl"
       role="region"
       aria-label="Media player"
     >

@@ -4,6 +4,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { BadgeCheck, Music2, Play, Search, X } from "lucide-react";
 import { toast } from "sonner";
+import { videoArtwork } from "@/lib/mediaPlayback";
 import { resolveMedia } from "@/lib/media";
 import { duration } from "@/lib/format";
 import { useAuth } from "@/hooks/useAuth";
@@ -16,7 +17,6 @@ import {
   EmptyState,
   IconTile,
   PillTabs,
-  ScreenHero,
   SectionHeader,
 } from "@/components/nuru/Primitives";
 import { NURU_PHOTO_POOLS, useRotatingMedia } from "@/lib/rotatingMedia";
@@ -111,7 +111,30 @@ function MusicScreen() {
   return (
     <AppShell>
       <ScreenHeader title="Music & media" subtitle="Worship, teaching and sound for your week" />
-      <ScreenHero image={heroBg} />
+      <section
+        className="relative mx-4 mb-2 overflow-hidden rounded-3xl bg-slate-950 p-6 text-white sm:p-8"
+        aria-label="Worship collection"
+      >
+        <CoverImage
+          src={heroBg}
+          alt=""
+          className="absolute inset-0 h-full w-full opacity-45"
+          loading="eager"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/60 to-transparent" />
+        <div className="relative max-w-lg">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-200">
+            Sound for your soul
+          </p>
+          <h2 className="mt-3 font-display text-3xl leading-tight sm:text-4xl">
+            A little worship.
+            <br />A brighter day.
+          </h2>
+          <p className="mt-3 max-w-sm text-sm leading-relaxed text-white/80">
+            Find a song to lift your spirit, or a conversation to deepen your faith.
+          </p>
+        </div>
+      </section>
 
       <div className="space-y-3 px-4 py-3">
         <div className="relative">
@@ -211,7 +234,11 @@ function MusicScreen() {
                     >
                       <div className="relative overflow-hidden rounded-2xl border border-border bg-surface-2">
                         <CoverImage
-                          src={resolveMedia(song.thumbnail_url)}
+                          src={videoArtwork(
+                            song.source,
+                            song.external_id,
+                            resolveMedia(song.thumbnail_url),
+                          )}
                           alt=""
                           width={320}
                           height={320}
@@ -386,7 +413,7 @@ function MusicScreen() {
         <MediaPlayback item={selectedMedia} onClose={() => setSelectedMedia(null)} />
       )}
       {nowPlaying && (
-        <div className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-surface/98 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-xl">
+        <div className="fixed inset-x-0 bottom-0 z-50 md:inset-x-auto md:bottom-5 md:right-5 md:w-[420px] md:rounded-3xl md:border border-t border-border bg-surface/98 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-xl">
           <div className="mx-auto max-w-xl">
             <div className="flex items-start justify-between gap-3 pb-2">
               <p className="line-clamp-2 text-sm font-semibold">{nowPlaying.title}</p>

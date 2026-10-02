@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { Play, X } from "lucide-react";
 import { fetchMediaCatalog, type MediaItem } from "@/services/media";
@@ -19,6 +19,7 @@ export function MediaCatalog({
   onPlay?: (item: MediaItem) => void;
 }) {
   const [selected, setSelected] = useState<MediaItem | null>(null);
+  const nextPageMarker = useRef<HTMLDivElement>(null);
   const catalog = useInfiniteQuery({
     queryKey: ["media-catalog", mediaType, query],
     initialPageParam: 0,
@@ -26,6 +27,29 @@ export function MediaCatalog({
     getNextPageParam: (page, pages) => (page.hasMore ? pages.length : undefined),
   });
   const items = catalog.data?.pages.flatMap((page) => page.items) ?? [];
+  const { hasNextPage, isFetchingNextPage, isFetchNextPageError, fetchNextPage } = catalog;
+  useEffect(() => {
+    const marker = nextPageMarker.current;
+    if (
+      !marker ||
+      !hasNextPage ||
+      isFetchingNextPage ||
+      isFetchNextPageError ||
+      typeof IntersectionObserver === "undefined"
+    )
+      return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          observer.disconnect();
+          void fetchNextPage();
+        }
+      },
+      { rootMargin: "300px 0px" },
+    );
+    observer.observe(marker);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, isFetchNextPageError, fetchNextPage]);
   return (
     <section
       className="space-y-3 px-4 py-4"
@@ -36,7 +60,7 @@ export function MediaCatalog({
           {mediaType === "music" ? "Song library" : "Podcast episodes"}
         </h2>
         {catalog.data && (
-          <span className="text-xs text-muted-foreground">
+          <span className="text-xs text-muted-foreground" role="status" aria-live="polite">
             {items.length.toLocaleString()} of{" "}
             {(catalog.data.pages[0]?.total ?? 0).toLocaleString()} {query ? "matches" : "available"}
           </span>
@@ -92,12 +116,23 @@ export function MediaCatalog({
         ))}
       </div>
       {catalog.hasNextPage && (
-        <PrimaryButton
-          onClick={() => void catalog.fetchNextPage()}
-          disabled={catalog.isFetchingNextPage}
-        >
-          {catalog.isFetchingNextPage ? "Loading…" : "Load more"}
-        </PrimaryButton>
+        <div ref={nextPageMarker} className="space-y-2">
+          <p className="text-xs text-muted-foreground">
+            Keep scrolling to see more {mediaType === "music" ? "songs" : "episodes"}.
+          </p>
+          <PrimaryButton
+            onClick={() => void catalog.fetchNextPage()}
+            disabled={catalog.isFetchingNextPage}
+          >
+            {catalog.isFetchingNextPage ? "Loading…" : "Load more"}
+          </PrimaryButton>
+        </div>
+      )}
+      {catalog.data && !catalog.hasNextPage && items.length > 0 && (
+        <p className="text-xs text-muted-foreground" role="status">
+          All {items.length.toLocaleString()} {query ? "matching" : "available"}{" "}
+          {mediaType === "music" ? "songs" : "episodes"} are displayed.
+        </p>
       )}
       {catalog.isFetchNextPageError && (
         <p role="alert" className="text-sm">

@@ -764,6 +764,10 @@ a {
 }
 
 /* Soft raised controls from the approved music-player reference. */
+.nuru-nav-dock {
+  background: color-mix(in srgb, var(--surface) 95%, transparent);
+  box-shadow: 0 -2px 18px var(--control-highlight), 0 8px 24px var(--control-shadow);
+}
 .nuru-soft-control,
 .nuru-tactile {
   background-color: var(--control-surface);

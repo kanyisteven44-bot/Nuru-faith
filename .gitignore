@@ -46,3 +46,6 @@ lint-baseline.json
 
 # Design preview screenshots
 .preview/
+
+# Local resumable media-import checkpoint
+.media-import-state.json

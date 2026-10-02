@@ -1,3 +1,4 @@
+import { CoverImage } from "@/components/nuru/CoverImage";
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -122,7 +123,7 @@ function DevotionalsScreen() {
                     className="relative block overflow-hidden rounded-2xl border border-border"
                   >
                     {d.cover_url ? (
-                      <img
+                      <CoverImage
                         src={resolveMedia(d.cover_url)}
                         alt=""
                         loading="lazy"

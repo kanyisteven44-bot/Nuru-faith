@@ -1,4 +1,4 @@
-const CACHE_NAME = "nuru-static-v1";
+const CACHE_NAME = "nuru-static-v4";
 const PRECACHE = [
   "/offline.html",
   "/manifest.webmanifest",

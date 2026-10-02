@@ -1,3 +1,4 @@
+import { CoverImage } from "@/components/nuru/CoverImage";
 import type { ComponentType, ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
@@ -6,7 +7,7 @@ import { cn } from "@/lib/utils";
 export function ScreenHero({ image, alt = "" }: { image: string; alt?: string }) {
   return (
     <div className="relative h-28 w-full overflow-hidden" aria-hidden={alt === ""}>
-      <img src={image} alt={alt} loading="eager" className="h-full w-full object-cover" />
+      <CoverImage src={image} alt={alt} loading="eager" className="h-full w-full object-cover" />
       <div className="absolute inset-0 bg-gradient-to-b from-background/25 via-background/60 to-background" />
     </div>
   );

@@ -1,3 +1,4 @@
+import { CoverImage } from "@/components/nuru/CoverImage";
 import { useMemo } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -113,7 +114,7 @@ function SeriesCard({ series, percent }: { series: SeriesRow; percent: number })
       className="relative block overflow-hidden rounded-2xl border border-border"
     >
       {series.cover_image ? (
-        <img
+        <CoverImage
           src={resolveMedia(series.cover_image)}
           alt=""
           loading="lazy"

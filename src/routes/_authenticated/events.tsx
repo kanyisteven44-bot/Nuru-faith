@@ -1,3 +1,4 @@
+import { CoverImage } from "@/components/nuru/CoverImage";
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -95,9 +96,10 @@ function EventsScreen() {
 
         {featured && (
           <article className="nuru-card relative overflow-hidden">
-            <div className="relative h-44">
-              <img
+            <div className="relative h-44 lg:h-72 xl:h-80">
+              <CoverImage
                 src={featured.cover_url ? resolveMedia(featured.cover_url) : heroBg}
+                loading="eager"
                 alt=""
                 className="h-full w-full object-cover"
               />
@@ -144,7 +146,7 @@ function EventsScreen() {
             const isGoing = going.has(e.id);
             return (
               <article key={e.id} className="nuru-card flex items-center gap-3 p-3">
-                <img
+                <CoverImage
                   src={e.cover_url ? resolveMedia(e.cover_url) : heroBg}
                   alt=""
                   className="h-14 w-14 shrink-0 rounded-xl object-cover"

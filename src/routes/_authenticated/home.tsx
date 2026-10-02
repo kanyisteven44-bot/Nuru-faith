@@ -1,3 +1,4 @@
+import { CoverImage } from "@/components/nuru/CoverImage";
 import { useEffect } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -132,7 +133,7 @@ function HomeScreen() {
           <div className="grid gap-5">
             {/* Hero */}
             <section className="relative overflow-hidden rounded-3xl">
-              <img
+              <CoverImage
                 src={resolveMedia(HERO_PHOTO)}
                 alt=""
                 className="h-[320px] w-full object-cover lg:h-[400px]"
@@ -247,7 +248,7 @@ function HomeScreen() {
                 >
                   <span className="h-[72px] w-[72px] shrink-0 overflow-hidden rounded-xl bg-surface-2">
                     {resume.cover_image && (
-                      <img
+                      <CoverImage
                         src={resolveMedia(resume.cover_image)}
                         alt=""
                         loading="lazy"
@@ -273,7 +274,7 @@ function HomeScreen() {
                 >
                   <span className="h-[72px] w-[72px] shrink-0 overflow-hidden rounded-xl bg-surface-2">
                     {devotional.cover_url && (
-                      <img
+                      <CoverImage
                         src={resolveMedia(devotional.cover_url)}
                         alt=""
                         loading="lazy"

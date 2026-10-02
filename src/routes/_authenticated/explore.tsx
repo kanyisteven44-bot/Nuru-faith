@@ -33,7 +33,7 @@ export const Route = createFileRoute("/_authenticated/explore")({
 });
 function ExploreScreen() {
   const { userId } = useAuth();
-  const search = Route.useSearch();
+  const search: z.infer<typeof schema> = Route.useSearch();
   const navigate = Route.useNavigate();
   const [input, setInput] = useState(search.q);
   const [recent, setRecent] = useState<string[]>([]);

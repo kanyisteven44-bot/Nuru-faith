@@ -111,7 +111,8 @@ Deno.serve(async (req) => {
     const { error: preferenceError } = await admin
       .from("notification_preferences")
       .upsert({ user_id: user.id }, { onConflict: "user_id" });
-    if (preferenceError) return json({ error: "Could not initialize notification preferences" }, 500);
+    if (preferenceError)
+      return json({ error: "Could not initialize notification preferences" }, 500);
 
     return json({ ok: true });
   }

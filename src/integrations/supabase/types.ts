@@ -375,29 +375,29 @@ export type Database = {
             referencedRelation: "courses";
             referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       faith_course_lesson_progress: {
         Row: {
-          user_id: string
-          course_slug: string
-          lesson_index: number
-          completed_at: string
-        }
+          user_id: string;
+          course_slug: string;
+          lesson_index: number;
+          completed_at: string;
+        };
         Insert: {
-          user_id: string
-          course_slug: string
-          lesson_index: number
-          completed_at?: string
-        }
+          user_id: string;
+          course_slug: string;
+          lesson_index: number;
+          completed_at?: string;
+        };
         Update: {
-          user_id?: string
-          course_slug?: string
-          lesson_index?: number
-          completed_at?: string
-        }
-        Relationships: []
-      }
+          user_id?: string;
+          course_slug?: string;
+          lesson_index?: number;
+          completed_at?: string;
+        };
+        Relationships: [];
+      };
 
       courses: {
         Row: {

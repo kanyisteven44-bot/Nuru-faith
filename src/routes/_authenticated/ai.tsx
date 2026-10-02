@@ -1,3 +1,5 @@
+import { CoverImage } from "@/components/nuru/CoverImage";
+import { resolveMedia } from "@/lib/media";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -42,7 +44,6 @@ import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
 import { NuruAiMark } from "@/components/nuru/NuruAiMark";
 import { AiMarkdown } from "@/components/nuru/AiMarkdown";
 import { CardSkeleton, IconTile } from "@/components/nuru/Primitives";
-import heroBg from "@/assets/mountain-dawn.jpg";
 
 type Search = {
   contextType?: string | undefined;
@@ -253,8 +254,8 @@ function AiScreen() {
     <AppShell>
       {messages.length === 0 && (
         <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10">
-          <img
-            src={heroBg}
+          <CoverImage
+            src={resolveMedia("asset:mountain-dawn")}
             alt=""
             loading="eager"
             className="h-full w-full object-cover opacity-40"

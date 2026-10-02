@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, ChevronRight, type LucideIcon } from "lucide-react";
@@ -322,7 +322,8 @@ export function Avatar({
   size?: keyof typeof AVATAR_SIZES;
   className?: string;
 }) {
-  const src = url || generatedAvatar(seed || name, name);
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const src = url && url !== failedUrl ? url : generatedAvatar(seed || name, name);
   return (
     <span
       className={cn(
@@ -331,7 +332,12 @@ export function Avatar({
         className,
       )}
     >
-      <img src={src} alt="" className="h-full w-full object-cover" />
+      <img
+        src={src}
+        alt=""
+        className="h-full w-full object-cover"
+        onError={() => setFailedUrl(url)}
+      />
     </span>
   );
 }

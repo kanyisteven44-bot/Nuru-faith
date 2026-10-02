@@ -52,6 +52,38 @@ export async function fetchMediaItems(options?: {
   return (data ?? []) as MediaItem[];
 }
 
+/** Page the stored catalogue rather than loading 10,000 rows into the browser. */
+export async function fetchMediaCatalog(options: {
+  mediaType: "music" | "podcast";
+  query?: string;
+  page: number;
+}) {
+  const pageSize = 24;
+  let query = supabase
+    .from("media_items")
+    .select(ITEM_COLUMNS, { count: "exact" })
+    .eq("is_approved", true)
+    .eq("media_type", options.mediaType)
+    .or("source.eq.youtube,audio_url.not.is.null");
+  // Escape PostgREST grammar and LIKE wildcards before constructing an OR filter.
+  const term = options.query
+    ?.trim()
+    .replace(/[^\p{L}\p{N}\s-]/gu, " ")
+    .trim();
+  if (term) query = query.or(`title.ilike.%${term}%,creator_name.ilike.%${term}%`);
+  const start = Math.max(0, options.page) * pageSize;
+  const { data, error, count } = await query
+    .order("published_at", { ascending: false, nullsFirst: false })
+    .order("id")
+    .range(start, start + pageSize - 1);
+  if (error) throw error;
+  return {
+    items: (data ?? []) as MediaItem[],
+    total: count ?? 0,
+    hasMore: start + pageSize < (count ?? 0),
+  };
+}
+
 export async function fetchMediaPlaylists(options?: {
   kind?: string;
   churchId?: string;

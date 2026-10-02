@@ -248,18 +248,20 @@ export function Avatar({
   seed?: string | null | undefined;
   size?: "sm" | "md" | "lg" | undefined;
 }) {
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const dim =
     size === "sm"
       ? "h-7 w-7 text-[10px]"
       : size === "lg"
         ? "h-16 w-16 text-lg"
         : "h-10 w-10 text-xs";
-  if (src) {
+  if (src && src !== failedSrc) {
     return (
       <img
         src={resolveMedia(src)}
         alt=""
         loading="lazy"
+        onError={() => setFailedSrc(src)}
         className={cn("shrink-0 rounded-full object-cover ring-1 ring-border-strong", dim)}
       />
     );

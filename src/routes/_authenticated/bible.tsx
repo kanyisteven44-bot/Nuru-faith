@@ -1,3 +1,6 @@
+import { CoverImage } from "@/components/nuru/CoverImage";
+import { BibleReadAloud } from "@/components/nuru/BibleReadAloud";
+import { resolveMedia } from "@/lib/media";
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -41,9 +44,8 @@ import {
 import { useShareSheet } from "@/hooks/useShareSheet";
 import { BOOK_ART, bookAbbr } from "@/lib/bookArt";
 import { AppShell, BrandBar } from "@/components/nuru/AppShell";
-import { CardSkeleton, EmptyState, PillTabs } from "@/components/nuru/Primitives";
+import { CardSkeleton, EmptyState, PillTabs, PrimaryButton } from "@/components/nuru/Primitives";
 import { Sheet } from "@/components/nuru/Sheet";
-import { NURU_PHOTO_POOLS, useRotatingMedia } from "@/lib/rotatingMedia";
 
 const ALL_BOOKS: BibleBook[] = [...OLD_TESTAMENT, ...NEW_TESTAMENT];
 
@@ -358,19 +360,19 @@ function ReadingPlans() {
               {...c.to}
               className="relative block overflow-hidden rounded-2xl border border-border"
             >
-              {c.cover ? (
-                <img src={c.cover} alt="" className="h-[104px] w-full object-cover" />
-              ) : (
-                <span className="block h-[104px] w-full bg-[linear-gradient(120deg,#143254,#0f2a49)]" />
-              )}
+              <CoverImage
+                src={resolveMedia(c.cover)}
+                alt=""
+                className="h-[104px] w-full object-cover"
+              />
               <span className="absolute inset-0 bg-[linear-gradient(to_right,rgba(17,23,21,0.92),rgba(17,23,21,0.55)_65%,rgba(17,23,21,0.25))]" />
-              <span className="absolute inset-0 flex items-center gap-3 px-4">
+              <span className="absolute inset-0 flex items-center gap-3 px-4 text-white">
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-display text-[21px] leading-tight">
                     {c.title}
                   </span>
                   {c.caption && (
-                    <span className="mt-0.5 block truncate text-[12px] text-ink-2">
+                    <span className="mt-0.5 block truncate text-[12px] text-white/85">
                       {c.caption}
                     </span>
                   )}
@@ -409,8 +411,8 @@ function Testament({ books, onOpen }: { books: BibleBook[]; onOpen: (b: BibleBoo
               >
                 <span className="relative h-14 w-20 shrink-0 overflow-hidden rounded-xl">
                   {art ? (
-                    <img
-                      src={art.art}
+                    <CoverImage
+                      src={resolveMedia(art.art)}
                       alt=""
                       loading="lazy"
                       className="h-full w-full object-cover"
@@ -683,10 +685,12 @@ function Reader({
           <EmptyState
             title="Couldn't load that passage"
             description="Check your connection and try again."
+            action={<PrimaryButton onClick={() => void passage.refetch()}>Try again</PrimaryButton>}
           />
         )}
         {passage.data && (
           <div className="nuru-card p-5">
+            <BibleReadAloud key={reference} verses={passage.data.verses} />
             <ol className="space-y-3.5">
               {passage.data.verses.map((v) => {
                 const activeColor = highlightByVerse.get(v.verse);

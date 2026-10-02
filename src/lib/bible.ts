@@ -50,6 +50,7 @@ const cache = new Map<string, Passage>();
 async function load(ref: string, translation: string): Promise<Passage> {
   const res = await fetch(
     `https://bible-api.com/${encodeURIComponent(ref)}?translation=${encodeURIComponent(translation)}`,
+    { signal: AbortSignal.timeout(15000) },
   );
   if (!res.ok) throw new Error(`Couldn't load ${ref}`);
   const json = (await res.json()) as ApiResponse;

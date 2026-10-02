@@ -1,3 +1,4 @@
+import { CoverImage } from "@/components/nuru/CoverImage";
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -221,7 +222,7 @@ function SavedTab() {
                   >
                     <span className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-surface-2">
                       {s.cover_image && (
-                        <img
+                        <CoverImage
                           src={resolveMedia(s.cover_image)}
                           alt=""
                           loading="lazy"
@@ -299,7 +300,7 @@ function HistoryTab() {
         >
           <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-surface-2 text-ink-3">
             {row.thumbnail_url ? (
-              <img
+              <CoverImage
                 src={resolveMedia(row.thumbnail_url)}
                 alt=""
                 loading="lazy"

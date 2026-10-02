@@ -10,7 +10,7 @@ import { fetchProfile, fetchDevotionals } from "@/services/content";
 import { readSavedDevotionalIds, toggleSavedDevotional } from "@/lib/devotionalBookmarks";
 import { AppShell } from "@/components/nuru/AppShell";
 import { FeatureHeaderBar } from "@/components/nuru/FeatureHeader";
-import { CardSkeleton, EmptyState } from "@/components/nuru/Primitives";
+import { CardSkeleton, EmptyState, ScreenHero } from "@/components/nuru/Primitives";
 
 export const Route = createFileRoute("/_authenticated/devotionals")({
   head: () => ({
@@ -70,6 +70,7 @@ function DevotionalsScreen() {
   return (
     <AppShell>
       <FeatureHeaderBar />
+      <ScreenHero image={resolveMedia("asset:topic-faith")} />
 
       <div className="px-4 pb-6">
         <h1 className="font-display text-[40px] leading-none">Devotionals</h1>

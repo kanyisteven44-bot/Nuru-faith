@@ -29,7 +29,12 @@ type ProfilePatch = Partial<{
 }>;
 
 export async function updateProfile(userId: string, patch: ProfilePatch) {
-  const { error } = await supabase.from("profiles").update(patch).eq("id", userId);
+  const { error } = await supabase
+    .from("profiles")
+    .update(patch)
+    .eq("id", userId)
+    .select("id")
+    .single();
   if (error) throw new Error(error.message);
 }
 

@@ -39,7 +39,7 @@ export async function fetchChapterPassage(
   if (cached) return cached;
 
   const url = `https://bible-api.com/${encodeURIComponent(ref)}?translation=${encodeURIComponent(translation)}&single_chapter_book_matching=indifferent`;
-  const response = await fetch(url);
+  const response = await fetch(url, { signal: AbortSignal.timeout(15000) });
   if (!response.ok) throw new Error(`Couldn't load ${ref}`);
 
   const json = (await response.json()) as BibleApiResponse;

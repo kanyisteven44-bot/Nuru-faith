@@ -1,7 +1,8 @@
+import { CoverImage } from "@/components/nuru/CoverImage";
+import { resolveMedia } from "@/lib/media";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowRight, HandHeart, Sprout, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
-import forest from "@/assets/quiet-night.jpg";
 
 export const Route = createFileRoute("/welcome")({
   ssr: false,
@@ -28,14 +29,14 @@ function Welcome() {
 
   return (
     <div className="relative min-h-dvh overflow-hidden bg-background">
-      <img
-        src={forest}
+      <CoverImage
+        src={resolveMedia("asset:quiet-night")}
         alt=""
         width={1024}
         height={640}
-        className="absolute inset-x-0 bottom-0 h-[55%] w-full object-cover opacity-60"
+        className="absolute inset-x-0 bottom-0 h-[55%] w-full object-cover opacity-100"
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-background via-background/85 to-background/55" />
+      <div className="absolute inset-0 bg-gradient-to-b from-background via-background/45 to-background/25" />
 
       <div className="relative mx-auto flex min-h-dvh max-w-xl flex-col px-7 pb-10 pt-[max(1.5rem,env(safe-area-inset-top))]">
         <div className="flex justify-end">

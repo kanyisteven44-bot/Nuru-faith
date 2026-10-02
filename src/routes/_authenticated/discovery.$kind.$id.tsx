@@ -1,4 +1,5 @@
-﻿import { createFileRoute, Link } from "@tanstack/react-router";
+import { CoverImage } from "@/components/nuru/CoverImage";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BadgeCheck, Church, UserPlus } from "lucide-react";
 import { toast } from "sonner";
@@ -61,7 +62,7 @@ function ContentDetail({ kindParam, id }: { kindParam: string; id: string }) {
           <article className="nuru-card space-y-4 overflow-hidden p-4">
             <h1 className="font-display text-xl font-semibold break-words">{item.title}</h1>
             {item.image && (
-              <img
+              <CoverImage
                 src={resolveMedia(item.image)}
                 alt=""
                 className="max-h-64 w-full rounded-xl object-cover"

@@ -1,5 +1,6 @@
 import { CoverImage } from "@/components/nuru/CoverImage";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { profilePhotoExtension } from "@/lib/profilePhoto";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -70,6 +71,8 @@ function ProfileScreen() {
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const photoInput = useRef<HTMLInputElement>(null);
   const [tab, setTab] = useState<GridTab>("Posts");
   const [people, setPeople] = useState<PeopleKind | null>(null);
 
@@ -146,9 +149,13 @@ function ProfileScreen() {
 
   async function save() {
     if (!userId) return;
+    if (!name.trim()) {
+      toast.error("Enter your name before saving.");
+      return;
+    }
     setSaving(true);
     try {
-      await updateProfile(userId, { full_name: name, bio });
+      await updateProfile(userId, { full_name: name.trim(), bio: bio.trim() });
       await qc.invalidateQueries({ queryKey: ["profile", userId] });
       setEditing(false);
       toast.success("Profile updated");
@@ -156,6 +163,35 @@ function ProfileScreen() {
       toast.error(e instanceof Error ? e.message : "Couldn't save that");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function uploadPhoto(file: File) {
+    if (!userId || uploading) return;
+    setUploading(true);
+    let path: string | null = null;
+    let uploaded = false;
+    let saved = false;
+    try {
+      const extension = profilePhotoExtension(file);
+      path = `${userId}/${crypto.randomUUID()}.${extension}`;
+      const { error } = await supabase.storage.from("avatars").upload(path, file, {
+        contentType: file.type,
+        upsert: false,
+      });
+      if (error) throw error;
+      uploaded = true;
+      const { data } = supabase.storage.from("avatars").getPublicUrl(path);
+      await updateProfile(userId, { avatar_url: data.publicUrl });
+      saved = true;
+      await qc.invalidateQueries({ queryKey: ["profile", userId] });
+      toast.success("Profile photo updated");
+    } catch (e) {
+      if (uploaded && !saved && path) await supabase.storage.from("avatars").remove([path]);
+      toast.error(e instanceof Error ? e.message : "Couldn't upload your photo");
+    } finally {
+      setUploading(false);
+      if (photoInput.current) photoInput.current.value = "";
     }
   }
 
@@ -179,6 +215,22 @@ function ProfileScreen() {
         <div className="px-4 pt-4">
           <CardSkeleton count={3} height="h-20" />
         </div>
+      ) : profile.isError || !profile.data ? (
+        <div className="px-4 pt-4">
+          <EmptyState
+            title="Your profile could not load"
+            description="Try again to load your profile."
+            action={
+              <button
+                type="button"
+                className="nuru-soft-control rounded-full px-4 py-2"
+                onClick={() => void profile.refetch()}
+              >
+                Try again
+              </button>
+            }
+          />
+        </div>
       ) : (
         <div className="px-4 pt-1">
           {/* Identity — the board leads with the avatar and the serif name. */}
@@ -193,16 +245,28 @@ function ProfileScreen() {
               />
               <button
                 type="button"
-                onClick={() => {
-                  setName(profile.data?.full_name ?? "");
-                  setBio(profile.data?.bio ?? "");
-                  setEditing(true);
-                }}
+                onClick={() => photoInput.current?.click()}
+                disabled={uploading}
                 aria-label="Change your photo"
                 className="nuru-disc absolute right-0 bottom-0 h-8 w-8 ring-4 ring-[var(--background)]"
               >
-                <Camera className="h-4 w-4" strokeWidth={1.9} />
+                {uploading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Camera className="h-4 w-4" strokeWidth={1.9} />
+                )}
               </button>
+              <input
+                ref={photoInput}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                aria-label="Choose profile photo"
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) void uploadPhoto(file);
+                }}
+              />
             </span>
 
             <div className="min-w-0 flex-1 pt-1">
@@ -337,7 +401,7 @@ function ProfileScreen() {
             <span className="min-w-0 flex-1">
               <span className="block text-[13px] font-bold">Events</span>
               <span className="block text-[11px] text-ink-3">
-                {(myEvents.data ?? []).length} booked
+                {myEvents.data ? `${myEvents.data.length} booked` : "— booked"}
               </span>
             </span>
             <ChevronRight className="h-4 w-4 shrink-0 text-ink-3" strokeWidth={2} />
@@ -363,7 +427,22 @@ function ProfileScreen() {
 
           <section className="pt-3">
             {active.isLoading && <CardSkeleton count={2} height="h-28" />}
-            {!active.isLoading && items.length === 0 && (
+            {active.isError && (
+              <EmptyState
+                title={`Couldn't load your ${tab.toLowerCase()}`}
+                description="Check your connection and try again."
+                action={
+                  <button
+                    type="button"
+                    className="nuru-soft-control rounded-full px-4 py-2"
+                    onClick={() => void active.refetch()}
+                  >
+                    Try again
+                  </button>
+                }
+              />
+            )}
+            {!active.isLoading && !active.isError && items.length === 0 && (
               <EmptyState
                 title={`No ${tab.toLowerCase()} yet`}
                 description={

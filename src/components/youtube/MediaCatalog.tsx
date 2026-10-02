@@ -146,6 +146,7 @@ export function MediaCatalog({
 
 export function MediaPlayback({ item, onClose }: { item: MediaItem; onClose: () => void }) {
   const [audioFailed, setAudioFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   useEffect(() => setAudioFailed(false), [item.id]);
   const video = item.source === "youtube" ? youtubeVideoId(item.external_id) : null;
   const audio = playableAudioUrl(item.audio_url);
@@ -172,7 +173,18 @@ export function MediaPlayback({ item, onClose }: { item: MediaItem; onClose: () 
         </div>
         {video ? (
           <>
-            <YouTubePlayer key={video} videoId={video} title={item.title} autoplay muted={false} />
+            <YouTubePlayer
+              key={`${video}:${attempt}`}
+              videoId={video}
+              title={item.title}
+              muted={false}
+            />
+            <p className="text-xs text-muted-foreground">
+              Tap Play in the video to start listening with sound.
+            </p>
+            <PrimaryButton onClick={() => setAttempt((value) => value + 1)}>
+              Reload player
+            </PrimaryButton>
             <a
               href={`https://www.youtube.com/watch?v=${video}`}
               target="_blank"
@@ -185,7 +197,7 @@ export function MediaPlayback({ item, onClose }: { item: MediaItem; onClose: () 
         ) : audio ? (
           <>
             <audio
-              key={item.id}
+              key={`${item.id}:${attempt}`}
               src={audio}
               controls
               autoPlay
@@ -197,9 +209,25 @@ export function MediaPlayback({ item, onClose }: { item: MediaItem; onClose: () 
               Streams directly from the publisher. Use the player controls to play, pause and seek.
             </p>
             {audioFailed && (
-              <p role="alert" className="text-sm">
-                The publisher’s audio could not load. Try again later.
-              </p>
+              <div role="alert" className="space-y-2 text-sm">
+                <p>The publisher’s audio could not load.</p>
+                <PrimaryButton
+                  onClick={() => {
+                    setAudioFailed(false);
+                    setAttempt((value) => value + 1);
+                  }}
+                >
+                  Retry playback
+                </PrimaryButton>
+                <a
+                  href={audio}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block text-primary"
+                >
+                  Open publisher audio
+                </a>
+              </div>
             )}
           </>
         ) : (

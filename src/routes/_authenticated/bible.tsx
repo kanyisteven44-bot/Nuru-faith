@@ -1,4 +1,5 @@
 import { CoverImage } from "@/components/nuru/CoverImage";
+import { BibleReadAloud } from "@/components/nuru/BibleReadAloud";
 import { resolveMedia } from "@/lib/media";
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -43,7 +44,7 @@ import {
 import { useShareSheet } from "@/hooks/useShareSheet";
 import { BOOK_ART, bookAbbr } from "@/lib/bookArt";
 import { AppShell, BrandBar } from "@/components/nuru/AppShell";
-import { CardSkeleton, EmptyState, PillTabs } from "@/components/nuru/Primitives";
+import { CardSkeleton, EmptyState, PillTabs, PrimaryButton } from "@/components/nuru/Primitives";
 import { Sheet } from "@/components/nuru/Sheet";
 
 const ALL_BOOKS: BibleBook[] = [...OLD_TESTAMENT, ...NEW_TESTAMENT];
@@ -684,15 +685,12 @@ function Reader({
           <EmptyState
             title="Couldn't load that passage"
             description="Check your connection and try again."
-            action={
-              <button type="button" className="btn-nuru" onClick={() => void passage.refetch()}>
-                Try again
-              </button>
-            }
+            action={<PrimaryButton onClick={() => void passage.refetch()}>Try again</PrimaryButton>}
           />
         )}
         {passage.data && (
           <div className="nuru-card p-5">
+            <BibleReadAloud key={reference} verses={passage.data.verses} />
             <ol className="space-y-3.5">
               {passage.data.verses.map((v) => {
                 const activeColor = highlightByVerse.get(v.verse);

@@ -1,6 +1,7 @@
-const CACHE_NAME = "nuru-static-v4";
+const CACHE_NAME = "nuru-static-v5-real-photos";
 const PRECACHE = [
   "/offline.html",
+  "/photos/mountain-lake.jpg",
   "/manifest.webmanifest",
   "/favicon.png",
   "/icons/icon-192.png",

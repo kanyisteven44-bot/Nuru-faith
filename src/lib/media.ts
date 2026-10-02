@@ -1,56 +1,38 @@
-import mountainDawn from "@/assets/mountain-dawn.jpg";
-import walkPurpose from "@/assets/walk-purpose.jpg";
-import friendsDusk from "@/assets/friends-dusk.jpg";
-import churchInterior from "@/assets/church-interior.jpg";
-import crossSunrise from "@/assets/cross-sunrise.jpg";
-import worshipNight from "@/assets/worship-night.jpg";
-import bibleCandle from "@/assets/bible-candle.jpg";
-import quietNight from "@/assets/quiet-night.jpg";
-import topicPrayer from "@/assets/topic-prayer.jpg";
-import topicPersonalGrowth from "@/assets/topic-personal-growth.jpg";
-import topicMentalHealth from "@/assets/topic-mental-health.jpg";
-import topicRelationships from "@/assets/topic-relationships.jpg";
-import topicLifeSkills from "@/assets/topic-life-skills.jpg";
-import topicFaith from "@/assets/topic-faith.jpg";
-import topicDiscipleship from "@/assets/topic-discipleship.jpg";
-import topicHopeHealing from "@/assets/topic-hope-healing.jpg";
-import topicFaithPurpose from "@/assets/topic-faith-purpose.jpg";
-import topicFriendsRelationships from "@/assets/topic-friends-relationships.jpg";
-
 /**
- * Demo/library imagery is stored in the database as a stable token
+ * Curated photographic imagery is stored in the database as a stable token
  * ("asset:cross-sunrise") so seeded content never depends on an external URL.
+ * Photo credits and source pages are recorded in /photos/credits.json.
  * Uploaded media is stored as a normal http(s) URL and passes straight through.
  */
 const LIBRARY: Record<string, string> = {
-  "mountain-dawn": mountainDawn,
-  "walk-purpose": walkPurpose,
-  "friends-dusk": friendsDusk,
-  "church-interior": churchInterior,
-  "cross-sunrise": crossSunrise,
-  "worship-night": worshipNight,
-  "bible-candle": bibleCandle,
-  "quiet-night": quietNight,
-  "topic-prayer": topicPrayer,
-  "topic-personal-growth": topicPersonalGrowth,
-  "topic-mental-health": topicMentalHealth,
-  "topic-relationships": topicRelationships,
-  "topic-life-skills": topicLifeSkills,
-  "topic-faith": topicFaith,
-  "topic-discipleship": topicDiscipleship,
-  "topic-hope-healing": topicHopeHealing,
-  "topic-faith-purpose": topicFaithPurpose,
-  "topic-friends-relationships": topicFriendsRelationships,
+  "mountain-dawn": "/photos/mountain-lake.jpg",
+  "walk-purpose": "/photos/forest-walk.jpg",
+  "friends-dusk": "/photos/friends-outdoors.jpg",
+  "church-interior": "/photos/church-sunlight.jpg",
+  "cross-sunrise": "/photos/alpine-reflections.jpg",
+  "worship-night": "/photos/worship-gathering.jpg",
+  "bible-candle": "/photos/open-bible.jpg",
+  "quiet-night": "/photos/alpine-reflections.jpg",
+  "topic-prayer": "/photos/prayer-community.jpg",
+  "topic-personal-growth": "/photos/forest-walk.jpg",
+  "topic-mental-health": "/photos/alpine-reflections.jpg",
+  "topic-relationships": "/photos/friends-outdoors.jpg",
+  "topic-life-skills": "/photos/friends-outdoors.jpg",
+  "topic-faith": "/photos/reading-scripture.jpg",
+  "topic-discipleship": "/photos/reading-scripture.jpg",
+  "topic-hope-healing": "/photos/mountain-lake.jpg",
+  "topic-faith-purpose": "/photos/forest-walk.jpg",
+  "topic-friends-relationships": "/photos/prayer-community.jpg",
   // Aliases for the 1,200-row library seed, which still references these
   // older keys — point them at real photos instead of a broken/fallback image.
-  "purpose-path": topicFaithPurpose,
-  "discipleship-book": topicDiscipleship,
-  "life-skills-growth": topicLifeSkills,
-  "relationships-bond": topicFriendsRelationships,
-  "calm-anchor": topicHopeHealing,
+  "purpose-path": "/photos/forest-walk.jpg",
+  "discipleship-book": "/photos/reading-scripture.jpg",
+  "life-skills-growth": "/photos/friends-outdoors.jpg",
+  "relationships-bond": "/photos/prayer-community.jpg",
+  "calm-anchor": "/photos/mountain-lake.jpg",
 };
 
-export const FALLBACK_IMAGE = mountainDawn;
+export const FALLBACK_IMAGE = "/photos/mountain-lake.jpg";
 
 export function resolveMedia(value?: string | null): string {
   if (!value) return FALLBACK_IMAGE;

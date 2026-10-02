@@ -1,8 +1,8 @@
+import { resolveMedia } from "@/lib/media";
 import { useEffect } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { NuruMark } from "@/components/nuru/Logo";
-import hero from "@/assets/mountain-dawn.jpg";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -52,7 +52,7 @@ function Splash() {
   return (
     <div className="relative min-h-dvh overflow-hidden bg-background">
       <img
-        src={hero}
+        src={resolveMedia("asset:mountain-dawn")}
         alt=""
         width={1024}
         height={640}

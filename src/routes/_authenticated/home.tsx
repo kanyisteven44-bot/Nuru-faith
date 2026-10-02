@@ -149,7 +149,7 @@ function HomeScreen() {
                 </p>
                 <Link
                   to="/devotionals"
-                  className="mt-5 inline-flex min-h-12 items-center justify-center rounded-full bg-white px-6 text-[14.5px] font-semibold text-[#111827] transition-colors hover:bg-white/90 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black/40 focus-visible:outline-none"
+                  className="nuru-soft-control mt-5 inline-flex min-h-12 items-center justify-center rounded-full bg-white px-6 text-[14.5px] font-semibold text-[#111827] transition-colors hover:bg-white/90 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black/40 focus-visible:outline-none"
                 >
                   Explore Devotionals
                 </Link>
@@ -186,7 +186,7 @@ function HomeScreen() {
               <div className="mt-4 flex flex-wrap gap-2">
                 <Link
                   to="/bible"
-                  className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full bg-primary px-4 text-[14px] font-semibold whitespace-nowrap text-primary-foreground transition-colors hover:brightness-105 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+                  className="nuru-soft-control nuru-soft-primary inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full bg-primary px-4 text-[14px] font-semibold whitespace-nowrap text-primary-foreground transition-colors hover:brightness-105 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
                 >
                   <BookOpen className="h-4 w-4 shrink-0" strokeWidth={2} />
                   Read Bible
@@ -194,7 +194,7 @@ function HomeScreen() {
                 <Link
                   to="/ai"
                   search={{ contextType: "verse", contextLabel: reference }}
-                  className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full border border-border bg-surface px-4 text-[14px] font-semibold whitespace-nowrap text-foreground transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                  className="nuru-soft-control inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full border border-border bg-surface px-4 text-[14px] font-semibold whitespace-nowrap text-foreground transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                 >
                   <Sparkles className="h-4 w-4 shrink-0" strokeWidth={2} />
                   Reflect
@@ -214,9 +214,9 @@ function HomeScreen() {
                   <li key={label}>
                     <Link
                       to={to}
-                      className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-card px-1 py-3.5 transition-colors hover:border-border-strong hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                      className="nuru-soft-control flex flex-col items-center gap-2 rounded-2xl border border-border bg-card px-1 py-3.5 transition-colors hover:border-border-strong hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                     >
-                      <span className="flex h-11 w-11 items-center justify-center rounded-full bg-accent text-primary">
+                      <span className="nuru-soft-inset flex h-11 w-11 items-center justify-center rounded-full bg-accent text-primary">
                         <Icon className="h-5 w-5" strokeWidth={1.9} />
                       </span>
                       <span className="text-[12.5px] font-semibold">{label}</span>

@@ -48,16 +48,22 @@ export function SectionHeader({
   );
 }
 
-/** Segmented filter row — bright blue active pill, quiet outlined rest. */
+/**
+ * Segmented filter row. The selected pill fills with the soft blue accent;
+ * the rest stay quiet outlines, as the boards draw them.
+ */
 export function PillTabs<T extends string>({
   tabs,
   value,
   onChange,
+  labels,
   className,
 }: {
   tabs: readonly T[];
   value: T;
   onChange: (t: T) => void;
+  /** Optional display text per tab, when the value isn't what you want shown. */
+  labels?: Partial<Record<T, string>>;
   className?: string;
 }) {
   return (
@@ -74,16 +80,15 @@ export function PillTabs<T extends string>({
             role="tab"
             aria-selected={active}
             onClick={() => onChange(tab)}
-            // Design system v2 chip: a rounded capsule with a quiet bevel;
-            // the selected one fills with forest and lifts.
             className={cn(
-              "h-9 shrink-0 rounded-full border px-3.5 text-[13px] font-semibold transition-all",
+              "h-9 shrink-0 rounded-full border px-4 text-[13px] font-semibold transition-colors",
+              "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
               active
-                ? "nuru-raise border-leaf/30 bg-[linear-gradient(180deg,var(--forest-hi),var(--primary))] text-foreground"
-                : "border-border-strong bg-[linear-gradient(180deg,#143254,#0C2440)] text-ink-2 shadow-[inset_0_1px_0_rgb(255_255_255/5%)] hover:text-foreground",
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border text-ink-2 hover:bg-surface-2 hover:text-foreground",
             )}
           >
-            {tab}
+            {labels?.[tab] ?? tab}
           </button>
         );
       })}
@@ -101,7 +106,8 @@ export function GradientButton({
     <button
       {...props}
       className={cn(
-        "inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-leaf/30 bg-primary px-5 text-sm font-semibold text-primary-foreground nuru-glow-sm transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-50 disabled:shadow-none",
+        "inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:brightness-105 active:scale-[0.99] disabled:opacity-50",
+        "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none",
         className,
       )}
     >
@@ -121,7 +127,8 @@ export function GhostButton({
     <button
       {...props}
       className={cn(
-        "inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-border-strong bg-surface-2 px-5 text-sm font-medium text-secondary-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50",
+        "inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-border bg-surface px-5 text-sm font-semibold text-foreground transition-colors hover:bg-surface-2 disabled:opacity-50",
+        "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
         className,
       )}
     >
@@ -179,11 +186,11 @@ export function ProgressBar({
         aria-valuemax={100}
       >
         <div
-          className="h-full rounded-full bg-gradient-to-r from-cyan to-primary transition-[width] duration-500"
+          className="h-full rounded-full bg-primary transition-[width] duration-500"
           style={{ width: `${pct}%` }}
         />
       </div>
-      {label && <p className="mt-1 text-[11px] text-muted-foreground">{label}</p>}
+      {label && <p className="mt-1 text-[11.5px] text-ink-3">{label}</p>}
     </div>
   );
 }
@@ -234,19 +241,22 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="nuru-card flex flex-col items-center gap-2 px-6 py-10 text-center">
-      <p className="font-display text-base font-semibold">{title}</p>
-      <p className="max-w-xs text-sm text-muted-foreground">{description}</p>
-      {action && <div className="pt-1">{action}</div>}
+    <div className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-card px-6 py-10 text-center">
+      <p className="font-display text-[17px] font-semibold">{title}</p>
+      <p className="max-w-xs text-[13.5px] leading-snug text-ink-2">{description}</p>
+      {action && <div className="pt-1.5">{action}</div>}
     </div>
   );
 }
 
 export function ErrorState({ message, onRetry }: { message?: string; onRetry?: () => void }) {
   return (
-    <div className="nuru-card flex flex-col items-center gap-3 px-6 py-10 text-center" role="alert">
-      <p className="font-display text-base font-semibold">Something didn't load</p>
-      <p className="max-w-xs text-sm text-muted-foreground">
+    <div
+      className="flex flex-col items-center gap-3 rounded-2xl border border-border bg-card px-6 py-10 text-center"
+      role="alert"
+    >
+      <p className="font-display text-[17px] font-semibold">Something didn&apos;t load</p>
+      <p className="max-w-xs text-[13.5px] leading-snug text-ink-2">
         {message ?? "Check your connection and try again."}
       </p>
       {onRetry && <GhostButton onClick={onRetry}>Try again</GhostButton>}

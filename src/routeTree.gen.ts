@@ -28,11 +28,13 @@ import { Route as AuthenticatedGroupsRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedGrowRouteImport } from './routes/_authenticated/grow'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
 import { Route as AuthenticatedHubRouteImport } from './routes/_authenticated/hub'
+import { Route as AuthenticatedLibraryRouteImport } from './routes/_authenticated/library'
 import { Route as AuthenticatedMessagesRouteImport } from './routes/_authenticated/messages'
 import { Route as AuthenticatedMusicRouteImport } from './routes/_authenticated/music'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedPodcastsRouteImport } from './routes/_authenticated/podcasts'
+import { Route as AuthenticatedPrayerRouteImport } from './routes/_authenticated/prayer'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedReelsRouteImport } from './routes/_authenticated/reels'
 import { Route as AuthenticatedServeRouteImport } from './routes/_authenticated/serve'
@@ -141,6 +143,11 @@ const AuthenticatedHubRoute = AuthenticatedHubRouteImport.update({
   path: '/hub',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedLibraryRoute = AuthenticatedLibraryRouteImport.update({
+  id: '/library',
+  path: '/library',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedMessagesRoute = AuthenticatedMessagesRouteImport.update({
   id: '/messages',
   path: '/messages',
@@ -165,6 +172,11 @@ const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
 const AuthenticatedPodcastsRoute = AuthenticatedPodcastsRouteImport.update({
   id: '/podcasts',
   path: '/podcasts',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPrayerRoute = AuthenticatedPrayerRouteImport.update({
+  id: '/prayer',
+  path: '/prayer',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
@@ -254,11 +266,13 @@ export interface FileRoutesByFullPath {
   '/grow': typeof AuthenticatedGrowRoute
   '/home': typeof AuthenticatedHomeRoute
   '/hub': typeof AuthenticatedHubRoute
+  '/library': typeof AuthenticatedLibraryRoute
   '/messages': typeof AuthenticatedMessagesRoute
   '/music': typeof AuthenticatedMusicRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/podcasts': typeof AuthenticatedPodcastsRoute
+  '/prayer': typeof AuthenticatedPrayerRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/reels': typeof AuthenticatedReelsRoute
   '/serve': typeof AuthenticatedServeRoute
@@ -291,11 +305,13 @@ export interface FileRoutesByTo {
   '/grow': typeof AuthenticatedGrowRoute
   '/home': typeof AuthenticatedHomeRoute
   '/hub': typeof AuthenticatedHubRoute
+  '/library': typeof AuthenticatedLibraryRoute
   '/messages': typeof AuthenticatedMessagesRoute
   '/music': typeof AuthenticatedMusicRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/podcasts': typeof AuthenticatedPodcastsRoute
+  '/prayer': typeof AuthenticatedPrayerRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/reels': typeof AuthenticatedReelsRoute
   '/serve': typeof AuthenticatedServeRoute
@@ -330,11 +346,13 @@ export interface FileRoutesById {
   '/_authenticated/grow': typeof AuthenticatedGrowRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/hub': typeof AuthenticatedHubRoute
+  '/_authenticated/library': typeof AuthenticatedLibraryRoute
   '/_authenticated/messages': typeof AuthenticatedMessagesRoute
   '/_authenticated/music': typeof AuthenticatedMusicRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/podcasts': typeof AuthenticatedPodcastsRoute
+  '/_authenticated/prayer': typeof AuthenticatedPrayerRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/reels': typeof AuthenticatedReelsRoute
   '/_authenticated/serve': typeof AuthenticatedServeRoute
@@ -369,11 +387,13 @@ export interface FileRouteTypes {
     | '/grow'
     | '/home'
     | '/hub'
+    | '/library'
     | '/messages'
     | '/music'
     | '/notifications'
     | '/onboarding'
     | '/podcasts'
+    | '/prayer'
     | '/profile'
     | '/reels'
     | '/serve'
@@ -406,11 +426,13 @@ export interface FileRouteTypes {
     | '/grow'
     | '/home'
     | '/hub'
+    | '/library'
     | '/messages'
     | '/music'
     | '/notifications'
     | '/onboarding'
     | '/podcasts'
+    | '/prayer'
     | '/profile'
     | '/reels'
     | '/serve'
@@ -444,11 +466,13 @@ export interface FileRouteTypes {
     | '/_authenticated/grow'
     | '/_authenticated/home'
     | '/_authenticated/hub'
+    | '/_authenticated/library'
     | '/_authenticated/messages'
     | '/_authenticated/music'
     | '/_authenticated/notifications'
     | '/_authenticated/onboarding'
     | '/_authenticated/podcasts'
+    | '/_authenticated/prayer'
     | '/_authenticated/profile'
     | '/_authenticated/reels'
     | '/_authenticated/serve'
@@ -607,6 +631,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedHubRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/library': {
+      id: '/_authenticated/library'
+      path: '/library'
+      fullPath: '/library'
+      preLoaderRoute: typeof AuthenticatedLibraryRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/messages': {
       id: '/_authenticated/messages'
       path: '/messages'
@@ -640,6 +671,13 @@ declare module '@tanstack/react-router' {
       path: '/podcasts'
       fullPath: '/podcasts'
       preLoaderRoute: typeof AuthenticatedPodcastsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/prayer': {
+      id: '/_authenticated/prayer'
+      path: '/prayer'
+      fullPath: '/prayer'
+      preLoaderRoute: typeof AuthenticatedPrayerRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/profile': {
@@ -743,11 +781,13 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedGrowRoute: typeof AuthenticatedGrowRoute
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedHubRoute: typeof AuthenticatedHubRoute
+  AuthenticatedLibraryRoute: typeof AuthenticatedLibraryRoute
   AuthenticatedMessagesRoute: typeof AuthenticatedMessagesRoute
   AuthenticatedMusicRoute: typeof AuthenticatedMusicRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedPodcastsRoute: typeof AuthenticatedPodcastsRoute
+  AuthenticatedPrayerRoute: typeof AuthenticatedPrayerRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedReelsRoute: typeof AuthenticatedReelsRoute
   AuthenticatedServeRoute: typeof AuthenticatedServeRoute
@@ -776,11 +816,13 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedGrowRoute: AuthenticatedGrowRoute,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedHubRoute: AuthenticatedHubRoute,
+  AuthenticatedLibraryRoute: AuthenticatedLibraryRoute,
   AuthenticatedMessagesRoute: AuthenticatedMessagesRoute,
   AuthenticatedMusicRoute: AuthenticatedMusicRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedPodcastsRoute: AuthenticatedPodcastsRoute,
+  AuthenticatedPrayerRoute: AuthenticatedPrayerRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedReelsRoute: AuthenticatedReelsRoute,
   AuthenticatedServeRoute: AuthenticatedServeRoute,

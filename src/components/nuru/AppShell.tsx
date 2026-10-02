@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { fetchProfile } from "@/services/content";
 import { generatedAvatar } from "@/lib/avatar";
 import { recordNuruActivity } from "@/services/pilot";
-import { NuruLockup, NuruMark } from "./Logo";
+import { NuruArch, NuruLockup, NuruMark } from "./Logo";
 import { MOBILE_NAV, SIDEBAR_GROUPS } from "./nav";
 
 /**
@@ -169,22 +169,56 @@ function NavItem({
         to={to}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "flex min-h-12 flex-col items-center justify-center gap-1.5 text-[10px] font-semibold transition-colors",
-          active ? "text-foreground" : "text-ink-3 hover:text-ink-2",
+          "flex min-h-12 flex-col items-center justify-center gap-1 rounded-lg text-[10.5px] font-medium transition-colors",
+          "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+          active ? "text-primary" : "text-ink-3 hover:text-ink-2",
         )}
       >
-        {/* The selected tab is marked by a raised forest pill, not a glow. */}
-        <span
-          className={cn(
-            "flex h-7 w-11 items-center justify-center rounded-full transition-colors",
-            active && "nuru-raise bg-[linear-gradient(180deg,var(--forest-hi),var(--primary))]",
-          )}
-        >
-          <Icon className="h-5 w-5" strokeWidth={active ? 2.1 : 1.75} />
-        </span>
+        <Icon className="h-5.5 w-5.5" strokeWidth={active ? 2.2 : 1.8} />
         {label}
       </Link>
     </li>
+  );
+}
+
+/**
+ * The header the designs put on nearly every screen: an optional back
+ * chevron, and the arch over the wordmark, centred.
+ */
+export function BoardHeader({ back = false, right }: { back?: boolean; right?: ReactNode }) {
+  const navigate = useNavigate();
+  return (
+    <header className="relative flex min-h-12 items-center justify-center px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 lg:justify-end lg:px-0 lg:pt-0">
+      {back && (
+        <button
+          type="button"
+          onClick={() => void navigate({ to: ".." })}
+          aria-label="Go back"
+          className="absolute left-2 flex h-10 w-10 items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none lg:left-0"
+        >
+          <ArrowLeft className="h-5 w-5" strokeWidth={2} />
+        </button>
+      )}
+      {/* The desktop rail already carries the mark, so the centred lockup
+          would be the brand twice on one screen. */}
+      <Link
+        to="/home"
+        aria-label="Nuru Faith"
+        className="flex flex-col items-center gap-1 lg:hidden"
+      >
+        <span className="block h-4 w-7">
+          <NuruArch />
+        </span>
+        <span className="font-display text-[11.5px] leading-none tracking-[0.2em] text-foreground">
+          NURU FAITH
+        </span>
+      </Link>
+      {right && (
+        <div className="absolute right-3 flex items-center gap-1 lg:static lg:right-auto">
+          {right}
+        </div>
+      )}
+    </header>
   );
 }
 

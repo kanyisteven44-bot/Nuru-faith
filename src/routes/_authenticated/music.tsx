@@ -540,6 +540,7 @@ function NuruAudioSection({
               </span>
               <button
                 aria-label={isPlaying ? `Pause ${t.title}` : `Play ${t.title}`}
+                aria-pressed={isPlaying}
                 onClick={() => {
                   if (!t.audio_url) {
                     toast("This track isn't licensed for streaming yet");
@@ -548,9 +549,9 @@ function NuruAudioSection({
                   setPlaying(isPlaying ? null : t.id);
                 }}
                 className={cn(
-                  "nuru-tactile flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border-strong bg-surface-2 transition-colors",
+                  "nuru-soft-control flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border-strong bg-surface-2 transition-colors",
                   isPlaying
-                    ? "border-primary bg-primary/15 text-leaf"
+                    ? "nuru-soft-primary border-primary bg-primary text-primary-foreground"
                     : "text-secondary-foreground",
                 )}
               >

@@ -48,6 +48,7 @@ const QUICK_ACCESS: { to: string; label: string; icon: LucideIcon }[] = [
   { to: "/prayer", label: "Pray", icon: HandHeart },
   { to: "/music", label: "Music", icon: Music2 },
   { to: "/reels", label: "Reels", icon: Clapperboard },
+  { to: "/ai", label: "Nuru AI", icon: Sparkles },
   // Matches the sidebar's Mentorship glyph, and stays distinct from Pray.
   { to: "/mentors", label: "Mentors", icon: UserRoundCheck },
 ];
@@ -217,7 +218,7 @@ function HomeScreen() {
               <h2 className="px-1 pb-2.5 text-[11px] font-semibold tracking-[0.14em] text-ink-3 uppercase">
                 Quick access
               </h2>
-              <ul className="grid grid-cols-5 gap-2">
+              <ul className="grid grid-cols-3 gap-2.5">
                 {QUICK_ACCESS.map(({ to, label, icon: Icon }) => (
                   <li key={label}>
                     <Link

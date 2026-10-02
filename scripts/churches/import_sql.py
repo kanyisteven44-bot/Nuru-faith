@@ -9,10 +9,6 @@ from urllib.parse import urlsplit
 
 data = json.load(open(sys.argv[1]))
 start, count = map(int, sys.argv[2:4])
-denominations = {'anglican': 'Anglican', 'catholic': 'Catholic', 'roman_catholic': 'Catholic',
-    'presbyterian': 'Presbyterian', 'baptist': 'Baptist', 'pentecostal': 'Pentecostal',
-    'methodist': 'Methodist', 'lutheran': 'Lutheran', 'seventh_day_adventist': 'Seventh-day Adventist',
-    'seventh-day_adventist': 'Seventh-day Adventist', 'nondenominational': 'Non-denominational'}
 def literal(value):
     return 'NULL' if value is None else "'"+str(value).replace("'", "''")+"'"
 values = []
@@ -23,11 +19,12 @@ for row in data['churches'][start:start+count]:
             website = None
     except ValueError:
         website = None
-    description = 'Public map listing; not a verified Nuru Faith church partner. Map data © OpenStreetMap contributors (ODbL 1.0). Source: '+row['source_url']
+    description = 'Denomination not confirmed. Public map listing; not a verified Nuru Faith church partner. Map data © OpenStreetMap contributors (ODbL 1.0). Source: '+row['source_url']
     if not row['county']:
         description += ' County not confirmed.'
-    raw_denom = row['denomination']
-    denomination = denominations.get(raw_denom, raw_denom.replace('_', ' ').title() if raw_denom else None)
+    # Source tags contradict some explicit church names. Keep them in the
+    # attributed dataset for review; do not assert them as app denominations.
+    denomination = None
     values.append('('+','.join(map(literal,[row['name'], 'ke-osm-'+row['source_id'].replace('/', '-'),
         denomination, 'Kenya', row['county'], row['city'], description, website]))+',false)')
 if not values:

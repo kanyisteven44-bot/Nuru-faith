@@ -1,3 +1,4 @@
+import { generatedAvatar } from "@/lib/avatar";
 import { CoverImage } from "@/components/nuru/CoverImage";
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -240,6 +241,7 @@ function MusicScreen() {
                             resolveMedia(song.thumbnail_url),
                           )}
                           alt=""
+                          fallbackSrc={generatedAvatar(song.title, song.id)}
                           width={320}
                           height={320}
                           loading="lazy"

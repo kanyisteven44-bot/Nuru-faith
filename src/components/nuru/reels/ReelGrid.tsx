@@ -1,3 +1,4 @@
+import { generatedAvatar } from "@/lib/avatar";
 import { CoverImage } from "@/components/nuru/CoverImage";
 import { videoArtwork } from "@/lib/mediaPlayback";
 import { Play } from "lucide-react";
@@ -21,6 +22,7 @@ export function ReelGrid({ items, onOpen }: { items: Reel[]; onOpen: (index: num
             <CoverImage
               src={videoArtwork(reel.source_type, reel.external_id, resolveMedia(reel.poster_url))}
               alt=""
+              fallbackSrc={generatedAvatar(reel.title || reel.creator_name, reel.id)}
               loading="lazy"
               className="absolute inset-0 h-full w-full object-cover"
             />

@@ -1,3 +1,4 @@
+import { generatedAvatar } from "@/lib/avatar";
 import { useEffect, useRef, useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { Play, X } from "lucide-react";
@@ -97,6 +98,7 @@ export function MediaCatalog({
           >
             <CoverImage
               src={videoArtwork(item.source, item.external_id, resolveMedia(item.thumbnail_url))}
+              fallbackSrc={generatedAvatar(item.title, item.id)}
               alt=""
               className="h-20 w-20 shrink-0 rounded-xl"
               width={96}

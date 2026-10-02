@@ -121,7 +121,6 @@ export async function deleteExternalReelComment(userId: string, commentId: strin
   if (error) throw new Error(error.message);
 }
 
-
 export async function reportExternalReel(input: {
   userId: string;
   externalReelId: string;
@@ -144,11 +143,12 @@ export async function reportExternalReel(input: {
   if (error && error.code !== "23505") throw new Error(error.message);
 }
 
-
 export async function ensureExternalReelLike(userId: string, externalReelId: string) {
-  const { error } = await supabase.from("external_reel_likes").upsert(
-    { user_id: userId, external_reel_id: externalReelId },
-    { onConflict: "external_reel_id,user_id", ignoreDuplicates: true },
-  );
+  const { error } = await supabase
+    .from("external_reel_likes")
+    .upsert(
+      { user_id: userId, external_reel_id: externalReelId },
+      { onConflict: "external_reel_id,user_id", ignoreDuplicates: true },
+    );
   if (error) throw new Error(error.message);
 }

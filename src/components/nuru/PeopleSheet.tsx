@@ -62,7 +62,7 @@ export function PeopleSheet({
       onClose={onClose}
       title={
         <div className="flex items-center gap-2">
-          <Users className="h-4 w-4 text-cyan" strokeWidth={1.8} />
+          <Users className="h-4 w-4 text-leaf" strokeWidth={1.8} />
           <p className="font-display text-[15px] font-bold">{copy.label}</p>
           {people.isSuccess && (
             <span className="text-[13px] text-muted-foreground">{rows.length}</span>

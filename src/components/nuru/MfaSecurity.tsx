@@ -68,7 +68,7 @@ export function MfaChallenge({
   return (
     <div className="nuru-card p-5">
       <div className="flex items-start gap-3">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-cyan">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-leaf">
           <ShieldCheck className="h-5 w-5" />
         </span>
         <div>
@@ -81,7 +81,7 @@ export function MfaChallenge({
 
       {loading ? (
         <div className="mt-5 flex min-h-12 items-center justify-center">
-          <Loader2 className="h-5 w-5 animate-spin text-cyan" />
+          <Loader2 className="h-5 w-5 animate-spin text-leaf" />
         </div>
       ) : factors.length === 0 ? (
         <p className="mt-5 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
@@ -227,16 +227,17 @@ export function MfaSecurityPanel({
   return (
     <section className="nuru-card space-y-4 p-4">
       <div className="flex items-start gap-3">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-cyan">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-leaf">
           <KeyRound className="h-5 w-5" />
         </span>
         <div className="min-w-0 flex-1">
           <h2 className="text-sm font-semibold">Authenticator app (TOTP)</h2>
           <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-            Protect your account with Google Authenticator, Microsoft Authenticator, Authy, 1Password, or another TOTP app.
+            Protect your account with Google Authenticator, Microsoft Authenticator, Authy,
+            1Password, or another TOTP app.
           </p>
           {required && (
-            <p className="mt-2 text-xs font-medium text-amber-200">
+            <p className="mt-2 text-xs font-medium text-sand">
               MFA is required for Nuru administrative accounts.
             </p>
           )}
@@ -245,18 +246,21 @@ export function MfaSecurityPanel({
 
       {loading ? (
         <div className="flex min-h-12 items-center justify-center">
-          <Loader2 className="h-5 w-5 animate-spin text-cyan" />
+          <Loader2 className="h-5 w-5 animate-spin text-leaf" />
         </div>
       ) : (
         <>
           {verified.map((factor, index) => (
-            <div key={factor.id} className="flex items-center gap-3 rounded-xl border border-border bg-surface-2 p-3">
-              <Smartphone className="h-4 w-4 text-cyan" />
+            <div
+              key={factor.id}
+              className="flex items-center gap-3 rounded-xl border border-border bg-surface-2 p-3"
+            >
+              <Smartphone className="h-4 w-4 text-leaf" />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-xs font-semibold">
                   {factor.friendly_name || `Authenticator ${index + 1}`}
                 </p>
-                <p className="text-[10px] text-emerald-300">Verified</p>
+                <p className="text-[10px] text-leaf">Verified</p>
               </div>
               {!required || verified.length > 1 ? (
                 <button
@@ -282,7 +286,7 @@ export function MfaSecurityPanel({
               />
               <div>
                 <p className="text-[11px] text-muted-foreground">Manual setup key</p>
-                <code className="mt-1 block break-all rounded-lg bg-background p-2 text-[11px] text-cyan">
+                <code className="mt-1 block break-all rounded-lg bg-background p-2 text-[11px] text-leaf">
                   {enrollment.secret}
                 </code>
               </div>
@@ -310,7 +314,7 @@ export function MfaSecurityPanel({
               type="button"
               disabled={busy}
               onClick={() => void beginEnrollment()}
-              className="min-h-11 w-full rounded-xl border border-primary/35 bg-primary/10 px-4 text-sm font-semibold text-cyan disabled:opacity-50"
+              className="min-h-11 w-full rounded-xl border border-primary/35 bg-primary/10 px-4 text-sm font-semibold text-leaf disabled:opacity-50"
             >
               {verified.length === 0 ? "Set up authenticator" : "Add backup authenticator"}
             </button>
@@ -318,7 +322,8 @@ export function MfaSecurityPanel({
 
           {verified.length > 0 && (
             <p className="text-[11px] leading-relaxed text-muted-foreground">
-              Supabase does not issue recovery codes. Add a second authenticator on a separate device or securely store a backup factor.
+              Supabase does not issue recovery codes. Add a second authenticator on a separate
+              device or securely store a backup factor.
             </p>
           )}
         </>

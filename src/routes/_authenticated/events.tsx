@@ -116,12 +116,12 @@ function EventsScreen() {
                 </p>
               )}
               <p className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                <CalendarDays className="h-3.5 w-3.5 text-cyan" />
+                <CalendarDays className="h-3.5 w-3.5 text-leaf" />
                 {eventDate(featured.starts_at)}
               </p>
               {featured.location && (
                 <p className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                  <MapPin className="h-3.5 w-3.5 text-cyan" />
+                  <MapPin className="h-3.5 w-3.5 text-leaf" />
                   {featured.location}
                 </p>
               )}

@@ -28,7 +28,7 @@ function GrowScreen() {
           <img src={hero} alt="" className="absolute inset-0 h-full w-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-r from-background via-background/78 to-background/20" />
           <div className="relative flex h-full max-w-[80%] flex-col justify-end p-4">
-            <p className="text-[10px] font-bold tracking-[0.15em] text-cyan uppercase">
+            <p className="text-[10px] font-bold tracking-[0.15em] text-leaf uppercase">
               Grow in Scripture
             </p>
             <h1 className="mt-1 font-display text-2xl font-bold text-white">
@@ -37,11 +37,8 @@ function GrowScreen() {
           </div>
         </section>
 
-        <Link
-          to="/devotionals"
-          className="nuru-card flex items-center gap-4 p-4 active:opacity-90"
-        >
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 to-green-600 text-white shadow-lg shadow-black/25">
+        <Link to="/devotionals" className="nuru-card flex items-center gap-4 p-4 active:opacity-90">
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl nuru-disc">
             <Sunrise className="h-6 w-6" />
           </span>
           <span className="min-w-0 flex-1">
@@ -56,11 +53,8 @@ function GrowScreen() {
           <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
         </Link>
 
-        <Link
-          to="/series"
-          className="nuru-card flex items-center gap-4 p-4 active:opacity-90"
-        >
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-400 to-amber-600 text-white shadow-lg shadow-black/25">
+        <Link to="/series" className="nuru-card flex items-center gap-4 p-4 active:opacity-90">
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl nuru-disc nuru-disc-sand">
             <GraduationCap className="h-6 w-6" />
           </span>
           <span className="min-w-0 flex-1">
@@ -80,16 +74,17 @@ function GrowScreen() {
           className="relative overflow-hidden rounded-2xl border border-primary/30 bg-primary/10 p-4 active:opacity-90"
         >
           <div className="flex items-start gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-primary/30 bg-primary/10 text-cyan">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-primary/30 bg-primary/10 text-leaf">
               <Sparkles className="h-5 w-5" />
             </span>
             <span className="min-w-0 flex-1">
               <span className="block text-sm font-semibold">Need structured learning?</span>
               <span className="mt-1 block text-[12px] leading-relaxed text-muted-foreground">
-                Faith Courses turns topics like baptism, prayer and discipleship into lesson-by-lesson learning.
+                Faith Courses turns topics like baptism, prayer and discipleship into
+                lesson-by-lesson learning.
               </span>
             </span>
-            <BookOpen className="h-4 w-4 shrink-0 text-cyan" />
+            <BookOpen className="h-4 w-4 shrink-0 text-leaf" />
           </div>
         </Link>
       </div>

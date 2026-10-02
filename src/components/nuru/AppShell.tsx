@@ -1,74 +1,20 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import {
-  ArrowLeft,
-  Bell,
-  BookOpen,
-  Calendar,
-  Church,
-  Clapperboard,
-  GraduationCap,
-  HandHeart,
-  Home,
-  Layers,
-  Menu,
-  Music2,
-  Search,
-  Settings,
-  Sparkles,
-  Sunrise,
-  User,
-  Users,
-} from "lucide-react";
+import { ArrowLeft, ChevronRight, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
-import { fetchProfile, fetchUnreadNotificationCount } from "@/services/content";
+import { fetchProfile } from "@/services/content";
 import { generatedAvatar } from "@/lib/avatar";
 import { recordNuruActivity } from "@/services/pilot";
-import { NuruMark } from "./Logo";
+import { NuruArch, NuruLockup, NuruMark } from "./Logo";
+import { MOBILE_NAV, SIDEBAR_GROUPS } from "./nav";
 
-/** Bible is reached from Quick Access on Home, so it is not in this bar. */
-const NAV = [
-  { to: "/home", label: "Home", icon: Home },
-  { to: "/community", label: "Community", icon: Users },
-  { to: "/events", label: "Events", icon: Calendar },
-  { to: "/profile", label: "Profile", icon: User },
-  { to: "/hub", label: "More", icon: Menu },
-] as const;
-
-const DESKTOP_NAV = [
-  {
-    label: "Discover",
-    items: [
-      { to: "/home", label: "Home", icon: Home },
-      { to: "/explore", label: "Search & Explore", icon: Search },
-      { to: "/reels", label: "Reels", icon: Clapperboard },
-      { to: "/music", label: "Music & Media", icon: Music2 },
-    ],
-  },
-  {
-    label: "Grow in faith",
-    items: [
-      { to: "/bible", label: "Bible", icon: BookOpen },
-      { to: "/devotionals", label: "Devotionals", icon: Sunrise },
-      { to: "/series", label: "Series", icon: Layers },
-      { to: "/faith-courses", label: "Faith Courses", icon: GraduationCap },
-      { to: "/ai", label: "Ask Nuru", icon: Sparkles },
-    ],
-  },
-  {
-    label: "Together",
-    items: [
-      { to: "/community", label: "Community", icon: Users },
-      { to: "/groups", label: "Groups", icon: Users },
-      { to: "/church", label: "My Church", icon: Church },
-      { to: "/mentors", label: "Mentorship", icon: HandHeart },
-      { to: "/events", label: "Events", icon: Calendar },
-    ],
-  },
-] as const;
-
+/**
+ * The app frame: a grouped sidebar from `lg:` up, and the five-item bar below
+ * that. Both read one shared definition in ./nav, so navigation can never
+ * drift between screens.
+ */
 export function AppShell({
   children,
   wide = false,
@@ -76,117 +22,133 @@ export function AppShell({
   hideNav = false,
 }: {
   children: ReactNode;
+  /** Kept for callers; the desktop frame is a fixed width now. */
   wide?: boolean | "xl";
-  /** Full-bleed screens (Reels) manage their own height and skip the bottom padding. */
+  /** Full-bleed screens (Reels) take the viewport whole and skip the frame. */
   flush?: boolean;
   hideNav?: boolean;
 }) {
-  const maxWidth = wide === "xl" ? "lg:max-w-7xl" : wide ? "lg:max-w-5xl" : "lg:max-w-6xl";
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   useEffect(() => {
     void recordNuruActivity();
   }, []);
 
-  return (
-    <div
-      className={cn(
-        "relative bg-background",
-        !hideNav && "lg:pl-64",
-        flush ? "h-dvh overflow-hidden" : "min-h-dvh",
-      )}
-    >
-      <a href="#nuru-main" className="nuru-skip-link">
-        Skip to content
-      </a>
-      <main
-        id="nuru-main"
-        tabIndex={-1}
-        className={cn(
-          "relative z-10 mx-auto w-full max-w-xl lg:px-4 xl:px-8",
-          flush || hideNav ? "" : "pb-24 lg:pb-10",
-          maxWidth,
-        )}
-      >
-        {children}
-      </main>
+  // Full-bleed screens (Reels) own the viewport, but they still need a way
+  // out on desktop — without the rail there is no navigation on the screen
+  // at all.
+  if (flush) {
+    return (
+      <div className="relative flex h-dvh overflow-hidden bg-background lg:gap-6 lg:p-6">
+        {!hideNav && <Sidebar pathname={pathname} />}
+        <main className="relative z-10 h-full min-w-0 flex-1 overflow-hidden lg:rounded-3xl">
+          {children}
+        </main>
+        {!hideNav && <MobileNav pathname={pathname} />}
+      </div>
+    );
+  }
 
-      {!hideNav && (
-        <>
-          <nav
-            aria-label="Main"
-            className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/95 backdrop-blur-xl lg:hidden"
-          >
-            <ul className="mx-auto grid max-w-xl grid-cols-5 px-1 pb-[max(0.4rem,env(safe-area-inset-bottom))] pt-2">
-              {NAV.map((item) => (
-                <NavItem
-                  key={item.to}
-                  {...item}
-                  active={pathname === item.to || pathname.startsWith(`${item.to}/`)}
-                />
-              ))}
-            </ul>
-          </nav>
-          <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-border bg-surface lg:flex">
-            <Link
-              to="/home"
-              aria-label="Nuru Faith Home"
-              className="flex shrink-0 items-center gap-3 border-b border-border px-5 py-6"
-            >
-              <NuruMark className="h-10 w-10" />
-              <span>
-                <span className="block font-display text-xl font-semibold">
-                  Nuru <span className="text-cyan">Faith</span>
-                </span>
-                <span className="text-[10px] tracking-wide text-muted-foreground">
-                  Faith. Community. Purpose.
-                </span>
-              </span>
-            </Link>
-            <nav
-              aria-label="Desktop"
-              className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-3 py-4"
-            >
-              {DESKTOP_NAV.map((group) => (
-                <section key={group.label} className="mb-5 last:mb-0">
-                  <h2 className="mb-2 px-3 font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    {group.label}
-                  </h2>
-                  <ul className="space-y-1">
-                    {group.items.map((item) => (
-                      <NavItem
-                        key={item.to}
-                        {...item}
-                        desktop
-                        active={pathname === item.to || pathname.startsWith(`${item.to}/`)}
-                      />
-                    ))}
-                  </ul>
-                </section>
-              ))}
-            </nav>
-            <nav aria-label="Account" className="shrink-0 border-t border-border px-3 py-3">
-              <ul className="space-y-1">
-                <NavItem
-                  to="/profile"
-                  label="My profile"
-                  icon={User}
-                  desktop
-                  active={pathname === "/profile"}
-                />
-                <NavItem
-                  to="/settings"
-                  label="Settings & help"
-                  icon={Settings}
-                  desktop
-                  active={pathname === "/settings"}
-                />
-              </ul>
-            </nav>
-          </aside>
-        </>
-      )}
+  return (
+    <div className="relative min-h-dvh bg-background">
+      <div className="mx-auto flex w-full max-w-[1480px] gap-6 lg:p-6">
+        {!hideNav && <Sidebar pathname={pathname} />}
+        <div
+          className={cn(
+            "min-w-0 flex-1",
+            !hideNav && "lg:rounded-3xl lg:border lg:border-border lg:bg-surface lg:p-6",
+            wide === "xl" && "max-w-none",
+          )}
+        >
+          <main className={cn("relative z-10 w-full", hideNav ? "" : "pb-28 lg:pb-0")}>
+            {children}
+          </main>
+        </div>
+      </div>
+      {!hideNav && <MobileNav pathname={pathname} />}
     </div>
+  );
+}
+
+/** Desktop navigation rail. */
+export function Sidebar({ pathname }: { pathname: string }) {
+  const { userId } = useAuth();
+  const { data: profile } = useQuery({
+    queryKey: ["profile", userId],
+    queryFn: () => fetchProfile(userId!),
+    enabled: !!userId,
+  });
+
+  return (
+    <aside className="hidden w-[232px] shrink-0 flex-col rounded-3xl border border-border bg-surface p-4 lg:flex">
+      <Link to="/home" className="mb-6 flex items-center gap-2.5 px-2">
+        <NuruMark className="h-9 w-9" />
+        <span className="font-sans text-[19px] font-bold tracking-tight">Nuru Faith</span>
+      </Link>
+
+      <nav aria-label="Main" className="flex-1 space-y-5">
+        {SIDEBAR_GROUPS.map((group) => (
+          <div key={group.heading}>
+            <p className="px-3 pb-1.5 text-[12px] font-semibold text-ink-3">{group.heading}</p>
+            <ul className="space-y-0.5">
+              {group.items.map((item) => {
+                const active = pathname.startsWith(item.to);
+                return (
+                  <li key={item.to}>
+                    <Link
+                      to={item.to}
+                      aria-current={active ? "page" : undefined}
+                      className={cn(
+                        "flex min-h-11 items-center gap-3 rounded-xl px-3 text-[14.5px] font-semibold transition-colors",
+                        active
+                          ? "bg-primary text-primary-foreground"
+                          : "text-ink-2 hover:bg-surface-2 hover:text-foreground",
+                      )}
+                    >
+                      <item.icon className="h-[18px] w-[18px] shrink-0" strokeWidth={1.9} />
+                      {item.label}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
+      </nav>
+
+      <Link
+        to="/profile"
+        className="mt-4 flex items-center gap-2.5 rounded-xl border-t border-border px-2 pt-4"
+      >
+        <Avatar
+          url={profile?.avatar_url ?? null}
+          name={profile?.full_name ?? ""}
+          seed={userId}
+          size="sm"
+          className="h-9 w-9"
+        />
+        <span className="min-w-0 flex-1 truncate text-[13.5px] font-semibold">
+          {profile?.full_name ?? "Your profile"}
+        </span>
+        <ChevronRight className="h-4 w-4 shrink-0 text-ink-3" strokeWidth={2} />
+      </Link>
+    </aside>
+  );
+}
+
+/** The five-item bar, below `lg:`. */
+export function MobileNav({ pathname }: { pathname: string }) {
+  return (
+    <nav
+      aria-label="Main"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/95 backdrop-blur-xl lg:hidden"
+    >
+      <ul className="mx-auto grid max-w-xl grid-cols-5 px-1 pt-2 pb-[max(0.4rem,env(safe-area-inset-bottom))]">
+        {MOBILE_NAV.map((item) => (
+          <NavItem key={item.to} {...item} active={pathname.startsWith(item.to)} />
+        ))}
+      </ul>
+    </nav>
   );
 }
 
@@ -195,39 +157,24 @@ function NavItem({
   label,
   icon: Icon,
   active,
-  desktop = false,
 }: {
   to: string;
   label: string;
-  icon: typeof Home;
+  icon: LucideIcon;
   active: boolean;
-  desktop?: boolean;
 }) {
   return (
     <li>
       <Link
         to={to}
-        {...(to === "/ai"
-          ? { search: {} }
-          : to === "/explore"
-            ? { search: { q: "", kind: "all" as const } }
-            : {})}
         aria-current={active ? "page" : undefined}
         className={cn(
-          desktop
-            ? "flex min-h-10 items-center gap-3 rounded-xl border border-transparent px-3 text-[13px] font-medium transition-colors hover:bg-surface-2/60"
-            : "flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl text-[10px] font-medium transition-colors",
-          active
-            ? desktop
-              ? "border-primary/25 bg-primary/15 text-cyan"
-              : "text-cyan"
-            : "text-muted-foreground hover:text-secondary-foreground",
+          "flex min-h-12 flex-col items-center justify-center gap-1 rounded-lg text-[10.5px] font-medium transition-colors",
+          "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+          active ? "text-primary" : "text-ink-3 hover:text-ink-2",
         )}
       >
-        <Icon
-          className={cn("h-5.5 w-5.5", active && "drop-shadow-[0_0_10px_var(--brand-cyan)]")}
-          strokeWidth={active ? 2.3 : 1.8}
-        />
+        <Icon className="h-5.5 w-5.5" strokeWidth={active ? 2.2 : 1.8} />
         {label}
       </Link>
     </li>
@@ -235,89 +182,88 @@ function NavItem({
 }
 
 /**
- * Home-style top bar: brand lockup on the left, notification bell and the
- * signed-in person's avatar on the right.
+ * The header the designs put on nearly every screen: an optional back
+ * chevron, and the arch over the wordmark, centred.
  */
-export function BrandBar() {
-  const { userId } = useAuth();
+export function BoardHeader({ back = false, right }: { back?: boolean; right?: ReactNode }) {
   const navigate = useNavigate();
-  const [search, setSearch] = useState("");
+  return (
+    <header className="relative flex min-h-12 items-center justify-center px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 lg:justify-end lg:px-0 lg:pt-0">
+      {back && (
+        <button
+          type="button"
+          onClick={() => void navigate({ to: ".." })}
+          aria-label="Go back"
+          className="absolute left-2 flex h-10 w-10 items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none lg:left-0"
+        >
+          <ArrowLeft className="h-5 w-5" strokeWidth={2} />
+        </button>
+      )}
+      {/* The desktop rail already carries the mark, so the centred lockup
+          would be the brand twice on one screen. */}
+      <Link
+        to="/home"
+        aria-label="Nuru Faith"
+        className="flex flex-col items-center gap-1 lg:hidden"
+      >
+        <span className="block h-4 w-7">
+          <NuruArch />
+        </span>
+        <span className="font-display text-[11.5px] leading-none tracking-[0.2em] text-foreground">
+          NURU FAITH
+        </span>
+      </Link>
+      {right && (
+        <div className="absolute right-3 flex items-center gap-1 lg:static lg:right-auto">
+          {right}
+        </div>
+      )}
+    </header>
+  );
+}
+
+/**
+ * Top bar for the main tabs. Home centres the full arch lockup with the
+ * avatar floated to the right; the other tabs show the plain "NURU" wordmark
+ * on the left, as the boards lay them out.
+ */
+export function BrandBar({ centered = false }: { centered?: boolean }) {
+  const { userId } = useAuth();
   const { data: profile } = useQuery({
     queryKey: ["profile", userId],
     queryFn: () => fetchProfile(userId!),
     enabled: !!userId,
   });
 
-  const { data: unread = 0 } = useQuery({
-    queryKey: ["notification-unread-count", userId],
-    queryFn: () => fetchUnreadNotificationCount(userId!),
-    enabled: !!userId,
-    staleTime: 30_000,
-    refetchInterval: 60_000,
-    refetchIntervalInBackground: false,
-    refetchOnWindowFocus: true,
-  });
+  const avatar = (
+    <Link to="/profile" aria-label="Your profile" className="shrink-0">
+      <Avatar
+        url={profile?.avatar_url ?? null}
+        name={profile?.full_name ?? ""}
+        seed={userId}
+        size="sm"
+        className="h-9 w-9"
+      />
+    </Link>
+  );
+
+  if (centered) {
+    return (
+      <header className="relative z-30 flex items-start justify-center px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-2">
+        <Link to="/home" aria-label="Nuru Faith">
+          <NuruLockup />
+        </Link>
+        <div className="absolute top-[max(0.75rem,env(safe-area-inset-top))] right-4">{avatar}</div>
+      </header>
+    );
+  }
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between gap-3 bg-background/90 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-xl lg:mb-6 lg:border-b lg:border-border lg:py-5">
-      <span className="flex items-center gap-2 lg:hidden">
-        <NuruMark className="h-7 w-7" />
-        <span className="font-display text-[17px] font-semibold">
-          Nuru <span className="text-cyan">Faith</span>
-        </span>
-      </span>
-      <form
-        role="search"
-        aria-label="Search Nuru Faith"
-        className="hidden w-full max-w-md items-center gap-3 rounded-xl border border-border bg-surface/75 px-3 focus-within:ring-2 focus-within:ring-primary/60 lg:flex"
-        onSubmit={(event) => {
-          event.preventDefault();
-          void navigate({
-            to: "/explore",
-            search: { q: search.trim().slice(0, 120), kind: "all" },
-          });
-        }}
-      >
-        <Search className="h-4 w-4 shrink-0 text-cyan" aria-hidden="true" />
-        <input
-          type="search"
-          aria-label="Search Scripture, music and community"
-          placeholder="Search Scripture, music, community…"
-          maxLength={120}
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          className="min-h-11 min-w-0 flex-1 bg-transparent text-xs text-foreground placeholder:text-muted-foreground focus-visible:outline-none"
-        />
-        <button
-          type="submit"
-          aria-label="Search"
-          className="rounded-lg p-2 text-cyan hover:bg-primary/10"
-        >
-          <ArrowLeft className="h-4 w-4 rotate-180" />
-        </button>
-      </form>
-      <div className="flex items-center gap-3">
-        <Link
-          to="/notifications"
-          aria-label="Notifications"
-          className="relative text-secondary-foreground transition-colors hover:text-foreground"
-        >
-          <Bell className="h-5.5 w-5.5" strokeWidth={1.8} />
-          {unread > 0 && (
-            <span className="absolute -right-2 -top-2 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-cyan px-1 text-[9px] font-bold text-background">
-              {unread > 99 ? "99+" : unread}
-            </span>
-          )}
-        </Link>
-        <Link to="/profile" aria-label="Your profile">
-          <Avatar
-            url={profile?.avatar_url ?? null}
-            name={profile?.full_name ?? ""}
-            seed={userId}
-            size="sm"
-          />
-        </Link>
-      </div>
+    <header className="sticky top-0 z-30 flex items-center justify-between gap-3 bg-background/90 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-xl lg:hidden">
+      <Link to="/home" aria-label="Nuru Faith">
+        <span className="font-display text-[20px] leading-none tracking-[0.16em]">NURU</span>
+      </Link>
+      {avatar}
     </header>
   );
 }
@@ -336,7 +282,7 @@ export function ScreenHeader({
 }) {
   const navigate = useNavigate();
   return (
-    <header className="sticky top-0 z-30 flex items-center gap-3 bg-background/90 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-xl lg:mb-6 lg:border-b lg:border-border lg:py-6">
+    <header className="sticky top-0 z-30 flex items-center gap-3 bg-background/90 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-xl">
       {back && (
         <button
           type="button"
@@ -348,12 +294,8 @@ export function ScreenHeader({
         </button>
       )}
       <div className="min-w-0 flex-1">
-        <h1 className="truncate font-display text-[22px] font-semibold tracking-tight lg:text-3xl">
-          {title}
-        </h1>
-        {subtitle && (
-          <p className="truncate text-xs text-muted-foreground lg:mt-1.5 lg:text-sm">{subtitle}</p>
-        )}
+        <h1 className="truncate font-display text-[22px] font-semibold tracking-tight">{title}</h1>
+        {subtitle && <p className="truncate text-xs text-muted-foreground">{subtitle}</p>}
       </div>
       {right && <div className="flex shrink-0 items-center gap-2">{right}</div>}
     </header>

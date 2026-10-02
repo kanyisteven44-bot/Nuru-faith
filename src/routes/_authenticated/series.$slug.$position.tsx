@@ -207,7 +207,7 @@ function SessionScreen() {
               </Link>
               <div className="min-w-0">
                 <p className="truncate text-[13px] font-medium">{series.data.title}</p>
-                <p className="text-[13px] font-semibold text-cyan">
+                <p className="text-[13px] font-semibold text-leaf">
                   Session {session.position} of {sessions.data?.length ?? 0}
                 </p>
               </div>
@@ -258,12 +258,12 @@ function SessionScreen() {
             </div>
           </div>
 
-          <p className="mt-4 inline-flex rounded-full border border-cyan/60 px-3 py-1 text-[11px] font-semibold tracking-[0.14em] text-cyan uppercase">
+          <p className="mt-4 inline-flex rounded-full border border-leaf/60 px-3 py-1 text-[11px] font-semibold tracking-[0.14em] text-leaf uppercase">
             {series.data.category}
           </p>
 
           <h1 className="mt-2 max-w-[60%] font-display text-[30px] leading-[1.08] font-bold tracking-tight">
-            {titleHead(session.title)} <span className="text-cyan">{titleTail(session.title)}</span>
+            {titleHead(session.title)} <span className="text-leaf">{titleTail(session.title)}</span>
           </h1>
 
           {session.introduction && (
@@ -344,7 +344,7 @@ function SessionScreen() {
               className={cn(
                 "flex items-center gap-2 rounded-2xl border px-3 py-2.5 text-left transition-colors",
                 stage === key
-                  ? "border-cyan/70 bg-primary text-primary-foreground nuru-glow-sm"
+                  ? "border-leaf/70 bg-primary text-primary-foreground nuru-glow-sm"
                   : "border-border bg-surface-2/60 text-secondary-foreground",
               )}
             >
@@ -453,7 +453,7 @@ function SessionScreen() {
         {stage === "Pray" && session.prayer && (
           <section className="nuru-card space-y-3 p-4">
             <h2 className="flex items-center gap-2 font-display text-[15px] font-semibold">
-              <HandHeart className="h-4 w-4 text-cyan" /> Pray
+              <HandHeart className="h-4 w-4 text-leaf" /> Pray
             </h2>
             <p className="text-sm whitespace-pre-line text-secondary-foreground italic">
               {session.prayer}
@@ -522,13 +522,13 @@ function SessionScreen() {
             )}
             className="inline-flex min-h-11 items-center gap-2 rounded-full border border-border bg-surface-2 px-5 text-sm font-medium"
           >
-            <Sparkles className="h-4 w-4 text-cyan" /> Ask Nuru AI
+            <Sparkles className="h-4 w-4 text-leaf" /> Ask Nuru AI
           </Link>
           <Link
             to="/community"
             className="inline-flex min-h-11 items-center gap-2 rounded-full border border-border bg-surface-2 px-5 text-sm font-medium"
           >
-            <MessageCircle className="h-4 w-4 text-cyan" /> Discuss
+            <MessageCircle className="h-4 w-4 text-leaf" /> Discuss
           </Link>
         </section>
 
@@ -584,13 +584,13 @@ function TeachingCard({
     <section className="nuru-card p-4">
       <div className="flex items-start justify-between gap-3">
         <h2 className="flex items-center gap-2 font-display text-[15px] font-semibold">
-          <Icon className="h-5 w-5 shrink-0 text-cyan" strokeWidth={1.8} />
+          <Icon className="h-5 w-5 shrink-0 text-leaf" strokeWidth={1.8} />
           {title}
         </h2>
         <Link
           to="/ai"
           search={to}
-          className="flex shrink-0 items-center gap-0.5 text-[12px] font-semibold text-cyan"
+          className="flex shrink-0 items-center gap-0.5 text-[12px] font-semibold text-leaf"
         >
           {action}
           <ChevronRight className="h-4 w-4" />
@@ -621,7 +621,7 @@ function PassageBlock({
     <section className="nuru-card relative overflow-hidden p-4 nuru-glow-sm">
       <div className="flex items-center justify-between gap-2">
         <h2 className="flex min-w-0 items-center gap-2">
-          <BookOpen className="h-5 w-5 shrink-0 text-cyan" strokeWidth={1.8} />
+          <BookOpen className="h-5 w-5 shrink-0 text-leaf" strokeWidth={1.8} />
           <span className="truncate font-display text-[16px] font-bold">{reference}</span>
         </h2>
         <div className="flex shrink-0 items-center gap-2">
@@ -681,7 +681,7 @@ function PassageBlock({
 
       {explanation && (
         <p className="mt-3 flex items-start gap-3 rounded-2xl border border-primary/35 bg-primary/10 p-3 text-[13px] leading-relaxed text-secondary-foreground">
-          <Crown className="mt-0.5 h-5 w-5 shrink-0 text-cyan" strokeWidth={1.8} />
+          <Crown className="mt-0.5 h-5 w-5 shrink-0 text-leaf" strokeWidth={1.8} />
           {explanation}
         </p>
       )}

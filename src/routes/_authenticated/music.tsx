@@ -163,7 +163,7 @@ function MusicScreen() {
                         }
                         className="nuru-card w-48 shrink-0 p-4 text-left"
                       >
-                        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/12 text-cyan">
+                        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/12 text-leaf">
                           <Music2 className="h-5 w-5" />
                         </span>
                         <span className="mt-3 block line-clamp-2 text-sm font-semibold">
@@ -172,7 +172,7 @@ function MusicScreen() {
                         <span className="mt-1 block line-clamp-2 text-[11px] text-muted-foreground">
                           {playlist.description}
                         </span>
-                        <span className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold text-cyan">
+                        <span className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold text-leaf">
                           <Play className="h-3.5 w-3.5 fill-current" /> Play latest
                         </span>
                       </button>
@@ -313,7 +313,7 @@ function MusicScreen() {
                           {p.description}
                         </span>
                       </span>
-                      <Play className="h-4 w-4 text-cyan" />
+                      <Play className="h-4 w-4 text-leaf" />
                     </button>
                   ))}
                 </div>
@@ -340,7 +340,7 @@ function MusicScreen() {
                         <span className="truncate text-sm font-semibold">{a.name}</span>
                         {a.is_verified && (
                           <BadgeCheck
-                            className="h-3.5 w-3.5 shrink-0 text-cyan"
+                            className="h-3.5 w-3.5 shrink-0 text-leaf"
                             aria-label="Verified"
                           />
                         )}
@@ -428,7 +428,7 @@ function MusicScreen() {
                         {m.creator_name}
                       </span>
                     </span>
-                    <Play className="h-4 w-4 text-cyan" />
+                    <Play className="h-4 w-4 text-leaf" />
                   </button>
                 ))}
               </div>
@@ -540,6 +540,7 @@ function NuruAudioSection({
               </span>
               <button
                 aria-label={isPlaying ? `Pause ${t.title}` : `Play ${t.title}`}
+                aria-pressed={isPlaying}
                 onClick={() => {
                   if (!t.audio_url) {
                     toast("This track isn't licensed for streaming yet");
@@ -548,9 +549,9 @@ function NuruAudioSection({
                   setPlaying(isPlaying ? null : t.id);
                 }}
                 className={cn(
-                  "nuru-tactile flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border-strong bg-surface-2 transition-colors",
+                  "nuru-soft-control flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border-strong bg-surface-2 transition-colors",
                   isPlaying
-                    ? "border-primary bg-primary/15 text-cyan"
+                    ? "nuru-soft-primary border-primary bg-primary text-primary-foreground"
                     : "text-secondary-foreground",
                 )}
               >

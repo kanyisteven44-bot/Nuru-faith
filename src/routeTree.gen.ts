@@ -23,22 +23,24 @@ import { Route as AuthenticatedCommunityRouteImport } from './routes/_authentica
 import { Route as AuthenticatedCreateRouteImport } from './routes/_authenticated/create'
 import { Route as AuthenticatedDevotionalsRouteImport } from './routes/_authenticated/devotionals'
 import { Route as AuthenticatedEventsRouteImport } from './routes/_authenticated/events'
-import { Route as AuthenticatedFaithCoursesIndexRouteImport } from './routes/_authenticated/faith-courses.index'
-import { Route as AuthenticatedFaithCoursesSlugRouteImport } from './routes/_authenticated/faith-courses.$slug'
 import { Route as AuthenticatedExploreRouteImport } from './routes/_authenticated/explore'
 import { Route as AuthenticatedGroupsRouteImport } from './routes/_authenticated/groups'
 import { Route as AuthenticatedGrowRouteImport } from './routes/_authenticated/grow'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
 import { Route as AuthenticatedHubRouteImport } from './routes/_authenticated/hub'
+import { Route as AuthenticatedLibraryRouteImport } from './routes/_authenticated/library'
 import { Route as AuthenticatedMessagesRouteImport } from './routes/_authenticated/messages'
 import { Route as AuthenticatedMusicRouteImport } from './routes/_authenticated/music'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedPodcastsRouteImport } from './routes/_authenticated/podcasts'
+import { Route as AuthenticatedPrayerRouteImport } from './routes/_authenticated/prayer'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedReelsRouteImport } from './routes/_authenticated/reels'
 import { Route as AuthenticatedServeRouteImport } from './routes/_authenticated/serve'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
+import { Route as AuthenticatedFaithCoursesIndexRouteImport } from './routes/_authenticated/faith-courses.index'
+import { Route as AuthenticatedFaithCoursesSlugRouteImport } from './routes/_authenticated/faith-courses.$slug'
 import { Route as AuthenticatedMentorsIndexRouteImport } from './routes/_authenticated/mentors.index'
 import { Route as AuthenticatedMentorsIdRouteImport } from './routes/_authenticated/mentors.$id'
 import { Route as AuthenticatedSeriesIndexRouteImport } from './routes/_authenticated/series.index'
@@ -116,18 +118,6 @@ const AuthenticatedEventsRoute = AuthenticatedEventsRouteImport.update({
   path: '/events',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedFaithCoursesIndexRoute =
-  AuthenticatedFaithCoursesIndexRouteImport.update({
-    id: '/faith-courses/',
-    path: '/faith-courses/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedFaithCoursesSlugRoute =
-  AuthenticatedFaithCoursesSlugRouteImport.update({
-    id: '/faith-courses/$slug',
-    path: '/faith-courses/$slug',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedExploreRoute = AuthenticatedExploreRouteImport.update({
   id: '/explore',
   path: '/explore',
@@ -151,6 +141,11 @@ const AuthenticatedHomeRoute = AuthenticatedHomeRouteImport.update({
 const AuthenticatedHubRoute = AuthenticatedHubRouteImport.update({
   id: '/hub',
   path: '/hub',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedLibraryRoute = AuthenticatedLibraryRouteImport.update({
+  id: '/library',
+  path: '/library',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedMessagesRoute = AuthenticatedMessagesRouteImport.update({
@@ -179,6 +174,11 @@ const AuthenticatedPodcastsRoute = AuthenticatedPodcastsRouteImport.update({
   path: '/podcasts',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedPrayerRoute = AuthenticatedPrayerRouteImport.update({
+  id: '/prayer',
+  path: '/prayer',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
@@ -199,6 +199,18 @@ const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedFaithCoursesIndexRoute =
+  AuthenticatedFaithCoursesIndexRouteImport.update({
+    id: '/faith-courses/',
+    path: '/faith-courses/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedFaithCoursesSlugRoute =
+  AuthenticatedFaithCoursesSlugRouteImport.update({
+    id: '/faith-courses/$slug',
+    path: '/faith-courses/$slug',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedMentorsIndexRoute =
   AuthenticatedMentorsIndexRouteImport.update({
     id: '/mentors/',
@@ -249,23 +261,25 @@ export interface FileRoutesByFullPath {
   '/create': typeof AuthenticatedCreateRoute
   '/devotionals': typeof AuthenticatedDevotionalsRoute
   '/events': typeof AuthenticatedEventsRoute
-  '/faith-courses/': typeof AuthenticatedFaithCoursesIndexRoute
-  '/faith-courses/$slug': typeof AuthenticatedFaithCoursesSlugRoute
   '/explore': typeof AuthenticatedExploreRoute
   '/groups': typeof AuthenticatedGroupsRoute
   '/grow': typeof AuthenticatedGrowRoute
   '/home': typeof AuthenticatedHomeRoute
   '/hub': typeof AuthenticatedHubRoute
+  '/library': typeof AuthenticatedLibraryRoute
   '/messages': typeof AuthenticatedMessagesRoute
   '/music': typeof AuthenticatedMusicRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/podcasts': typeof AuthenticatedPodcastsRoute
+  '/prayer': typeof AuthenticatedPrayerRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/reels': typeof AuthenticatedReelsRoute
   '/serve': typeof AuthenticatedServeRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/faith-courses/$slug': typeof AuthenticatedFaithCoursesSlugRoute
   '/mentors/$id': typeof AuthenticatedMentorsIdRoute
+  '/faith-courses/': typeof AuthenticatedFaithCoursesIndexRoute
   '/mentors/': typeof AuthenticatedMentorsIndexRoute
   '/series/': typeof AuthenticatedSeriesIndexRoute
   '/discovery/$kind/$id': typeof AuthenticatedDiscoveryKindIdRoute
@@ -286,23 +300,25 @@ export interface FileRoutesByTo {
   '/create': typeof AuthenticatedCreateRoute
   '/devotionals': typeof AuthenticatedDevotionalsRoute
   '/events': typeof AuthenticatedEventsRoute
-  '/faith-courses': typeof AuthenticatedFaithCoursesIndexRoute
-  '/faith-courses/$slug': typeof AuthenticatedFaithCoursesSlugRoute
   '/explore': typeof AuthenticatedExploreRoute
   '/groups': typeof AuthenticatedGroupsRoute
   '/grow': typeof AuthenticatedGrowRoute
   '/home': typeof AuthenticatedHomeRoute
   '/hub': typeof AuthenticatedHubRoute
+  '/library': typeof AuthenticatedLibraryRoute
   '/messages': typeof AuthenticatedMessagesRoute
   '/music': typeof AuthenticatedMusicRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/podcasts': typeof AuthenticatedPodcastsRoute
+  '/prayer': typeof AuthenticatedPrayerRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/reels': typeof AuthenticatedReelsRoute
   '/serve': typeof AuthenticatedServeRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/faith-courses/$slug': typeof AuthenticatedFaithCoursesSlugRoute
   '/mentors/$id': typeof AuthenticatedMentorsIdRoute
+  '/faith-courses': typeof AuthenticatedFaithCoursesIndexRoute
   '/mentors': typeof AuthenticatedMentorsIndexRoute
   '/series': typeof AuthenticatedSeriesIndexRoute
   '/discovery/$kind/$id': typeof AuthenticatedDiscoveryKindIdRoute
@@ -325,23 +341,25 @@ export interface FileRoutesById {
   '/_authenticated/create': typeof AuthenticatedCreateRoute
   '/_authenticated/devotionals': typeof AuthenticatedDevotionalsRoute
   '/_authenticated/events': typeof AuthenticatedEventsRoute
-  '/_authenticated/faith-courses/': typeof AuthenticatedFaithCoursesIndexRoute
-  '/_authenticated/faith-courses/$slug': typeof AuthenticatedFaithCoursesSlugRoute
   '/_authenticated/explore': typeof AuthenticatedExploreRoute
   '/_authenticated/groups': typeof AuthenticatedGroupsRoute
   '/_authenticated/grow': typeof AuthenticatedGrowRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/hub': typeof AuthenticatedHubRoute
+  '/_authenticated/library': typeof AuthenticatedLibraryRoute
   '/_authenticated/messages': typeof AuthenticatedMessagesRoute
   '/_authenticated/music': typeof AuthenticatedMusicRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/podcasts': typeof AuthenticatedPodcastsRoute
+  '/_authenticated/prayer': typeof AuthenticatedPrayerRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/reels': typeof AuthenticatedReelsRoute
   '/_authenticated/serve': typeof AuthenticatedServeRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/faith-courses/$slug': typeof AuthenticatedFaithCoursesSlugRoute
   '/_authenticated/mentors/$id': typeof AuthenticatedMentorsIdRoute
+  '/_authenticated/faith-courses/': typeof AuthenticatedFaithCoursesIndexRoute
   '/_authenticated/mentors/': typeof AuthenticatedMentorsIndexRoute
   '/_authenticated/series/': typeof AuthenticatedSeriesIndexRoute
   '/_authenticated/discovery/$kind/$id': typeof AuthenticatedDiscoveryKindIdRoute
@@ -364,23 +382,25 @@ export interface FileRouteTypes {
     | '/create'
     | '/devotionals'
     | '/events'
-    | '/faith-courses/'
-    | '/faith-courses/$slug'
     | '/explore'
     | '/groups'
     | '/grow'
     | '/home'
     | '/hub'
+    | '/library'
     | '/messages'
     | '/music'
     | '/notifications'
     | '/onboarding'
     | '/podcasts'
+    | '/prayer'
     | '/profile'
     | '/reels'
     | '/serve'
     | '/settings'
+    | '/faith-courses/$slug'
     | '/mentors/$id'
+    | '/faith-courses/'
     | '/mentors/'
     | '/series/'
     | '/discovery/$kind/$id'
@@ -401,23 +421,25 @@ export interface FileRouteTypes {
     | '/create'
     | '/devotionals'
     | '/events'
-    | '/faith-courses'
-    | '/faith-courses/$slug'
     | '/explore'
     | '/groups'
     | '/grow'
     | '/home'
     | '/hub'
+    | '/library'
     | '/messages'
     | '/music'
     | '/notifications'
     | '/onboarding'
     | '/podcasts'
+    | '/prayer'
     | '/profile'
     | '/reels'
     | '/serve'
     | '/settings'
+    | '/faith-courses/$slug'
     | '/mentors/$id'
+    | '/faith-courses'
     | '/mentors'
     | '/series'
     | '/discovery/$kind/$id'
@@ -439,23 +461,25 @@ export interface FileRouteTypes {
     | '/_authenticated/create'
     | '/_authenticated/devotionals'
     | '/_authenticated/events'
-    | '/_authenticated/faith-courses/'
-    | '/_authenticated/faith-courses/$slug'
     | '/_authenticated/explore'
     | '/_authenticated/groups'
     | '/_authenticated/grow'
     | '/_authenticated/home'
     | '/_authenticated/hub'
+    | '/_authenticated/library'
     | '/_authenticated/messages'
     | '/_authenticated/music'
     | '/_authenticated/notifications'
     | '/_authenticated/onboarding'
     | '/_authenticated/podcasts'
+    | '/_authenticated/prayer'
     | '/_authenticated/profile'
     | '/_authenticated/reels'
     | '/_authenticated/serve'
     | '/_authenticated/settings'
+    | '/_authenticated/faith-courses/$slug'
     | '/_authenticated/mentors/$id'
+    | '/_authenticated/faith-courses/'
     | '/_authenticated/mentors/'
     | '/_authenticated/series/'
     | '/_authenticated/discovery/$kind/$id'
@@ -572,20 +596,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEventsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/faith-courses/': {
-      id: '/_authenticated/faith-courses/'
-      path: '/faith-courses'
-      fullPath: '/faith-courses/'
-      preLoaderRoute: typeof AuthenticatedFaithCoursesIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/faith-courses/$slug': {
-      id: '/_authenticated/faith-courses/$slug'
-      path: '/faith-courses/$slug'
-      fullPath: '/faith-courses/$slug'
-      preLoaderRoute: typeof AuthenticatedFaithCoursesSlugRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/explore': {
       id: '/_authenticated/explore'
       path: '/explore'
@@ -619,6 +629,13 @@ declare module '@tanstack/react-router' {
       path: '/hub'
       fullPath: '/hub'
       preLoaderRoute: typeof AuthenticatedHubRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/library': {
+      id: '/_authenticated/library'
+      path: '/library'
+      fullPath: '/library'
+      preLoaderRoute: typeof AuthenticatedLibraryRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/messages': {
@@ -656,6 +673,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPodcastsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/prayer': {
+      id: '/_authenticated/prayer'
+      path: '/prayer'
+      fullPath: '/prayer'
+      preLoaderRoute: typeof AuthenticatedPrayerRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/profile': {
       id: '/_authenticated/profile'
       path: '/profile'
@@ -682,6 +706,20 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/faith-courses/': {
+      id: '/_authenticated/faith-courses/'
+      path: '/faith-courses'
+      fullPath: '/faith-courses/'
+      preLoaderRoute: typeof AuthenticatedFaithCoursesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/faith-courses/$slug': {
+      id: '/_authenticated/faith-courses/$slug'
+      path: '/faith-courses/$slug'
+      fullPath: '/faith-courses/$slug'
+      preLoaderRoute: typeof AuthenticatedFaithCoursesSlugRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/mentors/': {
@@ -738,23 +776,25 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCreateRoute: typeof AuthenticatedCreateRoute
   AuthenticatedDevotionalsRoute: typeof AuthenticatedDevotionalsRoute
   AuthenticatedEventsRoute: typeof AuthenticatedEventsRoute
-  AuthenticatedFaithCoursesIndexRoute: typeof AuthenticatedFaithCoursesIndexRoute
-  AuthenticatedFaithCoursesSlugRoute: typeof AuthenticatedFaithCoursesSlugRoute
   AuthenticatedExploreRoute: typeof AuthenticatedExploreRoute
   AuthenticatedGroupsRoute: typeof AuthenticatedGroupsRoute
   AuthenticatedGrowRoute: typeof AuthenticatedGrowRoute
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedHubRoute: typeof AuthenticatedHubRoute
+  AuthenticatedLibraryRoute: typeof AuthenticatedLibraryRoute
   AuthenticatedMessagesRoute: typeof AuthenticatedMessagesRoute
   AuthenticatedMusicRoute: typeof AuthenticatedMusicRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedPodcastsRoute: typeof AuthenticatedPodcastsRoute
+  AuthenticatedPrayerRoute: typeof AuthenticatedPrayerRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedReelsRoute: typeof AuthenticatedReelsRoute
   AuthenticatedServeRoute: typeof AuthenticatedServeRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedFaithCoursesSlugRoute: typeof AuthenticatedFaithCoursesSlugRoute
   AuthenticatedMentorsIdRoute: typeof AuthenticatedMentorsIdRoute
+  AuthenticatedFaithCoursesIndexRoute: typeof AuthenticatedFaithCoursesIndexRoute
   AuthenticatedMentorsIndexRoute: typeof AuthenticatedMentorsIndexRoute
   AuthenticatedSeriesIndexRoute: typeof AuthenticatedSeriesIndexRoute
   AuthenticatedDiscoveryKindIdRoute: typeof AuthenticatedDiscoveryKindIdRoute
@@ -771,23 +811,25 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCreateRoute: AuthenticatedCreateRoute,
   AuthenticatedDevotionalsRoute: AuthenticatedDevotionalsRoute,
   AuthenticatedEventsRoute: AuthenticatedEventsRoute,
-  AuthenticatedFaithCoursesIndexRoute: AuthenticatedFaithCoursesIndexRoute,
-  AuthenticatedFaithCoursesSlugRoute: AuthenticatedFaithCoursesSlugRoute,
   AuthenticatedExploreRoute: AuthenticatedExploreRoute,
   AuthenticatedGroupsRoute: AuthenticatedGroupsRoute,
   AuthenticatedGrowRoute: AuthenticatedGrowRoute,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedHubRoute: AuthenticatedHubRoute,
+  AuthenticatedLibraryRoute: AuthenticatedLibraryRoute,
   AuthenticatedMessagesRoute: AuthenticatedMessagesRoute,
   AuthenticatedMusicRoute: AuthenticatedMusicRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedPodcastsRoute: AuthenticatedPodcastsRoute,
+  AuthenticatedPrayerRoute: AuthenticatedPrayerRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedReelsRoute: AuthenticatedReelsRoute,
   AuthenticatedServeRoute: AuthenticatedServeRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedFaithCoursesSlugRoute: AuthenticatedFaithCoursesSlugRoute,
   AuthenticatedMentorsIdRoute: AuthenticatedMentorsIdRoute,
+  AuthenticatedFaithCoursesIndexRoute: AuthenticatedFaithCoursesIndexRoute,
   AuthenticatedMentorsIndexRoute: AuthenticatedMentorsIndexRoute,
   AuthenticatedSeriesIndexRoute: AuthenticatedSeriesIndexRoute,
   AuthenticatedDiscoveryKindIdRoute: AuthenticatedDiscoveryKindIdRoute,

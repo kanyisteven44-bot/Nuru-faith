@@ -72,6 +72,30 @@ function ContentDetail({ kindParam, id }: { kindParam: string; id: string }) {
               {item.description}
             </p>
             {item.reference && <ScriptureText reference={item.reference} />}
+            {item.kind === "churches" && item.sourceUrl && (
+              <div className="space-y-2">
+                <a
+                  href={item.sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-h-11 items-center rounded-full border border-primary/40 px-5 text-sm font-semibold text-primary"
+                >
+                  View church on map
+                </a>
+                <p className="text-xs text-muted-foreground">
+                  Map data © OpenStreetMap contributors, licensed under{" "}
+                  <a
+                    href="https://opendatacommons.org/licenses/odbl/1-0/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline"
+                  >
+                    ODbL
+                  </a>
+                  . Confirm details with the church before visiting.
+                </p>
+              </div>
+            )}
             {item.source === "youtube" && item.externalId && (
               <YouTubePlayer videoId={item.externalId} title={item.title} />
             )}

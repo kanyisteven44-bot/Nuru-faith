@@ -1,3 +1,4 @@
+import { resolveMedia } from "@/lib/media";
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -15,7 +16,13 @@ import {
 } from "@/services/content";
 import { addPrayerJournalEntry, fetchPrayerJournal } from "@/services/ai";
 import { AppShell, BoardHeader } from "@/components/nuru/AppShell";
-import { CardSkeleton, EmptyState, ErrorState, PillTabs } from "@/components/nuru/Primitives";
+import {
+  CardSkeleton,
+  EmptyState,
+  ErrorState,
+  PillTabs,
+  ScreenHero,
+} from "@/components/nuru/Primitives";
 
 export const Route = createFileRoute("/_authenticated/prayer")({
   head: () => ({
@@ -39,6 +46,7 @@ function PrayerScreen() {
   return (
     <AppShell>
       <BoardHeader back />
+      <ScreenHero image={resolveMedia("asset:topic-prayer")} />
 
       <div className="px-5 pb-8">
         <h1 className="font-display text-[30px] leading-tight font-semibold">Prayer</h1>

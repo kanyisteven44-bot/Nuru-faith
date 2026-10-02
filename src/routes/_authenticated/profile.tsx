@@ -1,3 +1,4 @@
+import { CoverImage } from "@/components/nuru/CoverImage";
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -378,7 +379,7 @@ function ProfileScreen() {
                   <li key={item.id}>
                     <div className="relative aspect-[3/4] overflow-hidden rounded-xl border border-border">
                       {item.cover ? (
-                        <img
+                        <CoverImage
                           src={resolveMedia(item.cover)}
                           alt=""
                           loading="lazy"

@@ -1,3 +1,4 @@
+import { CoverImage } from "@/components/nuru/CoverImage";
 import { resolveMedia } from "@/lib/media";
 import { useEffect } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
@@ -51,7 +52,7 @@ function Splash() {
 
   return (
     <div className="relative min-h-dvh overflow-hidden bg-background">
-      <img
+      <CoverImage
         src={resolveMedia("asset:mountain-dawn")}
         alt=""
         width={1024}

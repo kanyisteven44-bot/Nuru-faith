@@ -1,3 +1,5 @@
+import { resolveMedia } from "@/lib/media";
+import { ScreenHero } from "@/components/nuru/Primitives";
 import { useState, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
@@ -28,6 +30,7 @@ function PodcastsScreen() {
   return (
     <AppShell>
       <ScreenHeader title="Podcasts" subtitle="Real conversations about Scripture and faith" />
+      <ScreenHero image={resolveMedia("asset:church-interior")} />
       <div className="px-4 pt-4">
         <input
           className="input-nuru"

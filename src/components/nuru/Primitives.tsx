@@ -8,7 +8,7 @@ export function ScreenHero({ image, alt = "" }: { image: string; alt?: string })
   return (
     <div className="relative h-28 w-full overflow-hidden" aria-hidden={alt === ""}>
       <CoverImage src={image} alt={alt} loading="eager" className="h-full w-full object-cover" />
-      <div className="absolute inset-0 bg-gradient-to-b from-background/25 via-background/60 to-background" />
+      <div className="absolute inset-0 bg-gradient-to-b from-background/10 via-background/25 to-background/90" />
     </div>
   );
 }

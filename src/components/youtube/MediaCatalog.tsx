@@ -37,6 +37,7 @@ export function MediaCatalog({
         </h2>
         {catalog.data && (
           <span className="text-xs text-muted-foreground">
+            {items.length.toLocaleString()} of{" "}
             {(catalog.data.pages[0]?.total ?? 0).toLocaleString()} {query ? "matches" : "available"}
           </span>
         )}

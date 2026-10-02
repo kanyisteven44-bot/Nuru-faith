@@ -1,7 +1,7 @@
 import { Bookmark, Heart, MessageCircle, MoreHorizontal, Share2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { compactNumber } from "@/lib/format";
-import { resolveMedia } from "@/lib/media";
+import { generatedAvatar } from "@/lib/avatar";
 
 function RailButton({
   icon,
@@ -75,7 +75,11 @@ export function ReelActions({
         className="transition-transform duration-150 active:scale-90"
       >
         <img
-          src={resolveMedia(avatarUrl)}
+          src={avatarUrl || generatedAvatar(creatorName, creatorName)}
+          onError={(event) => {
+            event.currentTarget.onerror = null;
+            event.currentTarget.src = generatedAvatar(creatorName, creatorName);
+          }}
           alt=""
           width={44}
           height={44}

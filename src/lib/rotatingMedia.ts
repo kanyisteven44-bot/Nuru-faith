@@ -54,13 +54,7 @@ export const NURU_PHOTO_POOLS = {
     "asset:quiet-night",
     "asset:mountain-dawn",
   ],
-  music: [
-    "asset:worship-night",
-    "asset:church-interior",
-    "asset:friends-dusk",
-    "asset:cross-sunrise",
-    "asset:quiet-night",
-  ],
+  music: ["asset:worship-night", "asset:church-interior"],
   courses: [
     "asset:walk-purpose",
     "asset:bible-candle",

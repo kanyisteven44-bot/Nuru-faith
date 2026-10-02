@@ -1,3 +1,4 @@
+import { CoverImage } from "@/components/nuru/CoverImage";
 import { resolveMedia } from "@/lib/media";
 import { useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
@@ -86,7 +87,7 @@ function Onboarding() {
 
   return (
     <div className="relative min-h-dvh bg-background">
-      <img
+      <CoverImage
         src={resolveMedia("asset:walk-purpose")}
         alt=""
         loading="eager"

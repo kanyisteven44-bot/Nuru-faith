@@ -1,3 +1,4 @@
+import { CoverImage } from "@/components/nuru/CoverImage";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { BookOpen, ChevronRight, GraduationCap, Sparkles, Sunrise } from "lucide-react";
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
@@ -25,7 +26,7 @@ function GrowScreen() {
 
       <div className="space-y-5 px-4 pb-6">
         <section className="nuru-card relative h-48 overflow-hidden">
-          <img src={hero} alt="" className="absolute inset-0 h-full w-full object-cover" />
+          <CoverImage src={hero} alt="" className="absolute inset-0 h-full w-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-r from-background via-background/78 to-background/20" />
           <div className="relative flex h-full max-w-[80%] flex-col justify-end p-4">
             <p className="text-[10px] font-bold tracking-[0.15em] text-leaf uppercase">

@@ -1,3 +1,4 @@
+import { CoverImage } from "@/components/nuru/CoverImage";
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -186,7 +187,7 @@ function SessionScreen() {
     <AppShell>
       {/* Hero */}
       <header className="relative overflow-hidden">
-        <img
+        <CoverImage
           src={resolveMedia(series.data.cover_image)}
           alt=""
           className="absolute inset-0 h-full w-full object-cover"

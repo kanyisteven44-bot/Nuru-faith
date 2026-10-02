@@ -1,3 +1,4 @@
+import { CoverImage } from "@/components/nuru/CoverImage";
 import { resolveMedia } from "@/lib/media";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -253,7 +254,7 @@ function AiScreen() {
     <AppShell>
       {messages.length === 0 && (
         <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10">
-          <img
+          <CoverImage
             src={resolveMedia("asset:mountain-dawn")}
             alt=""
             loading="eager"

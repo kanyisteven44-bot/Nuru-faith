@@ -1,3 +1,4 @@
+import { CoverImage } from "@/components/nuru/CoverImage";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, BookOpen, Check, MessageCircle, Sparkles } from "lucide-react";
@@ -112,7 +113,7 @@ function SeriesDetail() {
   return (
     <AppShell>
       <div className="relative">
-        <img src={resolveMedia(s.cover_image)} alt="" className="h-52 w-full object-cover" />
+        <CoverImage src={resolveMedia(s.cover_image)} alt="" className="h-52 w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-background/10" />
         <Link
           to="/series"

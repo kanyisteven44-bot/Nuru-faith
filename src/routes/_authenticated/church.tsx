@@ -1,3 +1,5 @@
+import { resolveMedia } from "@/lib/media";
+import { CoverImage } from "@/components/nuru/CoverImage";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -113,7 +115,11 @@ function ChurchScreen() {
         <section className="nuru-card overflow-hidden">
           <div className="relative h-[168px]">
             {church.cover_url ? (
-              <img src={church.cover_url} alt="" className="h-full w-full object-cover" />
+              <CoverImage
+                src={resolveMedia(church.cover_url)}
+                alt=""
+                className="h-full w-full object-cover"
+              />
             ) : (
               <span className="block h-full w-full bg-[linear-gradient(140deg,#17456E,#0f2a49)]" />
             )}

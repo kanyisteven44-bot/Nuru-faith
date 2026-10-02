@@ -1,3 +1,4 @@
+import { CoverImage } from "@/components/nuru/CoverImage";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -113,7 +114,7 @@ function FaithCourseDetail() {
   return (
     <AppShell>
       <div className="relative h-64 overflow-hidden">
-        <img
+        <CoverImage
           src={resolveMedia(course.cover)}
           alt=""
           className="absolute inset-0 h-full w-full object-cover"

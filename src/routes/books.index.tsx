@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
 import { BooksCatalogue } from "@/components/nuru/BooksCatalogue";
 
-export const Route = createFileRoute("/books")({
+export const Route = createFileRoute("/books/")({
   head: () => ({ meta: [{ title: "Christian Books — Nuru Faith" }] }),
   component: BooksScreen,
 });

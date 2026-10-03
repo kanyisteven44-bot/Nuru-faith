@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { NuruMark } from "@/components/nuru/Logo";
 import { MfaChallenge, MfaSecurityPanel } from "@/components/nuru/MfaSecurity";
 import { getMfaRequirement, newPasswordError } from "@/lib/accountSecurity";
+import { authAvailability } from "@/lib/authAvailability.functions";
 
 const searchSchema = z.object({
   mode: z.enum(["login", "signup", "forgot", "mfa", "mfa-setup"]).optional().default("login"),
@@ -51,6 +52,25 @@ function AuthPage() {
   const [otpSent, setOtpSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [providers, setProviders] = useState<{
+    google: boolean | null;
+    phone: boolean | null;
+  } | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    void authAvailability()
+      .then((flags) => {
+        if (active) setProviders(flags);
+      })
+      .catch(() => {
+        if (active) setProviders({ google: null, phone: null });
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (mode === "mfa" || mode === "mfa-setup") return;
@@ -83,6 +103,7 @@ function AuthPage() {
 
   async function submitEmail(e: React.FormEvent) {
     e.preventDefault();
+    setAuthError(null);
     setBusy(true);
     try {
       if (mode === "forgot") {
@@ -128,7 +149,9 @@ function AuthPage() {
         await continueAfterSignIn("/home");
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Something went wrong");
+      const message = err instanceof Error ? err.message : "Something went wrong";
+      setAuthError(message);
+      toast.error(message);
     } finally {
       setBusy(false);
     }
@@ -176,11 +199,13 @@ function AuthPage() {
   }
 
   async function google() {
+    setAuthError(null);
     setBusy(true);
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
+          skipBrowserRedirect: true,
           redirectTo: `${window.location.origin}/auth-callback`,
           queryParams: {
             access_type: "offline",
@@ -195,7 +220,9 @@ function AuthPage() {
       // with skipBrowserRedirect in a future release.
       window.location.assign(data.url);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Sign-in isn't available right now");
+      const message = err instanceof Error ? err.message : "Sign-in isn't available right now";
+      setAuthError(message);
+      toast.error(message);
       setBusy(false);
     }
   }
@@ -326,12 +353,17 @@ function AuthPage() {
           <>
             <button
               type="button"
-              disabled={busy}
+              disabled={busy || !providers || providers.google === false}
               onClick={() => void google()}
               className="mt-6 flex min-h-12 w-full items-center justify-center gap-3 rounded-xl bg-white text-sm font-semibold text-slate-900 transition-opacity hover:opacity-95 disabled:opacity-60"
             >
               <GoogleGlyph /> Continue with Google
             </button>
+            {providers?.google === false && (
+              <p role="status" className="mt-2 text-center text-xs text-muted-foreground">
+                Google sign-in is not enabled yet. Use email and password to continue.
+              </p>
+            )}
 
             <div className="flex items-center gap-3 py-4">
               <span className="h-px flex-1 bg-border" />
@@ -351,6 +383,9 @@ function AuthPage() {
                 <button
                   key={m.value}
                   type="button"
+                  disabled={
+                    busy || (m.value === "phone" && (!providers || providers.phone === false))
+                  }
                   onClick={() => setMethod(m.value)}
                   className={cn(
                     "flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-[13px] font-semibold transition-colors",
@@ -363,6 +398,19 @@ function AuthPage() {
                 </button>
               ))}
             </div>
+            {providers?.phone === false && (
+              <p className="mt-2 text-center text-xs text-muted-foreground">
+                SMS sign-in is not enabled yet.
+              </p>
+            )}
+            {authError && (
+              <p
+                role="alert"
+                className="mt-3 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-foreground"
+              >
+                {authError}
+              </p>
+            )}
 
             {method === "email" ? (
               <form onSubmit={submitEmail} className="mt-4 space-y-3">

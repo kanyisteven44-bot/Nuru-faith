@@ -39,7 +39,13 @@ function Welcome() {
       <div className="absolute inset-0 bg-gradient-to-b from-background via-background/45 to-background/25" />
 
       <div className="relative mx-auto flex min-h-dvh max-w-xl flex-col px-7 pb-10 pt-[max(1.5rem,env(safe-area-inset-top))]">
-        <div className="flex justify-end">
+        <div className="flex items-center justify-between">
+          <Link
+            to="/opening"
+            className="inline-flex min-h-11 items-center rounded-full px-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+          >
+            Replay opening
+          </Link>
           <Link
             to="/auth"
             search={{ mode: "login" }}

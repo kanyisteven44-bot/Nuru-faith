@@ -313,7 +313,7 @@ function BookReader({ book }: { book: Book }) {
               }}
             >
               {page.text.split(/\n{2,}/).map((paragraph, index) => (
-                <p key={index} className="whitespace-pre-wrap">
+                <p key={index} className="whitespace-normal">
                   {paragraph}
                 </p>
               ))}

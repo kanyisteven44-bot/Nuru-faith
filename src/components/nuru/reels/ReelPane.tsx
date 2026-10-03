@@ -57,7 +57,7 @@ export function ReelPane(props: ReelPaneProps) {
   const viewLogged = useRef(false);
   const wasPlaying = useRef(false);
 
-  const [playerAttempt, setPlayerAttempt] = useState(0);
+  const [actuallyPlaying, setActuallyPlaying] = useState(false);
   const [paused, setPaused] = useState(false);
   const [showIcon, setShowIcon] = useState(false);
   const [burst, setBurst] = useState<{ x: number; y: number; key: number } | null>(null);
@@ -114,13 +114,13 @@ export function ReelPane(props: ReelPaneProps) {
 
   /* --- a view only counts after ~2 seconds of being active --- */
   useEffect(() => {
-    if (!active || viewLogged.current) return;
+    if (!active || !actuallyPlaying || viewLogged.current) return;
     const t = window.setTimeout(() => {
       viewLogged.current = true;
       onView(reel);
     }, 2000);
     return () => window.clearTimeout(t);
-  }, [active, reel, onView]);
+  }, [active, actuallyPlaying, reel, onView]);
 
   useEffect(() => () => (tapTimer.current ? window.clearTimeout(tapTimer.current) : undefined), []);
 
@@ -133,6 +133,7 @@ export function ReelPane(props: ReelPaneProps) {
   }, [hasVideo, isYouTubeEmbed]);
 
   function handlePointerUp(e: React.PointerEvent<HTMLDivElement>) {
+    if (e.target instanceof HTMLElement && e.target.closest("button, a, input, select")) return;
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -193,7 +194,10 @@ export function ReelPane(props: ReelPaneProps) {
       className="relative h-full w-full shrink-0 snap-start snap-always overflow-hidden bg-black"
       aria-label={`Reel by ${reel.creator_name}`}
     >
-      <div className="absolute inset-0" onPointerUp={handlePointerUp}>
+      <div
+        className={cn("absolute inset-0", isYouTubeEmbed && "bottom-[240px]")}
+        onPointerUp={handlePointerUp}
+      >
         {hasVideo && shouldLoad ? (
           <video
             ref={videoRef}
@@ -204,18 +208,22 @@ export function ReelPane(props: ReelPaneProps) {
             muted={muted}
             preload={active ? "auto" : "metadata"}
             className="h-full w-full object-cover"
+            onPlaying={() => setActuallyPlaying(true)}
+            onPause={() => setActuallyPlaying(false)}
+            onWaiting={() => setActuallyPlaying(false)}
+            onError={() => setActuallyPlaying(false)}
           />
-        ) : isYouTubeEmbed && shouldLoad ? (
+        ) : isYouTubeEmbed && shouldLoad && active ? (
           <YouTubePlayer
-            key={`${reel.id}:${playerAttempt}`}
             videoId={reel.external_id!}
             title={reel.caption || reel.creator_name}
             autoplay
             loop
-            controls={false}
+            controls
             muted={muted}
             playing={active && !paused && !commentsVisible}
-            interactive={false}
+            interactive
+            onPlaybackChange={setActuallyPlaying}
             className="h-full rounded-none"
           />
         ) : reel.poster_url ? (
@@ -257,7 +265,7 @@ export function ReelPane(props: ReelPaneProps) {
         </button>
       )}
 
-      {(isYouTubeEmbed || isLinkOutOnly) && (
+      {isLinkOutOnly && (
         <div className="absolute left-3 top-3 z-10 flex items-center gap-1.5 rounded-full bg-black/40 py-1.5 pl-1.5 pr-3 text-[11px] font-medium text-white backdrop-blur-md">
           <span className="rounded-full bg-white/15 px-2 py-0.5">
             {SOURCE_LABEL[reel.source_type as ImportedSource]}
@@ -269,26 +277,22 @@ export function ReelPane(props: ReelPaneProps) {
           >
             Open original <ExternalLink className="h-3 w-3" />
           </button>
-          {isYouTubeEmbed && (
-            <button
-              type="button"
-              onClick={() => setPlayerAttempt((value) => value + 1)}
-              className="min-h-9 rounded-full px-2 underline underline-offset-2"
-              aria-label="Reload Reel player"
-            >
-              Retry
-            </button>
-          )}
         </div>
       )}
 
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/55 to-transparent"
+        className={cn(
+          "pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/55 to-transparent",
+          isYouTubeEmbed && "hidden",
+        )}
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/80 via-black/40 to-transparent"
+        className={cn(
+          "pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/80 via-black/40 to-transparent",
+          isYouTubeEmbed && "hidden",
+        )}
       />
 
       {(hasVideo || isYouTubeEmbed) && !autoplayAllowed && !manualStart && (
@@ -320,7 +324,7 @@ export function ReelPane(props: ReelPaneProps) {
         </span>
       )}
 
-      {(hasVideo || isYouTubeEmbed) && muted && active && (
+      {hasVideo && muted && active && (
         <button
           type="button"
           onClick={props.onToggleMuted}
@@ -339,7 +343,7 @@ export function ReelPane(props: ReelPaneProps) {
         />
       )}
 
-      {(hasVideo || isYouTubeEmbed) && (
+      {hasVideo && (
         <button
           type="button"
           onClick={props.onToggleMuted}
@@ -352,9 +356,15 @@ export function ReelPane(props: ReelPaneProps) {
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0">
         {/* Keep the action rail on the right and leave the video centre clear. */}
-        <div className="pointer-events-auto flex items-end gap-3 px-3 pb-1">
+        <div
+          className={cn(
+            "pointer-events-auto flex gap-3 px-3 pb-1",
+            isYouTubeEmbed ? "flex-col items-stretch bg-slate-950" : "items-end",
+          )}
+        >
           <div className="order-2 shrink-0 pb-1">
             <ReelInteractiveActions
+              horizontal={isYouTubeEmbed}
               reel={reel}
               near={near}
               liked={props.liked}

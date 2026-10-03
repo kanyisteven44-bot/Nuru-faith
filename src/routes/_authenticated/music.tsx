@@ -18,6 +18,7 @@ import {
   EmptyState,
   IconTile,
   PillTabs,
+  PrimaryButton,
   SectionHeader,
 } from "@/components/nuru/Primitives";
 import { NURU_PHOTO_POOLS, useRotatingMedia } from "@/lib/rotatingMedia";
@@ -62,6 +63,7 @@ function MusicScreen() {
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
   const [nowPlaying, setNowPlaying] = useState<NowPlaying | null>(null);
+  const [discoverOnline, setDiscoverOnline] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null);
   const playCatalog = (item: MediaItem) => {
     setNowPlaying(null);
@@ -262,33 +264,48 @@ function MusicScreen() {
                 </div>
               </section>
 
-              <MediaCategoryRail
-                title="Worship right now"
-                query="christian worship live"
-                onSelect={openVideo}
-                showUnavailableNotice
-              />
-              <MediaCategoryRail
-                title="Songs for hard days"
-                query="christian worship peace anxiety"
-                onSelect={openVideo}
-              />
-              <MediaCategoryRail
-                title="Praise & celebration"
-                query="gospel praise songs"
-                onSelect={openVideo}
-              />
-              <MediaCategoryRail
-                title="Worship sets"
-                query="worship set full"
-                onSelect={openVideo}
-              />
-              <MediaCategoryRail title="Hymns" query="christian hymns" onSelect={openVideo} />
-              <MediaCategoryRail
-                title="Acoustic worship"
-                query="acoustic worship christian"
-                onSelect={openVideo}
-              />
+              <section className="px-4 pt-5">
+                <SectionHeader title="Discover more worship" />
+                <p className="mb-3 text-sm text-muted-foreground">
+                  Explore additional worship videos on YouTube.
+                </p>
+                {!discoverOnline && (
+                  <PrimaryButton onClick={() => setDiscoverOnline(true)}>
+                    Browse worship videos
+                  </PrimaryButton>
+                )}
+              </section>
+              {discoverOnline && (
+                <>
+                  <MediaCategoryRail
+                    title="Worship right now"
+                    query="christian worship live"
+                    onSelect={openVideo}
+                    showUnavailableNotice
+                  />
+                  <MediaCategoryRail
+                    title="Songs for hard days"
+                    query="christian worship peace anxiety"
+                    onSelect={openVideo}
+                  />
+                  <MediaCategoryRail
+                    title="Praise & celebration"
+                    query="gospel praise songs"
+                    onSelect={openVideo}
+                  />
+                  <MediaCategoryRail
+                    title="Worship sets"
+                    query="worship set full"
+                    onSelect={openVideo}
+                  />
+                  <MediaCategoryRail title="Hymns" query="christian hymns" onSelect={openVideo} />
+                  <MediaCategoryRail
+                    title="Acoustic worship"
+                    query="acoustic worship christian"
+                    onSelect={openVideo}
+                  />
+                </>
+              )}
               <NuruAudioSection
                 tracks={tracks.data ?? []}
                 loading={tracks.isLoading}

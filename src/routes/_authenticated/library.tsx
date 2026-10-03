@@ -1,3 +1,4 @@
+import { BooksCatalogue } from "@/components/nuru/BooksCatalogue";
 import { CoverImage } from "@/components/nuru/CoverImage";
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -43,11 +44,11 @@ export const Route = createFileRoute("/_authenticated/library")({
  * per-item permission flag) and there is no offline store behind it, so the
  * tab would be a mockup. It is listed in the gaps rather than faked.
  */
-const TABS = ["saved", "history"] as const;
+const TABS = ["books", "saved", "history"] as const;
 type Tab = (typeof TABS)[number];
 
 function LibraryScreen() {
-  const [tab, setTab] = useState<Tab>("saved");
+  const [tab, setTab] = useState<Tab>("books");
 
   return (
     <AppShell>
@@ -56,7 +57,7 @@ function LibraryScreen() {
       <div className="px-5 pb-8">
         <h1 className="font-display text-[30px] leading-tight font-semibold">Library</h1>
         <p className="mt-1 text-[14px] leading-snug text-ink-2">
-          Everything you have saved, in one place.
+          Books to explore and everything you have saved, in one place.
         </p>
 
         <div className="mt-4">
@@ -64,11 +65,18 @@ function LibraryScreen() {
             tabs={TABS}
             value={tab}
             onChange={setTab}
-            labels={{ saved: "Saved", history: "History" }}
+            labels={{ books: "Books", saved: "Saved", history: "History" }}
           />
         </div>
 
-        {tab === "saved" ? <SavedTab /> : <HistoryTab />}
+        <Link
+          to="/faith-courses"
+          className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-full border border-primary/30 px-4 text-sm font-semibold text-primary"
+        >
+          <GraduationCap className="h-4 w-4" /> Explore faith courses{" "}
+          <ChevronRight className="h-4 w-4" />
+        </Link>
+        {tab === "books" ? <BooksCatalogue /> : tab === "saved" ? <SavedTab /> : <HistoryTab />}
       </div>
     </AppShell>
   );

@@ -52,6 +52,7 @@ function AuthPage() {
   const [otpSent, setOtpSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
   const [providers, setProviders] = useState<{
     google: boolean | null;
     phone: boolean | null;
@@ -102,6 +103,7 @@ function AuthPage() {
 
   async function submitEmail(e: React.FormEvent) {
     e.preventDefault();
+    setAuthError(null);
     setBusy(true);
     try {
       if (mode === "forgot") {
@@ -147,7 +149,9 @@ function AuthPage() {
         await continueAfterSignIn("/home");
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Something went wrong");
+      const message = err instanceof Error ? err.message : "Something went wrong";
+      setAuthError(message);
+      toast.error(message);
     } finally {
       setBusy(false);
     }
@@ -195,6 +199,7 @@ function AuthPage() {
   }
 
   async function google() {
+    setAuthError(null);
     setBusy(true);
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
@@ -215,7 +220,9 @@ function AuthPage() {
       // with skipBrowserRedirect in a future release.
       window.location.assign(data.url);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Sign-in isn't available right now");
+      const message = err instanceof Error ? err.message : "Sign-in isn't available right now";
+      setAuthError(message);
+      toast.error(message);
       setBusy(false);
     }
   }
@@ -394,6 +401,14 @@ function AuthPage() {
             {providers?.phone === false && (
               <p className="mt-2 text-center text-xs text-muted-foreground">
                 SMS sign-in is not enabled yet.
+              </p>
+            )}
+            {authError && (
+              <p
+                role="alert"
+                className="mt-3 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-foreground"
+              >
+                {authError}
               </p>
             )}
 

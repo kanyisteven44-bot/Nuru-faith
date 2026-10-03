@@ -103,6 +103,10 @@ export const askNuruAi = createServerFn({ method: "POST" })
           "I couldn't put an answer together this time. Try asking in a slightly different way.",
       };
     } catch (err) {
+      if (err instanceof Error && /credit card|card on file|billing/i.test(err.message))
+        throw new Error(
+          "Nuru AI is awaiting billing setup by the app owner. Your question is saved; please try again once the service is enabled.",
+        );
       if (LoadAPIKeyError.isInstance(err)) throw new Error("Nuru AI is not configured yet.");
       if (APICallError.isInstance(err)) {
         if (err.statusCode === 429)
@@ -114,7 +118,7 @@ export const askNuruAi = createServerFn({ method: "POST" })
         if (err.statusCode === 403)
           throw new Error("Nuru AI is currently disabled for this workspace.");
         throw new Error(
-          `Nuru AI could not answer (${err.statusCode ?? "error"}). ${(err.responseBody ?? "").slice(0, 200)}`,
+          `Nuru AI could not answer (${err.statusCode ?? "error"}). Please try again later.`,
         );
       }
       throw err instanceof Error ? err : new Error("Nuru AI could not answer.");

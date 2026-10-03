@@ -139,24 +139,44 @@ function readableDuration(iso?: string | null): string | null {
     : `${mm}:${String(ss).padStart(2, "0")}`;
 }
 
-async function call(path: string, params: Record<string, string | undefined>, key: string) {
-  if (Date.now() < quotaCooldownUntil) throw new Error("quota");
+const metadataCache = new Map<string, { at: number; value: z.infer<typeof responseSchema> }>();
+const metadataRequests = new Map<string, Promise<z.infer<typeof responseSchema>>>();
+const METADATA_TTL = 60 * 60 * 1000;
 
-  const url = new URL(`${API}/${path}`);
-  for (const [k, v] of Object.entries(params)) if (v) url.searchParams.set(k, v);
-  url.searchParams.set("key", key);
-  const res = await fetch(url.toString());
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    if (res.status === 403 || res.status === 429) {
-      quotaCooldownUntil = Date.now() + QUOTA_COOLDOWN_MS;
-      console.warn(`[youtube] quota unavailable; pausing API calls for 6h (${res.status})`);
-      throw new Error("quota");
+async function call(path: string, params: Record<string, string | undefined>, key: string) {
+  const cacheKey = JSON.stringify([
+    path,
+    Object.entries(params).sort(([a], [b]) => a.localeCompare(b)),
+  ]);
+  const cached = metadataCache.get(cacheKey);
+  if (cached && Date.now() - cached.at < METADATA_TTL) return cached.value;
+  if (Date.now() < quotaCooldownUntil) throw new Error("quota");
+  const pending = metadataRequests.get(cacheKey);
+  if (pending) return pending;
+  const request = (async () => {
+    const url = new URL(`${API}/${path}`);
+    for (const [k, v] of Object.entries(params)) if (v) url.searchParams.set(k, v);
+    url.searchParams.set("key", key);
+    const res = await fetch(url.toString(), { signal: AbortSignal.timeout(15000) });
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      if (/quotaExceeded|dailyLimitExceeded/i.test(body) || res.status === 429) {
+        quotaCooldownUntil = Date.now() + QUOTA_COOLDOWN_MS;
+        throw new Error("quota");
+      }
+      throw new Error("unavailable");
     }
-    console.warn(`[youtube] ${path} unavailable (${res.status}) ${body.slice(0, 180)}`);
-    throw new Error("unavailable");
+    const value = responseSchema.parse(await res.json());
+    if (metadataCache.size >= 128) metadataCache.delete(metadataCache.keys().next().value!);
+    metadataCache.set(cacheKey, { at: Date.now(), value });
+    return value;
+  })();
+  metadataRequests.set(cacheKey, request);
+  try {
+    return await request;
+  } finally {
+    metadataRequests.delete(cacheKey);
   }
-  return responseSchema.parse(await res.json());
 }
 
 function emptyResult(error: string | null = null): YouTubeSearchResult {

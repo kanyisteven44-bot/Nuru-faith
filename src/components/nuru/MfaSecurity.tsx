@@ -157,13 +157,30 @@ export function MfaSecurityPanel({
   async function beginEnrollment() {
     setBusy(true);
     try {
-      for (const factor of factors.filter((item) => item.status !== "verified")) {
-        await supabase.auth.mfa.unenroll({ factorId: factor.id }).catch(() => undefined);
+      // Refresh first so another tab/device cannot leave us with stale factor state.
+      const listed = await supabase.auth.mfa.listFactors();
+      if (listed.error) throw listed.error;
+      const currentTotp = listed.data.totp;
+      setFactors(currentTotp);
+
+      // Never create another "Primary authenticator" when Supabase already has one.
+      // A verified factor belongs in the challenge flow; an unfinished enrollment
+      // must be removed before starting over.
+      const currentVerified = currentTotp.filter((item) => item.status === "verified");
+      if (currentVerified.length > 0 && verified.length === 0) {
+        toast.message("Authenticator found. Enter its 6-digit code to continue.");
+        onReady?.();
+        return;
+      }
+
+      for (const factor of currentTotp.filter((item) => item.status !== "verified")) {
+        const removed = await supabase.auth.mfa.unenroll({ factorId: factor.id });
+        if (removed.error) throw removed.error;
       }
 
       const { data, error } = await supabase.auth.mfa.enroll({
         factorType: "totp",
-        friendlyName: verified.length === 0 ? "Primary authenticator" : "Backup authenticator",
+        friendlyName: currentVerified.length === 0 ? "Primary authenticator" : `Backup authenticator ${currentTotp.length + 1}`,
       });
       if (error) throw error;
 

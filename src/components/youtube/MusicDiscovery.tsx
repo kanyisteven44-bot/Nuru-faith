@@ -232,6 +232,7 @@ export function MusicDiscovery({
               {visibleVideos.map((video) => (
                 <button
                   key={video.youtubeVideoId}
+                  data-video-id={video.youtubeVideoId}
                   type="button"
                   onClick={() => onPlay(video)}
                   aria-label={`Play ${video.title}`}

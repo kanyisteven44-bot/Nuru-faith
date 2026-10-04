@@ -7,7 +7,7 @@ import { CardSkeleton, EmptyState, PrimaryButton } from "@/components/nuru/Primi
 import { resolveMedia } from "@/lib/media";
 import { playableAudioUrl, videoArtwork, youtubeVideoId } from "@/lib/mediaPlayback";
 import { duration } from "@/lib/format";
-import { YouTubePlayer } from "./YouTubePlayer";
+import { InAppMediaPlayer as YouTubePlayer } from "./InAppMediaPlayer";
 
 export function MediaCatalog({
   mediaType,

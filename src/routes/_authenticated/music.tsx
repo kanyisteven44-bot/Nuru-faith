@@ -17,7 +17,8 @@ import {
   SectionHeader,
 } from "@/components/nuru/Primitives";
 import { NURU_PHOTO_POOLS, useRotatingMedia } from "@/lib/rotatingMedia";
-import { YouTubePlayer, YouTubeNotice } from "@/components/youtube/YouTubePlayer";
+import { YouTubeNotice } from "@/components/youtube/YouTubePlayer";
+import { InAppMediaPlayer as YouTubePlayer } from "@/components/youtube/InAppMediaPlayer";
 import { YouTubeSearchResults } from "@/components/youtube/YouTubeSearchResults";
 import { MediaCategoryRail } from "@/components/youtube/MediaCategoryRail";
 import { MediaPlayback } from "@/components/youtube/MediaCatalog";

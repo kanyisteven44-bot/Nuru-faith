@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { youtubeEmbedUrl } from "@/lib/youtubeEmbed";
-import { loadYoutubePlayerApi, type YoutubePlayer } from "@/lib/youtubePlayerApi";
+import { PLAYER_STATE, loadYoutubePlayerApi, type YoutubePlayer } from "@/lib/youtubePlayerApi";
 
 /** Official player: wait for onReady before controlling sound or playback. */
 export function InAppMediaPlayer({
@@ -16,6 +16,9 @@ export function InAppMediaPlayer({
   controls = true,
   interactive = true,
   onPlaybackChange,
+  onReady,
+  onEnded,
+  frameClassName,
 }: {
   videoId?: string;
   playlistId?: string;
@@ -28,16 +31,25 @@ export function InAppMediaPlayer({
   controls?: boolean;
   interactive?: boolean;
   onPlaybackChange?: (playing: boolean) => void;
+  /**
+   * Hands the live player out so Nuru's own transport can read position and
+   * seek. Null when the player goes away, so callers never hold a dead handle.
+   */
+  onReady?: (player: YoutubePlayer | null) => void;
+  /** The track finished on its own — the queue advances on this. */
+  onEnded?: () => void;
+  /** Sizing for the video surface itself, when the caller owns the frame. */
+  frameClassName?: string;
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<YoutubePlayer | null>(null);
   const ready = useRef(false);
-  const latest = useRef({ muted, playing, onPlaybackChange });
+  const latest = useRef({ muted, playing, onPlaybackChange, onReady, onEnded });
   const [notice, setNotice] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
-    latest.current = { muted, playing, onPlaybackChange };
-  }, [muted, playing, onPlaybackChange]);
+    latest.current = { muted, playing, onPlaybackChange, onReady, onEnded };
+  }, [muted, playing, onPlaybackChange, onReady, onEnded]);
   const src = useMemo(
     () => youtubeEmbedUrl({ videoId, playlistId, autoplay, muted, loop, controls }),
     // Sound and playback changes must not reload a video.
@@ -100,13 +112,15 @@ export function InAppMediaPlayer({
               }
               if (state.playing === true) event.target.playVideo();
               else if (state.playing === false) event.target.pauseVideo();
+              state.onReady?.(event.target);
             },
             onStateChange: (event) => {
               if (cancelled) return;
               clearBuffering();
-              latest.current.onPlaybackChange?.(event.data === 1);
-              if (event.data === 1) setNotice(null);
-              if (event.data === 3)
+              latest.current.onPlaybackChange?.(event.data === PLAYER_STATE.playing);
+              if (event.data === PLAYER_STATE.playing) setNotice(null);
+              if (event.data === PLAYER_STATE.ended) latest.current.onEnded?.();
+              if (event.data === PLAYER_STATE.buffering)
                 bufferingTimer = window.setTimeout(() => {
                   if (!cancelled)
                     setNotice(
@@ -144,6 +158,8 @@ export function InAppMediaPlayer({
       window.clearTimeout(readyTimeout);
       ready.current = false;
       playerRef.current = null;
+      // Tell the caller before the handle dies, so nothing polls a dead player.
+      latest.current.onReady?.(null);
       player?.destroy();
       host.replaceChildren();
     };
@@ -175,9 +191,12 @@ export function InAppMediaPlayer({
       <div
         ref={hostRef}
         className={cn(
-          playing !== undefined
-            ? "min-h-[200px] w-full flex-1"
-            : "aspect-video min-h-[200px] w-full",
+          // YouTube requires its player to stay visible and at least 200px,
+          // so Nuru skins around it rather than hiding it.
+          frameClassName ??
+            (playing !== undefined
+              ? "min-h-[200px] w-full flex-1"
+              : "aspect-video min-h-[200px] w-full"),
         )}
       />
       {notice && (

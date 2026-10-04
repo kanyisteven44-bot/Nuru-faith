@@ -26,6 +26,9 @@
  */
 import { readFile, writeFile } from "node:fs/promises";
 import {
+  DISCOVERY_QUERIES,
+  autoApprovable,
+  faithSignal,
   isKnownChannel,
   partitionAgainstExisting,
   pickBestChannel,
@@ -46,9 +49,14 @@ if (!key) {
 
 const DRY_RUN = !!process.env.NURU_DRY_RUN;
 const MAX_LOOKUPS = Number(process.env.NURU_MAX_LOOKUPS ?? 500);
+/** Discovery is on by default; NURU_DISCOVER=0 runs the named list alone. */
+const DISCOVER = process.env.NURU_DISCOVER !== "0";
+/** Stop before exhausting the day's API quota. Default allows ~90 searches. */
+const QUOTA_BUDGET = Number(process.env.NURU_QUOTA_BUDGET ?? 9000);
 const CANDIDATES = "content/music-source-candidates.json";
 const REVIEWED = "content/media-source-review.json";
 const UNRESOLVED = "content/music-source-unresolved.json";
+const PENDING = "content/music-source-pending-review.json";
 
 /** Each search costs 100 quota units of a default 10,000/day, so ~95 names. */
 let quotaSpent = 0;
@@ -67,14 +75,14 @@ async function yt(path, params) {
   return response.json();
 }
 
-/** Channels matching a name, as ChannelSummary objects. */
-async function searchChannels(name) {
+/** Channels matching a name or a discovery term, as ChannelSummary objects. */
+async function searchChannels(name, max = 5) {
   quotaSpent += 100;
   const found = await yt("search", {
     part: "snippet",
     q: name,
     type: "channel",
-    maxResults: "5",
+    maxResults: String(max),
     regionCode: "KE",
     relevanceLanguage: "sw",
   });
@@ -202,18 +210,92 @@ for (const candidate of fresh) {
   }
 }
 
+/* ---------- discovery ----------
+ * Beyond the named list, search gospel terms per language and keep every
+ * channel that verifies on its own: a music channel with real eligible
+ * uploads whose own title or description says it is gospel. This is what
+ * scales the catalogue past a hand-written list, without approving channels
+ * nothing has checked. Anything that verifies technically but shows no faith
+ * signal is reported for review rather than approved.
+ */
+const pending = [];
+if (DISCOVER) {
+  console.log(`\nDiscovery: ${DISCOVERY_QUERIES.length} searches.`);
+  for (const { query, languages } of DISCOVERY_QUERIES) {
+    if (quotaSpent >= QUOTA_BUDGET) {
+      console.log(`  stopping: quota budget of ${QUOTA_BUDGET} reached.`);
+      break;
+    }
+    let channels;
+    try {
+      channels = await searchChannels(query, 25);
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : "search failed";
+      console.error(`  ERROR  "${query}": ${reason}`);
+      if (/quota|403/i.test(reason)) break;
+      continue;
+    }
+
+    for (const channel of channels) {
+      if (isKnownChannel(channel.channelId, reviewed)) continue;
+      if (quotaSpent >= QUOTA_BUDGET) break;
+      let songs;
+      try {
+        songs = await sampleMusic(channel.channelId);
+      } catch {
+        continue;
+      }
+      if (!qualifiesAsMusicSource(songs.length)) continue;
+
+      const signal = faithSignal(channel);
+      if (!autoApprovable(channel, songs.length)) {
+        pending.push({
+          name: channel.title,
+          youtube_channel_id: channel.channelId,
+          found_by: query,
+          languages,
+          songs: songs.length,
+          reason: signal.disqualified
+            ? `channel mentions "${signal.disqualified}"`
+            : "nothing in the channel says it is gospel",
+        });
+        continue;
+      }
+
+      const row = toReviewedSource({
+        channel,
+        languages,
+        sample: songs[0],
+        verifiedAt: today,
+      });
+      added.push(row);
+      reviewed.push(row);
+      console.log(
+        `  ADD    ${row.name.slice(0, 30).padEnd(30)} ${languages.join(",").padEnd(8)} ` +
+          `${songs.length}+ songs  via "${query}"`,
+      );
+    }
+  }
+}
+
 if (!DRY_RUN) {
   reviewed.sort((a, b) => a.name.localeCompare(b.name));
   await writeFile(REVIEWED, `${JSON.stringify(reviewed, null, 2)}\n`);
   await writeFile(UNRESOLVED, `${JSON.stringify({ generated_at: today, unresolved }, null, 2)}\n`);
+  await writeFile(PENDING, `${JSON.stringify({ generated_at: today, pending }, null, 2)}\n`);
 }
 
 console.log(
-  `\n${added.length} added, ${unresolved.length} unresolved, ` +
+  `\n${added.length} added, ${unresolved.length} unresolved, ${pending.length} awaiting review, ` +
     `${reviewed.length} reviewed artists in total. About ${quotaSpent} quota units spent.`,
 );
-if (unresolved.length && !DRY_RUN) {
-  console.log(`Unresolved names written to ${UNRESOLVED} for manual review.`);
+if (!DRY_RUN) {
+  if (unresolved.length) console.log(`Names that did not resolve: ${UNRESOLVED}`);
+  if (pending.length)
+    console.log(
+      `Real music channels with no clear gospel signal: ${PENDING}. ` +
+        `Check them and move the genuine ones into ${REVIEWED}.`,
+    );
 }
 console.log(
   "Next: regenerate supabase/seeds/multilingual_sources.sql from the review file, " +

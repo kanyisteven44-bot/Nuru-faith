@@ -7,10 +7,24 @@ import { MEDIA_LANGUAGES, safeMediaTerm } from "@/lib/mediaDirectory";
 import { youtubeErrorMessage, type YouTubeVideo } from "@/services/youtubeService";
 import { CoverImage } from "@/components/nuru/CoverImage";
 import { CardSkeleton, PrimaryButton } from "@/components/nuru/Primitives";
+import { useNowPlaying, type NowPlayingTrack } from "@/hooks/useNowPlaying";
 import { MediaCatalog } from "./MediaCatalog";
 
 type Creator = Awaited<ReturnType<typeof fetchMediaDirectory>>["items"][number];
 const pill = "min-h-11 shrink-0 rounded-full border border-border px-4 text-sm font-medium";
+
+/** A search result in the shape the shared queue holds. */
+function asTrack(video: YouTubeVideo): NowPlayingTrack {
+  return {
+    id: video.youtubeVideoId,
+    source: "youtube",
+    external_id: video.youtubeVideoId,
+    title: video.title,
+    creator_name: video.channelName,
+    thumbnail_url: video.thumbnail,
+    duration_seconds: null,
+  };
+}
 
 export function MusicDiscovery({
   onPlay,
@@ -26,6 +40,7 @@ export function MusicDiscovery({
   const [selected, setSelected] = useState<Creator | null>(null);
   const [view, setView] = useState("All");
   const [language, setLanguage] = useState("all");
+  const { play } = useNowPlaying();
   const isMusic = mediaType === "music";
   const creatorLabel = isMusic ? "Artists" : "Creators";
   const contentLabel = isMusic ? "Songs" : "Episodes";
@@ -229,12 +244,15 @@ export function MusicDiscovery({
               {visibleVideos.length} {contentLabel.toLowerCase()} loaded
             </p>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
-              {visibleVideos.map((video) => (
+              {visibleVideos.map((video, position) => (
                 <button
                   key={video.youtubeVideoId}
                   data-video-id={video.youtubeVideoId}
                   type="button"
-                  onClick={() => onPlay(video)}
+                  onClick={() =>
+                    // An artist's songs queue up behind the one you tapped.
+                    isMusic ? play(visibleVideos.map(asTrack), position) : onPlay(video)
+                  }
                   aria-label={`Play ${video.title}`}
                   className="group overflow-hidden rounded-2xl border border-border bg-surface-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
@@ -296,7 +314,9 @@ export function MusicDiscovery({
           query={query}
           language={language}
           videoOnly={!isMusic}
-          onPlay={onPlayItem}
+          // Songs open in Nuru's own player with the list queued behind them;
+          // podcasts keep the panel, which also carries the publisher's audio.
+          {...(isMusic ? {} : { onPlay: onPlayItem })}
         />
       )}
     </section>

@@ -5,7 +5,21 @@ export type YoutubePlayer = {
   unMute(): void;
   setVolume(value: number): void;
   destroy(): void;
+  /** Position and seeking, so Nuru's own transport bar can drive the player. */
+  getCurrentTime(): number;
+  getDuration(): number;
+  seekTo(seconds: number, allowSeekAhead: boolean): void;
 };
+
+/** YouTube's numeric player states, named so call sites read clearly. */
+export const PLAYER_STATE = {
+  unstarted: -1,
+  ended: 0,
+  playing: 1,
+  paused: 2,
+  buffering: 3,
+  cued: 5,
+} as const;
 type PlayerEvent = { target: YoutubePlayer; data: number };
 type YoutubeApi = {
   Player: new (

@@ -9,6 +9,9 @@ import {
   qualifiesAsMusicSource,
   scoreChannelMatch,
   toReviewedSource,
+  faithSignal,
+  autoApprovable,
+  DISCOVERY_QUERIES,
 } from "../src/lib/musicSourceResolver.ts";
 
 const channel = (
@@ -152,4 +155,72 @@ test("a verified row always carries a channel to check it against", () => {
   });
   assert.ok(row.verification_url.endsWith(row.youtube_channel_id));
   assert.ok(row.sample_video_id.length === 11);
+});
+
+/* ---------- bulk discovery ---------- */
+
+test("a channel that says it is gospel passes the faith signal", () => {
+  for (const title of [
+    "Sample Gospel Ministries",
+    "Kikuyu Worship Channel",
+    "Nyimbo za Injili",
+    "Praise and Worship TV",
+  ]) {
+    assert.equal(faithSignal(channel(title)).gospel, true, `${title} should read as gospel`);
+  }
+});
+
+test("a secular music channel does not pass on search terms alone", () => {
+  // These are the shape of thing a "gospel" search actually returns.
+  for (const title of ["Benga Classics", "Ohangla Hits", "Top Kenyan Music"]) {
+    assert.equal(faithSignal(channel(title)).gospel, false, `${title} should not read as gospel`);
+  }
+});
+
+test("mix and DJ channels are disqualified outright", () => {
+  const dj = faithSignal({ ...channel("DJ Kipsot Gospel Mix"), description: "" });
+  assert.equal(dj.gospel, false);
+  assert.ok(dj.disqualified, "should say which word disqualified it");
+
+  const mix = faithSignal({ ...channel("Kalenjin Gospel Mix Vol 8"), description: "" });
+  assert.equal(mix.gospel, false);
+});
+
+test("the description counts, not just the title", () => {
+  const signal = faithSignal({
+    ...channel("Naserian"),
+    description: "Maasai gospel songs and worship from Narok.",
+  });
+  assert.equal(signal.gospel, true);
+});
+
+test("auto-approval needs both real songs and a gospel signal", () => {
+  const gospel = channel("Sample Gospel Ministries");
+  const secular = channel("Benga Classics");
+  assert.equal(autoApprovable(gospel, 12), true);
+  // Enough songs, but nothing says gospel.
+  assert.equal(autoApprovable(secular, 12), false);
+  // Says gospel, but barely any music.
+  assert.equal(autoApprovable(gospel, 1), false);
+});
+
+test("discovery covers every language the picker offers", async () => {
+  const { MEDIA_LANGUAGES } = await import("../src/lib/mediaDirectory.ts");
+  const searched = new Set(DISCOVERY_QUERIES.flatMap((q) => q.languages));
+  for (const { code, label } of MEDIA_LANGUAGES) {
+    if (code === "all" || code === "other") continue;
+    assert.ok(
+      searched.has(code),
+      `"${label}" (${code}) has a filter but no discovery query, so it would never fill.`,
+    );
+  }
+});
+
+test("discovery queries are gospel-specific, never bare language names", () => {
+  for (const { query } of DISCOVERY_QUERIES) {
+    assert.ok(
+      /gospel|worship|praise|injili|ngai/i.test(query),
+      `"${query}" is too broad — it would return secular channels.`,
+    );
+  }
 });

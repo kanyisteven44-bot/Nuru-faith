@@ -1,4 +1,4 @@
-import { otherLanguagesExclusion, safeMediaTerm } from "@/lib/mediaDirectory";
+import { otherLanguagesExclusion, otherLanguagesNotIn, safeMediaTerm } from "@/lib/mediaDirectory";
 import { supabase } from "@/integrations/supabase/client";
 
 export type MediaItem = {
@@ -74,7 +74,7 @@ export async function fetchMediaCatalog(options: {
   if (options.language && options.language !== "all") {
     query =
       options.language === "other"
-        ? query.not("language_code", "in", "(en,sw,ki,und)")
+        ? query.not("language_code", "in", otherLanguagesNotIn())
         : query.eq("language_code", options.language);
   }
   // Escape PostgREST grammar and LIKE wildcards before constructing an OR filter.

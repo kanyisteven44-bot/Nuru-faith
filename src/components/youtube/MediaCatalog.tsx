@@ -7,6 +7,7 @@ import { CardSkeleton, EmptyState, PrimaryButton } from "@/components/nuru/Primi
 import { resolveMedia } from "@/lib/media";
 import { playableAudioUrl, videoArtwork, youtubeVideoId } from "@/lib/mediaPlayback";
 import { duration } from "@/lib/format";
+import { useNowPlaying } from "@/hooks/useNowPlaying";
 import { InAppMediaPlayer as YouTubePlayer } from "./InAppMediaPlayer";
 
 export function MediaCatalog({
@@ -23,6 +24,7 @@ export function MediaCatalog({
   onPlay?: (item: MediaItem) => void;
 }) {
   const [selected, setSelected] = useState<MediaItem | null>(null);
+  const { play } = useNowPlaying();
   const nextPageMarker = useRef<HTMLDivElement>(null);
   const catalog = useInfiniteQuery({
     queryKey: ["media-catalog", mediaType, query, language, videoOnly],
@@ -89,13 +91,17 @@ export function MediaCatalog({
         />
       )}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
-        {items.map((item) => (
+        {items.map((item, position) => (
           <button
             key={item.id}
             type="button"
             className="group nuru-card overflow-hidden text-left transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             onClick={() => {
               if (onPlay) onPlay(item);
+              // Music opens in Nuru's own player, with the rest of the list
+              // queued behind it. Podcasts keep the panel, which also offers
+              // the publisher's audio stream.
+              else if (mediaType === "music") play(items, position);
               else setSelected(item);
             }}
             aria-label={`Play ${item.title}`}

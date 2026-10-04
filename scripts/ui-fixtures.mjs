@@ -139,6 +139,49 @@ export const FIXTURES = {
     topics: ["Prayer", "Discipleship"],
     is_active: true,
   })),
+
+  // Placeholder songs and artists, for checking the player's layout only.
+  // The titles are invented and the ids are not real videos or channels, so
+  // nothing here can be mistaken for a real artist's catalogue.
+  media_sources: Array.from({ length: 8 }, (_, i) => ({
+    id: `source-${i}`,
+    name: ["Sample Worship Collective", "Placeholder Praise Choir", "Example Gospel Band"][i % 3],
+    description: "Placeholder artist used for layout review.",
+    avatar_url: null,
+    youtube_channel_id: `UCsample${String(i).padStart(14, "0")}`,
+    content_kind: "music",
+    language_codes: [["sw"], ["ki"], ["luo"], ["kln"], ["kam"], ["luy"], ["mas"], ["en"]][i % 8],
+    source_type: "youtube",
+    is_approved: true,
+  })),
+
+  media_items: Array.from({ length: 18 }, (_, i) => ({
+    id: `song-${i}`,
+    source: "youtube",
+    external_id: `sample${String(i).padStart(5, "0")}`,
+    title: [
+      "Sample Song of Praise",
+      "Placeholder Worship Anthem",
+      "Example Hymn of Thanks",
+      "Sample Morning Devotion Song",
+    ][i % 4],
+    description: null,
+    thumbnail_url: [PHOTO, PHOTO2, PHOTO3][i % 3],
+    media_type: "music",
+    category: "worship",
+    creator_name: ["Sample Worship Collective", "Placeholder Praise Choir", "Example Gospel Band"][
+      i % 3
+    ],
+    youtube_channel_id: `UCsample${String(i % 8).padStart(14, "0")}`,
+    church_id: null,
+    audio_url: null,
+    duration_seconds: 180 + i * 17,
+    scripture_ref: null,
+    can_download: false,
+    is_featured: i < 3,
+    language_code: ["sw", "ki", "luo", "kln", "kam", "luy", "mas", "en"][i % 8],
+    published_at: new Date(Date.now() - i * 86400000).toISOString(),
+  })),
 };
 
 /**

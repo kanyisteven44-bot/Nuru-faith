@@ -159,6 +159,139 @@ export function isKnownChannel(
   return existing.some((e) => e.youtube_channel_id === channelId);
 }
 
+/* ---------- bulk discovery ---------- */
+
+/**
+ * Words that mark a channel as gospel rather than general music.
+ *
+ * Discovery searches gospel terms, but YouTube happily returns secular
+ * channels for them, so a discovered channel must say for itself that it is
+ * Christian music before it can be approved without a person looking. Named
+ * candidates skip this check — a person already vouched for the name.
+ */
+const FAITH_WORDS = [
+  "gospel",
+  "worship",
+  "praise",
+  "gospel music",
+  "christian",
+  "gospel singer",
+  "minister",
+  "ministries",
+  "ministry",
+  "church",
+  "jesus",
+  "christ",
+  "gospel artist",
+  "hymn",
+  "injili", // Kiswahili: gospel
+  "sifa", // Kiswahili: praise
+  "kwaya", // Kiswahili: choir
+  "nyimbo za injili",
+  "ibada", // Kiswahili: worship
+  "bwana", // Kiswahili: Lord
+  "mungu", // Kiswahili: God
+  "yesu",
+  "ngai", // Kikuyu: God
+  "nyasaye", // Dholuo: God
+  "mwathani", // Kikuyu: Lord
+  "asis", // Kalenjin: God
+  "enkai", // Maa: God
+  "akuj", // Turkana: God
+  "mulungu",
+  "murungu",
+];
+
+/** Words that mark a channel as something this catalogue must not import. */
+const DISQUALIFYING_WORDS = [
+  "dj ",
+  "mixtape",
+  "mix vol",
+  "nonstop mix",
+  "secular",
+  "comedy",
+  "news",
+  "politics",
+  "movie",
+  "film",
+  "drama",
+  "trailer",
+];
+
+function hasWord(haystack: string, needle: string): boolean {
+  return new RegExp(`(^|\\W)${needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(\\W|$)`, "i").test(
+    haystack,
+  );
+}
+
+/**
+ * Search terms that find gospel channels per language. Discovery runs every
+ * one of these, so the catalogue grows without anybody writing a name list.
+ * Each costs 100 quota units, so the set is deliberately finite.
+ */
+export const DISCOVERY_QUERIES: { query: string; languages: string[] }[] = [
+  // Kiswahili / East Africa
+  { query: "nyimbo za injili", languages: ["sw"] },
+  { query: "swahili gospel music official", languages: ["sw"] },
+  { query: "swahili worship songs", languages: ["sw"] },
+  { query: "kenyan gospel artist official", languages: ["sw"] },
+  { query: "tanzania gospel music official", languages: ["sw"] },
+  { query: "praise and worship kenya", languages: ["sw", "en"] },
+  // Kikuyu
+  { query: "kikuyu gospel songs official", languages: ["ki"] },
+  { query: "kikuyu worship music", languages: ["ki"] },
+  { query: "nyimbo cia gukena ngai", languages: ["ki"] },
+  // Dholuo
+  { query: "luo gospel songs official", languages: ["luo"] },
+  { query: "dholuo worship music", languages: ["luo"] },
+  // Kalenjin
+  { query: "kalenjin gospel songs official", languages: ["kln"] },
+  { query: "kalenjin worship music", languages: ["kln"] },
+  // Kamba
+  { query: "kamba gospel songs official", languages: ["kam"] },
+  { query: "kikamba gospel music", languages: ["kam"] },
+  // Luhya
+  { query: "luhya gospel songs official", languages: ["luy"] },
+  { query: "bukusu gospel music", languages: ["luy"] },
+  // Ekegusii
+  { query: "kisii gospel songs official", languages: ["guz"] },
+  { query: "ekegusii gospel music", languages: ["guz"] },
+  // Meru
+  { query: "kimeru gospel songs official", languages: ["mer"] },
+  // Maa
+  { query: "maasai gospel songs official", languages: ["mas"] },
+  // Turkana
+  { query: "turkana gospel songs official", languages: ["tuv"] },
+  // Taita
+  { query: "taita gospel songs official", languages: ["dav"] },
+  // English, African worship
+  { query: "african gospel worship official", languages: ["en"] },
+  { query: "gospel worship official channel", languages: ["en"] },
+];
+
+export type FaithSignal = { gospel: boolean; disqualified: string | null };
+
+/**
+ * Whether a channel's own title and description say it is gospel music.
+ * Returns the disqualifying word when one is found, so the report can say why.
+ */
+export function faithSignal(channel: ChannelSummary): FaithSignal {
+  const text = `${channel.title} ${channel.description ?? ""}`.toLowerCase();
+  const blocked = DISQUALIFYING_WORDS.find((word) =>
+    word.endsWith(" ") ? text.includes(word) : hasWord(text, word),
+  );
+  if (blocked) return { gospel: false, disqualified: blocked.trim() };
+  return { gospel: FAITH_WORDS.some((word) => hasWord(text, word)), disqualified: null };
+}
+
+/**
+ * Whether a channel found by search — rather than by name — may be approved
+ * without a person reviewing it. Stricter than the named path on purpose.
+ */
+export function autoApprovable(channel: ChannelSummary, eligibleSongCount: number): boolean {
+  return qualifiesAsMusicSource(eligibleSongCount) && faithSignal(channel).gospel;
+}
+
 /** Shape the verified result exactly as content/media-source-review.json stores it. */
 export function toReviewedSource(input: {
   channel: ChannelSummary;

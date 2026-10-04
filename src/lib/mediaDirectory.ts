@@ -48,9 +48,20 @@ export const NAMED_LANGUAGE_CODES: string[] = [
   "und",
 ];
 
-/** The Postgres array literal `not(language_codes, "cd", …)` expects. */
+/**
+ * "Other languages" for media_sources.language_codes, which is an array —
+ * the `cd` (contained-by) operator wants a Postgres array literal.
+ */
 export function otherLanguagesExclusion() {
   return `{${NAMED_LANGUAGE_CODES.join(",")}}`;
+}
+
+/**
+ * The same bucket for media_items.language_code, which is a single value —
+ * the `in` operator wants a parenthesised list instead.
+ */
+export function otherLanguagesNotIn() {
+  return `(${NAMED_LANGUAGE_CODES.join(",")})`;
 }
 
 export function safeMediaTerm(value: string) {

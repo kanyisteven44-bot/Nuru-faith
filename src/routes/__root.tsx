@@ -17,6 +17,8 @@ import { SplashScreen } from "@/components/nuru/SplashScreen";
 import { supabase } from "@/integrations/supabase/client";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
 import { ThemeProvider } from "@/hooks/useTheme";
+import { NowPlayingProvider } from "@/hooks/useNowPlaying";
+import { NuruPlayer } from "@/components/nuru/NuruPlayer";
 
 // Read directly (not through the `supabase` proxy, which throws if unset) so a
 // missing env var can never break page rendering — this link is a pure
@@ -179,10 +181,15 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <Outlet />
-        <Toaster position="top-center" />
-        <OfflineNotice />
-        <SplashScreen />
+        {/* The queue lives above the router so a song keeps playing while
+            you move between screens. */}
+        <NowPlayingProvider>
+          <Outlet />
+          <NuruPlayer />
+          <Toaster position="top-center" />
+          <OfflineNotice />
+          <SplashScreen />
+        </NowPlayingProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

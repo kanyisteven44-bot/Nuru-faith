@@ -880,3 +880,25 @@ a {
     box-shadow: none;
   }
 }
+
+/* The player's seek bar: the track and knob are drawn in the component, so
+   the native control is kept invisible but still fully operable by pointer,
+   keyboard and assistive technology. */
+.nuru-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  background: transparent;
+}
+.nuru-range::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: 9999px;
+  background: transparent;
+}
+.nuru-range::-webkit-slider-runnable-track,
+.nuru-range::-moz-range-track {
+  background: transparent;
+}

@@ -19,7 +19,11 @@ YOUTUBE_API_KEY=... node --experimental-strip-types scripts/resolve-music-source
 node scripts/generate-music-seed.mjs
 ```
 
-`NURU_DRY_RUN=1` resolves and reports without writing. `NURU_MAX_LOOKUPS` caps how many names are searched in a run: each search costs 100 units of a default 10,000/day quota, so roughly 95 new names per day.
+The run does two passes. First it resolves the named candidates. Then **discovery** searches gospel terms in every language the picker offers (`DISCOVERY_QUERIES` in `src/lib/musicSourceResolver.ts`) and keeps any channel that verifies on its own. That is what grows the catalogue past a hand-written list.
+
+A discovered channel is approved without a person looking only when it passes both gates: it has at least three uploads that satisfy the importer's rules, **and** its own title or description says it is gospel — in English or in the language it records in (`injili`, `sifa`, `ngai`, `nyasaye`, `enkai`, `akuj` and so on). A channel that is clearly a DJ mix, comedy or news feed is rejected outright. Real music channels with no gospel signal are written to `content/music-source-pending-review.json` instead of approved: search returns plenty of Benga and Ohangla for a gospel query, and those must not reach a worship catalogue for young people.
+
+`NURU_DRY_RUN=1` resolves and reports without writing. `NURU_DISCOVER=0` runs the named list alone. `NURU_QUOTA_BUDGET` (default 9000) stops the run before the day's API quota is gone; `NURU_MAX_LOOKUPS` caps named lookups. Each search costs 100 units of a default 10,000/day quota, so about 90 searches per day — re-run on later days to keep going.
 
 The resolver refuses rather than guesses. A one-word artist name only matches a channel whose title is exactly that name, two channels scoring alike are reported as ambiguous instead of picked between, and a channel with fewer than three eligible music uploads is rejected. This matters because a wrong channel id makes the importer serve the wrong channel's uploads to young people as worship music. Unresolved names are a normal outcome, not a failure — work through them by hand and add the confirmed channel.
 
@@ -40,3 +44,9 @@ Availability can change after import. Keep the visible YouTube player and extern
 ## Podcasts
 
 BibleProject episodes were imported from the publisher's public RSS feed `https://feeds.simplecast.com/3NVmUWZO` on 2026-10-02. Audio and artwork remain on the publisher's servers. No media is rehosted and no download permission is inferred. Stable feed GUID-derived IDs prevent duplicates. This import contains 543 distinct episodes; this is not a claim of 10,000 songs.
+
+## The player
+
+Songs open in Nuru's own player (`src/components/nuru/NuruPlayer.tsx`), not YouTube's default chrome: a slim bar above the navigation that opens into a full sheet, with Nuru's transport, type and artwork framing. Tapping a song queues the rest of the visible list behind it, and playback survives moving between screens because the queue (`src/hooks/useNowPlaying.tsx`) sits above the router.
+
+What the player may not do: YouTube's terms require its embedded player to stay visible and unobscured, and forbid separating audio from video. So the design treats the moving picture **as** the artwork — framed as a sleeve, with Nuru's controls around it — rather than hiding it behind a still and playing audio alone. `controls={false}` on the embed is an official parameter; hiding the player is not.

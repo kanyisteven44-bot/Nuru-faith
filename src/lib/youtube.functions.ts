@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { eligibleMusicVideo, MUSIC_SOURCE_NAMES } from "./musicImport";
+import { eligibleMusicVideo, isoSeconds, MUSIC_SOURCE_NAMES } from "./musicImport";
 import { faithSearch, trustedChannel, trustRank } from "./content-policy";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { enforceNuruRateLimit } from "./rateLimit";
@@ -289,6 +289,8 @@ export const youtubeSearch = createServerFn({ method: "POST" })
           const allowed = new Map(
             details.items
               .filter((video) =>
+                !/\b(podcast|sermon|interview|announcement|trailer|teaser|marriage|relationship|investments?)\b/i.test(video.snippet?.title ?? "") &&
+                isoSeconds(video.contentDetails?.duration ?? "") >= 120 &&
                 eligibleMusicVideo(
                   {
                     id: video.id,

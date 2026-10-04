@@ -19,11 +19,13 @@ test("Vercel deploys browser security headers", () => {
   assert.match(byName.get("permissions-policy") ?? "", /geolocation=\(\)/);
 });
 
-test("protected Nuru routes enforce MFA requirements", () => {
+test("protected Nuru routes require a session without an MFA redirect loop", () => {
   const route = read("src/routes/_authenticated/route.tsx");
-  assert.match(route, /getMfaRequirement/);
-  assert.match(route, /mode: "mfa"/);
-  assert.match(route, /mode: "mfa-setup"/);
+  assert.match(route, /supabase\.auth\.getSession/);
+  assert.match(route, /if \(error \|\| !user\) throw redirect/);
+  assert.doesNotMatch(route, /getMfaRequirement/);
+  assert.doesNotMatch(route, /mode: "mfa"/);
+  assert.doesNotMatch(route, /mode: "mfa-setup"/);
 });
 
 test("staff database writes require AAL2", () => {

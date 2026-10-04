@@ -40,6 +40,7 @@ function RailButton({
 
 /** The familiar vertical rail: creator, like, comments, share, save, more. */
 export function ReelActions({
+  horizontal = false,
   avatarUrl,
   creatorName,
   likeCount,
@@ -53,6 +54,7 @@ export function ReelActions({
   onSave,
   onMore,
 }: {
+  horizontal?: boolean;
   avatarUrl: string | null;
   creatorName: string;
   likeCount: number;
@@ -67,11 +69,16 @@ export function ReelActions({
   onMore: () => void;
 }) {
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div
+      className={cn(
+        "flex items-center",
+        horizontal ? "flex-row justify-between gap-1" : "flex-col gap-4",
+      )}
+    >
       <button
         type="button"
         onClick={onProfile}
-        aria-label={`Open ${creatorName}'s profile`}
+        aria-label={horizontal ? `About ${creatorName}` : `Open ${creatorName}'s profile`}
         className="transition-transform duration-150 active:scale-90"
       >
         <img
@@ -89,14 +96,22 @@ export function ReelActions({
       </button>
 
       <RailButton
-        aria={liked ? "Unlike Reel" : "Like Reel"}
+        aria={
+          horizontal
+            ? liked
+              ? "Unlike Reel in Nuru"
+              : "Like Reel in Nuru"
+            : liked
+              ? "Unlike Reel"
+              : "Like Reel"
+        }
         onClick={onLike}
-        label={compactNumber(likeCount)}
+        label={horizontal ? (liked ? "Liked" : "Like") : compactNumber(likeCount)}
         tint={liked ? "destructive" : undefined}
         icon={<Heart className={cn("h-6 w-6", liked && "fill-destructive text-destructive")} />}
       />
       <RailButton
-        aria={`Open ${commentCount} comments`}
+        aria={horizontal ? `Open ${commentCount} Nuru comments` : `Open ${commentCount} comments`}
         onClick={onComments}
         label={compactNumber(commentCount)}
         icon={<MessageCircle className="h-6 w-6" />}

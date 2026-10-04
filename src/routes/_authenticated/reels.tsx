@@ -94,8 +94,7 @@ function ReelsScreen() {
   const [muted, setMuted] = useState(true);
   const [dataSaver, setDataSaver] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
-  // A shared reel link should open straight into the full-screen player;
-  // otherwise Reels opens on the browsable grid.
+  // Open directly in the vertical feed; the grid remains an explicit choice.
   const [view, setView] = useState<"grid" | "feed">("feed");
   const [youtubeVisibleCount, setYoutubeVisibleCount] = useState(YOUTUBE_BATCH_SIZE);
   const [watchedExternalIds, setWatchedExternalIds] = useState<Set<string>>(new Set());
@@ -307,7 +306,7 @@ function ReelsScreen() {
   useEffect(() => {
     scrollerRef.current?.scrollTo({ top: 0 });
     setActiveIndex(0);
-    setView(linkedId ? "feed" : "grid");
+    setView("feed");
     setYoutubeVisibleCount(YOUTUBE_BATCH_SIZE);
     // Only react to the person switching feeds, not to linkedId itself.
     // eslint-disable-next-line react-hooks/exhaustive-deps

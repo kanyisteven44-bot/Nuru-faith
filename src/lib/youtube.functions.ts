@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { eligibleMusicVideo, isoSeconds, MUSIC_SOURCE_NAMES } from "./musicImport";
 import { faithSearch, trustedChannel, trustRank } from "./content-policy";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { enforceNuruRateLimit } from "./rateLimit";
@@ -62,9 +63,10 @@ export type YouTubeSearchResult = {
 const searchInput = z.object({
   query: z.string().trim().max(120).optional(),
   type: z.enum(["video", "playlist", "channel"]).default("video"),
-  maxResults: z.number().int().min(1).max(25).default(12),
+  maxResults: z.number().int().min(1).max(50).default(12),
   pageToken: z.string().max(200).optional(),
   channelId: z.string().max(64).optional(),
+  musicOnly: z.boolean().default(false),
   playlistId: z.string().max(64).optional(),
 });
 
@@ -74,6 +76,7 @@ const snippetSchema = z.object({
   description: z.string().optional(),
   channelId: z.string().optional(),
   channelTitle: z.string().optional(),
+  categoryId: z.string().optional(),
   publishedAt: z.string().optional(),
   videoOwnerChannelId: z.string().optional(),
   videoOwnerChannelTitle: z.string().optional(),
@@ -107,6 +110,20 @@ const responseSchema = z.object({
               videoId: z.string().optional(),
               duration: z.string().optional(),
               itemCount: z.number().optional(),
+              relatedPlaylists: z.object({ uploads: z.string().optional() }).optional(),
+              regionRestriction: z
+                .object({
+                  blocked: z.array(z.string()).optional(),
+                  allowed: z.array(z.string()).optional(),
+                })
+                .optional(),
+            })
+            .optional(),
+          status: z
+            .object({
+              embeddable: z.boolean().optional(),
+              privacyStatus: z.string().optional(),
+              uploadStatus: z.string().optional(),
             })
             .optional(),
           statistics: z.object({ subscriberCount: z.string().optional() }).optional(),
@@ -218,19 +235,36 @@ export const youtubeSearch = createServerFn({ method: "POST" })
     }
 
     try {
+      let playlistId = data.playlistId;
+      if (data.musicOnly) {
+        if (!data.channelId) return emptyResult("not-found");
+        const source = await context.supabase
+          .from("media_sources")
+          .select("id")
+          .eq("is_approved", true)
+          .eq("source_type", "youtube")
+          .eq("youtube_channel_id", data.channelId)
+          .in("name", MUSIC_SOURCE_NAMES)
+          .limit(1);
+        if (source.error) throw new Error("trust-unavailable");
+        if (!source.data?.length) return emptyResult("not-found");
+        const channel = await call("channels", { part: "contentDetails", id: data.channelId }, key);
+        playlistId = channel.items[0]?.contentDetails?.relatedPlaylists?.uploads;
+        if (!playlistId) return emptyResult("not-found");
+      }
       // Browsing a specific playlist's contents
-      if (data.playlistId) {
+      if (playlistId) {
         const json = await call(
           "playlistItems",
           {
             part: "snippet,contentDetails",
-            playlistId: data.playlistId,
+            playlistId,
             maxResults: String(data.maxResults),
             pageToken: data.pageToken,
           },
           key,
         );
-        const videos: YouTubeVideo[] = (json.items ?? [])
+        let videos: YouTubeVideo[] = (json.items ?? [])
           .filter((i) => i.contentDetails?.videoId)
           .map((i) => ({
             youtubeVideoId: i.contentDetails?.videoId ?? "",
@@ -243,6 +277,57 @@ export const youtubeSearch = createServerFn({ method: "POST" })
             duration: null,
             source: "youtube" as const,
           }));
+        if (data.musicOnly && videos.length) {
+          const details = await call(
+            "videos",
+            {
+              part: "snippet,status,contentDetails",
+              id: videos.map((video) => video.youtubeVideoId).join(","),
+            },
+            key,
+          );
+          const allowed = new Map(
+            details.items
+              .filter(
+                (video) =>
+                  !/\b(podcast|sermon|interview|announcement|trailer|teaser|marriage|relationship|investments?)\b/i.test(
+                    video.snippet?.title ?? "",
+                  ) &&
+                  isoSeconds(video.contentDetails?.duration ?? "") >= 120 &&
+                  eligibleMusicVideo(
+                    {
+                      id: video.id,
+                      snippet: {
+                        channelId: video.snippet?.channelId ?? "",
+                        categoryId: video.snippet?.categoryId ?? "",
+                        title: video.snippet?.title ?? "",
+                      },
+                      status: {
+                        embeddable: video.status?.embeddable ?? false,
+                        privacyStatus: video.status?.privacyStatus ?? "",
+                        uploadStatus: video.status?.uploadStatus ?? "",
+                      },
+                      contentDetails: {
+                        duration: video.contentDetails?.duration ?? "",
+                        ...(video.contentDetails?.regionRestriction
+                          ? { regionRestriction: video.contentDetails.regionRestriction }
+                          : {}),
+                      },
+                    },
+                    data.channelId!,
+                  ),
+              )
+              .map((video) => [video.id, video]),
+          );
+          videos = videos
+            .filter((video) => allowed.has(video.youtubeVideoId))
+            .map((video) => ({
+              ...video,
+              duration: readableDuration(
+                allowed.get(video.youtubeVideoId)?.contentDetails?.duration,
+              ),
+            }));
+        }
         return await filterTrusted({
           ...emptyResult(),
           videos,

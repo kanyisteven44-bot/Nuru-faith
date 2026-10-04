@@ -1,17 +1,12 @@
-import { YouTubeAccountAccess } from "@/components/youtube/YouTubeAccountAccess";
-import { generatedAvatar } from "@/lib/avatar";
 import { CoverImage } from "@/components/nuru/CoverImage";
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { BadgeCheck, Music2, Play, Search, X } from "lucide-react";
-import { toast } from "sonner";
-import { videoArtwork } from "@/lib/mediaPlayback";
-import { resolveMedia } from "@/lib/media";
 import { duration } from "@/lib/format";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchProfile, fetchTracks } from "@/services/content";
-import { fetchMediaItems, fetchMediaPlaylists, fetchMediaSources } from "@/services/media";
+import { fetchMediaItems, fetchMediaSources } from "@/services/media";
 import type { YouTubePlaylist, YouTubeVideo } from "@/services/youtubeService";
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
 import {
@@ -27,6 +22,7 @@ import { YouTubeSearchResults } from "@/components/youtube/YouTubeSearchResults"
 import { MediaCategoryRail } from "@/components/youtube/MediaCategoryRail";
 import { MediaCatalog, MediaPlayback } from "@/components/youtube/MediaCatalog";
 import type { MediaItem } from "@/services/media";
+import { MusicDiscovery } from "@/components/youtube/MusicDiscovery";
 import { MediaActions } from "@/components/youtube/MediaActions";
 
 export const Route = createFileRoute("/_authenticated/music")({
@@ -83,14 +79,6 @@ function MusicScreen() {
   const churchId = profile.data?.church_id ?? null;
 
   const tracks = useQuery({ queryKey: ["tracks"], queryFn: fetchTracks });
-  const curatedPlaylists = useQuery({
-    queryKey: ["media-playlists"],
-    queryFn: () => fetchMediaPlaylists(),
-  });
-  const featuredSongs = useQuery({
-    queryKey: ["media-items", "featured-songs"],
-    queryFn: () => fetchMediaItems({ mediaType: "music", featuredOnly: true, limit: 12 }),
-  });
   const artists = useQuery({
     queryKey: ["media-sources", "artist"],
     queryFn: () => fetchMediaSources({ sourceType: "youtube" }),
@@ -113,9 +101,6 @@ function MusicScreen() {
   return (
     <AppShell>
       <ScreenHeader title="Music & media" subtitle="Worship, teaching and sound for your week" />
-      <div className="mx-4 mb-4">
-        <YouTubeAccountAccess />
-      </div>
       <section
         className="relative mx-4 mb-2 overflow-hidden rounded-3xl bg-slate-950 p-6 text-white sm:p-8"
         aria-label="Worship collection"
@@ -165,12 +150,18 @@ function MusicScreen() {
         <PillTabs tabs={TABS} value={tab} onChange={setTab} />
       </div>
 
+      {tab === "Music" && !debounced.trim() && <MusicDiscovery onPlay={openVideo} />}
+
       {(tab === "Music" || tab === "Podcasts") && (
         <MediaCatalog
           mediaType={tab === "Music" ? "music" : "podcast"}
           query={debounced}
           onPlay={playCatalog}
         />
+      )}
+
+      {tab === "Music" && !debounced.trim() && !!tracks.data?.length && (
+        <NuruAudioSection tracks={tracks.data} loading={tracks.isLoading} onPlay={playCatalog} />
       )}
 
       {debounced.trim() ? (
@@ -181,126 +172,6 @@ function MusicScreen() {
         />
       ) : (
         <>
-          {tab === "Music" && (
-            <>
-              <section className="px-4 pt-2">
-                <SectionHeader title="Official worship channels" />
-                <p className="pb-2 text-xs text-muted-foreground">
-                  Curated official YouTube channels — tap one to play its latest worship uploads.
-                </p>
-                {curatedPlaylists.isLoading && <CardSkeleton count={3} height="h-16" />}
-                <div className="no-scrollbar flex gap-3 overflow-x-auto pb-2">
-                  {(curatedPlaylists.data ?? [])
-                    .filter((playlist) => playlist.category === "worship")
-                    .slice(0, 10)
-                    .map((playlist) => (
-                      <button
-                        key={playlist.id}
-                        type="button"
-                        onClick={() =>
-                          playlist.youtube_playlist_id
-                            ? (setSelectedMedia(null),
-                              setNowPlaying({
-                                kind: "youtube-playlist",
-                                id: playlist.youtube_playlist_id,
-                                title: playlist.title,
-                              }))
-                            : toast("This worship channel has no playable source yet")
-                        }
-                        className="nuru-card w-48 shrink-0 p-4 text-left"
-                      >
-                        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/12 text-leaf">
-                          <Music2 className="h-5 w-5" />
-                        </span>
-                        <span className="mt-3 block line-clamp-2 text-sm font-semibold">
-                          {playlist.title.replace(" — Official Worship", "")}
-                        </span>
-                        <span className="mt-1 block line-clamp-2 text-[11px] text-muted-foreground">
-                          {playlist.description}
-                        </span>
-                        <span className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold text-leaf">
-                          <Play className="h-3.5 w-3.5 fill-current" /> Play latest
-                        </span>
-                      </button>
-                    ))}
-                </div>
-              </section>
-
-              <section className="px-4 pt-4">
-                <SectionHeader title="Featured songs" />
-                {featuredSongs.isLoading && <CardSkeleton count={3} height="h-44" />}
-                <div className="no-scrollbar flex gap-3 overflow-x-auto pb-2">
-                  {(featuredSongs.data ?? []).map((song) => (
-                    <button
-                      key={song.id}
-                      type="button"
-                      onClick={() => playCatalog(song)}
-                      className="w-36 shrink-0 text-left"
-                    >
-                      <div className="relative overflow-hidden rounded-2xl border border-border bg-surface-2">
-                        <CoverImage
-                          src={videoArtwork(
-                            song.source,
-                            song.external_id,
-                            resolveMedia(song.thumbnail_url),
-                          )}
-                          alt=""
-                          fallbackSrc={generatedAvatar(song.title, song.id)}
-                          width={320}
-                          height={320}
-                          loading="lazy"
-                          className="h-36 w-36 object-cover"
-                        />
-                        <span className="absolute bottom-2 right-2 nuru-tactile nuru-tactile-primary flex h-11 w-11 items-center justify-center rounded-full bg-primary text-primary-foreground nuru-glow-sm">
-                          <Play className="h-4 w-4 fill-current" />
-                        </span>
-                      </div>
-                      <span className="mt-2 block line-clamp-2 text-sm font-semibold">
-                        {song.title}
-                      </span>
-                      <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">
-                        {song.creator_name}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </section>
-
-              <MediaCategoryRail
-                title="Worship right now"
-                query="christian worship live"
-                onSelect={openVideo}
-                showUnavailableNotice
-              />
-              <MediaCategoryRail
-                title="Songs for hard days"
-                query="christian worship peace anxiety"
-                onSelect={openVideo}
-              />
-              <MediaCategoryRail
-                title="Praise & celebration"
-                query="gospel praise songs"
-                onSelect={openVideo}
-              />
-              <MediaCategoryRail
-                title="Worship sets"
-                query="worship set full"
-                onSelect={openVideo}
-              />
-              <MediaCategoryRail title="Hymns" query="christian hymns" onSelect={openVideo} />
-              <MediaCategoryRail
-                title="Acoustic worship"
-                query="acoustic worship christian"
-                onSelect={openVideo}
-              />
-              <NuruAudioSection
-                tracks={tracks.data ?? []}
-                loading={tracks.isLoading}
-                onPlay={playCatalog}
-              />
-            </>
-          )}
-
           {tab === "Videos" && (
             <section className="px-4 pt-3">
               <SectionHeader title="Artists & channels" />

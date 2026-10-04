@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { eligibleMusicVideo, isoSeconds } from "../src/lib/musicImport.ts";
+import { eligibleMusicVideo, eligiblePodcastVideo, isoSeconds } from "../src/lib/musicImport.ts";
 import { playableAudioUrl, youtubeVideoId } from "../src/lib/mediaPlayback.ts";
 const video = {
   id: "abcdefghijk",
@@ -30,4 +30,20 @@ test("real durations and safe playback URLs", () => {
   );
   assert.equal(youtubeVideoId("abcdefghijk"), "abcdefghijk");
   assert.equal(youtubeVideoId("wrong"), null);
+});
+
+test("spoken uploads and short promotions stay out of music", () => {
+  for (const title of ["The Bold Podcast: Handling Conflicts", "New music teaser", "Tour announcement", "Marriage works"])
+    assert.equal(eligibleMusicVideo({ ...video, snippet: { ...video.snippet, title } }, "official"), false);
+  assert.equal(eligibleMusicVideo({ ...video, contentDetails: { duration: "PT1M59S" } }, "official"), false);
+  assert.equal(eligibleMusicVideo({ ...video, contentDetails: { duration: "PT2M" } }, "official"), true);
+});
+
+test("video episodes accept teaching categories but enforce channel and playback eligibility", () => {
+  const episode = { ...video, snippet: { ...video.snippet, categoryId: "27", title: "Bible podcast" } };
+  assert.equal(eligiblePodcastVideo(episode, "official"), true);
+  assert.equal(eligibleMusicVideo(episode, "official"), false);
+  assert.equal(eligiblePodcastVideo(episode, "unreviewed"), false);
+  assert.equal(eligiblePodcastVideo({ ...episode, status: { ...episode.status, embeddable: false } }, "official"), false);
+  assert.equal(eligiblePodcastVideo({ ...episode, contentDetails: { duration: "PT20M", regionRestriction: { allowed: ["US"] } } }, "official"), false);
 });

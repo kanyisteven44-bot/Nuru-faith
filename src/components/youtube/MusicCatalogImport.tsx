@@ -4,12 +4,13 @@ import { importMusicCatalogPage } from "@/lib/musicCatalog.functions";
 import { PrimaryButton } from "@/components/nuru/Primitives";
 
 type Cursor = { channelId: string | null; pageToken: string | null };
-const STORAGE_KEY = "nuru-music-import-v1";
 export function MusicCatalogImport() {
   const client = useQueryClient();
+  const [kind, setKind] = useState<"music" | "podcast">("music");
+  const STORAGE_KEY = `nuru-media-import-v2-${kind}`;
   const [running, setRunning] = useState(false);
   const [message, setMessage] = useState(
-    "Import distinct songs from approved official music channels.",
+    "Import distinct videos from reviewed sources. Admin MFA is required.",
   );
   const [total, setTotal] = useState<number | null>(null);
   const pause = useRef(false);
@@ -39,23 +40,21 @@ export function MusicCatalogImport() {
         }
       } else localStorage.removeItem(STORAGE_KEY);
       while (!pause.current) {
-        const result = await importMusicCatalogPage({ data: cursor });
+        const result = await importMusicCatalogPage({ data: { ...cursor, kind } });
         setTotal(result.total);
         await client.invalidateQueries({ queryKey: ["media-catalog"] });
         if (!result.next) {
           localStorage.removeItem(STORAGE_KEY);
           setMessage(
             result.targetReached
-              ? "10,000-song target reached."
-              : "Approved sources exhausted below 10,000. Review and add more official music channels; existing songs have not been duplicated.",
+              ? "10,000-video target reached."
+              : "Reviewed sources exhausted below the target. Add more reviewed creators to continue; entries have not been duplicated.",
           );
           break;
         }
         cursor = result.next;
         localStorage.setItem(STORAGE_KEY, JSON.stringify(cursor));
-        setMessage(
-          "Importing verified music metadata. Keep this page open, or pause and resume later.",
-        );
+        setMessage("Importing video metadata. Keep this page open, or pause and resume later.");
       }
       if (pause.current)
         setMessage("Paused after the current batch. Resume to continue from saved progress.");
@@ -68,12 +67,31 @@ export function MusicCatalogImport() {
   }
   return (
     <section className="nuru-card space-y-3 p-4">
-      <h2 className="font-display text-lg font-semibold">Music catalogue import</h2>
+      <h2 className="font-display text-lg font-semibold">Media catalogue import</h2>
+      <label className="block text-sm">
+        Collection
+        <select
+          aria-label="Import collection"
+          disabled={running}
+          value={kind}
+          onChange={(event) => {
+            setKind(event.target.value as "music" | "podcast");
+            setTotal(null);
+            setMessage("Ready to scan reviewed sources.");
+          }}
+          className="input-nuru mt-2"
+        >
+          <option value="music">Songs</option>
+          <option value="podcast">Video podcasts</option>
+        </select>
+      </label>
       <p className="text-sm text-muted-foreground" role="status">
         {message}
       </p>
       {total !== null && (
-        <p className="text-sm font-semibold">{total.toLocaleString()} / 10,000 distinct songs</p>
+        <p className="text-sm font-semibold">
+          {total.toLocaleString()} / 10,000 distinct {kind === "music" ? "songs" : "video episodes"}
+        </p>
       )}
       <div className="flex flex-wrap gap-2">
         <PrimaryButton disabled={running} onClick={() => void run(false)}>

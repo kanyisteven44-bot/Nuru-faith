@@ -1,3 +1,4 @@
+import { safeMediaTerm } from "@/lib/mediaDirectory";
 import { supabase } from "@/integrations/supabase/client";
 
 export type MediaItem = {
@@ -56,6 +57,9 @@ export async function fetchMediaItems(options?: {
 export async function fetchMediaCatalog(options: {
   mediaType: "music" | "podcast";
   query?: string;
+  language?: string;
+  channelId?: string;
+  videoOnly?: boolean;
   page: number;
 }) {
   const pageSize = 24;
@@ -65,6 +69,14 @@ export async function fetchMediaCatalog(options: {
     .eq("is_approved", true)
     .eq("media_type", options.mediaType)
     .or("source.eq.youtube,audio_url.not.is.null");
+  if (options.videoOnly) query = query.eq("source", "youtube");
+  if (options.channelId) query = query.eq("youtube_channel_id", options.channelId);
+  if (options.language && options.language !== "all") {
+    query =
+      options.language === "other"
+        ? query.not("language_code", "in", "(en,sw,ki,und)")
+        : query.eq("language_code", options.language);
+  }
   // Escape PostgREST grammar and LIKE wildcards before constructing an OR filter.
   const term = options.query
     ?.trim()
@@ -270,6 +282,8 @@ export async function setMediaApproval(
 }
 
 export async function upsertMediaSource(input: {
+  content_kind?: "music" | "podcast" | "mixed" | "other";
+  language_codes?: string[];
   name: string;
   source_type: string;
   youtube_channel_id?: string | null;
@@ -282,4 +296,37 @@ export async function upsertMediaSource(input: {
   const { data, error } = await supabase.from("media_sources").insert(input).select("id").single();
   if (error) throw error;
   return data;
+}
+
+export async function fetchMediaDirectory(options: {
+  kind: "music" | "podcast";
+  query?: string;
+  language?: string;
+  page: number;
+}) {
+  const pageSize = 36;
+  let query = supabase
+    .from("media_sources")
+    .select("id,name,description,avatar_url,youtube_channel_id,content_kind,language_codes", {
+      count: "exact",
+    })
+    .eq("is_approved", true)
+    .eq("source_type", "youtube")
+    .in("content_kind", [options.kind, "mixed"])
+    .not("youtube_channel_id", "is", null);
+  const term = safeMediaTerm(options.query ?? "");
+  if (term) query = query.ilike("name", `%${term}%`);
+  if (options.language && options.language !== "all") {
+    query =
+      options.language === "other"
+        ? query.not("language_codes", "cd", "{en,sw,ki,und}")
+        : query.contains("language_codes", [options.language]);
+  }
+  const start = Math.max(0, options.page) * pageSize;
+  const { data, error, count } = await query
+    .order("name")
+    .order("id")
+    .range(start, start + pageSize - 1);
+  if (error) throw error;
+  return { items: data ?? [], total: count ?? 0, hasMore: start + pageSize < (count ?? 0) };
 }

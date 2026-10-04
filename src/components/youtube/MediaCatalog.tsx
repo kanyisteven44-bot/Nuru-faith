@@ -1,4 +1,3 @@
-import { generatedAvatar } from "@/lib/avatar";
 import { useEffect, useRef, useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { Play, X } from "lucide-react";
@@ -8,23 +7,28 @@ import { CardSkeleton, EmptyState, PrimaryButton } from "@/components/nuru/Primi
 import { resolveMedia } from "@/lib/media";
 import { playableAudioUrl, videoArtwork, youtubeVideoId } from "@/lib/mediaPlayback";
 import { duration } from "@/lib/format";
-import { YouTubePlayer } from "./YouTubePlayer";
+import { InAppMediaPlayer as YouTubePlayer } from "./InAppMediaPlayer";
 
 export function MediaCatalog({
   mediaType,
   query = "",
   onPlay,
+  language = "all",
+  videoOnly = false,
 }: {
   mediaType: "music" | "podcast";
   query?: string;
+  language?: string;
+  videoOnly?: boolean;
   onPlay?: (item: MediaItem) => void;
 }) {
   const [selected, setSelected] = useState<MediaItem | null>(null);
   const nextPageMarker = useRef<HTMLDivElement>(null);
   const catalog = useInfiniteQuery({
-    queryKey: ["media-catalog", mediaType, query],
+    queryKey: ["media-catalog", mediaType, query, language, videoOnly],
     initialPageParam: 0,
-    queryFn: ({ pageParam }) => fetchMediaCatalog({ mediaType, query, page: pageParam }),
+    queryFn: ({ pageParam }) =>
+      fetchMediaCatalog({ mediaType, query, language, videoOnly, page: pageParam }),
     getNextPageParam: (page, pages) => (page.hasMore ? pages.length : undefined),
   });
   const items = catalog.data?.pages.flatMap((page) => page.items) ?? [];
@@ -58,7 +62,7 @@ export function MediaCatalog({
     >
       <div className="flex items-center justify-between gap-3">
         <h2 className="font-display text-lg font-semibold">
-          {mediaType === "music" ? "Song library" : "Podcast episodes"}
+          {mediaType === "music" ? "All songs" : videoOnly ? "Video episodes" : "Audio episodes"}
         </h2>
         {catalog.data && (
           <span className="text-xs text-muted-foreground" role="status" aria-live="polite">
@@ -84,27 +88,31 @@ export function MediaCatalog({
           }
         />
       )}
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
         {items.map((item) => (
           <button
             key={item.id}
             type="button"
-            className="group nuru-card flex min-h-24 items-center gap-4 p-3 text-left transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="group nuru-card overflow-hidden text-left transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             onClick={() => {
               if (onPlay) onPlay(item);
               else setSelected(item);
             }}
             aria-label={`Play ${item.title}`}
           >
-            <CoverImage
-              src={videoArtwork(item.source, item.external_id, resolveMedia(item.thumbnail_url))}
-              fallbackSrc={generatedAvatar(item.title, item.id)}
-              alt=""
-              className="h-20 w-20 shrink-0 rounded-xl"
-              width={96}
-              height={96}
-            />
-            <span className="min-w-0 flex-1">
+            <span className="relative block">
+              <CoverImage
+                src={videoArtwork(item.source, item.external_id, resolveMedia(item.thumbnail_url))}
+                alt=""
+                className="aspect-video w-full"
+                width={480}
+                height={270}
+              />
+              <span className="absolute bottom-2 right-2 flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                <Play className="h-4 w-4 fill-current" />
+              </span>
+            </span>
+            <span className="block min-w-0 p-3">
               <span className="block line-clamp-2 text-sm font-semibold">{item.title}</span>
               <span className="block truncate text-xs text-muted-foreground">
                 {item.creator_name}
@@ -114,9 +122,6 @@ export function MediaCatalog({
                   {duration(item.duration_seconds)}
                 </span>
               )}
-            </span>
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground">
-              <Play className="h-4 w-4 fill-current" />
             </span>
           </button>
         ))}

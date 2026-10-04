@@ -1,7 +1,7 @@
 /** Import metadata only. Playback remains in the official YouTube player. */
 import { createClient } from "@supabase/supabase-js";
 import { readFile, writeFile } from "node:fs/promises";
-import { eligibleMusicVideo, isoSeconds, MUSIC_SOURCE_NAMES } from "../src/lib/musicImport.ts";
+import { eligibleMusicVideo, isoSeconds } from "../src/lib/musicImport.ts";
 
 const key = process.env.YOUTUBE_API_KEY;
 const url = process.env.SUPABASE_URL;
@@ -47,15 +47,14 @@ async function count() {
 }
 const { data: sources, error } = await db
   .from("media_sources")
-  .select("id,name,youtube_channel_id")
+  .select("id,name,youtube_channel_id,content_kind")
   .eq("is_approved", true)
   .eq("source_type", "youtube");
 if (error) throw error;
 // Explicit musical sources. Never classify every sermon/channel upload as a song.
-const names = new Set(MUSIC_SOURCE_NAMES);
 let total = await count();
 try {
-  for (const source of (sources ?? []).filter((s) => names.has(s.name) && s.youtube_channel_id)) {
+  for (const source of (sources ?? []).filter((s) => ["music", "mixed"].includes(s.content_kind) && s.youtube_channel_id)) {
     if (total >= target) break;
     const channelId = source.youtube_channel_id;
     if (state.channels[channelId]?.done) continue;

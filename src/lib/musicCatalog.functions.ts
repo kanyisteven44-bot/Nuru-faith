@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { eligibleMusicVideo, isoSeconds, MUSIC_SOURCE_NAMES } from "./musicImport";
+import { eligibleMusicVideo, eligiblePodcastVideo, isoSeconds } from "./musicImport";
 
 const thumb = z.object({ url: z.string() });
 const videoSchema = z.object({
@@ -12,6 +12,7 @@ const videoSchema = z.object({
     channelTitle: z.string(),
     categoryId: z.string(),
     publishedAt: z.string(),
+    defaultAudioLanguage: z.string().optional(),
     thumbnails: z.object({ high: thumb.optional(), medium: thumb.optional() }),
   }),
   status: z.object({
@@ -32,6 +33,7 @@ export const importMusicCatalogPage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
     z.object({
+      kind: z.enum(["music", "podcast"]).default("music"),
       channelId: z.string().max(64).nullable().default(null),
       pageToken: z.string().max(500).nullable().default(null),
     }),
@@ -67,28 +69,37 @@ export const importMusicCatalogPage = createServerFn({ method: "POST" })
         .from("media_items")
         .select("id", { head: true, count: "exact" })
         .eq("source", "youtube")
-        .eq("media_type", "music")
+        .eq("media_type", data.kind)
         .eq("is_approved", true);
       if (error) throw error;
       return count ?? 0;
     };
     const before = await songCount();
     if (before >= 10000) return { total: before, added: 0, next: null, targetReached: true };
-    const { data: sources, error } = await db
-      .from("media_sources")
-      .select("id,name,youtube_channel_id")
-      .eq("is_approved", true)
-      .eq("source_type", "youtube")
-      .in("name", MUSIC_SOURCE_NAMES)
-      .order("id");
+    function sourceQuery() {
+      return db
+        .from("media_sources")
+        .select("id,name,youtube_channel_id,language_codes")
+        .eq("is_approved", true)
+        .eq("source_type", "youtube")
+        .in("content_kind", [data.kind, "mixed"])
+        .not("youtube_channel_id", "is", null);
+    }
+    let query = sourceQuery();
+    if (data.channelId) query = query.eq("youtube_channel_id", data.channelId);
+    const { data: sources, error } = await query.order("id").limit(1);
     if (error) throw error;
-    const eligibleSources = (sources ?? []).filter((source) => !!source.youtube_channel_id);
-    const index = data.channelId
-      ? eligibleSources.findIndex((source) => source.youtube_channel_id === data.channelId)
-      : 0;
-    if (index < 0) throw new Error("This source is no longer approved. Start a fresh import scan.");
-    const source = eligibleSources[index];
-    if (!source) return { total: before, added: 0, next: null, targetReached: false };
+    const source = sources?.[0];
+    if (!source) {
+      if (data.channelId) throw new Error("This source is no longer approved. Start a fresh scan.");
+      return { total: before, added: 0, next: null, targetReached: false };
+    }
+    const { data: following, error: nextError } = await sourceQuery()
+      .gt("id", source.id)
+      .order("id")
+      .limit(1);
+    if (nextError) throw nextError;
+    const nextChannel = following?.[0]?.youtube_channel_id;
     const channelId = source.youtube_channel_id!;
     const channel = z
       .object({
@@ -102,7 +113,6 @@ export const importMusicCatalogPage = createServerFn({ method: "POST" })
       })
       .parse(await call("channels", { part: "contentDetails", id: channelId }));
     const uploads = channel.items[0]?.contentDetails.relatedPlaylists.uploads;
-    const nextChannel = eligibleSources[index + 1]?.youtube_channel_id;
     if (!uploads)
       return {
         total: before,
@@ -130,7 +140,9 @@ export const importMusicCatalogPage = createServerFn({ method: "POST" })
           .parse(await call("videos", { part: "snippet,status,contentDetails", id: ids.join(",") }))
       : { items: [] };
     const rows = response.items
-      .filter((video) => eligibleMusicVideo(video, channelId))
+      .filter((video) =>
+        (data.kind === "music" ? eligibleMusicVideo : eligiblePodcastVideo)(video, channelId),
+      )
       .map((video) => ({
         source: "youtube",
         external_id: video.id,
@@ -138,8 +150,10 @@ export const importMusicCatalogPage = createServerFn({ method: "POST" })
         title: video.snippet.title,
         creator_name: video.snippet.channelTitle,
         youtube_channel_id: channelId,
-        media_type: "music",
-        category: "worship",
+        media_type: data.kind,
+        category: data.kind === "music" ? "worship" : "faith",
+        language_code:
+          video.snippet.defaultAudioLanguage?.split("-")[0] ?? source.language_codes[0] ?? "und",
         thumbnail_url:
           video.snippet.thumbnails.high?.url ?? video.snippet.thumbnails.medium?.url ?? null,
         duration_seconds: isoSeconds(video.contentDetails.duration),

@@ -896,6 +896,7 @@ export type Database = {
           is_approved: boolean;
           is_featured: boolean;
           media_type: string;
+          language_code: string;
           published_at: string | null;
           scripture_ref: string | null;
           source: string;
@@ -920,6 +921,7 @@ export type Database = {
           is_approved?: boolean;
           is_featured?: boolean;
           media_type?: string;
+          language_code?: string;
           published_at?: string | null;
           scripture_ref?: string | null;
           source: string;
@@ -1073,6 +1075,8 @@ export type Database = {
           is_approved: boolean;
           is_verified: boolean;
           name: string;
+          content_kind: string;
+          language_codes: string[];
           organization_id: string | null;
           source_type: string;
           updated_at: string;
@@ -1088,6 +1092,8 @@ export type Database = {
           is_approved?: boolean;
           is_verified?: boolean;
           name: string;
+          content_kind?: string;
+          language_codes?: string[];
           organization_id?: string | null;
           source_type: string;
           updated_at?: string;
@@ -1103,6 +1109,8 @@ export type Database = {
           is_approved?: boolean;
           is_verified?: boolean;
           name?: string;
+          content_kind?: string;
+          language_codes?: string[];
           organization_id?: string | null;
           source_type?: string;
           updated_at?: string;

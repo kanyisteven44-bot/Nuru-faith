@@ -20,7 +20,7 @@ import { NURU_PHOTO_POOLS, useRotatingMedia } from "@/lib/rotatingMedia";
 import { YouTubePlayer, YouTubeNotice } from "@/components/youtube/YouTubePlayer";
 import { YouTubeSearchResults } from "@/components/youtube/YouTubeSearchResults";
 import { MediaCategoryRail } from "@/components/youtube/MediaCategoryRail";
-import { MediaCatalog, MediaPlayback } from "@/components/youtube/MediaCatalog";
+import { MediaPlayback } from "@/components/youtube/MediaCatalog";
 import type { MediaItem } from "@/services/media";
 import { MusicDiscovery } from "@/components/youtube/MusicDiscovery";
 import { MediaActions } from "@/components/youtube/MediaActions";
@@ -150,13 +150,12 @@ function MusicScreen() {
         <PillTabs tabs={TABS} value={tab} onChange={setTab} />
       </div>
 
-      {tab === "Music" && !debounced.trim() && <MusicDiscovery onPlay={openVideo} />}
-
       {(tab === "Music" || tab === "Podcasts") && (
-        <MediaCatalog
+        <MusicDiscovery
           mediaType={tab === "Music" ? "music" : "podcast"}
           query={debounced}
-          onPlay={playCatalog}
+          onPlay={openVideo}
+          onPlayItem={playCatalog}
         />
       )}
 
@@ -164,9 +163,9 @@ function MusicScreen() {
         <NuruAudioSection tracks={tracks.data} loading={tracks.isLoading} onPlay={playCatalog} />
       )}
 
-      {debounced.trim() ? (
+      {debounced.trim() && tab !== "Music" && tab !== "Podcasts" ? (
         <YouTubeSearchResults
-          query={tab === "Podcasts" ? `${debounced} Christian podcast` : debounced}
+          query={debounced}
           onSelectVideo={openVideo}
           onSelectPlaylist={openPlaylist}
         />

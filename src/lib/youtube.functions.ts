@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { eligibleMusicVideo, isoSeconds, MUSIC_SOURCE_NAMES } from "./musicImport";
+import { eligibleMusicVideo, eligiblePodcastVideo } from "./musicImport";
 import { faithSearch, trustedChannel, trustRank } from "./content-policy";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { enforceNuruRateLimit } from "./rateLimit";
@@ -60,15 +60,20 @@ export type YouTubeSearchResult = {
   error: string | null;
 };
 
-const searchInput = z.object({
-  query: z.string().trim().max(120).optional(),
-  type: z.enum(["video", "playlist", "channel"]).default("video"),
-  maxResults: z.number().int().min(1).max(50).default(12),
-  pageToken: z.string().max(200).optional(),
-  channelId: z.string().max(64).optional(),
-  musicOnly: z.boolean().default(false),
-  playlistId: z.string().max(64).optional(),
-});
+const searchInput = z
+  .object({
+    query: z.string().trim().max(120).optional(),
+    type: z.enum(["video", "playlist", "channel"]).default("video"),
+    maxResults: z.number().int().min(1).max(50).default(12),
+    pageToken: z.string().max(200).optional(),
+    channelId: z.string().max(64).optional(),
+    musicOnly: z.boolean().default(false),
+    podcastOnly: z.boolean().default(false),
+    playlistId: z.string().max(64).optional(),
+  })
+  .refine((data) => !(data.musicOnly && data.podcastOnly), {
+    message: "Choose music or podcast videos, not both.",
+  });
 
 const thumbnailSchema = z.object({ url: z.string() });
 const snippetSchema = z.object({
@@ -236,7 +241,7 @@ export const youtubeSearch = createServerFn({ method: "POST" })
 
     try {
       let playlistId = data.playlistId;
-      if (data.musicOnly) {
+      if (data.musicOnly || data.podcastOnly) {
         if (!data.channelId) return emptyResult("not-found");
         const source = await context.supabase
           .from("media_sources")
@@ -244,7 +249,7 @@ export const youtubeSearch = createServerFn({ method: "POST" })
           .eq("is_approved", true)
           .eq("source_type", "youtube")
           .eq("youtube_channel_id", data.channelId)
-          .in("name", MUSIC_SOURCE_NAMES)
+          .in("content_kind", [data.musicOnly ? "music" : "podcast", "mixed"])
           .limit(1);
         if (source.error) throw new Error("trust-unavailable");
         if (!source.data?.length) return emptyResult("not-found");
@@ -277,7 +282,7 @@ export const youtubeSearch = createServerFn({ method: "POST" })
             duration: null,
             source: "youtube" as const,
           }));
-        if (data.musicOnly && videos.length) {
+        if ((data.musicOnly || data.podcastOnly) && videos.length) {
           const details = await call(
             "videos",
             {
@@ -288,34 +293,29 @@ export const youtubeSearch = createServerFn({ method: "POST" })
           );
           const allowed = new Map(
             details.items
-              .filter(
-                (video) =>
-                  !/\b(podcast|sermon|interview|announcement|trailer|teaser|marriage|relationship|investments?)\b/i.test(
-                    video.snippet?.title ?? "",
-                  ) &&
-                  isoSeconds(video.contentDetails?.duration ?? "") >= 120 &&
-                  eligibleMusicVideo(
-                    {
-                      id: video.id,
-                      snippet: {
-                        channelId: video.snippet?.channelId ?? "",
-                        categoryId: video.snippet?.categoryId ?? "",
-                        title: video.snippet?.title ?? "",
-                      },
-                      status: {
-                        embeddable: video.status?.embeddable ?? false,
-                        privacyStatus: video.status?.privacyStatus ?? "",
-                        uploadStatus: video.status?.uploadStatus ?? "",
-                      },
-                      contentDetails: {
-                        duration: video.contentDetails?.duration ?? "",
-                        ...(video.contentDetails?.regionRestriction
-                          ? { regionRestriction: video.contentDetails.regionRestriction }
-                          : {}),
-                      },
+              .filter((video) =>
+                (data.podcastOnly ? eligiblePodcastVideo : eligibleMusicVideo)(
+                  {
+                    id: video.id,
+                    snippet: {
+                      channelId: video.snippet?.channelId ?? "",
+                      categoryId: video.snippet?.categoryId ?? "",
+                      title: video.snippet?.title ?? "",
                     },
-                    data.channelId!,
-                  ),
+                    status: {
+                      embeddable: video.status?.embeddable ?? false,
+                      privacyStatus: video.status?.privacyStatus ?? "",
+                      uploadStatus: video.status?.uploadStatus ?? "",
+                    },
+                    contentDetails: {
+                      duration: video.contentDetails?.duration ?? "",
+                      ...(video.contentDetails?.regionRestriction
+                        ? { regionRestriction: video.contentDetails.regionRestriction }
+                        : {}),
+                    },
+                  },
+                  data.channelId!,
+                ),
               )
               .map((video) => [video.id, video]),
           );

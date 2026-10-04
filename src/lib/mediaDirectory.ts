@@ -6,6 +6,12 @@
  * (639-1 where one exists, otherwise 639-3), which is what `language_codes`
  * on media_sources and `language_code` on media_items store.
  *
+ * A language earns a pill only where gospel recording in it is documented —
+ * see content/music-source-candidates.json. Pokot, Samburu, Borana, Kuria
+ * and Somali are deliberately absent: no recording artists were found in
+ * those languages, and a pill that always returns nothing is a worse answer
+ * than no pill. Add them here once an artist is verified.
+ *
  * "All" and "Other" are buckets, not languages — NAMED_LANGUAGE_CODES below
  * derives from this list so a newly named language can never also fall into
  * "Other".
@@ -22,7 +28,8 @@ export const MEDIA_LANGUAGES = [
   { code: "guz", label: "Ekegusii" },
   { code: "mer", label: "Meru" },
   { code: "mas", label: "Maa" },
-  { code: "so", label: "Somali" },
+  { code: "tuv", label: "Turkana" },
+  { code: "dav", label: "Taita" },
   { code: "other", label: "Other languages" },
 ] as const;
 

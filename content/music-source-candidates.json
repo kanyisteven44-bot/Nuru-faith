@@ -12,7 +12,10 @@
     "do not resolve are reported for manual review, never guessed at.",
     "",
     "'languages' is the language the artist is reported to record in and is",
-    "applied to the source only once the channel itself is confirmed."
+    "applied to the source only once the channel itself is confirmed.",
+    "",
+    "Read 'excluded' before adding anyone back: it records artists who were",
+    "deliberately left out and why."
   ],
   "references": [
     "https://www.kamataschool.com/top-kikuyu-gospel-artists-in-kenya/",
@@ -24,6 +27,12 @@
     "https://believersportal.com/list-gospel-artists-kenya/",
     "https://mdundo.com/news/45523",
     "https://gospelregister.org/blogs/africa-gospel-music/posts/7314170/top-10-kenyan-gospel-artists",
+    "https://africangospellyrics.com/category/kenya-2/",
+    "https://africangospellyrics.com/category/kenya-2/turkana/",
+    "https://africangospellyrics.com/category/kenya-2/taita/",
+    "https://sifalyrics.com/chart/ke",
+    "https://www.standardmedia.co.ke/standard-entertainment/article/2000100070/after-a-long-struggle-turkana-girl-releases-a-hit-gospel-album",
+    "https://en.wikipedia.org/wiki/Category:Kenyan_gospel_musicians",
     "https://en.wikipedia.org/wiki/Gloria_Muliro",
     "https://en.wikipedia.org/wiki/Janet_Otieno",
     "https://en.wikipedia.org/wiki/Mary_Atieno_Ominde",
@@ -32,7 +41,61 @@
     "https://en.wikipedia.org/wiki/Evelyn_Wanjiru",
     "https://en.wikipedia.org/wiki/Peter_Kaberere",
     "https://en.wikipedia.org/wiki/Daddy_Owen",
-    "https://en.wikipedia.org/wiki/Agundabweni_Akweyu"
+    "https://en.wikipedia.org/wiki/Agundabweni_Akweyu",
+    "https://en.wikipedia.org/wiki/Cece_Sagini",
+    "https://en.wikipedia.org/wiki/Sarah_K"
+  ],
+  "excluded": [
+    {
+      "name": "Bahati",
+      "reason": "Left gospel music and no longer identifies as a gospel artist. Importing his channel would pull secular releases into a worship catalogue for young people.",
+      "source": "https://en.wikipedia.org/wiki/Bahati_(singer)"
+    },
+    {
+      "name": "Willy Paul",
+      "reason": "Moved from gospel to secular music in 2018 and has stated so himself. Same reason as above.",
+      "source": "https://www.standardmedia.co.ke/ureport/article/2001378740/willy-paul-explains-why-he-quit-the-gospel-music-industry"
+    },
+    {
+      "name": "Prince Indah, Musa Jakadala, Elisha Toto, Iyanii",
+      "reason": "Ohangla and Benga artists, not gospel. They surface in Luo music searches but sing secular material.",
+      "source": "https://en.wikipedia.org/wiki/Prince_Indah"
+    },
+    {
+      "name": "Samidoh",
+      "reason": "Secular Mugithi artist. Appears in Kikuyu and Meru music results but is not a gospel musician.",
+      "source": "search result conflation, not a gospel source"
+    }
+  ],
+  "languages_with_no_artist_found": [
+    {
+      "language": "Pokot",
+      "note": "No named recording gospel artist found. africangospellyrics.com has no Pokot category."
+    },
+    {
+      "language": "Samburu",
+      "note": "No named recording gospel artist found."
+    },
+    {
+      "language": "Borana",
+      "note": "No named recording gospel artist found."
+    },
+    {
+      "language": "Kuria",
+      "note": "No named recording gospel artist found."
+    },
+    {
+      "language": "Somali",
+      "note": "No Somali-language Christian worship recording artist found. Left out of the language picker rather than offered as an always-empty filter."
+    },
+    {
+      "language": "Mijikenda",
+      "note": "africangospellyrics.com carries Mijikenda gospel lyrics, so the tradition exists, but no named recording artist was found. Left out of the picker until one is."
+    },
+    {
+      "language": "Meru",
+      "note": "Kimeru gospel exists in mixes and lyrics collections, but only one named artist was found (Single L Star), so coverage is thin and may not survive the resolver."
+    }
   ],
   "candidates": [
     {
@@ -55,6 +118,8 @@
     { "name": "Muhiko Nebster", "languages": ["ki"], "note": "kamataschool" },
     { "name": "Phyllis Mbuthia", "languages": ["ki"], "note": "chosic Kikuyu gospel chart" },
     { "name": "Loise Kim", "languages": ["ki"], "note": "chosic Kikuyu gospel chart" },
+    { "name": "John Ndungu", "languages": ["ki"], "note": "kamataschool" },
+    { "name": "Allan Aaron", "languages": ["ki"], "note": "kamataschool" },
 
     {
       "name": "Emmy Kosgei",
@@ -82,6 +147,12 @@
       "note": "Kalenjin gospel compilation credits"
     },
     { "name": "Joy Kibet", "languages": ["kln", "sw"], "note": "Kalenjin and Swahili gospel" },
+    {
+      "name": "Millicent Cherotich",
+      "languages": ["kln"],
+      "note": "Kalenjin gospel compilation credits"
+    },
+    { "name": "Josphat Koech Karanja", "languages": ["kln"], "note": "kalenjininfocentre" },
 
     {
       "name": "Janet Otieno",
@@ -98,7 +169,12 @@
     { "name": "Eunice Ogoma", "languages": ["luo"], "note": "Luo gospel listings" },
     { "name": "Dorah Nyagem", "languages": ["luo"], "note": "Luo gospel listings" },
     { "name": "Brother Benard", "languages": ["luo"], "note": "Luo gospel listings" },
-    { "name": "Elizabeth Nyambere Atieno", "languages": ["luo"], "note": "Luo gospel listings" },
+    {
+      "name": "Joyce Omondi",
+      "languages": ["luo", "en"],
+      "note": "Wikipedia Kenyan gospel musicians category"
+    },
+    { "name": "Melez Dottie", "languages": ["luo"], "note": "Luo gospel listings" },
 
     {
       "name": "Stephen Kasolo",
@@ -122,12 +198,69 @@
     { "name": "Hellena Ken", "languages": ["kam"], "note": "thekenya411 Kamba gospel list" },
     { "name": "Henrie Mutuku", "languages": ["kam", "en"], "note": "Wikipedia — Kenyan gospel" },
     { "name": "Mbuvi", "languages": ["kam", "sw"], "note": "Wikipedia — Kenyan gospel" },
+    { "name": "Kenny Bizzoh", "languages": ["kam"], "note": "thekenya411 Kamba gospel list" },
+    { "name": "Pastor Musembi", "languages": ["kam"], "note": "thekenya411 Kamba gospel list" },
 
     { "name": "Gloria Muliro", "languages": ["luy", "sw"], "note": "Wikipedia — records in Luhya" },
     {
       "name": "Agundabweni Akweyu",
       "languages": ["luy", "sw"],
       "note": "Wikipedia — Kenyan gospel"
+    },
+    {
+      "name": "Timothy Kitui",
+      "languages": ["luy"],
+      "note": "Luhya gospel — 'Huvira Vyosi', 'Ndakhuyanza'"
+    },
+    { "name": "Micah Wanyenje", "languages": ["luy"], "note": "Bukusu gospel — 'Takwei'" },
+    { "name": "Lydiah Henry", "languages": ["luy"], "note": "Luhya gospel listings" },
+    { "name": "Pius Wafula", "languages": ["luy"], "note": "Luhya gospel listings" },
+    {
+      "name": "Ungasitse",
+      "languages": ["luy"],
+      "note": "Maragoli gospel album on Apple Music / Shazam"
+    },
+
+    {
+      "name": "Cece Sagini",
+      "languages": ["guz", "en"],
+      "note": "Wikipedia Kenyan gospel musicians category"
+    },
+
+    {
+      "name": "Single L Star",
+      "languages": ["mer"],
+      "note": "Only named Kimeru gospel artist found — 'MURUNGU (official meru kenyan gospel)'. Kimeru gospel clearly exists in mixes and lyrics sites, but named recording artists are thinly documented online. If this channel does not clear the resolver, drop 'mer' from MEDIA_LANGUAGES until one does."
+    },
+
+    {
+      "name": "Agatha Naserian",
+      "languages": ["mas"],
+      "note": "Maasai gospel — 'Eton Ake Eparanita Enkai'"
+    },
+    { "name": "Mercy Selein", "languages": ["mas"], "note": "Maasai worship" },
+    { "name": "Joshua ole Nasio", "languages": ["mas"], "note": "Maasai gospel — 'Ashe Enkai'" },
+    { "name": "Lucy Rotiken", "languages": ["mas"], "note": "Maasai gospel — 'Orpurkel'" },
+    { "name": "Ben Lankoi", "languages": ["mas"], "note": "Maasai gospel — 'Keidimayu'" },
+
+    {
+      "name": "Moses Eiton",
+      "languages": ["tuv"],
+      "note": "Turkana gospel; also written Apostle Moses Eiton"
+    },
+    { "name": "Madona Erupe", "languages": ["tuv"], "note": "Standard — album 'Ebongunit Yesu'" },
+    { "name": "Sammy Epungure", "languages": ["tuv"], "note": "Turkana gospel listings" },
+    { "name": "Susan Akabwai", "languages": ["tuv"], "note": "Turkana gospel listings" },
+
+    {
+      "name": "Boniface Mghanga",
+      "languages": ["dav"],
+      "note": "Taita gospel — arranger, 'Kaunga Yachee'"
+    },
+    {
+      "name": "Muungano Choir",
+      "languages": ["dav", "sw"],
+      "note": "africangospellyrics Taita entry"
     },
 
     {
@@ -149,13 +282,44 @@
       "languages": ["sw", "en"],
       "note": "believersportal Kenyan gospel list"
     },
-    { "name": "Bahati", "languages": ["sw"], "note": "thekenya411; mdundo" },
     { "name": "Jimmy Gait", "languages": ["sw"], "note": "believersportal Kenyan gospel list" },
-    { "name": "Willy Paul", "languages": ["sw"], "note": "believersportal Kenyan gospel list" },
     { "name": "Peter Kaberere", "languages": ["sw"], "note": "Wikipedia — Kenyan gospel" },
-    { "name": "Emmy Kosgei", "languages": ["kln", "sw"], "note": "duplicate guard exercise" },
-    { "name": "Phyllis Mbuthia", "languages": ["ki"], "note": "duplicate guard exercise" },
-    { "name": "Mejja Kerubo", "languages": ["guz"], "note": "Ekegusii gospel listings" },
-    { "name": "Christina Shusho", "languages": ["sw"], "note": "already reviewed — dedupe check" }
+    {
+      "name": "Amani Gracious",
+      "languages": ["sw"],
+      "note": "Wikipedia Kenyan gospel musicians category"
+    },
+    {
+      "name": "Masha Mapenzi",
+      "languages": ["sw"],
+      "note": "Wikipedia Kenyan gospel musicians category"
+    },
+    {
+      "name": "George Barasa",
+      "languages": ["sw"],
+      "note": "Wikipedia Kenyan gospel musicians category"
+    },
+    {
+      "name": "Esther and Ezekiel",
+      "languages": ["sw"],
+      "note": "Wikipedia Kenyan gospel musicians category"
+    },
+    {
+      "name": "Hopekid",
+      "languages": ["sw"],
+      "note": "Kenyan gospel, quoted on the industry in pulse.co.ke"
+    },
+    {
+      "name": "Baraka Eliya",
+      "languages": ["sw"],
+      "note": "2025 Swahili worship release 'Niko Salama'"
+    },
+    {
+      "name": "Neema Mwende",
+      "languages": ["sw"],
+      "note": "2025 Swahili worship release 'Niko Salama'"
+    },
+    { "name": "Obby Alpha", "languages": ["sw"], "note": "Swahili gospel mix credits 2025" },
+    { "name": "Moji Short Baba", "languages": ["sw"], "note": "Swahili gospel mix credits 2025" }
   ]
 }

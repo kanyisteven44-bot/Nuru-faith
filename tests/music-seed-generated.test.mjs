@@ -75,5 +75,62 @@ test("candidate names are plain data, with no channel ids guessed in advance", a
       false,
       `${candidate.name}: candidates must not pre-declare a channel id`,
     );
+    assert.ok(candidate.note?.length, `${candidate.name}: no note saying where the name came from`);
+  }
+});
+
+test("artists who left gospel music are not quietly re-added", async () => {
+  const file = JSON.parse(await readFile("content/music-source-candidates.json", "utf8"));
+  assert.ok(file.excluded?.length, "the excluded list is missing");
+
+  // Each excluded entry may name several artists in one line.
+  const barred = file.excluded
+    .flatMap((e) => e.name.split(",").map((n) => n.trim().toLowerCase()))
+    .filter(Boolean);
+  for (const entry of file.excluded) {
+    assert.ok(entry.reason?.length, `${entry.name}: excluded with no reason given`);
+  }
+
+  for (const candidate of file.candidates) {
+    assert.ok(
+      !barred.includes(candidate.name.toLowerCase()),
+      `${candidate.name} is on the excluded list — see 'excluded' for why. ` +
+        `Importing a secular artist's channel would pull non-worship releases ` +
+        `into the catalogue.`,
+    );
+  }
+});
+
+test("every candidate language has a filter users can reach it by", async () => {
+  const file = JSON.parse(await readFile("content/music-source-candidates.json", "utf8"));
+  const { MEDIA_LANGUAGES } = await import("../src/lib/mediaDirectory.ts");
+  const offered = new Set(MEDIA_LANGUAGES.map((l) => l.code));
+  for (const candidate of file.candidates) {
+    for (const code of candidate.languages) {
+      assert.ok(
+        offered.has(code),
+        `${candidate.name} is tagged "${code}", which MEDIA_LANGUAGES does not offer — ` +
+          `the artist would be unreachable except under "Other languages".`,
+      );
+    }
+  }
+});
+
+test("a language is only offered where an artist was actually found", async () => {
+  const file = JSON.parse(await readFile("content/music-source-candidates.json", "utf8"));
+  const { MEDIA_LANGUAGES } = await import("../src/lib/mediaDirectory.ts");
+  const reviewed = JSON.parse(await readFile("content/media-source-review.json", "utf8"));
+
+  const covered = new Set([
+    ...file.candidates.flatMap((c) => c.languages),
+    ...reviewed.flatMap((r) => r.language_codes ?? []),
+  ]);
+  for (const { code, label } of MEDIA_LANGUAGES) {
+    if (code === "all" || code === "other") continue;
+    assert.ok(
+      covered.has(code),
+      `"${label}" (${code}) is offered as a filter but no candidate or reviewed ` +
+        `artist records in it, so the filter would always be empty.`,
+    );
   }
 });

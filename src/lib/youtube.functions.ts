@@ -288,31 +288,34 @@ export const youtubeSearch = createServerFn({ method: "POST" })
           );
           const allowed = new Map(
             details.items
-              .filter((video) =>
-                !/\b(podcast|sermon|interview|announcement|trailer|teaser|marriage|relationship|investments?)\b/i.test(video.snippet?.title ?? "") &&
-                isoSeconds(video.contentDetails?.duration ?? "") >= 120 &&
-                eligibleMusicVideo(
-                  {
-                    id: video.id,
-                    snippet: {
-                      channelId: video.snippet?.channelId ?? "",
-                      categoryId: video.snippet?.categoryId ?? "",
-                      title: video.snippet?.title ?? "",
+              .filter(
+                (video) =>
+                  !/\b(podcast|sermon|interview|announcement|trailer|teaser|marriage|relationship|investments?)\b/i.test(
+                    video.snippet?.title ?? "",
+                  ) &&
+                  isoSeconds(video.contentDetails?.duration ?? "") >= 120 &&
+                  eligibleMusicVideo(
+                    {
+                      id: video.id,
+                      snippet: {
+                        channelId: video.snippet?.channelId ?? "",
+                        categoryId: video.snippet?.categoryId ?? "",
+                        title: video.snippet?.title ?? "",
+                      },
+                      status: {
+                        embeddable: video.status?.embeddable ?? false,
+                        privacyStatus: video.status?.privacyStatus ?? "",
+                        uploadStatus: video.status?.uploadStatus ?? "",
+                      },
+                      contentDetails: {
+                        duration: video.contentDetails?.duration ?? "",
+                        ...(video.contentDetails?.regionRestriction
+                          ? { regionRestriction: video.contentDetails.regionRestriction }
+                          : {}),
+                      },
                     },
-                    status: {
-                      embeddable: video.status?.embeddable ?? false,
-                      privacyStatus: video.status?.privacyStatus ?? "",
-                      uploadStatus: video.status?.uploadStatus ?? "",
-                    },
-                    contentDetails: {
-                      duration: video.contentDetails?.duration ?? "",
-                      ...(video.contentDetails?.regionRestriction
-                        ? { regionRestriction: video.contentDetails.regionRestriction }
-                        : {}),
-                    },
-                  },
-                  data.channelId!,
-                ),
+                    data.channelId!,
+                  ),
               )
               .map((video) => [video.id, video]),
           );

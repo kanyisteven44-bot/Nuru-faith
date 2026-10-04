@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { Play } from "lucide-react";
 import { fetchMediaSources } from "@/services/media";
@@ -43,6 +43,13 @@ export function MusicDiscovery({ onPlay }: { onPlay: (video: YouTubeVideo) => vo
       ]),
     ).values(),
   ];
+  const { hasNextPage, isFetching, isError, fetchNextPage } = songs;
+  const pageCount = songs.data?.pages.length ?? 0;
+  useEffect(() => {
+    if (hasNextPage && !isFetching && !isError && videos.length < 12 && pageCount < 4) {
+      void fetchNextPage();
+    }
+  }, [hasNextPage, isFetching, isError, pageCount, fetchNextPage, videos.length]);
   return (
     <section className="space-y-4 px-4 py-5" aria-label="Discover music">
       <div>

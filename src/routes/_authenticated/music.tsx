@@ -1,4 +1,3 @@
-import { YouTubeAccountAccess } from "@/components/youtube/YouTubeAccountAccess";
 import { generatedAvatar } from "@/lib/avatar";
 import { CoverImage } from "@/components/nuru/CoverImage";
 import { useEffect, useState } from "react";
@@ -113,9 +112,6 @@ function MusicScreen() {
   return (
     <AppShell>
       <ScreenHeader title="Music & media" subtitle="Worship, teaching and sound for your week" />
-      <div className="mx-4 mb-4">
-        <YouTubeAccountAccess />
-      </div>
       <section
         className="relative mx-4 mb-2 overflow-hidden rounded-3xl bg-slate-950 p-6 text-white sm:p-8"
         aria-label="Worship collection"

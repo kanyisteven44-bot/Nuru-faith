@@ -670,6 +670,121 @@ a {
   }
 }
 
+/* Cinematic opening: finite motion, extruded arch and a reflected light stage. */
+.nuru-opening {
+  background: radial-gradient(ellipse at 50% 35%, #123e5a 0%, #06182a 42%, #020812 100%);
+}
+.nuru-opening-halo {
+  background: radial-gradient(ellipse at 50% 35%, rgb(65 194 255 / 22%), transparent 42%);
+  animation: nuru-halo-arrive 2.4s ease-out both;
+}
+.nuru-opening-scene {
+  perspective: 1000px;
+}
+.nuru-opening-mark {
+  transform: rotateX(-6deg) rotateY(-12deg);
+  animation: nuru-arch-arrive 2.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.nuru-opening-face {
+  filter: drop-shadow(0 0 5px #bdefff) drop-shadow(0 0 20px rgb(38 181 255 / 65%));
+}
+.nuru-opening-floor {
+  top: 48%;
+  width: min(82vw, 640px);
+  height: 180px;
+  background: radial-gradient(ellipse, rgb(81 206 255 / 22%), transparent 68%);
+  border-color: rgb(120 217 255 / 10%);
+}
+.nuru-opening-reflection {
+  position: absolute;
+  top: 96%;
+  width: 100%;
+  height: 45%;
+  opacity: 0.18;
+  transform: scaleY(-1) rotateX(45deg);
+  filter: blur(3px);
+  mask-image: linear-gradient(transparent, black);
+  pointer-events: none;
+}
+.nuru-opening-orbit {
+  position: absolute;
+  inset: 12% -35%;
+  border: 1px solid rgb(103 204 255 / 18%);
+  border-top-color: rgb(174 237 255 / 60%);
+  border-radius: 50%;
+  transform: rotateZ(-25deg) rotateX(65deg);
+  animation: nuru-orbit-arrive 2.4s ease-out both;
+  pointer-events: none;
+}
+.nuru-opening-stars {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.nuru-opening-stars i {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: #b2e8ff;
+  box-shadow: 0 0 8px rgb(125 222 255 / 60%);
+  opacity: 0.4;
+  animation: nuru-stars-arrive 1.8s ease-out both;
+}
+@keyframes nuru-arch-arrive {
+  from {
+    opacity: 0;
+    transform: translateZ(-260px) rotateX(16deg) rotateY(72deg) scale(0.65);
+  }
+  55% {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+    transform: rotateX(-6deg) rotateY(-12deg);
+  }
+}
+@keyframes nuru-orbit-arrive {
+  from {
+    opacity: 0;
+    transform: rotateZ(-70deg) rotateX(75deg) scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: rotateZ(-25deg) rotateX(65deg);
+  }
+}
+@keyframes nuru-halo-arrive {
+  from {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes nuru-stars-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 0.4;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nuru-opening-mark {
+    transform: none;
+  }
+  .nuru-opening-orbit,
+  .nuru-opening-reflection,
+  .nuru-opening-stars {
+    display: none;
+  }
+}
+
 /* Quick Access tiles: a saturated rounded square per destination. */
 .home-tile {
   display: inline-flex;

@@ -3,7 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 
 const SESSION_KEY = "nuru-opening-3d-shown";
-const HOLD_MS = 3400;
+const HOLD_MS = 2800;
 const MAX_MS = 5000;
 const EXIT_MS = 320;
 let shownOnLoad: boolean | null = null;
@@ -118,6 +118,18 @@ export function SplashScreen({
       )}
     >
       <div aria-hidden="true" className="nuru-opening-halo" />
+      <div aria-hidden="true" className="nuru-opening-stars">
+        {Array.from({ length: 18 }, (_, index) => (
+          <i
+            key={index}
+            style={{
+              left: `${(index * 37 + 11) % 100}%`,
+              top: `${(index * 23 + 7) % 78}%`,
+              animationDelay: `${index * 70}ms`,
+            }}
+          />
+        ))}
+      </div>
       <div aria-hidden="true" className="nuru-opening-floor" />
       <button
         ref={skipButton}
@@ -128,6 +140,7 @@ export function SplashScreen({
         {preview ? "Close preview" : "Skip intro"}
       </button>
       <div aria-hidden="true" className="nuru-opening-scene">
+        <div className="nuru-opening-orbit" />
         <div className="nuru-opening-mark">
           {Array.from({ length: 9 }, (_, index) => (
             <svg
@@ -140,7 +153,7 @@ export function SplashScreen({
               <path
                 d={ARCH}
                 stroke={index === 0 ? "#C9F3FF" : "#167CA9"}
-                strokeWidth={index === 0 ? 5 : 7}
+                strokeWidth={index === 0 ? 6 : 8}
                 strokeLinecap="round"
               />
             </svg>
@@ -156,6 +169,9 @@ export function SplashScreen({
             />
           </svg>
           <div className="nuru-opening-beam" />
+          <svg viewBox="0 0 200 250" fill="none" className="nuru-opening-reflection">
+            <path d={ARCH} stroke="#8DDFFF" strokeWidth="5" strokeLinecap="round" />
+          </svg>
         </div>
       </div>
       <div className="nuru-opening-title relative z-10 mt-4 text-center">

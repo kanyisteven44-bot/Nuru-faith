@@ -24,7 +24,7 @@ export function MusicDiscovery({
   mediaType?: "music" | "podcast";
 }) {
   const [selected, setSelected] = useState<Creator | null>(null);
-  const [view, setView] = useState("All");
+  const [view, setView] = useState(isMusic ? "Songs" : "Episodes");
   const [language, setLanguage] = useState("all");
   const isMusic = mediaType === "music";
   const creatorLabel = isMusic ? "Artists" : "Creators";
@@ -290,7 +290,7 @@ export function MusicDiscovery({
           </>
         )}
       </div>
-      {!selected && view !== creatorLabel && (
+      {!selected && (
         <MediaCatalog
           mediaType={mediaType}
           query={query}

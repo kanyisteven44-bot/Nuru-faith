@@ -25,7 +25,7 @@ export function YouTubeAccountAccess() {
           href="https://music.youtube.com/"
           target="_blank"
           rel="noopener noreferrer"
-          className="btn-nuru-primary flex min-h-12 items-center justify-center gap-2 rounded-2xl px-4 text-sm font-semibold"
+          className="bg-primary text-primary-foreground hover:opacity-90 flex min-h-12 items-center justify-center gap-2 rounded-2xl px-4 text-sm font-semibold"
         >
           <Music2 aria-hidden="true" className="h-4 w-4" />
           Open YouTube Music

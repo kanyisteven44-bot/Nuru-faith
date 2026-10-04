@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowUp, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useShareSheet } from "@/hooks/useShareSheet";
@@ -94,9 +94,8 @@ function ReelsScreen() {
   const [muted, setMuted] = useState(true);
   const [dataSaver, setDataSaver] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
-  // A shared reel link should open straight into the full-screen player;
-  // otherwise Reels opens on the browsable grid.
-  const [view, setView] = useState<"grid" | "feed">(linkedId ? "feed" : "grid");
+  // Open directly in the vertical feed; the grid remains an explicit choice.
+  const [view, setView] = useState<"grid" | "feed">("feed");
   const [youtubeVisibleCount, setYoutubeVisibleCount] = useState(YOUTUBE_BATCH_SIZE);
   const [watchedExternalIds, setWatchedExternalIds] = useState<Set<string>>(new Set());
   const [hiddenIds, setHiddenIds] = useState<string[]>([]);
@@ -307,7 +306,7 @@ function ReelsScreen() {
   useEffect(() => {
     scrollerRef.current?.scrollTo({ top: 0 });
     setActiveIndex(0);
-    setView(linkedId ? "feed" : "grid");
+    setView("feed");
     setYoutubeVisibleCount(YOUTUBE_BATCH_SIZE);
     // Only react to the person switching feeds, not to linkedId itself.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -480,11 +479,38 @@ function ReelsScreen() {
           <button
             type="button"
             onClick={() => setView("grid")}
-            aria-label="Back to Reels grid"
+            aria-label="Browse Reels grid"
             className="pointer-events-auto absolute left-3 top-[max(0.75rem,env(safe-area-inset-top))] z-20 rounded-full bg-black/40 p-2 text-white backdrop-blur-md"
           >
             <ArrowLeft className="h-4.5 w-4.5" />
           </button>
+        )}
+
+        {view === "feed" && items.length > 0 && (
+          <div className="absolute right-3 top-[max(0.75rem,env(safe-area-inset-top))] z-20 flex gap-1">
+            {([-1, 1] as const).map((direction) => (
+              <button
+                key={direction}
+                type="button"
+                aria-label={direction < 0 ? "Previous Reel" : "Next Reel"}
+                disabled={activeIndex + direction < 0 || activeIndex + direction >= items.length}
+                onClick={() => {
+                  const node = scrollerRef.current;
+                  node?.scrollTo({
+                    top: (activeIndex + direction) * node.clientHeight,
+                    behavior: "smooth",
+                  });
+                }}
+                className="flex h-11 w-9 items-center justify-center rounded-full bg-black/40 text-white disabled:opacity-30"
+              >
+                {direction < 0 ? (
+                  <ArrowUp className="h-4 w-4" />
+                ) : (
+                  <ArrowDown className="h-4 w-4" />
+                )}
+              </button>
+            ))}
+          </div>
         )}
 
         {initialLoading && (
@@ -591,11 +617,8 @@ function ReelsScreen() {
                 onShare={() => void share(reel)}
                 onMore={() => setMoreFor(reel)}
                 onProfile={() => {
-                  if (reel.external_url) {
-                    window.open(reel.external_url, "_blank", "noopener,noreferrer");
-                  } else {
-                    void navigate({ to: "/profile" });
-                  }
+                  if (reel.external_id) setMoreFor(reel);
+                  else void navigate({ to: "/profile" });
                 }}
                 onRead={() => setReadFor(reel)}
                 onPray={() =>

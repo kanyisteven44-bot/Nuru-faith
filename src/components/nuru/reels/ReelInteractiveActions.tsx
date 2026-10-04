@@ -18,6 +18,7 @@ import { ReelActions } from "./ReelActions";
 type ExternalReelState = Awaited<ReturnType<typeof fetchExternalReelState>>;
 
 export function ReelInteractiveActions({
+  horizontal = false,
   reel,
   near,
   liked,
@@ -30,6 +31,7 @@ export function ReelInteractiveActions({
   onMore,
   onCommentsVisibilityChange,
 }: {
+  horizontal?: boolean;
   reel: Reel;
   near: boolean;
   liked: boolean;
@@ -118,6 +120,7 @@ export function ReelInteractiveActions({
   return (
     <>
       <ReelActions
+        horizontal={horizontal}
         avatarUrl={reel.creator_avatar_url}
         creatorName={reel.creator_name}
         likeCount={isExternal ? reel.like_count + (state.data?.liked ? 1 : 0) : reel.like_count}
@@ -218,7 +221,7 @@ function ExternalCommentsSheet({
       >
         <header className="flex items-center justify-between border-b border-border/70 px-4 py-3">
           <div>
-            <h2 className="font-display text-base font-semibold">Comments</h2>
+            <h2 className="font-display text-base font-semibold">Nuru comments</h2>
             <p className="text-[11px] text-muted-foreground">
               {comments.data?.length ?? 0} on this Reel
             </p>

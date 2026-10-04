@@ -1,4 +1,3 @@
-import { YouTubeAccountAccess } from "@/components/youtube/YouTubeAccountAccess";
 import { resolveMedia } from "@/lib/media";
 import { ScreenHero } from "@/components/nuru/Primitives";
 import { useState, useEffect } from "react";
@@ -31,9 +30,6 @@ function PodcastsScreen() {
   return (
     <AppShell>
       <ScreenHeader title="Podcasts" subtitle="Real conversations about Scripture and faith" />
-      <div className="mx-4 mb-4">
-        <YouTubeAccountAccess />
-      </div>
       <ScreenHero image={resolveMedia("asset:church-interior")} />
       <div className="px-4 pt-4">
         <input

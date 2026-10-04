@@ -1,4 +1,4 @@
-import { safeMediaTerm } from "@/lib/mediaDirectory";
+import { otherLanguagesExclusion, safeMediaTerm } from "@/lib/mediaDirectory";
 import { supabase } from "@/integrations/supabase/client";
 
 export type MediaItem = {
@@ -319,7 +319,7 @@ export async function fetchMediaDirectory(options: {
   if (options.language && options.language !== "all") {
     query =
       options.language === "other"
-        ? query.not("language_codes", "cd", "{en,sw,ki,und}")
+        ? query.not("language_codes", "cd", otherLanguagesExclusion())
         : query.contains("language_codes", [options.language]);
   }
   const start = Math.max(0, options.page) * pageSize;

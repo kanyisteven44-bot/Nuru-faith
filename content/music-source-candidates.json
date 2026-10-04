@@ -1,0 +1,161 @@
+{
+  "$comment": [
+    "CANDIDATES, NOT VERIFIED SOURCES. Nothing here reaches the app until",
+    "scripts/resolve-music-sources.mjs resolves each name against the YouTube",
+    "Data API, confirms the channel exists and publishes eligible music, and",
+    "writes it into content/media-source-review.json with a channel id, an",
+    "avatar and a sample video as proof.",
+    "",
+    "These names were gathered from the listed references. A reference proves",
+    "only that the name was published somewhere, never that a given YouTube",
+    "channel belongs to that artist — that is the resolver's job. Names that",
+    "do not resolve are reported for manual review, never guessed at.",
+    "",
+    "'languages' is the language the artist is reported to record in and is",
+    "applied to the source only once the channel itself is confirmed."
+  ],
+  "references": [
+    "https://www.kamataschool.com/top-kikuyu-gospel-artists-in-kenya/",
+    "https://www.chosic.com/genre-chart/kikuyu-gospel/",
+    "http://kalenjininfocentre.blogspot.com/2009/09/kalenjin-gospel-singers.html",
+    "https://kalenjin.co.ke/2021/05/lilian-rotichs-rise-and-rise-in-the-gospel-industry/",
+    "https://nation.africa/kenya/counties/kericho/the-king-of-kalenjin-gospel-796014",
+    "http://thekenya411.blogspot.com/2019/11/top-10-kamba-gospel-musicians.html",
+    "https://believersportal.com/list-gospel-artists-kenya/",
+    "https://mdundo.com/news/45523",
+    "https://gospelregister.org/blogs/africa-gospel-music/posts/7314170/top-10-kenyan-gospel-artists",
+    "https://en.wikipedia.org/wiki/Gloria_Muliro",
+    "https://en.wikipedia.org/wiki/Janet_Otieno",
+    "https://en.wikipedia.org/wiki/Mary_Atieno_Ominde",
+    "https://en.wikipedia.org/wiki/Henrie_Mutuku",
+    "https://en.wikipedia.org/wiki/Mbuvi",
+    "https://en.wikipedia.org/wiki/Evelyn_Wanjiru",
+    "https://en.wikipedia.org/wiki/Peter_Kaberere",
+    "https://en.wikipedia.org/wiki/Daddy_Owen",
+    "https://en.wikipedia.org/wiki/Agundabweni_Akweyu"
+  ],
+  "candidates": [
+    {
+      "name": "Ben Githae",
+      "languages": ["ki"],
+      "note": "kamataschool; chosic Kikuyu gospel chart"
+    },
+    { "name": "Ruth Wamuyu", "languages": ["ki"], "note": "kamataschool" },
+    { "name": "Sammy Irungu", "languages": ["ki"], "note": "kamataschool" },
+    { "name": "Charles Kingori", "languages": ["ki"], "note": "kamataschool" },
+    { "name": "Grace Mwai", "languages": ["ki"], "note": "kamataschool" },
+    { "name": "Edith Wairimu", "languages": ["ki"], "note": "kamataschool" },
+    { "name": "Martin wa Janet", "languages": ["ki"], "note": "kamataschool" },
+    { "name": "Paul Waiganjo", "languages": ["ki"], "note": "kamataschool" },
+    { "name": "Elijah Murugami", "languages": ["ki"], "note": "kamataschool" },
+    { "name": "Teacher Beatrice", "languages": ["ki"], "note": "kamataschool" },
+    { "name": "Kevin Maina", "languages": ["ki"], "note": "kamataschool" },
+    { "name": "Nd Githuka", "languages": ["ki"], "note": "kamataschool" },
+    { "name": "Elizabeth Nyambere", "languages": ["ki"], "note": "kamataschool" },
+    { "name": "Muhiko Nebster", "languages": ["ki"], "note": "kamataschool" },
+    { "name": "Phyllis Mbuthia", "languages": ["ki"], "note": "chosic Kikuyu gospel chart" },
+    { "name": "Loise Kim", "languages": ["ki"], "note": "chosic Kikuyu gospel chart" },
+
+    {
+      "name": "Emmy Kosgei",
+      "languages": ["kln", "sw"],
+      "note": "nation.africa; kalenjininfocentre"
+    },
+    {
+      "name": "Joel Kimetto",
+      "languages": ["kln"],
+      "note": "nation.africa — 'father of Kalenjin gospel'"
+    },
+    { "name": "Lilian Rotich", "languages": ["kln"], "note": "kalenjin.co.ke profile" },
+    { "name": "Mike Rotich", "languages": ["kln"], "note": "kalenjininfocentre" },
+    { "name": "Maggy Cheruiyot", "languages": ["kln"], "note": "kalenjininfocentre" },
+    { "name": "Joyce Langat", "languages": ["kln"], "note": "Kalenjin Music Festival coverage" },
+    { "name": "Barbra Chepkoech", "languages": ["kln"], "note": "kalenjininfocentre" },
+    {
+      "name": "Josphat Kirui",
+      "languages": ["kln"],
+      "note": "Kalenjin gospel compilation credits"
+    },
+    {
+      "name": "Nellylyn Biwott",
+      "languages": ["kln"],
+      "note": "Kalenjin gospel compilation credits"
+    },
+    { "name": "Joy Kibet", "languages": ["kln", "sw"], "note": "Kalenjin and Swahili gospel" },
+
+    {
+      "name": "Janet Otieno",
+      "languages": ["luo", "sw"],
+      "note": "Wikipedia — gospel, born Kisumu"
+    },
+    {
+      "name": "Mary Atieno Ominde",
+      "languages": ["luo"],
+      "note": "Wikipedia — gospel musician and pastor"
+    },
+    { "name": "Emma Jalamo", "languages": ["luo"], "note": "reported gospel Ohangla" },
+    { "name": "Lady Maureen", "languages": ["luo"], "note": "Luo gospel listings" },
+    { "name": "Eunice Ogoma", "languages": ["luo"], "note": "Luo gospel listings" },
+    { "name": "Dorah Nyagem", "languages": ["luo"], "note": "Luo gospel listings" },
+    { "name": "Brother Benard", "languages": ["luo"], "note": "Luo gospel listings" },
+    { "name": "Elizabeth Nyambere Atieno", "languages": ["luo"], "note": "Luo gospel listings" },
+
+    {
+      "name": "Stephen Kasolo",
+      "languages": ["kam", "sw"],
+      "note": "thekenya411 Kamba gospel list"
+    },
+    {
+      "name": "Wilberforce Musyoka",
+      "languages": ["kam"],
+      "note": "thekenya411 Kamba gospel list"
+    },
+    { "name": "Justus Myello", "languages": ["kam"], "note": "thekenya411 Kamba gospel list" },
+    { "name": "Purity Kateiko", "languages": ["kam"], "note": "thekenya411 Kamba gospel list" },
+    { "name": "Jackson Mutinda", "languages": ["kam"], "note": "thekenya411 Kamba gospel list" },
+    { "name": "James Mwongela", "languages": ["kam"], "note": "thekenya411 Kamba gospel list" },
+    { "name": "David Munyao", "languages": ["kam"], "note": "thekenya411 Kamba gospel list" },
+    { "name": "Stella Mengele", "languages": ["kam"], "note": "thekenya411 Kamba gospel list" },
+    { "name": "Faith Nzilani", "languages": ["kam"], "note": "thekenya411 Kamba gospel list" },
+    { "name": "Caxton Mutambuki", "languages": ["kam"], "note": "thekenya411 Kamba gospel list" },
+    { "name": "Dan Mutemi", "languages": ["kam"], "note": "thekenya411 Kamba gospel list" },
+    { "name": "Hellena Ken", "languages": ["kam"], "note": "thekenya411 Kamba gospel list" },
+    { "name": "Henrie Mutuku", "languages": ["kam", "en"], "note": "Wikipedia — Kenyan gospel" },
+    { "name": "Mbuvi", "languages": ["kam", "sw"], "note": "Wikipedia — Kenyan gospel" },
+
+    { "name": "Gloria Muliro", "languages": ["luy", "sw"], "note": "Wikipedia — records in Luhya" },
+    {
+      "name": "Agundabweni Akweyu",
+      "languages": ["luy", "sw"],
+      "note": "Wikipedia — Kenyan gospel"
+    },
+
+    {
+      "name": "Mercy Masika",
+      "languages": ["sw", "en"],
+      "note": "mdundo most successful Kenyan gospel"
+    },
+    { "name": "Kambua", "languages": ["sw", "en"], "note": "mdundo most successful Kenyan gospel" },
+    { "name": "Daddy Owen", "languages": ["sw"], "note": "Wikipedia — Kenyan gospel" },
+    { "name": "Rufftone", "languages": ["sw"], "note": "believersportal Kenyan gospel list" },
+    {
+      "name": "Esther Wahome",
+      "languages": ["sw", "ki"],
+      "note": "believersportal Kenyan gospel list"
+    },
+    { "name": "Pitson", "languages": ["sw"], "note": "Kenyan worship, widely covered" },
+    {
+      "name": "Eunice Njeri",
+      "languages": ["sw", "en"],
+      "note": "believersportal Kenyan gospel list"
+    },
+    { "name": "Bahati", "languages": ["sw"], "note": "thekenya411; mdundo" },
+    { "name": "Jimmy Gait", "languages": ["sw"], "note": "believersportal Kenyan gospel list" },
+    { "name": "Willy Paul", "languages": ["sw"], "note": "believersportal Kenyan gospel list" },
+    { "name": "Peter Kaberere", "languages": ["sw"], "note": "Wikipedia — Kenyan gospel" },
+    { "name": "Emmy Kosgei", "languages": ["kln", "sw"], "note": "duplicate guard exercise" },
+    { "name": "Phyllis Mbuthia", "languages": ["ki"], "note": "duplicate guard exercise" },
+    { "name": "Mejja Kerubo", "languages": ["guz"], "note": "Ekegusii gospel listings" },
+    { "name": "Christina Shusho", "languages": ["sw"], "note": "already reviewed — dedupe check" }
+  ]
+}

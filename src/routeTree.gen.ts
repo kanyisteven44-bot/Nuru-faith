@@ -16,6 +16,7 @@ import { Route as AuthCallbackRouteImport } from './routes/auth-callback'
 import { Route as OpeningRouteImport } from './routes/opening'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as WelcomeRouteImport } from './routes/welcome'
+import { Route as YoutubeAccountRouteImport } from './routes/youtube-account'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAiRouteImport } from './routes/_authenticated/ai'
 import { Route as AuthenticatedBibleRouteImport } from './routes/_authenticated/bible'
@@ -83,6 +84,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
 const WelcomeRoute = WelcomeRouteImport.update({
   id: '/welcome',
   path: '/welcome',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const YoutubeAccountRoute = YoutubeAccountRouteImport.update({
+  id: '/youtube-account',
+  path: '/youtube-account',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
@@ -271,6 +277,7 @@ export interface FileRoutesByFullPath {
   '/opening': typeof OpeningRoute
   '/reset-password': typeof ResetPasswordRoute
   '/welcome': typeof WelcomeRoute
+  '/youtube-account': typeof YoutubeAccountRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/ai': typeof AuthenticatedAiRoute
   '/bible': typeof AuthenticatedBibleRoute
@@ -313,6 +320,7 @@ export interface FileRoutesByTo {
   '/opening': typeof OpeningRoute
   '/reset-password': typeof ResetPasswordRoute
   '/welcome': typeof WelcomeRoute
+  '/youtube-account': typeof YoutubeAccountRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/ai': typeof AuthenticatedAiRoute
   '/bible': typeof AuthenticatedBibleRoute
@@ -357,6 +365,7 @@ export interface FileRoutesById {
   '/opening': typeof OpeningRoute
   '/reset-password': typeof ResetPasswordRoute
   '/welcome': typeof WelcomeRoute
+  '/youtube-account': typeof YoutubeAccountRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/ai': typeof AuthenticatedAiRoute
   '/_authenticated/bible': typeof AuthenticatedBibleRoute
@@ -401,6 +410,7 @@ export interface FileRouteTypes {
     | '/opening'
     | '/reset-password'
     | '/welcome'
+    | '/youtube-account'
     | '/admin'
     | '/ai'
     | '/bible'
@@ -443,6 +453,7 @@ export interface FileRouteTypes {
     | '/opening'
     | '/reset-password'
     | '/welcome'
+    | '/youtube-account'
     | '/admin'
     | '/ai'
     | '/bible'
@@ -486,6 +497,7 @@ export interface FileRouteTypes {
     | '/opening'
     | '/reset-password'
     | '/welcome'
+    | '/youtube-account'
     | '/_authenticated/admin'
     | '/_authenticated/ai'
     | '/_authenticated/bible'
@@ -530,6 +542,7 @@ export interface RootRouteChildren {
   OpeningRoute: typeof OpeningRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   WelcomeRoute: typeof WelcomeRoute
+  YoutubeAccountRoute: typeof YoutubeAccountRoute
   BooksBookIdRoute: typeof BooksBookIdRoute
   BooksIndexRoute: typeof BooksIndexRoute
   FaithCoursesIndexRoute: typeof FaithCoursesIndexRoute
@@ -584,6 +597,13 @@ declare module '@tanstack/react-router' {
       path: '/welcome'
       fullPath: '/welcome'
       preLoaderRoute: typeof WelcomeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/youtube-account': {
+      id: '/youtube-account'
+      path: '/youtube-account'
+      fullPath: '/youtube-account'
+      preLoaderRoute: typeof YoutubeAccountRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/admin': {
@@ -906,6 +926,7 @@ const rootRouteChildren: RootRouteChildren = {
   OpeningRoute: OpeningRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   WelcomeRoute: WelcomeRoute,
+  YoutubeAccountRoute: YoutubeAccountRoute,
   BooksBookIdRoute: BooksBookIdRoute,
   BooksIndexRoute: BooksIndexRoute,
   FaithCoursesIndexRoute: FaithCoursesIndexRoute,

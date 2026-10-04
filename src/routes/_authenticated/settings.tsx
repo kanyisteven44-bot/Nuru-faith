@@ -1,3 +1,4 @@
+import { YouTubeAccountAccess } from "@/components/youtube/YouTubeAccountAccess";
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -92,6 +93,10 @@ function SettingsScreen() {
             <MfaSecurityPanel required={staffMfaRequired} />
           </div>
         )}
+
+        <div className="mt-6">
+          <YouTubeAccountAccess />
+        </div>
 
         {/* Appearance — the real control, wired to the theme provider. */}
         <Section title="Appearance">

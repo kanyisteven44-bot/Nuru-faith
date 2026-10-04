@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import { youtubeEmbedUrl } from "../src/lib/youtubeEmbed.ts";
 
 const params = (url) => new URL(url).searchParams;
@@ -31,7 +32,7 @@ test("looping a single video needs itself as the playlist", () => {
   assert.equal(p.get("playlist"), "abc123");
 });
 
-test("reels hide native controls; other surfaces keep them", () => {
+test("embedded player controls can be configured explicitly", () => {
   assert.equal(params(youtubeEmbedUrl({ videoId: "a", controls: false })).get("controls"), "0");
   assert.equal(params(youtubeEmbedUrl({ videoId: "a" })).get("controls"), "1");
 });
@@ -46,4 +47,17 @@ test("a playlist with no video id uses the videoseries embed", () => {
   const url = new URL(youtubeEmbedUrl({ playlistId: "PL123" }));
   assert.equal(url.pathname, "/embed/videoseries");
   assert.equal(url.searchParams.get("list"), "PL123");
+});
+
+test("deployment permits the official API and widget scripts without allowing arbitrary external scripts", () => {
+  const config = JSON.parse(fs.readFileSync(new URL("../vercel.json", import.meta.url), "utf8"));
+  const csp = config.headers[0].headers.find(
+    (header) => header.key === "Content-Security-Policy",
+  ).value;
+  const directive = csp.split(";").find((value) => value.trim().startsWith("script-src "));
+  const sources = directive.trim().split(/\s+/).slice(1);
+  assert(sources.includes("https://www.youtube.com/iframe_api"));
+  assert(sources.includes("https://www.youtube.com/s/player/"));
+  assert(!sources.includes("https:"));
+  assert(!sources.includes("*"));
 });

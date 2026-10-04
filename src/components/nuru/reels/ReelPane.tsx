@@ -230,9 +230,12 @@ export function ReelPane(props: ReelPaneProps) {
             loop
             controls
             muted={muted}
-            playing={active && !paused && !commentsVisible}
+            playing={active && !paused && !commentsVisible && (autoplayAllowed || manualStart)}
             interactive
-            onPlaybackChange={setActuallyPlaying}
+            onPlaybackChange={(playing) => {
+              setActuallyPlaying(playing);
+              if (playing && !autoplayAllowed) setManualStart(true);
+            }}
             className="h-full rounded-none"
           />
         ) : reel.poster_url ? (

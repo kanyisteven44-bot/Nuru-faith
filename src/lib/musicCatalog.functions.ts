@@ -39,8 +39,8 @@ export const importMusicCatalogPage = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data, context }) => {
-    if (context.claims["aal"] !== "aal2")
-      throw new Error("Verify your admin account with MFA before importing.");
+    // Temporary: catalogue import is still restricted to super_admin/moderator below.
+    // MFA enforcement is disabled here while the existing-factor enrollment bug is repaired.
     const { data: roles, error: roleError } = await context.supabase
       .from("user_roles")
       .select("role")

@@ -6,8 +6,7 @@ import { Loader2, Lock, Mail, Phone, User as UserIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { NuruMark } from "@/components/nuru/Logo";
-import { MfaChallenge, MfaSecurityPanel } from "@/components/nuru/MfaSecurity";
-import { getMfaRequirement, newPasswordError } from "@/lib/accountSecurity";
+import { newPasswordError } from "@/lib/accountSecurity";
 import { authAvailability } from "@/lib/authAvailability.functions";
 
 const searchSchema = z.object({
@@ -75,29 +74,14 @@ function AuthPage() {
   useEffect(() => {
     if (mode === "mfa" || mode === "mfa-setup") return;
 
-    void supabase.auth.getSession().then(async ({ data }) => {
-      if (!data.session) return;
-      const requirement = await getMfaRequirement().catch(() => "none" as const);
-      if (requirement === "challenge") {
-        void navigate({ to: "/auth", search: { mode: "mfa" }, replace: true });
-      } else if (requirement === "setup") {
-        void navigate({ to: "/auth", search: { mode: "mfa-setup" }, replace: true });
-      } else {
-        void navigate({ to: "/home", replace: true });
-      }
+    void supabase.auth.getSession().then(({ data }) => {
+      if (data.session) void navigate({ to: "/home", replace: true });
     });
   }, [navigate, mode]);
 
   async function continueAfterSignIn(fallback: "/home" | "/onboarding") {
-    const requirement = await getMfaRequirement();
-    if (requirement === "challenge") {
-      void navigate({ to: "/auth", search: { mode: "mfa" }, replace: true });
-      return;
-    }
-    if (requirement === "setup") {
-      void navigate({ to: "/auth", search: { mode: "mfa-setup" }, replace: true });
-      return;
-    }
+    // Temporary owner-requested bypass: keep normal Supabase authentication,
+    // but do not force MFA enrollment/challenge while the factor flow is repaired.
     void navigate({ to: fallback, replace: true });
   }
 
@@ -227,20 +211,9 @@ function AuthPage() {
     }
   }
 
-  if (mode === "mfa") {
-    return (
-      <AuthSecurityShell>
-        <MfaChallenge onSuccess={() => void navigate({ to: "/home", replace: true })} />
-      </AuthSecurityShell>
-    );
-  }
-
-  if (mode === "mfa-setup") {
-    return (
-      <AuthSecurityShell>
-        <MfaSecurityPanel required onReady={() => void navigate({ to: "/home", replace: true })} />
-      </AuthSecurityShell>
-    );
+  if (mode === "mfa" || mode === "mfa-setup") {
+    void navigate({ to: "/home", replace: true });
+    return null;
   }
 
   return (

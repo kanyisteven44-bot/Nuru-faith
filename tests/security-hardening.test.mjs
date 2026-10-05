@@ -19,11 +19,13 @@ test("Vercel deploys browser security headers", () => {
   assert.match(byName.get("permissions-policy") ?? "", /geolocation=\(\)/);
 });
 
-test("protected Nuru routes enforce MFA requirements", () => {
+test("protected Nuru routes require a session without an MFA redirect loop", () => {
   const route = read("src/routes/_authenticated/route.tsx");
-  assert.match(route, /getMfaRequirement/);
-  assert.match(route, /mode: "mfa"/);
-  assert.match(route, /mode: "mfa-setup"/);
+  assert.match(route, /supabase\.auth\.getSession/);
+  assert.match(route, /if \(error \|\| !user\) throw redirect/);
+  assert.doesNotMatch(route, /getMfaRequirement/);
+  assert.doesNotMatch(route, /mode: "mfa"/);
+  assert.doesNotMatch(route, /mode: "mfa-setup"/);
 });
 
 test("staff database writes require AAL2", () => {
@@ -53,4 +55,50 @@ test("new and reset passwords use the hardened validator", () => {
   assert.match(helper, /\[A-Z\]/);
   assert.match(helper, /\[0-9\]/);
   assert.match(helper, /\[\^A-Za-z0-9\]/);
+});
+
+test("the metadata worker authorizes staff before loading the privileged client", () => {
+  const worker = read("src/lib/musicCatalog.functions.ts");
+  const roleCheck = worker.indexOf("if (roleError || !roles?.length)");
+  const privilegedClient = worker.indexOf('await import("@/integrations/supabase/client.server")');
+  assert.ok(roleCheck > 0 && privilegedClient > roleCheck);
+  assert.match(worker, /middleware\(\[requireSupabaseAuth\]\)/);
+  assert.match(worker, /if \(!trust\?\.is_verified \|\| !trustedChannel\(trust\.trust_level\)\)/);
+  assert.match(worker, /ignoreDuplicates: true/);
+  assert.doesNotMatch(worker, /\.from\("media_sources"\)[\s\S]{0,80}\.(insert|update|upsert)/);
+});
+
+test("import cursors cannot be supplied by clients and progress is not publicly writable", () => {
+  const worker = read("src/lib/musicCatalog.functions.ts");
+  const input = worker.slice(worker.indexOf(".inputValidator("), worker.indexOf(".handler("));
+  assert.doesNotMatch(input, /channelId|pageToken|is_approved|title|external_id/);
+  const migration = read("supabase/migrations/20261005055626_server_media_import_progress.sql");
+  assert.match(migration, /enable row level security/);
+  assert.match(migration, /revoke all on public.media_catalog_imports from anon, authenticated/);
+  assert.match(migration, /for select to authenticated using \(private.is_staff/);
+});
+
+test("admin AI reporting exposes only privacy-safe aggregates behind a super-admin role check", () => {
+  const endpoint = read("src/lib/adminOperations.functions.ts");
+  assert.match(endpoint, /middleware\(\[requireSupabaseAuth\]\)/);
+  assert.match(endpoint, /\.eq\("user_id", context.userId\)/);
+  assert.match(endpoint, /\.eq\("role", "super_admin"\)/);
+  assert.ok(
+    endpoint.indexOf('throw new Error("Super-admin access required.")') <
+      endpoint.indexOf('await import("@/integrations/supabase/client.server")'),
+  );
+  const migration = read("supabase/migrations/20261005063347_admin_learning_operations.sql");
+  assert.match(migration, /having count\(distinct user_id\) >= 5/);
+  assert.match(
+    migration,
+    /revoke all on function public.get_nuru_admin_overview\(\) from public,anon,authenticated/,
+  );
+  assert.match(
+    migration,
+    /grant execute on function public.get_nuru_admin_overview\(\) to service_role/,
+  );
+  assert.doesNotMatch(
+    migration,
+    /jsonb_build_object\([^;]*'(content|prompt|answer|conversation_id|user_id)'/,
+  );
 });

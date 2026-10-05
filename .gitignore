@@ -44,5 +44,8 @@ dist-ssr
 *-validation.json
 lint-baseline.json
 
-# Screenshots from scripts/ui-preview.mjs
+# Design preview screenshots
 .preview/
+
+# Local resumable media-import checkpoint
+.media-import-state.json

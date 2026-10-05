@@ -1,14 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { CoverImage } from "@/components/nuru/CoverImage";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { BadgeCheck, Music2, Pause, Play, Search, X } from "lucide-react";
-import { toast } from "sonner";
-import { cn } from "@/lib/utils";
-import { resolveMedia } from "@/lib/media";
+import { BadgeCheck, Music2, Play, Search, X } from "lucide-react";
 import { duration } from "@/lib/format";
 import { useAuth } from "@/hooks/useAuth";
-import { fetchPlaylists, fetchProfile, fetchTracks } from "@/services/content";
-import { fetchMediaItems, fetchMediaPlaylists, fetchMediaSources } from "@/services/media";
+import { fetchProfile, fetchTracks } from "@/services/content";
+import { fetchMediaItems, fetchMediaSources } from "@/services/media";
 import type { YouTubePlaylist, YouTubeVideo } from "@/services/youtubeService";
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
 import {
@@ -16,13 +14,16 @@ import {
   EmptyState,
   IconTile,
   PillTabs,
-  ScreenHero,
   SectionHeader,
 } from "@/components/nuru/Primitives";
-import heroBg from "@/assets/worship-night.jpg";
-import { YouTubePlayer, YouTubeNotice } from "@/components/youtube/YouTubePlayer";
+import { NURU_PHOTO_POOLS, useRotatingMedia } from "@/lib/rotatingMedia";
+import { YouTubeNotice } from "@/components/youtube/YouTubePlayer";
+import { InAppMediaPlayer as YouTubePlayer } from "@/components/youtube/InAppMediaPlayer";
 import { YouTubeSearchResults } from "@/components/youtube/YouTubeSearchResults";
 import { MediaCategoryRail } from "@/components/youtube/MediaCategoryRail";
+import { MediaPlayback } from "@/components/youtube/MediaCatalog";
+import type { MediaItem } from "@/services/media";
+import { MusicDiscovery } from "@/components/youtube/MusicDiscovery";
 import { MediaActions } from "@/components/youtube/MediaActions";
 
 export const Route = createFileRoute("/_authenticated/music")({
@@ -59,6 +60,12 @@ function MusicScreen() {
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
   const [nowPlaying, setNowPlaying] = useState<NowPlaying | null>(null);
+  const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null);
+  const playCatalog = (item: MediaItem) => {
+    setNowPlaying(null);
+    setSelectedMedia(item);
+  };
+  const heroBg = useRotatingMedia(NURU_PHOTO_POOLS.music, "music-hero");
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(search), 450);
@@ -72,16 +79,7 @@ function MusicScreen() {
   });
   const churchId = profile.data?.church_id ?? null;
 
-  const playlists = useQuery({ queryKey: ["playlists"], queryFn: fetchPlaylists });
   const tracks = useQuery({ queryKey: ["tracks"], queryFn: fetchTracks });
-  const curatedPlaylists = useQuery({
-    queryKey: ["media-playlists"],
-    queryFn: () => fetchMediaPlaylists(),
-  });
-  const featuredSongs = useQuery({
-    queryKey: ["media-items", "featured-songs"],
-    queryFn: () => fetchMediaItems({ mediaType: "music", featuredOnly: true, limit: 12 }),
-  });
   const artists = useQuery({
     queryKey: ["media-sources", "artist"],
     queryFn: () => fetchMediaSources({ sourceType: "youtube" }),
@@ -92,15 +90,42 @@ function MusicScreen() {
     enabled: !!churchId,
   });
 
-  const openVideo = (v: YouTubeVideo) =>
+  const openVideo = (v: YouTubeVideo) => {
+    setSelectedMedia(null);
     setNowPlaying({ kind: "youtube-video", id: v.youtubeVideoId, title: v.title });
-  const openPlaylist = (p: YouTubePlaylist) =>
+  };
+  const openPlaylist = (p: YouTubePlaylist) => {
+    setSelectedMedia(null);
     setNowPlaying({ kind: "youtube-playlist", id: p.youtubePlaylistId, title: p.title });
+  };
 
   return (
     <AppShell>
       <ScreenHeader title="Music & media" subtitle="Worship, teaching and sound for your week" />
-      <ScreenHero image={heroBg} />
+      <section
+        className="relative mx-4 mb-2 overflow-hidden rounded-3xl bg-slate-950 p-6 text-white sm:p-8"
+        aria-label="Worship collection"
+      >
+        <CoverImage
+          src={heroBg}
+          alt=""
+          className="absolute inset-0 h-full w-full opacity-45"
+          loading="eager"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/60 to-transparent" />
+        <div className="relative max-w-lg">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-200">
+            Sound for your soul
+          </p>
+          <h2 className="mt-3 font-display text-3xl leading-tight sm:text-4xl">
+            A little worship.
+            <br />A brighter day.
+          </h2>
+          <p className="mt-3 max-w-sm text-sm leading-relaxed text-white/80">
+            Find a song to lift your spirit, or a conversation to deepen your faith.
+          </p>
+        </div>
+      </section>
 
       <div className="space-y-3 px-4 py-3">
         <div className="relative">
@@ -126,7 +151,20 @@ function MusicScreen() {
         <PillTabs tabs={TABS} value={tab} onChange={setTab} />
       </div>
 
-      {debounced.trim() ? (
+      {(tab === "Music" || tab === "Podcasts") && (
+        <MusicDiscovery
+          mediaType={tab === "Music" ? "music" : "podcast"}
+          query={debounced}
+          onPlay={openVideo}
+          onPlayItem={playCatalog}
+        />
+      )}
+
+      {tab === "Music" && !debounced.trim() && !!tracks.data?.length && (
+        <NuruAudioSection tracks={tracks.data} loading={tracks.isLoading} onPlay={playCatalog} />
+      )}
+
+      {debounced.trim() && tab !== "Music" && tab !== "Podcasts" ? (
         <YouTubeSearchResults
           query={debounced}
           onSelectVideo={openVideo}
@@ -134,191 +172,6 @@ function MusicScreen() {
         />
       ) : (
         <>
-          {tab === "Music" && (
-            <>
-              <section className="px-4 pt-2">
-                <SectionHeader title="Official worship channels" />
-                <p className="pb-2 text-xs text-muted-foreground">
-                  Curated official YouTube channels — tap one to play its latest worship uploads.
-                </p>
-                {curatedPlaylists.isLoading && <CardSkeleton count={3} height="h-16" />}
-                <div className="no-scrollbar flex gap-3 overflow-x-auto pb-2">
-                  {(curatedPlaylists.data ?? [])
-                    .filter((playlist) => playlist.category === "worship")
-                    .slice(0, 10)
-                    .map((playlist) => (
-                      <button
-                        key={playlist.id}
-                        type="button"
-                        onClick={() =>
-                          playlist.youtube_playlist_id
-                            ? setNowPlaying({
-                                kind: "youtube-playlist",
-                                id: playlist.youtube_playlist_id,
-                                title: playlist.title,
-                              })
-                            : toast("This worship channel has no playable source yet")
-                        }
-                        className="nuru-card w-48 shrink-0 p-4 text-left"
-                      >
-                        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/12 text-cyan">
-                          <Music2 className="h-5 w-5" />
-                        </span>
-                        <span className="mt-3 block line-clamp-2 text-sm font-semibold">
-                          {playlist.title.replace(" — Official Worship", "")}
-                        </span>
-                        <span className="mt-1 block line-clamp-2 text-[11px] text-muted-foreground">
-                          {playlist.description}
-                        </span>
-                        <span className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold text-cyan">
-                          <Play className="h-3.5 w-3.5 fill-current" /> Play latest
-                        </span>
-                      </button>
-                    ))}
-                </div>
-              </section>
-
-              <section className="px-4 pt-4">
-                <SectionHeader title="Featured songs" />
-                {featuredSongs.isLoading && <CardSkeleton count={3} height="h-44" />}
-                <div className="no-scrollbar flex gap-3 overflow-x-auto pb-2">
-                  {(featuredSongs.data ?? []).map((song) => (
-                    <button
-                      key={song.id}
-                      type="button"
-                      onClick={() =>
-                        song.source === "youtube"
-                          ? setNowPlaying({
-                              kind: "youtube-video",
-                              id: song.external_id,
-                              title: song.title,
-                            })
-                          : toast("This song has no playable source yet")
-                      }
-                      className="w-36 shrink-0 text-left"
-                    >
-                      <div className="relative overflow-hidden rounded-2xl border border-border bg-surface-2">
-                        <img
-                          src={resolveMedia(song.thumbnail_url)}
-                          alt=""
-                          width={320}
-                          height={320}
-                          loading="lazy"
-                          className="h-36 w-36 object-cover"
-                        />
-                        <span className="absolute bottom-2 right-2 flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground nuru-glow-sm">
-                          <Play className="h-4 w-4 fill-current" />
-                        </span>
-                      </div>
-                      <span className="mt-2 block line-clamp-2 text-sm font-semibold">
-                        {song.title}
-                      </span>
-                      <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">
-                        {song.creator_name}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </section>
-
-              <MediaCategoryRail
-                title="Worship right now"
-                query="christian worship live"
-                onSelect={openVideo}
-                showUnavailableNotice
-              />
-              <MediaCategoryRail
-                title="Songs for hard days"
-                query="christian worship peace anxiety"
-                onSelect={openVideo}
-              />
-              <MediaCategoryRail
-                title="Praise & celebration"
-                query="gospel praise songs"
-                onSelect={openVideo}
-              />
-              <MediaCategoryRail
-                title="Worship sets"
-                query="worship set full"
-                onSelect={openVideo}
-              />
-              <MediaCategoryRail title="Hymns" query="christian hymns" onSelect={openVideo} />
-              <MediaCategoryRail
-                title="Acoustic worship"
-                query="acoustic worship christian"
-                onSelect={openVideo}
-              />
-              <NuruAudioSection tracks={tracks.data ?? []} loading={tracks.isLoading} />
-            </>
-          )}
-
-          {tab === "Podcasts" && (
-            <section className="pt-3">
-              <div className="px-4">
-                <SectionHeader title="Nuru playlists" />
-              </div>
-              <div className="no-scrollbar flex gap-3 overflow-x-auto px-4 pb-1">
-                {playlists.isLoading && <CardSkeleton count={2} height="h-40" />}
-                {(playlists.data ?? []).map((p) => (
-                  <article key={p.id} className="w-40 shrink-0">
-                    <div className="relative">
-                      <img
-                        src={resolveMedia(p.cover_url)}
-                        alt=""
-                        width={320}
-                        height={320}
-                        loading="lazy"
-                        className="h-40 w-40 rounded-2xl border border-border object-cover"
-                      />
-                      <span className="absolute bottom-2 right-2 flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground nuru-glow-sm">
-                        <Play className="h-4 w-4 fill-current" />
-                      </span>
-                    </div>
-                    <p className="mt-2 truncate text-sm font-semibold">{p.title}</p>
-                    <p className="truncate text-[11px] text-muted-foreground">{p.description}</p>
-                  </article>
-                ))}
-              </div>
-
-              <div className="px-4 pt-5">
-                <SectionHeader title="Curated video playlists" />
-                {curatedPlaylists.isLoading && <CardSkeleton count={2} height="h-20" />}
-                {!curatedPlaylists.isLoading && (curatedPlaylists.data ?? []).length === 0 && (
-                  <EmptyState
-                    title="No curated playlists yet"
-                    description="Your church and the Nuru team can add approved playlists here."
-                  />
-                )}
-                <div className="space-y-2">
-                  {(curatedPlaylists.data ?? []).map((p) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() =>
-                        p.youtube_playlist_id
-                          ? setNowPlaying({
-                              kind: "youtube-playlist",
-                              id: p.youtube_playlist_id,
-                              title: p.title,
-                            })
-                          : toast("This playlist has no video source yet")
-                      }
-                      className="nuru-card flex w-full items-center gap-3 p-3 text-left"
-                    >
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-semibold">{p.title}</span>
-                        <span className="block truncate text-[11px] text-muted-foreground">
-                          {p.description}
-                        </span>
-                      </span>
-                      <Play className="h-4 w-4 text-cyan" />
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </section>
-          )}
-
           {tab === "Videos" && (
             <section className="px-4 pt-3">
               <SectionHeader title="Artists & channels" />
@@ -338,7 +191,7 @@ function MusicScreen() {
                         <span className="truncate text-sm font-semibold">{a.name}</span>
                         {a.is_verified && (
                           <BadgeCheck
-                            className="h-3.5 w-3.5 shrink-0 text-cyan"
+                            className="h-3.5 w-3.5 shrink-0 text-leaf"
                             aria-label="Verified"
                           />
                         )}
@@ -409,15 +262,7 @@ function MusicScreen() {
                   <button
                     key={m.id}
                     type="button"
-                    onClick={() =>
-                      m.source === "youtube"
-                        ? setNowPlaying({
-                            kind: "youtube-video",
-                            id: m.external_id,
-                            title: m.title,
-                          })
-                        : toast("This item isn't playable yet")
-                    }
+                    onClick={() => playCatalog(m)}
                     className="nuru-card flex w-full items-center gap-3 p-3 text-left"
                   >
                     <span className="min-w-0 flex-1">
@@ -426,7 +271,7 @@ function MusicScreen() {
                         {m.creator_name}
                       </span>
                     </span>
-                    <Play className="h-4 w-4 text-cyan" />
+                    <Play className="h-4 w-4 text-leaf" />
                   </button>
                 ))}
               </div>
@@ -441,8 +286,11 @@ function MusicScreen() {
         </Link>
       </div>
 
+      {selectedMedia && (
+        <MediaPlayback item={selectedMedia} onClose={() => setSelectedMedia(null)} />
+      )}
       {nowPlaying && (
-        <div className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-surface/98 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-xl">
+        <div className="fixed inset-x-0 bottom-0 z-50 md:inset-x-auto md:bottom-5 md:right-5 md:w-[420px] md:rounded-3xl md:border border-t border-border bg-surface/98 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-xl">
           <div className="mx-auto max-w-xl">
             <div className="flex items-start justify-between gap-3 pb-2">
               <p className="line-clamp-2 text-sm font-semibold">{nowPlaying.title}</p>
@@ -461,6 +309,7 @@ function MusicScreen() {
                 ? { videoId: nowPlaying.id }
                 : { playlistId: nowPlaying.id })}
               autoplay
+              muted={false}
             />
             <YouTubeNotice className="pt-2" />
             <MediaActions
@@ -481,10 +330,11 @@ function MusicScreen() {
   );
 }
 
-/** Rights-cleared audio hosted by Nuru Faith itself. */
+/** Audio hosted by the church or Nuru. */
 function NuruAudioSection({
   tracks,
   loading,
+  onPlay,
 }: {
   tracks: {
     id: string;
@@ -494,71 +344,59 @@ function NuruAudioSection({
     duration_seconds: number;
   }[];
   loading: boolean;
+  onPlay: (item: MediaItem) => void;
 }) {
-  const [playing, setPlaying] = useState<string | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const current = useMemo(() => tracks.find((t) => t.id === playing) ?? null, [tracks, playing]);
-
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    if (current?.audio_url) {
-      audio.src = resolveMedia(current.audio_url);
-      void audio.play().catch(() => setPlaying(null));
-    } else {
-      audio.pause();
-    }
-  }, [current]);
-
   return (
     <section className="px-4 pt-6">
       <SectionHeader title="Nuru Audio" />
-      <p className="pb-2 text-xs text-muted-foreground">
-        Rights-cleared worship we host ourselves — these can be saved for offline listening.
-      </p>
       {loading && <CardSkeleton count={3} height="h-16" />}
-      {!loading && tracks.length === 0 && (
+      {!loading && !tracks.length && (
         <EmptyState
           title="No Nuru Audio yet"
-          description="Licensed worship sets are being added."
+          description="Church-hosted audio will appear here when it is added."
         />
       )}
       <div className="space-y-2">
-        {tracks.map((t) => {
-          const isPlaying = playing === t.id;
-          return (
-            <div key={t.id} className="nuru-card flex items-center gap-3 p-3">
-              <IconTile icon={Music2} tone="cyan" size="lg" />
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-semibold">{t.title}</span>
-                <span className="block truncate text-xs text-muted-foreground">{t.artist}</span>
-              </span>
-              <span className="text-[11px] text-muted-foreground">
-                {duration(t.duration_seconds)}
-              </span>
-              <button
-                aria-label={isPlaying ? `Pause ${t.title}` : `Play ${t.title}`}
-                onClick={() => {
-                  if (!t.audio_url) {
-                    toast("This track isn't licensed for streaming yet");
-                    return;
-                  }
-                  setPlaying(isPlaying ? null : t.id);
-                }}
-                className={cn(
-                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border-strong transition-colors",
-                  isPlaying
-                    ? "border-primary bg-primary/15 text-cyan"
-                    : "text-secondary-foreground",
-                )}
-              >
-                {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-              </button>
-            </div>
-          );
-        })}
+        {tracks.map((track) => (
+          <button
+            key={track.id}
+            type="button"
+            disabled={!track.audio_url}
+            className="nuru-card flex w-full items-center gap-3 p-3 text-left disabled:opacity-50"
+            onClick={() =>
+              onPlay({
+                id: track.id,
+                source: "nuru_audio",
+                external_id: track.id,
+                title: track.title,
+                description: null,
+                thumbnail_url: null,
+                media_type: "music",
+                category: null,
+                creator_name: track.artist,
+                youtube_channel_id: null,
+                church_id: null,
+                audio_url: track.audio_url,
+                duration_seconds: track.duration_seconds,
+                scripture_ref: null,
+                can_download: false,
+                is_featured: false,
+              })
+            }
+            aria-label={`Play ${track.title}`}
+          >
+            <IconTile icon={Music2} tone="cyan" size="lg" />
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-semibold">{track.title}</span>
+              <span className="block truncate text-xs text-muted-foreground">{track.artist}</span>
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {duration(track.duration_seconds)}
+            </span>
+            <Play className="h-4 w-4" />
+          </button>
+        ))}
       </div>
-      <audio ref={audioRef} onEnded={() => setPlaying(null)} className="hidden" />
     </section>
   );
 }

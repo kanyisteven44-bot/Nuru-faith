@@ -8,6 +8,45 @@ export type Database = {
   };
   public: {
     Tables: {
+      media_catalog_imports: {
+        Row: {
+          kind: string;
+          channel_id: string | null;
+          page_token: string | null;
+          status: string;
+          imported_total: number;
+          pages_processed: number;
+          last_error: string | null;
+          lease_token: string | null;
+          lease_until: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          kind: string;
+          channel_id?: string | null;
+          page_token?: string | null;
+          status?: string;
+          imported_total?: number;
+          pages_processed?: number;
+          last_error?: string | null;
+          lease_token?: string | null;
+          lease_until?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          kind?: string;
+          channel_id?: string | null;
+          page_token?: string | null;
+          status?: string;
+          imported_total?: number;
+          pages_processed?: number;
+          last_error?: string | null;
+          lease_token?: string | null;
+          lease_until?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       ai_conversations: {
         Row: {
           context_id: string | null;

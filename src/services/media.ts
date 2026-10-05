@@ -59,7 +59,7 @@ export async function fetchMediaCatalog(options: {
   query?: string;
   language?: string;
   channelId?: string;
-  videoOnly?: boolean;
+  playback?: "all" | "audio" | "video";
   page: number;
 }) {
   const pageSize = 24;
@@ -67,9 +67,14 @@ export async function fetchMediaCatalog(options: {
     .from("media_items")
     .select(ITEM_COLUMNS, { count: "exact" })
     .eq("is_approved", true)
-    .eq("media_type", options.mediaType)
-    .or("source.eq.youtube,audio_url.not.is.null");
-  if (options.videoOnly) query = query.eq("source", "youtube");
+    .eq("media_type", options.mediaType);
+  if (options.playback === "video") {
+    query = query.eq("source", "youtube");
+  } else if (options.playback === "audio") {
+    query = query.not("audio_url", "is", null).neq("audio_url", "");
+  } else {
+    query = query.or("source.eq.youtube,audio_url.not.is.null");
+  }
   if (options.channelId) query = query.eq("youtube_channel_id", options.channelId);
   if (options.language && options.language !== "all") {
     query =

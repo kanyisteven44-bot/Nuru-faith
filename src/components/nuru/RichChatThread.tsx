@@ -50,6 +50,7 @@ export function RichChatThread({
     url: string;
   } | null>(null);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const [voiceEffect, setVoiceEffect] = useState("Normal");
   const [enhanceVoice, setEnhanceVoice] = useState(true);
   const voiceContext = useRef<AudioContext | null>(null);
   const mounted = useRef(true);
@@ -211,7 +212,7 @@ export function RichChatThread({
       });
       recordingStream.current = stream;
       let capture = stream;
-      if (enhanceVoice) {
+      if (enhanceVoice || voiceEffect !== "Normal") {
         const context = new AudioContext();
         voiceContext.current = context;
         await context.resume();
@@ -221,7 +222,34 @@ export function RichChatThread({
         filter.frequency.value = 100;
         const compressor = context.createDynamicsCompressor();
         const destination = context.createMediaStreamDestination();
-        source.connect(filter).connect(compressor).connect(destination);
+        const processed = source.connect(filter).connect(compressor);
+        if (voiceEffect === "Echo") {
+          processed.connect(destination);
+          const delay = context.createDelay(1);
+          delay.delayTime.value = 0.18;
+          const gain = context.createGain();
+          gain.gain.value = 0.3;
+          processed.connect(delay).connect(gain).connect(destination);
+        } else if (voiceEffect === "Robot") {
+          const modulator = context.createOscillator();
+          modulator.frequency.value = 45;
+          modulator.type = "sine";
+          const gain = context.createGain();
+          gain.gain.value = 0.5;
+          const depth = context.createGain();
+          depth.gain.value = 0.5;
+          modulator.connect(depth).connect(gain.gain);
+          processed.connect(gain).connect(destination);
+          modulator.start();
+        } else if (voiceEffect !== "Normal") {
+          const tone = context.createBiquadFilter();
+          tone.type =
+            voiceEffect === "Warm" || voiceEffect === "Deep tone" ? "lowshelf" : "highshelf";
+          tone.frequency.value =
+            voiceEffect === "Deep tone" ? 400 : voiceEffect === "Warm" ? 700 : 2200;
+          tone.gain.value = voiceEffect === "Deep tone" ? 8 : 5;
+          processed.connect(tone).connect(destination);
+        } else processed.connect(destination);
         capture = destination.stream;
       }
       const preferred = ["audio/webm;codecs=opus", "audio/webm", "audio/ogg", "audio/mp4"].find(
@@ -426,6 +454,33 @@ export function RichChatThread({
         )}
 
         {richMediaAllowed && !recording && !voiceDraft && (
+          <fieldset className="mb-3 rounded-2xl border border-violet-400/20 bg-violet-500/5 p-3">
+            <legend className="px-1 text-xs font-semibold">Voice-note effect</legend>
+            <div className="flex flex-wrap gap-2">
+              {["Normal", "Warm", "Echo", "Deep tone", "Robot", "Bright"].map((name) => (
+                <button
+                  key={name}
+                  type="button"
+                  disabled={sending}
+                  aria-pressed={voiceEffect === name}
+                  onClick={() => setVoiceEffect(name)}
+                  className={cn(
+                    "min-h-9 rounded-full px-3 text-xs font-semibold",
+                    voiceEffect === name
+                      ? "bg-violet-500 text-white"
+                      : "bg-surface-2 text-muted-foreground",
+                  )}
+                >
+                  {name}
+                </button>
+              ))}
+            </div>
+            <p className="mt-2 text-[10px] text-muted-foreground">
+              Choose before recording. Preview the effect before sending.
+            </p>
+          </fieldset>
+        )}
+        {richMediaAllowed && !recording && !voiceDraft && (
           <label className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
             <input
               type="checkbox"
@@ -441,7 +496,7 @@ export function RichChatThread({
             <p className="text-xs font-semibold">
               Preview your voice note • {Math.ceil(voiceDraft.duration / 1000)}s
             </p>
-            <audio controls src={voiceDraft.url} className="h-10 w-full" />
+            <VoicePlayback src={voiceDraft.url} />
             <div className="flex justify-end gap-3">
               <button
                 type="button"
@@ -562,15 +617,46 @@ function VoiceNote({
 
   return (
     <div className="min-w-52">
-      <audio
-        controls
-        preload="metadata"
-        src={audio.data}
-        className={cn("h-10 w-full", mine ? "accent-white" : "accent-primary")}
-      />
+      <VoicePlayback src={audio.data} mine={mine} />
       {durationMs ? (
         <p className="mt-1 text-[10px] opacity-65">{Math.ceil(durationMs / 1000)} sec voice note</p>
       ) : null}
+    </div>
+  );
+}
+
+function VoicePlayback({ src, mine = false }: { src: string; mine?: boolean }) {
+  const ref = useRef<HTMLAudioElement>(null);
+  const [speed, setSpeed] = useState(1);
+  return (
+    <div className="space-y-2">
+      <audio
+        ref={ref}
+        controls
+        preload="metadata"
+        src={src}
+        className={cn("h-10 w-full", mine ? "accent-white" : "accent-primary")}
+      />
+      <div className="flex justify-end gap-1" aria-label="Playback speed">
+        {[1, 1.5, 2].map((value) => (
+          <button
+            key={value}
+            type="button"
+            aria-label={`Play at ${value} times speed`}
+            aria-pressed={speed === value}
+            onClick={() => {
+              setSpeed(value);
+              if (ref.current) ref.current.playbackRate = value;
+            }}
+            className={cn(
+              "min-h-8 rounded-full px-3 text-[11px] font-semibold",
+              speed === value ? "bg-violet-500 text-white" : "bg-black/10",
+            )}
+          >
+            {value}×
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

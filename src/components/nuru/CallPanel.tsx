@@ -1,5 +1,16 @@
 import { useEffect, useRef, useState } from "react";
-import { Mic, MicOff, PhoneOff, Video, VideoOff, X } from "lucide-react";
+import {
+  Mic,
+  MicOff,
+  PhoneOff,
+  Video,
+  VideoOff,
+  X,
+  Sparkles,
+  Volume2,
+  VolumeX,
+  RotateCcw,
+} from "lucide-react";
 import { Avatar } from "@/components/nuru/AppShell";
 import {
   answerCallSession,
@@ -17,6 +28,10 @@ const effects = {
   Warm: "sepia(.25) saturate(1.15)",
   Glow: "brightness(1.12) contrast(.95)",
   Mono: "grayscale(1)",
+  Dreamy: "saturate(.8) contrast(.9) brightness(1.08)",
+  "Low light": "brightness(1.35) contrast(1.08)",
+  Hearts: "none",
+  Sparkles: "none",
 };
 
 type IncomingCall = {
@@ -43,10 +58,17 @@ export function CallPanel({
   const effectRef = useRef("Natural");
   effectRef.current = effect;
   const [effectsAvailable, setEffectsAvailable] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const [showEffects, setShowEffects] = useState(false);
+  const [speakerMuted, setSpeakerMuted] = useState(false);
+  const [mediaReady, setMediaReady] = useState(false);
+  const [remoteReady, setRemoteReady] = useState(false);
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
   const [seconds, setSeconds] = useState(0);
   const peerConnection = useRef<RTCPeerConnection | null>(null);
   const localStream = useRef<MediaStream | null>(null);
-  const remoteStream = useRef<MediaStream>(new MediaStream());
+  const remoteStream = useRef<MediaStream | null>(null);
   const remoteVideo = useRef<HTMLVideoElement>(null);
   const localVideo = useRef<HTMLVideoElement>(null);
   const remoteAudio = useRef<HTMLAudioElement>(null);
@@ -68,15 +90,25 @@ export function CallPanel({
     let frame = 0;
     let rawStream: MediaStream | null = null;
     let sourceVideo: HTMLVideoElement | null = null;
+    setError("");
+    setMediaReady(false);
+    setRemoteReady(false);
+    setEffectsAvailable(false);
+    setStatus("Requesting permission…");
+    appliedAnswer.current = false;
+    remoteStream.current = new MediaStream();
+    let timeout: ReturnType<typeof setTimeout> | undefined;
     const pc = new RTCPeerConnection({
       iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
     });
     peerConnection.current = pc;
 
     pc.ontrack = (event) => {
+      if (disposed) return;
+      setRemoteReady(true);
       for (const track of event.streams[0]?.getTracks() ?? [event.track]) {
-        if (!remoteStream.current.getTracks().some((existing) => existing.id === track.id)) {
-          remoteStream.current.addTrack(track);
+        if (!remoteStream.current!.getTracks().some((existing) => existing.id === track.id)) {
+          remoteStream.current!.addTrack(track);
         }
       }
       if (remoteVideo.current) remoteVideo.current.srcObject = remoteStream.current;
@@ -84,14 +116,25 @@ export function CallPanel({
     };
 
     pc.onconnectionstatechange = () => {
-      if (pc.connectionState === "connected") setStatus("Connected");
+      if (disposed) return;
+      if (pc.connectionState === "connected") {
+        setStatus("Connected");
+        clearTimeout(timeout);
+      }
       if (["failed", "disconnected"].includes(pc.connectionState)) {
         setStatus("Connection interrupted");
+        setError(
+          "The call connection was interrupted. End the call and try again. Some mobile or workplace networks need a relay server.",
+        );
       }
     };
 
     async function start() {
       try {
+        if (userId === peer.id)
+          throw new Error("Choose another Nuru member to call. You cannot call your own account.");
+        if (!navigator.mediaDevices?.getUserMedia)
+          throw new Error("Open Nuru in Chrome or Safari over HTTPS to use calls.");
         let stream = await navigator.mediaDevices.getUserMedia({
           audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
           video: kind === "video",
@@ -116,10 +159,24 @@ export function CallPanel({
               rawStream.getTracks().forEach((track) => track.stop());
               return;
             }
+            canvas.width = sourceVideo.videoWidth || 640;
+            canvas.height = sourceVideo.videoHeight || 480;
             const draw = () => {
               if (disposed || !sourceVideo) return;
               context.filter = effects[effectRef.current as keyof typeof effects] || "none";
               context.drawImage(sourceVideo, 0, 0, canvas.width, canvas.height);
+              if (effectRef.current === "Hearts" || effectRef.current === "Sparkles") {
+                context.filter = "none";
+                context.font = `${Math.round(canvas.width / 20)}px sans-serif`;
+                for (let i = 0; i < 9; i++) {
+                  const y = (Date.now() / 35 + i * 79) % canvas.height;
+                  context.fillText(
+                    effectRef.current === "Hearts" ? "💜" : "✨",
+                    (i * 97 + 30) % canvas.width,
+                    y,
+                  );
+                }
+              }
               frame = requestAnimationFrame(draw);
             };
             draw();
@@ -129,6 +186,7 @@ export function CallPanel({
           }
         }
         localStream.current = stream;
+        setMediaReady(true);
         stream.getTracks().forEach((track) => pc.addTrack(track, stream));
         if (localVideo.current) localVideo.current.srcObject = stream;
 
@@ -137,6 +195,7 @@ export function CallPanel({
           const answer = await pc.createAnswer();
           await pc.setLocalDescription(answer);
           await waitForIceGatheringComplete(pc);
+          if (disposed) return;
           if (!pc.localDescription) throw new Error("Call answer was not created.");
           await answerCallSession(incoming.id, pc.localDescription.toJSON());
           setCallId(incoming.id);
@@ -145,6 +204,7 @@ export function CallPanel({
           const offer = await pc.createOffer();
           await pc.setLocalDescription(offer);
           await waitForIceGatheringComplete(pc);
+          if (disposed) return;
           if (!pc.localDescription) throw new Error("Call offer was not created.");
           const session = await createCallSession({
             callerId: userId,
@@ -152,14 +212,38 @@ export function CallPanel({
             kind,
             offer: pc.localDescription.toJSON(),
           });
+          if (disposed) {
+            await endCallSession(session.id);
+            return;
+          }
           setCallId(session.id);
           setStatus("Ringing…");
+          timeout = setTimeout(() => {
+            if (disposed || pc.connectionState === "connected") return;
+            setStatus("No answer");
+            setError(
+              "This call was not connected. Check that the other person has Messages open, then try again.",
+            );
+            void endCallSession(session.id).catch(() => undefined);
+          }, 60000);
         }
       } catch (callError) {
+        if (disposed) return;
+        rawStream?.getTracks().forEach((track) => track.stop());
+        cancelAnimationFrame(frame);
+        setMediaReady(false);
+        setStatus("Call could not start");
+        const name = callError instanceof Error ? callError.name : "";
         setError(
-          callError instanceof Error
-            ? callError.message
-            : "Microphone or camera access is required for this call.",
+          name === "NotAllowedError" || name === "PermissionDeniedError"
+            ? "Camera or microphone permission was denied. Open this link in Chrome, allow Camera and Microphone in Site settings, then tap Try again."
+            : name === "NotFoundError"
+              ? "No camera or microphone was found on this device."
+              : name === "NotReadableError"
+                ? "Your camera or microphone is busy. Close other apps using it, then try again."
+                : callError instanceof Error
+                  ? callError.message
+                  : "Could not start the call. Please retry.",
         );
       }
     }
@@ -168,6 +252,7 @@ export function CallPanel({
 
     return () => {
       disposed = true;
+      clearTimeout(timeout);
       cancelAnimationFrame(frame);
       rawStream?.getTracks().forEach((track) => track.stop());
       if (sourceVideo) {
@@ -178,17 +263,19 @@ export function CallPanel({
       peerConnection.current = null;
       localStream.current?.getTracks().forEach((track) => track.stop());
       localStream.current = null;
-      remoteStream.current.getTracks().forEach((track) => track.stop());
-      remoteStream.current = new MediaStream();
+      remoteStream.current!.getTracks().forEach((track) => track.stop());
+      remoteStream.current = null;
     };
-  }, [incoming, kind, peer.id, userId]);
+  }, [incoming, kind, peer.id, userId, attempt]);
 
   useEffect(() => {
     if (!callId) return;
+    let active = true;
+    let closeTimer: number | undefined;
     const timer = window.setInterval(() => {
       void fetchCallSession(callId)
         .then(async (session) => {
-          if (!session) return;
+          if (!active || !session) return;
           if (!incoming && session.answer && !appliedAnswer.current && peerConnection.current) {
             appliedAnswer.current = true;
             await peerConnection.current.setRemoteDescription(
@@ -203,17 +290,25 @@ export function CallPanel({
             setStatus("Connected");
           if (session.status === "declined") {
             setStatus("Call declined");
-            window.setTimeout(onClose, 900);
+            closeTimer ??= window.setTimeout(() => {
+              if (active) closeRef.current();
+            }, 900);
           }
           if (session.status === "ended" || session.status === "missed") {
             setStatus("Call ended");
-            window.setTimeout(onClose, 700);
+            closeTimer ??= window.setTimeout(() => {
+              if (active) closeRef.current();
+            }, 700);
           }
         })
         .catch(() => setError("Couldn’t update call status. Check your connection."));
     }, 1200);
-    return () => window.clearInterval(timer);
-  }, [callId, incoming, onClose]);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      clearTimeout(closeTimer);
+    };
+  }, [callId, incoming]);
 
   function toggleMute() {
     const next = !muted;
@@ -233,6 +328,8 @@ export function CallPanel({
   }
 
   async function end() {
+    localStream.current?.getTracks().forEach((track) => track.stop());
+    closeRef.current();
     if (callId) {
       try {
         await endCallSession(callId);
@@ -240,14 +337,13 @@ export function CallPanel({
         // The local call still closes even if the status update fails.
       }
     }
-    onClose();
   }
 
   const name = peer.full_name || peer.username || "Nuru member";
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-[#07111f]/95 p-4 text-white">
-      <div className="relative flex h-full max-h-[860px] w-full max-w-3xl flex-col overflow-hidden rounded-[32px] border border-cyan-200/15 bg-[#0b1728] shadow-2xl">
+      <div className="relative flex h-full max-h-[860px] w-full max-w-3xl flex-col overflow-hidden rounded-[32px] border border-cyan-200/15 bg-[radial-gradient(ellipse_at_top,#28204a_0%,#0b1728_55%,#17102c_100%)] shadow-2xl">
         <button
           type="button"
           onClick={() => void end()}
@@ -258,14 +354,39 @@ export function CallPanel({
         </button>
 
         {kind === "video" ? (
-          <div className="relative min-h-0 flex-1 bg-black">
-            <video ref={remoteVideo} autoPlay playsInline className="h-full w-full object-cover" />
+          <div className="relative min-h-0 flex-1 overflow-hidden">
+            {!remoteReady && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-5 bg-[radial-gradient(ellipse_at_center,#352453,#0b1728_70%)] p-8">
+                <div className="rounded-full p-2 ring-2 ring-violet-400/70 shadow-[0_0_60px_#8b5cf655]">
+                  <Avatar
+                    url={peer.avatar_url}
+                    name={name}
+                    seed={peer.id}
+                    size="lg"
+                    className="h-28 w-28 text-4xl"
+                  />
+                </div>
+                <p className="text-lg font-semibold">
+                  {error ? "Let’s get you connected" : "Waiting for their camera…"}
+                </p>
+              </div>
+            )}
+            <video
+              ref={remoteVideo}
+              muted={speakerMuted}
+              autoPlay
+              playsInline
+              className="relative h-full w-full object-cover"
+            />
             <video
               ref={localVideo}
               autoPlay
               muted
               playsInline
-              className="absolute bottom-5 right-5 h-36 w-28 rounded-2xl border border-white/20 bg-[#14243b] object-cover shadow-xl"
+              className={cn(
+                !mediaReady && "hidden",
+                "absolute bottom-5 right-5 h-36 w-28 rounded-2xl border border-white/20 bg-[#14243b] object-cover shadow-xl",
+              )}
             />
             <div className="absolute left-0 right-0 top-0 bg-gradient-to-b from-black/55 to-transparent p-6 pt-8">
               <p className="text-xl font-bold">{name}</p>
@@ -273,13 +394,25 @@ export function CallPanel({
             </div>
           </div>
         ) : (
-          <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-8 text-center">
+          <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center px-8 text-center">
+            <div
+              aria-hidden="true"
+              className="absolute inset-x-6 top-1/2 flex -translate-y-1/2 items-center justify-between opacity-40"
+            >
+              {Array.from({ length: 28 }, (_, i) => (
+                <span
+                  key={i}
+                  className="w-1.5 rounded-full bg-gradient-to-t from-violet-500 to-pink-300"
+                  style={{ height: `${18 + ((i * 37) % 75)}px` }}
+                />
+              ))}
+            </div>
             <Avatar
               url={peer.avatar_url}
               name={name}
               seed={peer.id}
               size="lg"
-              className="h-32 w-32 border-white/20 text-4xl"
+              className="relative h-32 w-32 border-white/20 text-4xl ring-4 ring-violet-400/50 ring-offset-8 ring-offset-[#17152b] shadow-[0_0_70px_#8b5cf666]"
             />
             <h2 className="mt-6 font-display text-3xl font-bold">{name}</h2>
             {peer.username && <p className="mt-1 text-sm text-white/55">@{peer.username}</p>}
@@ -287,13 +420,15 @@ export function CallPanel({
           </div>
         )}
 
-        {kind === "audio" && <audio ref={remoteAudio} autoPlay className="hidden" />}
+        {kind === "audio" && (
+          <audio ref={remoteAudio} muted={speakerMuted} autoPlay className="hidden" />
+        )}
         <div className="px-5 pt-3 text-center text-xs text-white/60" role="status">
           {status === "Connected"
             ? `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`
             : status}
         </div>
-        {kind === "video" && effectsAvailable && (
+        {kind === "video" && effectsAvailable && showEffects && (
           <div
             className="flex flex-wrap justify-center gap-2 px-4 pt-4"
             aria-label="Camera effects"
@@ -319,14 +454,25 @@ export function CallPanel({
 
         {error && (
           <div className="mx-5 mb-3 rounded-2xl bg-red-500/15 px-4 py-3 text-sm text-red-100">
-            {error}
+            <p role="alert">{error}</p>
+            {!mediaReady && (
+              <button
+                type="button"
+                onClick={() => setAttempt((value) => value + 1)}
+                className="mt-3 flex min-h-10 items-center gap-2 rounded-full bg-white/15 px-4 font-semibold"
+              >
+                <RotateCcw className="h-4 w-4" />
+                Try again
+              </button>
+            )}
           </div>
         )}
 
-        <div className="flex items-center justify-center gap-5 px-6 pb-[max(2rem,env(safe-area-inset-bottom))] pt-5">
+        <div className="flex items-center justify-center gap-3 px-4 pb-[max(2rem,env(safe-area-inset-bottom))] pt-5">
           <button
             type="button"
             onClick={toggleMute}
+            disabled={!mediaReady}
             aria-label={muted ? "Unmute microphone" : "Mute microphone"}
             className={cn(
               "flex h-14 w-14 items-center justify-center rounded-full",
@@ -340,6 +486,7 @@ export function CallPanel({
             <button
               type="button"
               onClick={toggleCamera}
+              disabled={!mediaReady}
               aria-label={cameraOff ? "Turn camera on" : "Turn camera off"}
               className={cn(
                 "flex h-14 w-14 items-center justify-center rounded-full",
@@ -350,6 +497,26 @@ export function CallPanel({
             </button>
           )}
 
+          {kind === "video" && (
+            <button
+              type="button"
+              disabled={!effectsAvailable}
+              onClick={() => setShowEffects((value) => !value)}
+              aria-label="Camera effects"
+              aria-expanded={showEffects}
+              className="flex h-12 w-12 items-center justify-center rounded-full bg-violet-500/25 disabled:opacity-35"
+            >
+              <Sparkles className="h-5 w-5" />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setSpeakerMuted((value) => !value)}
+            aria-label={speakerMuted ? "Unmute speaker" : "Mute speaker"}
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10"
+          >
+            {speakerMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+          </button>
           <button
             type="button"
             onClick={() => void end()}

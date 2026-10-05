@@ -163,6 +163,7 @@ export function MediaCatalog({
 }
 
 export function MediaPlayback({ item, onClose }: { item: MediaItem; onClose: () => void }) {
+  const audioRef = useRef<HTMLAudioElement>(null);
   const [audioFailed, setAudioFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -176,6 +177,27 @@ export function MediaPlayback({ item, onClose }: { item: MediaItem; onClose: () 
   const video = item.source === "youtube" ? youtubeVideoId(item.external_id) : null;
   const audio = playableAudioUrl(item.audio_url);
   const artwork = videoArtwork(item.source, item.external_id, resolveMedia(item.thumbnail_url));
+
+  async function togglePlayback() {
+    if (video) {
+      if (!showVideo) setShowVideo(true);
+      setPlaying((value) => !value);
+      return;
+    }
+    const player = audioRef.current;
+    if (!audio || !player) return;
+    if (!player.paused) {
+      player.pause();
+      return;
+    }
+    try {
+      setAudioFailed(false);
+      await player.play();
+    } catch {
+      setPlaying(false);
+      setAudioFailed(true);
+    }
+  }
 
   return (
     <div
@@ -244,7 +266,7 @@ export function MediaPlayback({ item, onClose }: { item: MediaItem; onClose: () 
               <button type="button" className="nuru-soft-control flex h-12 w-12 items-center justify-center rounded-full" aria-label="Previous">
                 <SkipBack className="h-5 w-5 fill-current" />
               </button>
-              <button type="button" onClick={() => setPlaying((value) => !value)} className="flex h-20 w-20 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl shadow-primary/25" aria-label={playing ? "Pause" : "Play"}>
+              <button type="button" onClick={() => void togglePlayback()} className="flex h-20 w-20 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl shadow-primary/25" aria-label={playing ? "Pause" : "Play"}>
                 {playing ? <Pause className="h-8 w-8 fill-current" /> : <Play className="ml-1 h-8 w-8 fill-current" />}
               </button>
               <button type="button" className="nuru-soft-control flex h-12 w-12 items-center justify-center rounded-full" aria-label="Next">
@@ -287,9 +309,9 @@ export function MediaPlayback({ item, onClose }: { item: MediaItem; onClose: () 
             ) : audio ? (
               <div className="nuru-card rounded-3xl p-5">
                 <audio
+                  ref={audioRef}
                   key={`${item.id}:${attempt}`}
                   src={audio}
-                  autoPlay={playing}
                   preload="metadata"
                   className="w-full"
                   onPlay={() => setPlaying(true)}

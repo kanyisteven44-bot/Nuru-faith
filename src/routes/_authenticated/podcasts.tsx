@@ -14,14 +14,27 @@ export const Route = createFileRoute("/_authenticated/podcasts")({
       { title: "Podcasts & sermons — Nuru Faith" },
       {
         name: "description",
-        content: "Sermons, teaching series and Christian podcasts for young believers.",
+        content: "Discover Christian podcasts, sermons, Bible study and faith conversations.",
       },
       { property: "og:title", content: "Podcasts & sermons — Nuru Faith" },
-      { property: "og:description", content: "Sermons and Christian podcasts." },
+      { property: "og:description", content: "Search and play Christian podcasts and sermons." },
     ],
   }),
   component: PodcastsScreen,
 });
+
+const TOPICS = [
+  "Bible study",
+  "Prayer",
+  "Youth",
+  "Purpose",
+  "Relationships",
+  "Mental health",
+  "Leadership",
+  "Family",
+  "Theology",
+  "Christian living",
+] as const;
 
 function PodcastsScreen() {
   const [selected, setSelected] = useState<MediaItem | null>(null);

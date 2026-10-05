@@ -29,3 +29,5 @@ npm run dev
 - Tailwind CSS
 
 <!-- Production deployment trigger: 2026-10-05 -->
+
+<!-- Production deployment trigger: rich-groups-messaging-2026-10-05 -->

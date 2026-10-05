@@ -22,13 +22,13 @@ function RailButton({
       type="button"
       onClick={onClick}
       aria-label={aria}
-      className="flex min-h-11 w-12 flex-col items-center gap-1 text-[11px] font-semibold text-white transition-transform duration-150 active:scale-90 motion-reduce:transition-none motion-reduce:active:scale-100"
+      className="flex min-h-11 w-12 flex-col items-center gap-1 text-[11px] font-semibold text-white drop-shadow-md transition-transform duration-150 active:scale-90 motion-reduce:transition-none motion-reduce:active:scale-100"
     >
       <span
         className={cn(
-          "flex h-9 w-9 items-center justify-center rounded-full bg-black/25 backdrop-blur-sm",
-          tint === "destructive" && "bg-destructive/25",
-          tint === "cyan" && "bg-leaf/20",
+          "flex h-10 w-10 items-center justify-center rounded-full border border-white/70 bg-white/90 text-[#182033] shadow-[0_5px_14px_rgba(0,0,0,0.18)] backdrop-blur-sm",
+          tint === "destructive" && "text-destructive",
+          tint === "cyan" && "text-[#2E79D3]",
         )}
       >
         {icon}
@@ -91,7 +91,7 @@ export function ReelActions({
           width={44}
           height={44}
           loading="lazy"
-          className="h-11 w-11 rounded-full object-cover ring-2 ring-primary"
+          className="h-11 w-11 rounded-full object-cover ring-2 ring-[#4B90E6] shadow-[0_5px_14px_rgba(0,0,0,0.22)]"
         />
       </button>
 

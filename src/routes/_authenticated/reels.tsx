@@ -481,23 +481,30 @@ function ReelsScreen() {
 
   return (
     <AppShell flush>
-      <div className="relative h-[calc(100dvh-4.5rem-env(safe-area-inset-bottom))] w-full overflow-hidden bg-slate-950 md:rounded-3xl">
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-center pt-[max(0.75rem,env(safe-area-inset-top))]">
-          <div className="pointer-events-auto">
+      <div className="relative h-[calc(100dvh-4.5rem-env(safe-area-inset-bottom))] w-full overflow-hidden bg-[#F3F6FB] md:rounded-3xl">
+        <header className="absolute inset-x-0 top-0 z-30 border-b border-white/70 bg-[#F3F6FB]/96 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] text-[#182033] backdrop-blur-xl">
+          <div className="mx-auto flex max-w-[440px] items-center justify-between">
+            <div className="flex min-w-0 items-center gap-2">
+              {view === "feed" && (
+                <button
+                  type="button"
+                  onClick={() => setView("grid")}
+                  aria-label="Back to Reels grid"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/80 bg-[#F3F6FB] shadow-[5px_5px_12px_rgba(171,181,197,0.28),-5px_-5px_12px_rgba(255,255,255,0.95)]"
+                >
+                  <ArrowLeft className="h-4.5 w-4.5" />
+                </button>
+              )}
+              <div className="min-w-0">
+                <p className="truncate font-display text-[22px] font-semibold leading-none">Nuru Faith</p>
+                <p className="mt-1 text-[11px] text-[#7A8597]">Faith-filled short videos</p>
+              </div>
+            </div>
+          </div>
+          <div className="pointer-events-auto mx-auto mt-3 flex max-w-[440px] justify-center">
             <ReelFeedTabs value={feed} onChange={setFeed} />
           </div>
-        </div>
-
-        {view === "feed" && (
-          <button
-            type="button"
-            onClick={() => setView("grid")}
-            aria-label="Back to Reels grid"
-            className="pointer-events-auto absolute left-3 top-[max(0.75rem,env(safe-area-inset-top))] z-20 rounded-full bg-black/40 p-2 text-white backdrop-blur-md"
-          >
-            <ArrowLeft className="h-4.5 w-4.5" />
-          </button>
-        )}
+        </header>
 
         {initialLoading && (
           <div className="flex h-full items-center justify-center p-6">
@@ -519,11 +526,11 @@ function ReelsScreen() {
         )}
 
         {items.length > 0 && view === "grid" && (
-          <div ref={scrollerRef} className="no-scrollbar h-full overflow-y-auto pt-16">
+          <div ref={scrollerRef} className="no-scrollbar h-full overflow-y-auto pt-28">
             <ReelGrid items={items} onOpen={openReel} />
             <div ref={sentinelRef} aria-hidden="true" className="h-1" />
             {reels.isFetchingNextPage && (
-              <div className="flex items-center justify-center gap-2 py-4 text-xs text-white/70">
+              <div className="flex items-center justify-center gap-2 py-4 text-xs text-[#7A8597]">
                 <Loader2 className="h-4 w-4 animate-spin" /> Loading more
               </div>
             )}
@@ -533,7 +540,7 @@ function ReelsScreen() {
         {items.length > 0 && view === "feed" && (
           <div
             ref={scrollerRef}
-            className="no-scrollbar mx-auto mt-16 h-[calc(100%_-_4rem)] w-full max-w-[440px] snap-y snap-mandatory overflow-y-auto overscroll-contain md:rounded-t-2xl"
+            className="no-scrollbar mx-auto mt-28 h-[calc(100%_-_7rem)] w-full max-w-[440px] snap-y snap-mandatory overflow-y-auto overscroll-contain md:rounded-t-2xl"
           >
             {items.map((reel, i) => (
               <ReelPane
@@ -646,20 +653,20 @@ function ReelsScreen() {
             <div ref={sentinelRef} aria-hidden="true" className="h-1" />
 
             {(reels.isFetchingNextPage || youtubeFallback.isFetchingNextPage) && (
-              <div className="flex snap-start items-center justify-center gap-2 py-4 text-xs text-white/70">
+              <div className="flex snap-start items-center justify-center gap-2 bg-[#F3F6FB] py-4 text-xs text-[#7A8597]">
                 <Loader2 className="h-4 w-4 animate-spin" /> Loading more
               </div>
             )}
 
             {(reels.isError || youtubeFallback.isFetchNextPageError) && !initialLoading && (
-              <div className="flex snap-start flex-col items-center gap-2 py-6 text-center">
-                <p className="text-sm text-white/80">Couldn't load more.</p>
+              <div className="flex snap-start flex-col items-center gap-2 bg-[#F3F6FB] py-6 text-center">
+                <p className="text-sm text-[#4F5B70]">Couldn't load more.</p>
                 <button
                   onClick={() => {
                     if (reels.isError) void reels.fetchNextPage();
                     if (youtubeFallback.isFetchNextPageError) void youtubeFallback.fetchNextPage();
                   }}
-                  className="rounded-full bg-white/15 px-4 py-2 text-xs font-semibold text-white"
+                  className="rounded-full border border-white/80 bg-white px-4 py-2 text-xs font-semibold text-[#182033] shadow-sm"
                 >
                   Retry
                 </button>

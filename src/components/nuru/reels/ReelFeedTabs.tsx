@@ -12,11 +12,11 @@ export function ReelFeedTabs({
   onChange: (f: ReelFeed) => void;
 }) {
   return (
-    <div className="nuru-gradient-bg rounded-full p-[3px] shadow-[0_4px_20px_-6px_rgba(126,108,255,0.6)]">
+    <div className="rounded-full border border-white/80 bg-[#EDF1F7] p-1 shadow-[6px_6px_15px_rgba(171,181,197,0.3),-6px_-6px_15px_rgba(255,255,255,0.95)]">
       <div
         role="tablist"
         aria-label="Reel feeds"
-        className="flex items-center gap-1 rounded-full bg-[#051730] p-[3px]"
+        className="flex items-center gap-1 rounded-full"
       >
         {REEL_FEEDS.map((feed) => {
           const active = feed === value;
@@ -30,8 +30,8 @@ export function ReelFeedTabs({
               className={cn(
                 "min-h-9 rounded-full px-3.5 text-[12px] transition-colors",
                 active
-                  ? "nuru-gradient-bg font-bold text-[#F1EEE6]"
-                  : "font-semibold text-white/65",
+                  ? "bg-white font-bold text-[#182033] shadow-[0_5px_12px_rgba(82,96,119,0.16)]"
+                  : "font-semibold text-[#778296]",
               )}
             >
               {feed}

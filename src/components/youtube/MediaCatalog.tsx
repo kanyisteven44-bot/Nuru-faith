@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bookmark, ChevronDown, Pause, Play, Repeat2, Share2, Volume2, VolumeX } from "lucide-react";
-import { fetchMediaCatalog, fetchMySavedMediaIds, toggleSavedMedia, type MediaItem } from "@/services/media";
+import { fetchMediaCatalog, fetchMediaItemBySourceExternalId, fetchMySavedMediaIds, toggleSavedMedia, type MediaItem } from "@/services/media";
 import { CoverImage } from "@/components/nuru/CoverImage";
 import { CardSkeleton, EmptyState, PrimaryButton } from "@/components/nuru/Primitives";
 import { resolveMedia } from "@/lib/media";
@@ -202,16 +202,27 @@ export function MediaPlayback({ item, onClose }: { item: MediaItem; onClose: () 
   const artwork = videoArtwork(item.source, item.external_id, resolveMedia(item.thumbnail_url));
   const isVideo = !!video;
 
+  const canonicalItem = useQuery({
+    queryKey: ["canonical-media-item", item.source, item.external_id],
+    queryFn: () => fetchMediaItemBySourceExternalId(item.source, item.external_id),
+    enabled: !!item.external_id && !/^[0-9a-f-]{36}$/i.test(item.id),
+    staleTime: 5 * 60 * 1000,
+  });
+  const canonicalId = /^[0-9a-f-]{36}$/i.test(item.id) ? item.id : canonicalItem.data?.id ?? null;
+
   const savedIds = useQuery({
     queryKey: ["saved-media-ids", userId],
     queryFn: () => fetchMySavedMediaIds(userId!),
     enabled: !!userId,
     staleTime: 30_000,
   });
-  const saved = !!savedIds.data?.has(item.id);
+  const saved = !!canonicalId && !!savedIds.data?.has(canonicalId);
 
   const saveMutation = useMutation({
-    mutationFn: () => toggleSavedMedia(userId!, item.id, saved),
+    mutationFn: () => {
+      if (!canonicalId) throw new Error("This video is not in the Nuru catalogue yet.");
+      return toggleSavedMedia(userId!, canonicalId, saved);
+    },
     onSuccess: async (nextSaved) => {
       await qc.invalidateQueries({ queryKey: ["saved-media-ids", userId] });
       toast.success(nextSaved ? "Saved" : "Removed from saved");
@@ -330,9 +341,10 @@ export function MediaPlayback({ item, onClose }: { item: MediaItem; onClose: () 
           <div className="mt-6 flex items-center justify-center gap-7">
             <button
               type="button"
-              disabled={!userId || saveMutation.isPending}
+              disabled={!userId || canonicalItem.isLoading || saveMutation.isPending}
               onClick={() => {
                 if (!userId) return toast.error("Sign in to save media");
+                if (!canonicalId) return toast.error("This video is not in the Nuru catalogue yet.");
                 saveMutation.mutate();
               }}
               aria-pressed={saved}

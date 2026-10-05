@@ -25,6 +25,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
+import { z } from "zod";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell, BoardHeader } from "@/components/nuru/AppShell";
@@ -35,7 +36,12 @@ import { useTheme } from "@/hooks/useTheme";
 import type { ThemePreference } from "@/lib/theme";
 import { fetchMyRoles } from "@/services/content";
 
+const settingsSearchSchema = z.object({
+  panel: z.enum(["profile"]).optional(),
+});
+
 export const Route = createFileRoute("/_authenticated/settings")({
+  validateSearch: settingsSearchSchema,
   head: () => ({
     meta: [
       { title: "Settings — Nuru Faith" },
@@ -64,10 +70,11 @@ const THEME_OPTIONS: { value: ThemePreference; label: string; hint: string; icon
 
 function SettingsScreen() {
   const navigate = useNavigate();
+  const search = Route.useSearch();
   const qc = useQueryClient();
   const { userId } = useAuth();
   const { preference, setPreference } = useTheme();
-  const [profileOpen, setProfileOpen] = useState(false);
+  const profileOpen = search.panel === "profile";
   const [securityOpen, setSecurityOpen] = useState(false);
   const [languageOpen, setLanguageOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
@@ -86,7 +93,9 @@ function SettingsScreen() {
   if (profileOpen) {
     return (
       <AppShell>
-        <ProfileSettingsPanel onBack={() => setProfileOpen(false)} />
+        <ProfileSettingsPanel
+          onBack={() => void navigate({ to: "/settings", search: {}, replace: true })}
+        />
       </AppShell>
     );
   }
@@ -122,7 +131,9 @@ function SettingsScreen() {
             icon={UserCog}
             label="Profile"
             description="Photo, username, display name and bio"
-            onClick={() => setProfileOpen(true)}
+            onClick={() =>
+              void navigate({ to: "/settings", search: { panel: "profile" }, replace: true })
+            }
           />
           <RowButton
             icon={ShieldCheck}

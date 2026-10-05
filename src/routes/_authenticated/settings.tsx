@@ -1,19 +1,27 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Bell,
+  BookOpen,
   Check,
   ChevronRight,
   CircleHelp,
+  Copy,
+  HeartHandshake,
   Info,
   Languages,
+  LayoutDashboard,
+  Mail,
+  MessageCircle,
   Monitor,
   Moon,
+  Music2,
+  Phone,
   ShieldCheck,
   Sun,
   UserCog,
-  LayoutDashboard,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -36,6 +44,12 @@ export const Route = createFileRoute("/_authenticated/settings")({
   component: SettingsScreen,
 });
 
+const COMPANY_EMAIL = "tech@gmail.co.ke.com";
+const HELPLINES = [
+  { display: "+254 117 499 067", tel: "+254117499067", wa: "254117499067" },
+  { display: "+254 116 096 909", tel: "+254116096909", wa: "254116096909" },
+] as const;
+
 const THEME_OPTIONS: { value: ThemePreference; label: string; hint: string; icon: LucideIcon }[] = [
   { value: "light", label: "Light", hint: "Always the light theme", icon: Sun },
   { value: "dark", label: "Dark", hint: "Always the dark theme", icon: Moon },
@@ -53,6 +67,9 @@ function SettingsScreen() {
   const { userId } = useAuth();
   const { preference, setPreference } = useTheme();
   const [securityOpen, setSecurityOpen] = useState(false);
+  const [languageOpen, setLanguageOpen] = useState(false);
+  const [supportOpen, setSupportOpen] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
 
   const roles = useQuery({
     queryKey: ["roles", userId],
@@ -70,17 +87,28 @@ function SettingsScreen() {
     void navigate({ to: "/auth", search: { mode: "login" }, replace: true });
   }
 
+  async function copy(value: string, label: string) {
+    try {
+      await navigator.clipboard.writeText(value);
+      toast.success(`${label} copied`);
+    } catch {
+      toast.error(`Couldn't copy ${label.toLowerCase()}`);
+    }
+  }
+
   return (
     <AppShell>
       <BoardHeader back />
 
       <div className="px-5 pb-8">
         <h1 className="font-display text-[30px] leading-tight font-semibold">Settings</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Your account, security, app preferences and Nuru Faith support.
+        </p>
 
-        {/* Account */}
         <Section title="Account">
           {isStaff && <RowLink icon={LayoutDashboard} label="Admin Dashboard" to="/admin" />}
-          <RowLink icon={UserCog} label="Account" to="/profile" />
+          <RowLink icon={UserCog} label="Profile & Account" to="/profile" />
           <RowButton
             icon={ShieldCheck}
             label="Privacy & Security"
@@ -91,12 +119,18 @@ function SettingsScreen() {
         </Section>
 
         {securityOpen && (
-          <div className="mt-2">
-            <MfaSecurityPanel required={staffMfaRequired} />
-          </div>
+          <Panel>
+            <h3 className="font-display text-lg font-semibold">Privacy & Security</h3>
+            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+              Manage multi-factor authentication for this account. Staff accounts require the
+              stronger AAL2 security level before protected administrative changes are accepted.
+            </p>
+            <div className="mt-4">
+              <MfaSecurityPanel required={staffMfaRequired} />
+            </div>
+          </Panel>
         )}
 
-        {/* Appearance — the real control, wired to the theme provider. */}
         <Section title="Appearance">
           <fieldset className="px-1 py-1">
             <legend className="sr-only">Theme</legend>
@@ -130,38 +164,157 @@ function SettingsScreen() {
                     <span className="block text-[15px] font-semibold">{label}</span>
                     <span className="block truncate text-[12.5px] text-ink-3">{hint}</span>
                   </span>
-                  {active && (
-                    <Check className="h-4.5 w-4.5 shrink-0 text-primary" strokeWidth={2.4} />
-                  )}
+                  {active && <Check className="h-4.5 w-4.5 shrink-0 text-primary" strokeWidth={2.4} />}
                 </label>
               );
             })}
           </fieldset>
         </Section>
 
-        {/* Preferences */}
         <Section title="Preferences">
           <RowButton
             icon={Languages}
             label="Language"
             value="English"
-            onClick={() => toast("Only English is available for now.")}
+            onClick={() => setLanguageOpen((open) => !open)}
+            expanded={languageOpen}
           />
         </Section>
 
-        {/* About */}
+        {languageOpen && (
+          <Panel>
+            <h3 className="font-display text-lg font-semibold">Language</h3>
+            <div className="mt-3 flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/8 p-3">
+              <Languages className="h-5 w-5 text-primary" />
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-semibold">English</span>
+                <span className="block text-xs text-muted-foreground">Current interface language</span>
+              </span>
+              <Check className="h-4 w-4 text-primary" />
+            </div>
+            <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+              Nuru can still show multilingual Scripture, music and media when the source provides
+              it. The app interface is currently maintained in English so controls stay consistent.
+            </p>
+          </Panel>
+        )}
+
         <Section title="About">
           <RowButton
             icon={CircleHelp}
             label="Help & Support"
-            onClick={() => toast("Support contact details haven't been set up yet.")}
+            onClick={() => setSupportOpen((open) => !open)}
+            expanded={supportOpen}
           />
           <RowButton
             icon={Info}
             label="About Nuru Faith"
-            onClick={() => toast("Faith. Community. Purpose.")}
+            onClick={() => setAboutOpen((open) => !open)}
+            expanded={aboutOpen}
           />
         </Section>
+
+        {supportOpen && (
+          <Panel>
+            <h3 className="font-display text-xl font-semibold">Help & Support</h3>
+            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+              Nuru Faith support is handled by Vortiqora Technologies. You can call, WhatsApp or
+              email the team directly.
+            </p>
+
+            <div className="mt-4 space-y-3">
+              {HELPLINES.map((line, index) => (
+                <div key={line.tel} className="rounded-2xl border border-border bg-surface-2 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-ink-3">
+                    Helpline {index + 1}
+                  </p>
+                  <p className="mt-1 text-base font-semibold">{line.display}</p>
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <a
+                      href={`tel:${line.tel}`}
+                      className="nuru-soft-control inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold"
+                    >
+                      <Phone className="h-4 w-4" /> Call
+                    </a>
+                    <a
+                      href={`https://wa.me/${line.wa}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="nuru-soft-control inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold"
+                    >
+                      <MessageCircle className="h-4 w-4" /> WhatsApp
+                    </a>
+                  </div>
+                </div>
+              ))}
+
+              <div className="rounded-2xl border border-border bg-surface-2 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-ink-3">
+                  Company email
+                </p>
+                <p className="mt-1 break-all text-base font-semibold">{COMPANY_EMAIL}</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <a
+                    href={`mailto:${COMPANY_EMAIL}?subject=Nuru%20Faith%20Support`}
+                    className="nuru-soft-control inline-flex min-h-11 items-center gap-2 rounded-xl px-4 text-sm font-semibold"
+                  >
+                    <Mail className="h-4 w-4" /> Email support
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => void copy(COMPANY_EMAIL, "Email")}
+                    className="nuru-soft-control inline-flex min-h-11 items-center gap-2 rounded-xl px-4 text-sm font-semibold"
+                  >
+                    <Copy className="h-4 w-4" /> Copy
+                  </button>
+                </div>
+              </div>
+            </div>
+          </Panel>
+        )}
+
+        {aboutOpen && (
+          <Panel>
+            <div className="flex items-start gap-3">
+              <span className="nuru-disc h-11 w-11 shrink-0">
+                <HeartHandshake className="h-5 w-5" />
+              </span>
+              <div>
+                <h3 className="font-display text-xl font-semibold">Nuru Faith</h3>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
+                  Faith. Community. Purpose.
+                </p>
+              </div>
+            </div>
+
+            <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+              Nuru Faith is a Christian platform for young people to grow closer to God, understand
+              Scripture, build healthy Christian community, receive mentorship, learn through
+              courses and devotionals, worship through music, discover events and serve with
+              purpose.
+            </p>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+              The platform brings Bible reading, guided learning, Reels, community conversations,
+              mentorship, music and podcasts, events and faith-focused AI tools into one connected
+              experience. Nuru Faith is developed by Vortiqora Technologies.
+            </p>
+
+            <div className="mt-5 grid grid-cols-2 gap-2">
+              <AboutLink to="/bible" icon={BookOpen} label="Bible" />
+              <AboutLink to="/faith-courses" icon={BookOpen} label="Courses" />
+              <AboutLink to="/community" icon={Users} label="Community" />
+              <AboutLink to="/mentors" icon={HeartHandshake} label="Mentorship" />
+              <AboutLink to="/music" icon={Music2} label="Music & media" />
+              <AboutLink to="/reels" icon={MessageCircle} label="Reels" />
+            </div>
+
+            <div className="mt-5 rounded-xl border border-border bg-surface-2 p-4 text-xs leading-relaxed text-muted-foreground">
+              <p><strong className="text-foreground">Company:</strong> Vortiqora Technologies</p>
+              <p className="mt-1"><strong className="text-foreground">Email:</strong> {COMPANY_EMAIL}</p>
+              <p className="mt-1"><strong className="text-foreground">Helpline:</strong> {HELPLINES.map((line) => line.display).join(" · ")}</p>
+            </div>
+          </Panel>
+        )}
 
         <button
           type="button"
@@ -170,12 +323,15 @@ function SettingsScreen() {
         >
           Log out
         </button>
+        <p className="mt-2 text-center text-[11px] text-muted-foreground">
+          Log out is intentionally kept here in Settings so account actions stay in one place.
+        </p>
       </div>
     </AppShell>
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="mt-6">
       <h2 className="px-1 pb-2 text-[11px] font-semibold tracking-[0.14em] text-ink-3 uppercase">
@@ -184,6 +340,10 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       <div className="rounded-2xl border border-border bg-card p-1">{children}</div>
     </section>
   );
+}
+
+function Panel({ children }: { children: ReactNode }) {
+  return <section className="nuru-card mt-3 p-5">{children}</section>;
 }
 
 const ROW_CLASS =
@@ -222,5 +382,25 @@ function RowButton({
         strokeWidth={2}
       />
     </button>
+  );
+}
+
+function AboutLink({
+  to,
+  icon: Icon,
+  label,
+}: {
+  to: "/bible" | "/faith-courses" | "/community" | "/mentors" | "/music" | "/reels";
+  icon: LucideIcon;
+  label: string;
+}) {
+  return (
+    <Link
+      to={to}
+      className="nuru-soft-control flex min-h-12 items-center gap-2 rounded-xl px-3 text-sm font-semibold"
+    >
+      <Icon className="h-4 w-4 text-primary" />
+      <span>{label}</span>
+    </Link>
   );
 }

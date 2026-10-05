@@ -27,3 +27,5 @@ npm run dev
 - TypeScript
 - React
 - Tailwind CSS
+
+<!-- Production deployment trigger: 2026-10-05 -->

@@ -59,6 +59,7 @@ function MusicScreen() {
   const [tab, setTab] = useState<Tab>("Music");
   const [musicMode, setMusicMode] = useState<MusicMode>("Video");
   const [search, setSearch] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
   const [debounced, setDebounced] = useState("");
   const [nowPlaying, setNowPlaying] = useState<NowPlaying | null>(null);
   const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null);
@@ -119,7 +120,24 @@ function MusicScreen() {
 
   return (
     <AppShell>
-      <ScreenHeader title="Music & media" subtitle="Worship, teaching and sound for your week" />
+      <ScreenHeader
+        title="Music & media"
+        subtitle="Worship, teaching and sound for your week"
+        right={
+          <button
+            type="button"
+            onClick={() => {
+              if (searchOpen && !search) setSearchOpen(false);
+              else setSearchOpen(true);
+            }}
+            aria-label={searchOpen ? "Close music search" : "Search music and media"}
+            aria-expanded={searchOpen}
+            className="nuru-soft-control flex h-10 w-10 items-center justify-center rounded-full text-secondary-foreground"
+          >
+            {searchOpen ? <X className="h-4.5 w-4.5" /> : <Search className="h-4.5 w-4.5" />}
+          </button>
+        }
+      />
       <section
         className="relative mx-4 mb-2 overflow-hidden rounded-3xl bg-slate-950 p-6 text-white sm:p-8"
         aria-label="Worship collection"
@@ -146,26 +164,29 @@ function MusicScreen() {
       </section>
 
       <div className="space-y-3 px-4 py-3">
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search worship, sermons, artists…"
-            aria-label="Search music and media"
-            className="input-nuru pl-11"
-          />
-          {search && (
-            <button
-              type="button"
-              onClick={() => setSearch("")}
-              aria-label="Clear search"
-              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1.5 text-muted-foreground"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
-        </div>
+        {(searchOpen || search) && (
+          <div className="relative rounded-2xl border border-border bg-card p-1 shadow-sm">
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-primary" />
+            <input
+              autoFocus={searchOpen}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search songs, artists, sermons…"
+              aria-label="Search music and media"
+              className="h-12 w-full rounded-xl bg-transparent pl-11 pr-11 text-sm outline-none placeholder:text-muted-foreground"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                aria-label="Clear search"
+                className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground hover:bg-surface-2"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        )}
         <PillTabs tabs={TABS} value={tab} onChange={setTab} />
         {tab === "Music" && (
           <div className="space-y-2 rounded-2xl border border-border bg-card p-3">
@@ -339,7 +360,11 @@ function MusicScreen() {
       </div>
 
       {selectedMedia && (
-        <MediaPlayback item={selectedMedia} onClose={() => setSelectedMedia(null)} />
+        <MediaPlayback
+          item={selectedMedia}
+          onClose={() => setSelectedMedia(null)}
+          onSelect={setSelectedMedia}
+        />
       )}
       {nowPlaying && (
         <div className="fixed inset-x-0 bottom-0 z-50 md:inset-x-auto md:bottom-5 md:right-5 md:w-[420px] md:rounded-3xl md:border border-t border-border bg-surface/98 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-xl">

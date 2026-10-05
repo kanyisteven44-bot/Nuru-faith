@@ -8,7 +8,6 @@ import {
   ChevronRight,
   Clapperboard,
   GraduationCap,
-  Library,
   HandHeart,
   Music2,
   Sparkles,
@@ -53,9 +52,7 @@ const QUICK_ACCESS: { to: string; label: string; icon: LucideIcon }[] = [
   { to: "/ai", label: "Nuru AI", icon: Sparkles },
   // Matches the sidebar's Mentorship glyph, and stays distinct from Pray.
   { to: "/mentors", label: "Mentors", icon: UserRoundCheck },
-  { to: "/faith-courses", label: "Courses", icon: GraduationCap },
-  { to: "/devotionals", label: "Devotionals", icon: BookOpen },
-  { to: "/series", label: "Series", icon: Library },
+  { to: "/grow", label: "Learning", icon: GraduationCap },
 ];
 
 function HomeScreen() {
@@ -209,10 +206,10 @@ function HomeScreen() {
                   </Link>
                 </div>
                 <Link
-                  to="/devotionals"
+                  to="/grow"
                   className="mt-4 inline-flex min-h-11 items-center gap-1 text-[13px] font-semibold text-white underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
                 >
-                  Explore Devotionals <ChevronRight className="h-4 w-4" />
+                  Explore Learning <ChevronRight className="h-4 w-4" />
                 </Link>
               </div>
             </section>
@@ -248,7 +245,7 @@ function HomeScreen() {
                   Continue reading
                 </h2>
                 <Link
-                  to="/devotionals"
+                  to="/grow"
                   className="shrink-0 text-[13px] font-semibold text-primary hover:underline"
                 >
                   See all

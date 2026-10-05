@@ -6,7 +6,7 @@ import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
 import { MusicDiscovery } from "@/components/youtube/MusicDiscovery";
 import type { MediaItem } from "@/services/media";
 import type { YouTubeVideo } from "@/services/youtubeService";
-import { MediaCatalog, MediaPlayback } from "@/components/youtube/MediaCatalog";
+import { MediaPlayback } from "@/components/youtube/MediaCatalog";
 
 export const Route = createFileRoute("/_authenticated/podcasts")({
   head: () => ({
@@ -25,7 +25,6 @@ export const Route = createFileRoute("/_authenticated/podcasts")({
 
 function PodcastsScreen() {
   const [selected, setSelected] = useState<MediaItem | null>(null);
-  const [audioArchive, setAudioArchive] = useState(false);
   function playVideo(video: YouTubeVideo) {
     setSelected({
       id: video.youtubeVideoId,
@@ -56,7 +55,7 @@ function PodcastsScreen() {
     <AppShell>
       <ScreenHeader
         title="Podcasts"
-        subtitle="Video conversations about Scripture and everyday life"
+        subtitle="Sermons, teaching and conversations about Scripture"
       />
       <ScreenHero image={resolveMedia("asset:church-interior")} />
       <div className="px-4 pt-4">
@@ -69,23 +68,15 @@ function PodcastsScreen() {
           placeholder="Search episodes or creators…"
         />
       </div>
+      {/* The catalogue below now lists every episode, audio and video alike,
+          so the old "Browse audio archive" toggle is gone — it was hiding the
+          whole published archive behind a second tap. */}
       <MusicDiscovery
         mediaType="podcast"
         query={query}
         onPlay={playVideo}
         onPlayItem={setSelected}
       />
-      <div className="px-4 pb-4">
-        <button
-          type="button"
-          className="min-h-11 text-sm text-primary"
-          aria-expanded={audioArchive}
-          onClick={() => setAudioArchive(!audioArchive)}
-        >
-          {audioArchive ? "Hide audio archive" : "Browse audio archive"}
-        </button>
-      </div>
-      {audioArchive && <MediaCatalog mediaType="podcast" query={query} />}
       {selected && <MediaPlayback item={selected} onClose={() => setSelected(null)} />}
     </AppShell>
   );

@@ -20,7 +20,19 @@ import type { MediaItem } from "@/services/media";
 
 export type NowPlayingTrack = Pick<
   MediaItem,
-  "id" | "source" | "external_id" | "title" | "creator_name" | "thumbnail_url" | "duration_seconds"
+  | "id"
+  | "source"
+  | "external_id"
+  | "title"
+  | "creator_name"
+  | "thumbnail_url"
+  | "duration_seconds"
+  /**
+   * Podcast episodes come from publisher RSS with a real audio enclosure, so
+   * they play through a plain audio element and the artwork is a still. Songs
+   * come from YouTube and must use its embedded player.
+   */
+  | "audio_url"
 >;
 
 type Transport = {

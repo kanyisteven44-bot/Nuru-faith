@@ -155,6 +155,34 @@ export const FIXTURES = {
     is_approved: true,
   })),
 
+  // Episodes carry a real audio enclosure, as the publisher-fed rows do, so
+  // the audio engine is exercised rather than mocked. The file below is a
+  // short public-domain test tone, not anybody's episode.
+  podcast_items: Array.from({ length: 10 }, (_, i) => ({
+    id: `episode-${i}`,
+    source: "podcast",
+    external_id: `sample-episode-${i}`,
+    title: [
+      "Sample Episode: Reading the Psalms",
+      "Placeholder Teaching on Prayer",
+      "Example Conversation about Faith",
+    ][i % 3],
+    description: "Placeholder episode summary used to check how the layout wraps.",
+    thumbnail_url: [PHOTO, PHOTO2, PHOTO3][i % 3],
+    media_type: "podcast",
+    category: "teaching",
+    creator_name: "Sample Teaching Podcast",
+    youtube_channel_id: null,
+    church_id: null,
+    audio_url: "https://upload.wikimedia.org/wikipedia/commons/c/c8/Example.ogg",
+    duration_seconds: 1200 + i * 90,
+    scripture_ref: null,
+    can_download: false,
+    is_featured: i < 2,
+    language_code: "en",
+    published_at: new Date(Date.now() - i * 604800000).toISOString(),
+  })),
+
   media_items: Array.from({ length: 18 }, (_, i) => ({
     id: `song-${i}`,
     source: "youtube",
@@ -189,12 +217,45 @@ export const FIXTURES = {
  * return the fixtures above. Writes and auth are left alone — the harness
  * never signs in and never mutates anything.
  */
+/** A short silent WAV, so the audio engine really plays rather than erroring. */
+function silentWav(seconds = 30) {
+  const rate = 8000;
+  const samples = rate * seconds;
+  const buffer = Buffer.alloc(44 + samples * 2);
+  buffer.write("RIFF", 0);
+  buffer.writeUInt32LE(36 + samples * 2, 4);
+  buffer.write("WAVEfmt ", 8);
+  buffer.writeUInt32LE(16, 16);
+  buffer.writeUInt16LE(1, 20);
+  buffer.writeUInt16LE(1, 22);
+  buffer.writeUInt32LE(rate, 24);
+  buffer.writeUInt32LE(rate * 2, 28);
+  buffer.writeUInt16LE(2, 32);
+  buffer.writeUInt16LE(16, 34);
+  buffer.write("data", 36);
+  buffer.writeUInt32LE(samples * 2, 40);
+  return buffer;
+}
+
 export async function installFixtures(page) {
+  // The fixture episode's enclosure, served locally so playback is real.
+  await page.route("**/wikipedia/commons/**", (route) =>
+    route.fulfill({ status: 200, contentType: "audio/wav", body: silentWav() }),
+  );
+
   await page.route("**/rest/v1/**", async (route) => {
     const url = new URL(route.request().url());
     // /rest/v1/<table>
     const table = url.pathname.split("/rest/v1/")[1]?.split("?")[0] ?? "";
-    const rows = FIXTURES[table];
+    // media_items serves songs and episodes from one table, so honour the
+    // media_type filter the way PostgREST would.
+    let rows = FIXTURES[table];
+    if (table === "media_items") {
+      const wanted = url.searchParams.get("media_type") ?? "";
+      if (wanted.includes("podcast") || wanted.includes("sermon")) rows = FIXTURES.podcast_items;
+      const sourceFilter = url.searchParams.get("source") ?? "";
+      if (sourceFilter.includes("youtube")) rows = FIXTURES.media_items;
+    }
     if (!rows || route.request().method() !== "GET") {
       return route.fulfill({ status: 200, contentType: "application/json", body: "[]" });
     }

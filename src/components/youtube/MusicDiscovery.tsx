@@ -23,6 +23,8 @@ function asTrack(video: YouTubeVideo): NowPlayingTrack {
     creator_name: video.channelName,
     thumbnail_url: video.thumbnail,
     duration_seconds: null,
+    // Search results are YouTube videos, never publisher audio enclosures.
+    audio_url: null,
   };
 }
 
@@ -313,10 +315,11 @@ export function MusicDiscovery({
           mediaType={mediaType}
           query={query}
           language={language}
-          videoOnly={!isMusic}
-          // Songs open in Nuru's own player with the list queued behind them;
-          // podcasts keep the panel, which also carries the publisher's audio.
-          {...(isMusic ? {} : { onPlay: onPlayItem })}
+          // Episodes are not filtered to YouTube: nearly all of them come from
+          // publisher RSS with an audio enclosure, and forcing source=youtube
+          // here hid the entire archive behind a secondary button.
+          // Both songs and episodes open in Nuru's own player; the catalogue
+          // queues the rest of the list behind whatever was tapped.
         />
       )}
     </section>

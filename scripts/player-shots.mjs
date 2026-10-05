@@ -54,9 +54,11 @@ const errors = [];
 page.on("pageerror", (e) => errors.push(String(e).slice(0, 200)));
 
 const label = `${THEME}-${WIDTH}`;
-await page.goto(`${BASE}/music`, { waitUntil: "networkidle", timeout: 60000 });
+const ROUTE = process.env.ROUTE ?? "/music";
+const PREFIX = ROUTE === "/podcasts" ? "p" : "";
+await page.goto(BASE + ROUTE, { waitUntil: "networkidle", timeout: 60000 });
 await page.waitForTimeout(6000);
-await page.screenshot({ path: `${OUT}/01-catalogue-${label}.png` });
+await page.screenshot({ path: `${OUT}/${PREFIX}01-catalogue-${label}.png` });
 
 // Play the first song in the grid.
 const firstSong = page.getByRole("button", { name: /^Play / }).first();
@@ -66,14 +68,35 @@ if (!found) {
 } else {
   await firstSong.click();
   await page.waitForTimeout(2500);
-  await page.screenshot({ path: `${OUT}/02-player-open-${label}.png` });
+  await page.screenshot({ path: `${OUT}/${PREFIX}02-player-open-${label}.png` });
+
+  // For the audio engine there is a real file behind this, so position must
+  // actually advance — that is the difference between a drawn bar and a
+  // working transport.
+  if (ROUTE === "/podcasts") {
+    const read = () =>
+      page.evaluate(() => {
+        const el = document.querySelector("audio");
+        return el ? { t: el.currentTime, paused: el.paused, dur: el.duration } : null;
+      });
+    const before = await read();
+    await page.waitForTimeout(3000);
+    const after = await read();
+    if (!before || !after) console.log("AUDIO: no audio element found");
+    else
+      console.log(
+        `AUDIO: paused=${after.paused} position ${before.t.toFixed(2)}s -> ${after.t.toFixed(2)}s ` +
+          `of ${Number.isFinite(after.dur) ? after.dur.toFixed(0) : "?"}s ` +
+          `${after.t > before.t ? "ADVANCING" : "NOT ADVANCING"}`,
+      );
+  }
 
   // Minimise to the docked bar.
   const minimise = page.getByRole("button", { name: /Minimise the player/ });
   if (await minimise.count()) {
     await minimise.click();
     await page.waitForTimeout(1200);
-    await page.screenshot({ path: `${OUT}/03-mini-bar-${label}.png` });
+    await page.screenshot({ path: `${OUT}/${PREFIX}03-mini-bar-${label}.png` });
   }
 
   // Re-open and show the queue.
@@ -85,7 +108,7 @@ if (!found) {
     if (await queue.count()) {
       await queue.click();
       await page.waitForTimeout(800);
-      await page.screenshot({ path: `${OUT}/04-queue-${label}.png` });
+      await page.screenshot({ path: `${OUT}/${PREFIX}04-queue-${label}.png` });
     }
   }
 }

@@ -64,7 +64,7 @@ export function MediaCatalog({
     >
       <div className="flex items-center justify-between gap-3">
         <h2 className="font-display text-lg font-semibold">
-          {mediaType === "music" ? "All songs" : videoOnly ? "Video episodes" : "Audio episodes"}
+          {mediaType === "music" ? "All songs" : videoOnly ? "Video episodes" : "All episodes"}
         </h2>
         {catalog.data && (
           <span className="text-xs text-muted-foreground" role="status" aria-live="polite">
@@ -97,12 +97,10 @@ export function MediaCatalog({
             type="button"
             className="group nuru-card overflow-hidden text-left transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             onClick={() => {
+              // Songs and episodes both open in Nuru's own player, with the
+              // rest of the list queued behind them.
               if (onPlay) onPlay(item);
-              // Music opens in Nuru's own player, with the rest of the list
-              // queued behind it. Podcasts keep the panel, which also offers
-              // the publisher's audio stream.
-              else if (mediaType === "music") play(items, position);
-              else setSelected(item);
+              else play(items, position);
             }}
             aria-label={`Play ${item.title}`}
           >

@@ -15,24 +15,29 @@ import {
 import { cn } from "@/lib/utils";
 import { duration } from "@/lib/format";
 import { resolveMedia } from "@/lib/media";
-import { videoArtwork, youtubeVideoId } from "@/lib/mediaPlayback";
+import { playableAudioUrl, videoArtwork, youtubeVideoId } from "@/lib/mediaPlayback";
 import { useNowPlaying, type NowPlayingTrack } from "@/hooks/useNowPlaying";
 import type { YoutubePlayer } from "@/lib/youtubePlayerApi";
 import { InAppMediaPlayer } from "@/components/youtube/InAppMediaPlayer";
 import { CoverImage } from "./CoverImage";
 
 /**
- * Nuru's own music player.
+ * Nuru's own player, for songs and podcast episodes alike.
  *
  * One surface for the whole app: a slim bar above the navigation while you
  * browse, which opens into a full sheet. The transport, artwork framing and
- * type are Nuru's; the moving picture inside the artwork is YouTube's
- * official embedded player, which its terms require to stay visible and
- * unobscured, so the design treats the video *as* the artwork rather than
- * hiding it behind a still.
+ * type are Nuru's throughout.
  *
- * The YouTube surface is mounted exactly once, here, and re-parented between
- * the bar and the sheet by CSS alone. Unmounting it would restart the song.
+ * Two engines sit behind the same controls:
+ *  - Podcast episodes carry a real audio enclosure from the publisher's feed,
+ *    so they play through a plain audio element and the artwork is the
+ *    episode's own cover.
+ *  - Songs come from YouTube, whose terms require its embedded player to stay
+ *    visible and forbid separating audio from video, so the sheet frames the
+ *    moving picture *as* the artwork rather than hiding it behind a still.
+ *
+ * Whichever engine is in use is mounted exactly once and never remounted
+ * while a track plays, because that would restart it.
  */
 export function NuruPlayer() {
   const { track, expanded } = useNowPlaying();
@@ -127,8 +132,12 @@ function PlayerSurface({ expanded }: { expanded: boolean }) {
 
   if (!track) return null;
 
-  const videoId = track.source === "youtube" ? youtubeVideoId(track.external_id) : null;
-  const artwork = videoArtwork(track.source, track.external_id, resolveMedia(track.thumbnail_url));
+  const audioUrl = playableAudioUrl(track.audio_url);
+  const videoId =
+    !audioUrl && track.source === "youtube" ? youtubeVideoId(track.external_id) : null;
+  const artwork = audioUrl
+    ? resolveMedia(track.thumbnail_url)
+    : videoArtwork(track.source, track.external_id, resolveMedia(track.thumbnail_url));
   const total = length || track.duration_seconds || 0;
   const shown = scrubbing ?? position;
   const progress = total > 0 ? Math.min(100, (shown / total) * 100) : 0;
@@ -139,7 +148,19 @@ function PlayerSurface({ expanded }: { expanded: boolean }) {
     setPosition(target);
   };
 
-  const video = videoId ? (
+  const stage = audioUrl ? (
+    <>
+      <CoverImage src={artwork} alt="" className="h-full w-full" />
+      <AudioEngine
+        src={audioUrl}
+        playing={playing}
+        muted={muted}
+        onPlaybackChange={onPlaybackChange}
+        onReady={onReady}
+        onEnded={next}
+      />
+    </>
+  ) : videoId ? (
     <InAppMediaPlayer
       videoId={videoId}
       title={track.title}
@@ -199,7 +220,7 @@ function PlayerSurface({ expanded }: { expanded: boolean }) {
           {/* Artwork — the official player lives in here, framed as the sleeve. */}
           <div className="mx-auto w-full max-w-[420px] shrink-0 lg:mx-0 lg:max-w-[52%]">
             <div className="aspect-square w-full overflow-hidden rounded-3xl border border-border bg-black shadow-[0_24px_60px_-28px_rgb(17_24_39/45%)] lg:aspect-video">
-              <div className="flex h-full w-full items-center justify-center">{video}</div>
+              <div className="relative flex h-full w-full items-center justify-center">{stage}</div>
             </div>
           </div>
 
@@ -291,8 +312,9 @@ function PlayerSurface({ expanded }: { expanded: boolean }) {
             </div>
 
             <p className="mt-5 shrink-0 text-center text-[11.5px] leading-snug text-ink-3 lg:text-left">
-              Played through YouTube&apos;s official player. Nothing is hosted or downloadable in
-              Nuru Faith.
+              {audioUrl
+                ? "Streamed from the publisher. Nothing is hosted or downloadable in Nuru Faith."
+                : "Played through YouTube's official player. Nothing is hosted or downloadable in Nuru Faith."}
             </p>
 
             {showQueue && <Queue />}
@@ -370,6 +392,96 @@ function PlayerSurface({ expanded }: { expanded: boolean }) {
           />
         </span>
       </button>
+    </>
+  );
+}
+
+/**
+ * Plays a publisher's audio enclosure directly, and reports position the same
+ * way the YouTube engine does so one set of controls drives either.
+ *
+ * The element is deliberately not `controls` — Nuru draws the transport — but
+ * it is a real audio element, so the OS media keys and lock screen work.
+ */
+function AudioEngine({
+  src,
+  playing,
+  muted,
+  onPlaybackChange,
+  onReady,
+  onEnded,
+}: {
+  src: string;
+  playing: boolean;
+  muted: boolean;
+  onPlaybackChange: (value: boolean) => void;
+  onReady: (transport: YoutubePlayer | null) => void;
+  onEnded: () => void;
+}) {
+  const ref = useRef<HTMLAudioElement>(null);
+  const [failed, setFailed] = useState(false);
+
+  // Hand a transport out in the same shape the YouTube player uses.
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    onReady({
+      playVideo: () => void element.play().catch(() => undefined),
+      pauseVideo: () => element.pause(),
+      mute: () => {
+        element.muted = true;
+      },
+      unMute: () => {
+        element.muted = false;
+      },
+      setVolume: (value: number) => {
+        element.volume = Math.max(0, Math.min(100, value)) / 100;
+      },
+      destroy: () => element.pause(),
+      getCurrentTime: () => element.currentTime,
+      getDuration: () => (Number.isFinite(element.duration) ? element.duration : 0),
+      seekTo: (seconds: number) => {
+        element.currentTime = seconds;
+      },
+    });
+    return () => onReady(null);
+  }, [onReady, src]);
+
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    if (playing) void element.play().catch(() => onPlaybackChange(false));
+    else element.pause();
+  }, [playing, onPlaybackChange]);
+
+  useEffect(() => {
+    if (ref.current) ref.current.muted = muted;
+  }, [muted]);
+
+  useEffect(() => setFailed(false), [src]);
+
+  return (
+    <>
+      <audio
+        ref={ref}
+        src={src}
+        preload="metadata"
+        onPlay={() => onPlaybackChange(true)}
+        onPause={() => onPlaybackChange(false)}
+        onEnded={onEnded}
+        onError={() => {
+          setFailed(true);
+          onPlaybackChange(false);
+        }}
+      />
+      {failed && (
+        <div
+          role="alert"
+          className="absolute inset-x-0 bottom-0 bg-black/80 p-3 text-center text-[12px] leading-snug text-white"
+        >
+          This episode could not be played. It may have moved on the publisher&apos;s server.
+        </div>
+      )}
     </>
   );
 }

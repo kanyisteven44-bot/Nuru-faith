@@ -1,12 +1,15 @@
+import { readingAudioSections } from "@/lib/readingAudio";
+import { BibleReadAloud } from "@/components/nuru/BibleReadAloud";
+import { ReadingQuickAccess } from "@/components/nuru/ReadingQuickAccess";
 import { CoverImage } from "@/components/nuru/CoverImage";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, Bookmark, Flame } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { resolveMedia } from "@/lib/media";
-import { fetchProfile, fetchDevotionals } from "@/services/content";
+import { fetchProfile, fetchDevotionalLibrary } from "@/services/content";
 import { readSavedDevotionalIds, toggleSavedDevotional } from "@/lib/devotionalBookmarks";
 import { AppShell } from "@/components/nuru/AppShell";
 import { FeatureHeaderBar } from "@/components/nuru/FeatureHeader";
@@ -48,18 +51,30 @@ type DevotionalRow = {
   cover_url: string | null;
   publish_date: string | null;
   read_minutes: number | null;
+  body: string | null;
+  scripture_text: string | null;
 };
 
 function DevotionalsScreen() {
   const { userId } = useAuth();
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(0);
+  const [opened, setOpened] = useState<string | null>(null);
   const [savedIds, setSavedIds] = useState<Set<string>>(() => readSavedDevotionalIds(null));
+
+  useEffect(() => {
+    setSavedIds(readSavedDevotionalIds(userId ?? null));
+  }, [userId]);
 
   const profile = useQuery({
     queryKey: ["profile", userId],
     queryFn: () => fetchProfile(userId!),
     enabled: !!userId,
   });
-  const devotionals = useQuery({ queryKey: ["devotionals"], queryFn: fetchDevotionals });
+  const devotionals = useQuery({
+    queryKey: ["devotional-library", search, page],
+    queryFn: () => fetchDevotionalLibrary(search, page),
+  });
   const rows = (devotionals.data ?? []) as DevotionalRow[];
   const streak = profile.data?.faith_streak ?? 0;
 
@@ -70,6 +85,9 @@ function DevotionalsScreen() {
   return (
     <AppShell>
       <FeatureHeaderBar />
+      <div className="px-4">
+        <ReadingQuickAccess />
+      </div>
       <ScreenHero image={resolveMedia("asset:topic-faith")} />
 
       <div className="px-4 pb-6">
@@ -102,10 +120,29 @@ function DevotionalsScreen() {
         </section>
 
         <h2 className="mt-6 mb-3 font-display text-[22px] leading-none">Daily devotionals</h2>
+        <input
+          aria-label="Search devotionals"
+          className="input-nuru mb-4"
+          placeholder="Search readings or Scripture…"
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(0);
+            setOpened(null);
+          }}
+        />
+        {devotionals.isError && (
+          <p role="alert">
+            Readings could not load.{" "}
+            <button className="underline" onClick={() => void devotionals.refetch()}>
+              Try again
+            </button>
+          </p>
+        )}
 
         {devotionals.isLoading && <CardSkeleton count={3} height="h-[120px]" />}
 
-        {!devotionals.isLoading && rows.length === 0 && (
+        {devotionals.isSuccess && rows.length === 0 && (
           <EmptyState
             title="No devotionals yet"
             description="Daily readings will appear here as they're published."
@@ -119,10 +156,7 @@ function DevotionalsScreen() {
               const label = dayLabel(d.publish_date);
               return (
                 <li key={d.id}>
-                  <Link
-                    to="/bible"
-                    className="relative block overflow-hidden rounded-2xl border border-border"
-                  >
+                  <div className="relative block overflow-hidden rounded-2xl border border-border">
                     {d.cover_url ? (
                       <CoverImage
                         src={resolveMedia(d.cover_url)}
@@ -162,12 +196,71 @@ function DevotionalsScreen() {
                     >
                       <Bookmark className="h-3.5 w-3.5" fill={saved ? "currentColor" : "none"} />
                     </button>
-                  </Link>
+                  </div>
+                  <button
+                    type="button"
+                    aria-expanded={opened === d.id}
+                    className="nuru-card mt-2 min-h-11 w-full px-4 text-sm font-semibold"
+                    onClick={() => setOpened(opened === d.id ? null : d.id)}
+                  >
+                    {opened === d.id ? "Close reading" : "Read devotional"}
+                  </button>
+                  {opened === d.id && (
+                    <article className="nuru-card mt-2 space-y-4 p-5">
+                      <h3 className="font-display text-2xl">{d.title}</h3>
+                      <BibleReadAloud
+                        key={d.id}
+                        label="devotional"
+                        verses={readingAudioSections([
+                          d.title,
+                          d.scripture_ref,
+                          d.scripture_text,
+                          d.body,
+                        ])}
+                      />
+                      {d.scripture_text && (
+                        <blockquote className="border-l-2 border-primary pl-4 text-sm leading-7">
+                          {d.scripture_text}
+                        </blockquote>
+                      )}
+                      <p className="whitespace-pre-wrap text-base leading-8 text-secondary-foreground">
+                        {d.body || "This reading has no devotional text yet."}
+                      </p>
+                      <Link to="/bible" className="text-sm font-semibold text-primary">
+                        Open Bible reader
+                      </Link>
+                    </article>
+                  )}
                 </li>
               );
             })}
           </ul>
         )}
+        <div className="mt-5 flex items-center justify-between gap-3">
+          <button
+            className="nuru-card min-h-11 px-4 disabled:opacity-40"
+            disabled={page === 0 || devotionals.isFetching}
+            onClick={() => {
+              setPage((p) => p - 1);
+              setOpened(null);
+            }}
+          >
+            Previous
+          </button>
+          <span aria-live="polite" className="text-sm">
+            Page {page + 1}
+          </span>
+          <button
+            className="nuru-card min-h-11 px-4 disabled:opacity-40"
+            disabled={!devotionals.isSuccess || rows.length < 24 || devotionals.isFetching}
+            onClick={() => {
+              setPage((p) => p + 1);
+              setOpened(null);
+            }}
+          >
+            Next
+          </button>
+        </div>
       </div>
     </AppShell>
   );

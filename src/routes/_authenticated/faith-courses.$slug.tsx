@@ -1,3 +1,5 @@
+import { readingAudioSections } from "@/lib/readingAudio";
+import { BibleReadAloud } from "@/components/nuru/BibleReadAloud";
 import { CoverImage } from "@/components/nuru/CoverImage";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -220,6 +222,18 @@ function FaithCourseDetail() {
           </div>
 
           <div className="space-y-5 p-4">
+            <BibleReadAloud
+              key={`${slug}-${lessonIndex}`}
+              label="lesson"
+              verses={readingAudioSections([
+                lesson.title,
+                lesson.references.join(". "),
+                teaching.context,
+                teaching.meaning,
+                ...course.examples,
+                teaching.practice,
+              ])}
+            />
             <div>
               <div className="mb-2 flex items-center gap-2">
                 <BookOpen className="h-4 w-4 text-leaf" />

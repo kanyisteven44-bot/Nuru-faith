@@ -1,11 +1,17 @@
+import { ReadingQuickAccess } from "@/components/nuru/ReadingQuickAccess";
 import { CoverImage } from "@/components/nuru/CoverImage";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { resolveMedia } from "@/lib/media";
-import { fetchCuratedSeries, fetchMyProgress, type SeriesRow } from "@/services/series";
+import {
+  fetchCuratedSeries,
+  fetchMyProgress,
+  fetchSeries,
+  type SeriesRow,
+} from "@/services/series";
 import { AppShell } from "@/components/nuru/AppShell";
 import { FeatureHeaderBar } from "@/components/nuru/FeatureHeader";
 import { CardSkeleton, EmptyState, ErrorState } from "@/components/nuru/Primitives";
@@ -43,6 +49,12 @@ const CURATED_SLUGS = [
 
 function SeriesHome() {
   const { userId } = useAuth();
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(0);
+  const library = useQuery({
+    queryKey: ["series-library", search, page],
+    queryFn: () => fetchSeries(search, undefined, page, 24),
+  });
 
   const series = useQuery({
     queryKey: ["curated-series"],
@@ -63,6 +75,9 @@ function SeriesHome() {
   return (
     <AppShell>
       <FeatureHeaderBar />
+      <div className="px-4">
+        <ReadingQuickAccess />
+      </div>
 
       <div className="px-4 pb-6">
         <h1 className="font-display text-[40px] leading-none">Bible series</h1>
@@ -91,6 +106,58 @@ function SeriesHome() {
           )}
         </div>
 
+        <section className="mt-8 space-y-4">
+          <h2 className="font-display text-2xl">Explore the library</h2>
+          <p className="text-xs text-ink-2">
+            Browse guided studies alongside the selected series above.
+          </p>
+          <input
+            aria-label="Search series library"
+            className="input-nuru"
+            placeholder="Search topics, titles or descriptions…"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(0);
+            }}
+          />
+          {library.isPending ? (
+            <CardSkeleton count={3} height="h-40" />
+          ) : library.isError ? (
+            <div role="alert">
+              The library could not load.{" "}
+              <button className="underline" onClick={() => void library.refetch()}>
+                Try again
+              </button>
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2">
+              {library.data?.map((s) => (
+                <SeriesCard key={s.id} series={s} percent={progressMap.get(s.id) ?? 0} />
+              ))}
+            </div>
+          )}
+          {library.isSuccess && !library.data.length && <p>No series match your search.</p>}
+          <div className="flex items-center justify-between gap-3">
+            <button
+              className="nuru-card min-h-11 px-4 disabled:opacity-40"
+              disabled={page === 0 || library.isFetching}
+              onClick={() => setPage((p) => p - 1)}
+            >
+              Previous
+            </button>
+            <span aria-live="polite" className="text-sm">
+              Page {page + 1}
+            </span>
+            <button
+              className="nuru-card min-h-11 px-4 disabled:opacity-40"
+              disabled={library.isFetching || !library.isSuccess || library.data.length < 24}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Next
+            </button>
+          </div>
+        </section>
         <p className="mt-6 rounded-2xl border border-border bg-surface px-4 py-3 text-xs text-ink-3">
           Bible series are written to help you understand the Bible in context — not to replace your
           church, pastor or your own reading.

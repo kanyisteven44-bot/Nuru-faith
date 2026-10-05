@@ -2,9 +2,16 @@ import { useEffect, useRef, useState } from "react";
 import { PrimaryButton, GhostButton } from "./Primitives";
 
 /** Read short utterances in sequence so long chapters work on mobile voices. */
-export function BibleReadAloud({ verses }: { verses: { text: string }[] }) {
+export function BibleReadAloud({
+  verses,
+  label = "chapter",
+}: {
+  verses: { text: string }[];
+  label?: string;
+}) {
   const [supported, setSupported] = useState(false);
   const [state, setState] = useState<"idle" | "reading" | "paused">("idle");
+  const [rate, setRate] = useState(1);
   const [error, setError] = useState("");
   const generation = useRef({ value: 0 });
   const current = useRef<SpeechSynthesisUtterance | null>(null);
@@ -41,6 +48,7 @@ export function BibleReadAloud({ verses }: { verses: { text: string }[] }) {
       }
       const utterance = new SpeechSynthesisUtterance(verse.text);
       utterance.lang = "en";
+      utterance.rate = rate;
       if (voice) utterance.voice = voice;
       utterance.onend = () => speak(index + 1);
       utterance.onerror = () => {
@@ -57,7 +65,22 @@ export function BibleReadAloud({ verses }: { verses: { text: string }[] }) {
   }
 
   return (
-    <section aria-label="Read Bible aloud" className="nuru-card mb-3 space-y-2 p-3">
+    <section aria-label={`Read ${label} aloud`} className="nuru-card mb-3 space-y-2 p-3">
+      <label className="flex items-center gap-2 text-xs">
+        Reading speed
+        <select
+          aria-label="Reading speed"
+          value={rate}
+          disabled={state !== "idle"}
+          onChange={(e) => setRate(Number(e.target.value))}
+          className="rounded-lg border border-border bg-surface-2 px-2 py-1"
+        >
+          <option value={0.75}>0.75×</option>
+          <option value={1}>1×</option>
+          <option value={1.25}>1.25×</option>
+          <option value={1.5}>1.5×</option>
+        </select>
+      </label>
       <div className="flex flex-wrap gap-2">
         <PrimaryButton disabled={!supported || !verses.length} onClick={read}>
           {state === "idle" ? "Read aloud" : "Restart reading"}
@@ -79,7 +102,7 @@ export function BibleReadAloud({ verses }: { verses: { text: string }[] }) {
       </div>
       <p className="text-xs text-muted-foreground" role="status">
         {supported
-          ? "Reads this chapter using your device’s English voice."
+          ? `Reads this ${label} using your device’s English voice.`
           : "Read aloud is unavailable in this browser."}
       </p>
       {error && (

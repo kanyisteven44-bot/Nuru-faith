@@ -1,3 +1,5 @@
+import { readingAudioSections } from "@/lib/readingAudio";
+import { BibleReadAloud } from "@/components/nuru/BibleReadAloud";
 import { CoverImage } from "@/components/nuru/CoverImage";
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
@@ -390,6 +392,23 @@ function SessionScreen() {
           </TeachingCard>
         )}
 
+        {stage === "Read" && (
+          <div className="px-4">
+            <BibleReadAloud
+              key={session.id}
+              label="series session"
+              verses={readingAudioSections([
+                session.title,
+                session.introduction,
+                session.context_note,
+                session.main_teaching,
+                session.connections,
+                session.prayer,
+                session.practical_action,
+              ])}
+            />
+          </div>
+        )}
         {stage === "Read" && session.main_teaching && (
           <TeachingCard
             icon={Users}

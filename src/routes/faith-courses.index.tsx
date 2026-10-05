@@ -1,3 +1,4 @@
+import { ReadingQuickAccess } from "@/components/nuru/ReadingQuickAccess";
 import externalCourses from "@/data/externalCourses.json";
 import { CoverImage } from "@/components/nuru/CoverImage";
 import { useMemo, useState } from "react";
@@ -67,6 +68,9 @@ function FaithCoursesScreen() {
   return (
     <AppShell>
       <ScreenHeader title="Faith Courses" subtitle="Learn deeply. Live faithfully." />
+      <div className="px-4">
+        <ReadingQuickAccess />
+      </div>
 
       <div className="space-y-6 px-4 pb-6">
         <section className="nuru-card relative h-52 overflow-hidden lg:h-80">

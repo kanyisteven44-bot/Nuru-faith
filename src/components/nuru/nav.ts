@@ -4,7 +4,6 @@ import {
   Church,
   Clapperboard,
   Compass,
-  FileText,
   GraduationCap,
   Home,
   Library,
@@ -41,9 +40,7 @@ export const SIDEBAR_GROUPS: { heading: string; items: NavLink[] }[] = [
   {
     heading: "Grow",
     items: [
-      { to: "/devotionals", label: "Devotionals", icon: FileText },
-      { to: "/series", label: "Series", icon: GraduationCap },
-      { to: "/faith-courses", label: "Faith Courses", icon: GraduationCap },
+      { to: "/grow", label: "Learning", icon: GraduationCap },
       { to: "/books", label: "Christian Books", icon: BookOpen },
       { to: "/ai", label: "Ask Nuru", icon: Sparkles },
     ],

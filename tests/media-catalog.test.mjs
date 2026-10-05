@@ -1,6 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { eligibleMusicVideo, eligiblePodcastVideo, isoSeconds } from "../src/lib/musicImport.ts";
+import {
+  MAX_SONG_SECONDS,
+  eligibleMusicVideo,
+  eligiblePodcastVideo,
+  isoSeconds,
+} from "../src/lib/musicImport.ts";
 import { playableAudioUrl, youtubeVideoId } from "../src/lib/mediaPlayback.ts";
 const video = {
   id: "abcdefghijk",
@@ -33,17 +38,81 @@ test("real durations and safe playback URLs", () => {
 });
 
 test("spoken uploads and short promotions stay out of music", () => {
-  for (const title of ["The Bold Podcast: Handling Conflicts", "New music teaser", "Tour announcement", "Marriage works"])
-    assert.equal(eligibleMusicVideo({ ...video, snippet: { ...video.snippet, title } }, "official"), false);
-  assert.equal(eligibleMusicVideo({ ...video, contentDetails: { duration: "PT1M59S" } }, "official"), false);
-  assert.equal(eligibleMusicVideo({ ...video, contentDetails: { duration: "PT2M" } }, "official"), true);
+  for (const title of [
+    "The Bold Podcast: Handling Conflicts",
+    "New music teaser",
+    "Tour announcement",
+    "Marriage works",
+  ])
+    assert.equal(
+      eligibleMusicVideo({ ...video, snippet: { ...video.snippet, title } }, "official"),
+      false,
+    );
+  assert.equal(
+    eligibleMusicVideo({ ...video, contentDetails: { duration: "PT1M59S" } }, "official"),
+    false,
+  );
+  assert.equal(
+    eligibleMusicVideo({ ...video, contentDetails: { duration: "PT2M" } }, "official"),
+    true,
+  );
 });
 
 test("video episodes accept teaching categories but enforce channel and playback eligibility", () => {
-  const episode = { ...video, snippet: { ...video.snippet, categoryId: "27", title: "Bible podcast" } };
+  const episode = {
+    ...video,
+    snippet: { ...video.snippet, categoryId: "27", title: "Bible podcast" },
+  };
   assert.equal(eligiblePodcastVideo(episode, "official"), true);
   assert.equal(eligibleMusicVideo(episode, "official"), false);
   assert.equal(eligiblePodcastVideo(episode, "unreviewed"), false);
-  assert.equal(eligiblePodcastVideo({ ...episode, status: { ...episode.status, embeddable: false } }, "official"), false);
-  assert.equal(eligiblePodcastVideo({ ...episode, contentDetails: { duration: "PT20M", regionRestriction: { allowed: ["US"] } } }, "official"), false);
+  assert.equal(
+    eligiblePodcastVideo(
+      { ...episode, status: { ...episode.status, embeddable: false } },
+      "official",
+    ),
+    false,
+  );
+  assert.equal(
+    eligiblePodcastVideo(
+      { ...episode, contentDetails: { duration: "PT20M", regionRestriction: { allowed: ["US"] } } },
+      "official",
+    ),
+    false,
+  );
+});
+
+/* ---------- songs have an upper length bound ---------- */
+
+const song = (seconds, title = "Artist - A Worship Song (Official Video)") => ({
+  id: "abcdefghijk",
+  snippet: { channelId: "UC0000000000000000000000", categoryId: "10", title },
+  status: { embeddable: true, privacyStatus: "public", uploadStatus: "processed" },
+  contentDetails: { duration: `PT${seconds}S` },
+});
+
+test("a normal song is eligible", () => {
+  assert.equal(eligibleMusicVideo(song(240), "UC0000000000000000000000"), true);
+});
+
+test("an extended live worship set is still a song", () => {
+  assert.equal(eligibleMusicVideo(song(MAX_SONG_SECONDS - 1), "UC0000000000000000000000"), true);
+});
+
+test("a livestreamed service is not a song", () => {
+  // The real catalogue took in a 4-hour "The Gathering | Episode 10" this way.
+  assert.equal(eligibleMusicVideo(song(15348), "UC0000000000000000000000"), false);
+  assert.equal(eligibleMusicVideo(song(43258), "UC0000000000000000000000"), false);
+});
+
+test("episode and livestream titles are rejected at any length", () => {
+  const ch = "UC0000000000000000000000";
+  assert.equal(eligibleMusicVideo(song(300, "The Gathering | Episode 10"), ch), false);
+  assert.equal(eligibleMusicVideo(song(300, "Sunday Service 12 Oct"), ch), false);
+  assert.equal(eligibleMusicVideo(song(300, "3 Hours of Worship"), ch), false);
+  assert.equal(eligibleMusicVideo(song(300, "Full Album - Live"), ch), false);
+});
+
+test("a clip under two minutes is still too short", () => {
+  assert.equal(eligibleMusicVideo(song(60), "UC0000000000000000000000"), false);
 });

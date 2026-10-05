@@ -31,11 +31,24 @@ function eligibleVideo(video: CatalogVideo, channelId: string): boolean {
     (!region?.allowed || region.allowed.includes("KE"))
   );
 }
+/**
+ * A song has an upper bound as well as a lower one.
+ *
+ * Without this, a channel's livestreamed services, full concerts and
+ * hours-long loop compilations all land in the song catalogue: the first
+ * import put 1,576 items over fifteen minutes into it, the longest of them
+ * twelve hours. Twenty minutes leaves room for an extended live worship set
+ * while keeping services and compilations out.
+ */
+export const MAX_SONG_SECONDS = 20 * 60;
+
 export function eligibleMusicVideo(video: CatalogVideo, channelId: string): boolean {
+  const seconds = isoSeconds(video.contentDetails?.duration ?? "");
   return (
     eligibleVideo(video, channelId) &&
+    seconds <= MAX_SONG_SECONDS &&
     video.snippet?.categoryId === "10" &&
-    !/\b(podcast|sermon|interview|announcement|trailer|teaser|marriage|relationship|investments?|tour|vlog)\b/i.test(
+    !/\b(podcast|sermon|interview|announcement|trailer|teaser|marriage|relationship|investments?|tour|vlog|episode|live\s?stream|service|conference|night\s?of\s?worship|full\s?album|compilation|mix|playlist|hours?)\b/i.test(
       video.snippet.title ?? "",
     )
   );

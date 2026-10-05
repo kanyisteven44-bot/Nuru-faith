@@ -31,7 +31,7 @@ test("looping a single video needs itself as the playlist", () => {
   assert.equal(p.get("playlist"), "abc123");
 });
 
-test("reels hide native controls; other surfaces keep them", () => {
+test("embedded player controls can be configured explicitly", () => {
   assert.equal(params(youtubeEmbedUrl({ videoId: "a", controls: false })).get("controls"), "0");
   assert.equal(params(youtubeEmbedUrl({ videoId: "a" })).get("controls"), "1");
 });

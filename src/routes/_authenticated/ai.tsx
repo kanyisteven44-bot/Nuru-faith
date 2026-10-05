@@ -130,6 +130,12 @@ function AiScreen() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const [requestError, setRequestError] = useState<string | null>(null);
+  const [failedRequest, setFailedRequest] = useState<{
+    body: string;
+    history: ChatMessage[];
+    userSaved: boolean;
+  } | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const seeded = useRef(false);
   const endRef = useRef<HTMLDivElement | null>(null);
@@ -173,7 +179,7 @@ function AiScreen() {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  async function send(text: string) {
+  async function send(text: string, retry = false) {
     const body = text.trim();
     if (!body || busy) return;
     if (!userId) {
@@ -181,10 +187,16 @@ function AiScreen() {
       return;
     }
     setBusy(true);
+    setRequestError(null);
     setInput("");
 
     const localId = crypto.randomUUID();
-    const history: ChatMessage[] = [...messages, { id: localId, role: "user", content: body }];
+    const previousFailure = retry ? failedRequest : null;
+    const history: ChatMessage[] = previousFailure?.history ?? [
+      ...messages,
+      { id: localId, role: "user", content: body },
+    ];
+    let userSaved = previousFailure?.userSaved ?? false;
     setMessages([
       ...history,
       { id: `${localId}-p`, role: "assistant", content: "", pending: true },
@@ -203,7 +215,10 @@ function AiScreen() {
         convId = conv.id;
         setConversationId(conv.id);
       }
-      await saveMessage({ conversationId: convId, userId, role: "user", content: body });
+      if (!userSaved) {
+        await saveMessage({ conversationId: convId, userId, role: "user", content: body });
+        userSaved = true;
+      }
 
       const result = await ask({
         data: {
@@ -220,11 +235,14 @@ function AiScreen() {
         role: "assistant",
         content: result.content,
       });
+      setFailedRequest(null);
       setMessages([...history, { id: saved.id, role: "assistant", content: result.content }]);
       await qc.invalidateQueries({ queryKey: ["ai-conversations", userId] });
     } catch (e) {
       setMessages(history);
-      toast.error(e instanceof Error ? e.message : "Nuru AI couldn't answer just now");
+      const error = e instanceof Error ? e.message : "Nuru AI couldn't answer just now";
+      setRequestError(error);
+      setFailedRequest({ body, history, userSaved });
     } finally {
       setBusy(false);
     }
@@ -239,6 +257,8 @@ function AiScreen() {
 
   async function openConversation(id: string) {
     setShowHistory(false);
+    setRequestError(null);
+    setFailedRequest(null);
     setConversationId(id);
     const rows: AiMessage[] = await fetchMessages(id);
     setMessages(rows.map((m) => ({ id: m.id, role: m.role, content: m.content })));
@@ -246,6 +266,8 @@ function AiScreen() {
 
   function newChat() {
     setConversationId(null);
+    setRequestError(null);
+    setFailedRequest(null);
     setMessages([]);
     setShowHistory(false);
   }
@@ -271,6 +293,7 @@ function AiScreen() {
           <div className="flex items-center gap-2">
             <button
               onClick={newChat}
+              disabled={busy}
               aria-label="New chat"
               className="rounded-full bg-surface-2 p-2"
             >
@@ -278,6 +301,7 @@ function AiScreen() {
             </button>
             <button
               onClick={() => setShowHistory((v) => !v)}
+              disabled={busy}
               aria-label="Chat history"
               className="rounded-full bg-surface-2 p-2"
             >
@@ -467,6 +491,25 @@ function AiScreen() {
               )}
             </div>
           ),
+        )}
+        {requestError && (
+          <div role="alert" className="nuru-card space-y-3 border-destructive/30 p-4">
+            <p className="text-sm font-semibold">Nuru AI could not answer</p>
+            <p className="text-sm text-muted-foreground">{requestError}</p>
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                disabled={busy || !failedRequest}
+                onClick={() => failedRequest && void send(failedRequest.body, true)}
+                className="nuru-soft-control min-h-11 rounded-full px-4 text-sm font-semibold disabled:opacity-50"
+              >
+                Retry answer
+              </button>
+              <Link to="/bible" className="inline-flex min-h-11 items-center text-sm text-primary">
+                Read the Bible
+              </Link>
+            </div>
+          </div>
         )}
         <div ref={endRef} />
       </div>

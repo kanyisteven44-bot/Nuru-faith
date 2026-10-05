@@ -7,10 +7,10 @@ import { NURU_PHOTO_POOLS, useRotatingMedia } from "@/lib/rotatingMedia";
 export const Route = createFileRoute("/_authenticated/grow")({
   head: () => ({
     meta: [
-      { title: "Devotions & Series — Nuru Faith" },
+      { title: "Learning — Nuru Faith" },
       {
         name: "description",
-        content: "Daily devotionals and deeper Scripture Series in one place.",
+        content: "Courses, daily devotionals and Scripture Series in one learning hub.",
       },
     ],
   }),
@@ -22,7 +22,7 @@ function GrowScreen() {
 
   return (
     <AppShell>
-      <ScreenHeader title="Devotions & Series" subtitle="Read daily. Go deeper." />
+      <ScreenHeader title="Learning" subtitle="Courses, devotions and Scripture Series" />
 
       <div className="space-y-5 px-4 pb-6">
         <section className="nuru-card relative h-48 overflow-hidden">

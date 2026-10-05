@@ -5,8 +5,9 @@ import { cn } from "@/lib/utils";
 import { fetchPassage, type Passage } from "@/lib/bible";
 import { useQuery } from "@tanstack/react-query";
 import { reportReel, REPORT_REASONS, type Reel } from "@/services/reels";
+import { reportExternalReel } from "@/services/externalReelInteractions";
 import { CardSkeleton, ErrorState } from "@/components/nuru/Primitives";
-import { Sheet } from "./Sheet";
+import { Sheet } from "../Sheet";
 
 export function ReadSheet({ reel, onClose }: { reel: Reel; onClose: () => void }) {
   const passage = useQuery({
@@ -23,7 +24,7 @@ export function ReadSheet({ reel, onClose }: { reel: Reel; onClose: () => void }
       onClose={onClose}
       height="max-h-[75dvh]"
       title={
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-cyan">
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-leaf">
           {reel.scripture_ref}
         </p>
       }
@@ -47,7 +48,7 @@ export function ReadSheet({ reel, onClose }: { reel: Reel; onClose: () => void }
             className="mt-4 flex items-center justify-between rounded-2xl bg-surface-2 p-3 text-sm font-semibold"
           >
             Study this deeper in a Scripture Series
-            <span className="text-cyan">Open</span>
+            <span className="text-leaf">Open</span>
           </Link>
         )}
       </div>
@@ -75,7 +76,18 @@ export function ReportSheet({
     }
     setSending(true);
     try {
-      await reportReel({ reelId: reel.id, userId, reason, details });
+      if (reel.external_id) {
+        await reportExternalReel({
+          userId,
+          externalReelId: reel.external_id,
+          reason,
+          details,
+          sourceUrl: reel.external_url,
+          creatorName: reel.creator_name,
+        });
+      } else {
+        await reportReel({ reelId: reel.id, userId, reason, details });
+      }
       toast.success("Thank you — our moderators will review this");
       onClose();
     } catch (e) {

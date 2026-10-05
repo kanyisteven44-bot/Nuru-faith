@@ -43,6 +43,35 @@ the build command, install command, or output directory — Nitro's `vercel`
 preset still emits a standard Build Output API v3 directory
 (`.vercel/output`) that Vercel picks up automatically.
 
+## Supabase project
+
+The production Supabase project ref is `qnqkcqywvqzfkickezxd`. The CLI config, client/server
+environment variables and OAuth callbacks must all point to this same project.
+Do not run migrations until the target ref has been checked against this value.
+
+## Google sign-in
+
+Google OAuth requires configuration outside this repository. In the Google
+Cloud OAuth web client, add this exact **Authorized redirect URI**:
+
+```text
+https://qnqkcqywvqzfkickezxd.supabase.co/auth/v1/callback
+```
+
+Then enable Google under **Supabase → Authentication → Providers → Google**
+and enter that web client's Client ID and Client Secret. Under **Supabase →
+Authentication → URL Configuration**, use the canonical production URL as the
+Site URL and allow these application callbacks:
+
+```text
+https://nuru-faith-vortiqora.vercel.app/auth-callback
+http://localhost:3000/auth-callback
+```
+
+Add an exact callback for any additional custom production domain. Use a
+Vercel preview wildcard only for preview testing; keep production callbacks
+exact.
+
 ## Known-good local reproduction
 
 ```bash

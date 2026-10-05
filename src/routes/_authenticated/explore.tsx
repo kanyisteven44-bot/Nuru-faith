@@ -33,7 +33,7 @@ export const Route = createFileRoute("/_authenticated/explore")({
 });
 function ExploreScreen() {
   const { userId } = useAuth();
-  const search = Route.useSearch();
+  const search: z.infer<typeof schema> = Route.useSearch();
   const navigate = Route.useNavigate();
   const [input, setInput] = useState(search.q);
   const [recent, setRecent] = useState<string[]>([]);
@@ -86,7 +86,7 @@ function ExploreScreen() {
   }
   return (
     <AppShell>
-      <ScreenHeader title="Explore" subtitle="Find your next step in faith" />
+      <ScreenHeader title="Search" />
       <div className="space-y-3 px-4 py-4">
         <form
           className="relative"
@@ -113,7 +113,7 @@ function ExploreScreen() {
             <button
               key={kind}
               aria-pressed={search.kind === kind}
-              className={`min-h-11 shrink-0 rounded-full border px-4 text-xs ${search.kind === kind ? "border-cyan bg-surface-2 text-cyan" : "border-border"}`}
+              className={`min-h-11 shrink-0 rounded-lg border px-4 text-xs ${search.kind === kind ? "border-leaf/40 bg-primary/30 text-foreground" : "border-border bg-surface-2/60"}`}
               onClick={() => void navigate({ search: { ...search, kind } })}
             >
               {kind === "all" ? "All" : DISCOVERY_LABELS[kind]}
@@ -126,7 +126,7 @@ function ExploreScreen() {
             <div className="flex flex-wrap gap-2">
               {SUGGESTED_SEARCHES.map((q) => (
                 <button
-                  className="min-h-11 rounded-full bg-surface-2 px-3 text-xs"
+                  className="min-h-11 rounded-lg border border-border bg-surface-2 px-3 text-xs"
                   key={q}
                   onClick={() => remember(q)}
                 >
@@ -141,7 +141,7 @@ function ExploreScreen() {
             <div className="flex items-center justify-between">
               <p className="text-xs text-muted-foreground">Recent searches on this device</p>
               <button
-                className="min-h-11 px-2 text-xs text-cyan"
+                className="min-h-11 px-2 text-xs text-leaf"
                 onClick={() => {
                   setRecent([]);
                   try {

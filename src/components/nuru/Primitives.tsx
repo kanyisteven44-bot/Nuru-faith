@@ -1,3 +1,4 @@
+import { CoverImage } from "@/components/nuru/CoverImage";
 import type { ComponentType, ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
@@ -6,8 +7,8 @@ import { cn } from "@/lib/utils";
 export function ScreenHero({ image, alt = "" }: { image: string; alt?: string }) {
   return (
     <div className="relative h-28 w-full overflow-hidden" aria-hidden={alt === ""}>
-      <img src={image} alt={alt} loading="eager" className="h-full w-full object-cover" />
-      <div className="absolute inset-0 bg-gradient-to-b from-background/25 via-background/60 to-background" />
+      <CoverImage src={image} alt={alt} loading="eager" className="h-full w-full object-cover" />
+      <div className="absolute inset-0 bg-gradient-to-b from-background/10 via-background/25 to-background/90" />
     </div>
   );
 }
@@ -27,7 +28,7 @@ export function SectionHeader({
     <div className="mb-3 flex items-end justify-between gap-3">
       <div className="min-w-0">
         {eyebrow && (
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan/80">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-sand">
             {eyebrow}
           </p>
         )}
@@ -37,7 +38,7 @@ export function SectionHeader({
         (to ? (
           <Link
             to={to}
-            className="shrink-0 text-xs font-semibold text-cyan transition-opacity hover:opacity-80"
+            className="shrink-0 text-xs font-semibold text-leaf transition-opacity hover:opacity-80"
           >
             {action}
           </Link>
@@ -48,16 +49,22 @@ export function SectionHeader({
   );
 }
 
-/** Segmented filter row — bright blue active pill, quiet outlined rest. */
+/**
+ * Segmented filter row. The selected pill fills with the soft blue accent;
+ * the rest stay quiet outlines, as the boards draw them.
+ */
 export function PillTabs<T extends string>({
   tabs,
   value,
   onChange,
+  labels,
   className,
 }: {
   tabs: readonly T[];
   value: T;
   onChange: (t: T) => void;
+  /** Optional display text per tab, when the value isn't what you want shown. */
+  labels?: Partial<Record<T, string>>;
   className?: string;
 }) {
   return (
@@ -75,13 +82,14 @@ export function PillTabs<T extends string>({
             aria-selected={active}
             onClick={() => onChange(tab)}
             className={cn(
-              "min-h-9 shrink-0 rounded-full px-4 text-[13px] font-semibold transition-all",
+              "nuru-soft-control min-h-11 shrink-0 rounded-full border px-4 text-[13px] font-semibold transition-colors",
+              "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
               active
-                ? "bg-primary text-primary-foreground nuru-glow-sm"
-                : "border border-border bg-surface-2/60 text-muted-foreground hover:text-secondary-foreground",
+                ? "nuru-soft-primary border-primary bg-primary text-primary-foreground"
+                : "border-border text-ink-2 hover:bg-surface-2 hover:text-foreground",
             )}
           >
-            {tab}
+            {labels?.[tab] ?? tab}
           </button>
         );
       })}
@@ -89,7 +97,7 @@ export function PillTabs<T extends string>({
   );
 }
 
-/** Primary action — solid electric blue with a soft glow. */
+/** Primary action with a soft raised bevel and an inset pressed state. */
 export function GradientButton({
   children,
   className,
@@ -99,7 +107,8 @@ export function GradientButton({
     <button
       {...props}
       className={cn(
-        "inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground nuru-glow-sm transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-50 disabled:shadow-none",
+        "nuru-soft-control nuru-soft-primary inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:brightness-105 active:scale-[0.99] disabled:opacity-50",
+        "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none",
         className,
       )}
     >
@@ -119,7 +128,8 @@ export function GhostButton({
     <button
       {...props}
       className={cn(
-        "inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-border-strong bg-surface-2 px-5 text-sm font-medium text-secondary-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50",
+        "nuru-soft-control inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-border bg-surface px-5 text-sm font-semibold text-foreground transition-colors hover:bg-surface-2 disabled:opacity-50",
+        "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
         className,
       )}
     >
@@ -129,12 +139,11 @@ export function GhostButton({
 }
 
 const ICON_TONES = {
-  brand: { glyph: "text-cyan", fill: "bg-primary/25 ring-primary/40" },
-  cyan: { glyph: "text-cyan", fill: "bg-cyan/18 ring-cyan/35" },
-  violet: { glyph: "text-violet", fill: "bg-violet/25 ring-violet/40" },
-  growth: { glyph: "text-growth", fill: "bg-growth/18 ring-growth/35" },
-  warning: { glyph: "text-warning", fill: "bg-warning/18 ring-warning/35" },
-  magenta: { glyph: "text-magenta", fill: "bg-magenta/22 ring-magenta/38" },
+  brand: "border-primary/45 bg-primary/24 text-leaf",
+  cyan: "border-leaf/40 bg-leaf/18 text-leaf",
+  violet: "border-terra/40 bg-terra/20 text-terra-lt",
+  growth: "border-growth/40 bg-growth/18 text-growth",
+  warning: "border-warning/45 bg-warning/18 text-warning",
 } as const;
 
 /**
@@ -175,16 +184,8 @@ export function IconTile({
           : "h-5 w-5";
   const { glyph: glyphTone, fill } = ICON_TONES[tone];
   return (
-    <span
-      className={cn(
-        filled
-          ? cn("inline-flex items-center justify-center rounded-lg ring-1 ring-inset", fill)
-          : "nuru-icon-tile",
-        box,
-        className,
-      )}
-    >
-      <Icon className={cn(glyph, glyphTone)} />
+    <span className={cn("nuru-icon-tile", ICON_TONES[tone], box, className)}>
+      <Icon className={glyph} />
     </span>
   );
 }
@@ -209,11 +210,11 @@ export function ProgressBar({
         aria-valuemax={100}
       >
         <div
-          className="h-full rounded-full bg-gradient-to-r from-cyan to-primary transition-[width] duration-500"
+          className="h-full rounded-full bg-primary transition-[width] duration-500"
           style={{ width: `${pct}%` }}
         />
       </div>
-      {label && <p className="mt-1 text-[11px] text-muted-foreground">{label}</p>}
+      {label && <p className="mt-1 text-[11.5px] text-ink-3">{label}</p>}
     </div>
   );
 }
@@ -225,14 +226,15 @@ export function Chip({
   children: ReactNode;
   tone?: "muted" | "growth" | "brand" | "violet";
 }) {
+  // Design system v2 badges: each status sits on its own soft ground.
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium",
-        tone === "muted" && "bg-surface-2 text-muted-foreground",
-        tone === "growth" && "bg-growth/15 text-growth",
-        tone === "brand" && "bg-primary/18 text-cyan ring-1 ring-inset ring-primary/25",
-        tone === "violet" && "bg-violet/15 text-violet",
+        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold tracking-[0.04em]",
+        tone === "muted" && "bg-surface-2 text-ink-3",
+        tone === "growth" && "bg-olive-soft text-leaf",
+        tone === "brand" && "bg-olive-soft text-leaf",
+        tone === "violet" && "bg-[#33280F] text-terra-lt",
       )}
     >
       {children}
@@ -263,19 +265,22 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="nuru-card flex flex-col items-center gap-2 px-6 py-10 text-center">
-      <p className="font-display text-base font-semibold">{title}</p>
-      <p className="max-w-xs text-sm text-muted-foreground">{description}</p>
-      {action && <div className="pt-1">{action}</div>}
+    <div className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-card px-6 py-10 text-center">
+      <p className="font-display text-[17px] font-semibold">{title}</p>
+      <p className="max-w-xs text-[13.5px] leading-snug text-ink-2">{description}</p>
+      {action && <div className="pt-1.5">{action}</div>}
     </div>
   );
 }
 
 export function ErrorState({ message, onRetry }: { message?: string; onRetry?: () => void }) {
   return (
-    <div className="nuru-card flex flex-col items-center gap-3 px-6 py-10 text-center" role="alert">
-      <p className="font-display text-base font-semibold">Something didn't load</p>
-      <p className="max-w-xs text-sm text-muted-foreground">
+    <div
+      className="flex flex-col items-center gap-3 rounded-2xl border border-border bg-card px-6 py-10 text-center"
+      role="alert"
+    >
+      <p className="font-display text-[17px] font-semibold">Something didn&apos;t load</p>
+      <p className="max-w-xs text-[13.5px] leading-snug text-ink-2">
         {message ?? "Check your connection and try again."}
       </p>
       {onRetry && <GhostButton onClick={onRetry}>Try again</GhostButton>}

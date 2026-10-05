@@ -8,6 +8,45 @@ export type Database = {
   };
   public: {
     Tables: {
+      media_catalog_imports: {
+        Row: {
+          kind: string;
+          channel_id: string | null;
+          page_token: string | null;
+          status: string;
+          imported_total: number;
+          pages_processed: number;
+          last_error: string | null;
+          lease_token: string | null;
+          lease_until: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          kind: string;
+          channel_id?: string | null;
+          page_token?: string | null;
+          status?: string;
+          imported_total?: number;
+          pages_processed?: number;
+          last_error?: string | null;
+          lease_token?: string | null;
+          lease_until?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          kind?: string;
+          channel_id?: string | null;
+          page_token?: string | null;
+          status?: string;
+          imported_total?: number;
+          pages_processed?: number;
+          last_error?: string | null;
+          lease_token?: string | null;
+          lease_until?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       ai_conversations: {
         Row: {
           context_id: string | null;
@@ -291,10 +330,14 @@ export type Database = {
           content: string | null;
           course_id: string;
           created_at: string;
+          estimated_minutes: number;
           id: string;
+          key_terms: string[];
+          learning_objectives: string[];
           media_url: string | null;
           position: number;
           reflection: string | null;
+          resources: Json;
           scripture_refs: string[] | null;
           title: string;
         };
@@ -302,10 +345,14 @@ export type Database = {
           content?: string | null;
           course_id: string;
           created_at?: string;
+          estimated_minutes?: number;
           id?: string;
+          key_terms?: string[];
+          learning_objectives?: string[];
           media_url?: string | null;
           position: number;
           reflection?: string | null;
+          resources?: Json;
           scripture_refs?: string[] | null;
           title: string;
         };
@@ -313,10 +360,14 @@ export type Database = {
           content?: string | null;
           course_id?: string;
           created_at?: string;
+          estimated_minutes?: number;
           id?: string;
+          key_terms?: string[];
+          learning_objectives?: string[];
           media_url?: string | null;
           position?: number;
           reflection?: string | null;
+          resources?: Json;
           scripture_refs?: string[] | null;
           title?: string;
         };
@@ -365,6 +416,28 @@ export type Database = {
           },
         ];
       };
+      faith_course_lesson_progress: {
+        Row: {
+          user_id: string;
+          course_slug: string;
+          lesson_index: number;
+          completed_at: string;
+        };
+        Insert: {
+          user_id: string;
+          course_slug: string;
+          lesson_index: number;
+          completed_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          course_slug?: string;
+          lesson_index?: number;
+          completed_at?: string;
+        };
+        Relationships: [];
+      };
+
       courses: {
         Row: {
           category: string | null;
@@ -398,6 +471,42 @@ export type Database = {
           lesson_count?: number;
           slug?: string;
           title?: string;
+        };
+        Relationships: [];
+      };
+      device_push_tokens: {
+        Row: {
+          created_at: string;
+          enabled: boolean;
+          id: string;
+          last_seen_at: string;
+          platform: string;
+          token: string;
+          updated_at: string;
+          user_agent: string | null;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          enabled?: boolean;
+          id?: string;
+          last_seen_at?: string;
+          platform?: string;
+          token: string;
+          updated_at?: string;
+          user_agent?: string | null;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          enabled?: boolean;
+          id?: string;
+          last_seen_at?: string;
+          platform?: string;
+          token?: string;
+          updated_at?: string;
+          user_agent?: string | null;
+          user_id?: string;
         };
         Relationships: [];
       };
@@ -524,6 +633,105 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
+      };
+      external_reel_comments: {
+        Row: {
+          content: string;
+          created_at: string;
+          external_reel_id: string;
+          id: string;
+          user_id: string;
+        };
+        Insert: {
+          content: string;
+          created_at?: string;
+          external_reel_id: string;
+          id?: string;
+          user_id: string;
+        };
+        Update: {
+          content?: string;
+          created_at?: string;
+          external_reel_id?: string;
+          id?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      external_reel_likes: {
+        Row: {
+          created_at: string;
+          external_reel_id: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          external_reel_id: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          external_reel_id?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      external_reel_reports: {
+        Row: {
+          created_at: string;
+          creator_name: string | null;
+          details: string | null;
+          external_reel_id: string;
+          id: string;
+          reason: string;
+          reported_by: string;
+          source_url: string | null;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          creator_name?: string | null;
+          details?: string | null;
+          external_reel_id: string;
+          id?: string;
+          reason: string;
+          reported_by: string;
+          source_url?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          creator_name?: string | null;
+          details?: string | null;
+          external_reel_id?: string;
+          id?: string;
+          reason?: string;
+          reported_by?: string;
+          source_url?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      external_reel_saves: {
+        Row: {
+          created_at: string;
+          external_reel_id: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          external_reel_id: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          external_reel_id?: string;
+          user_id?: string;
+        };
+        Relationships: [];
       };
       group_members: {
         Row: {
@@ -727,6 +935,7 @@ export type Database = {
           is_approved: boolean;
           is_featured: boolean;
           media_type: string;
+          language_code: string;
           published_at: string | null;
           scripture_ref: string | null;
           source: string;
@@ -751,6 +960,7 @@ export type Database = {
           is_approved?: boolean;
           is_featured?: boolean;
           media_type?: string;
+          language_code?: string;
           published_at?: string | null;
           scripture_ref?: string | null;
           source: string;
@@ -904,6 +1114,8 @@ export type Database = {
           is_approved: boolean;
           is_verified: boolean;
           name: string;
+          content_kind: string;
+          language_codes: string[];
           organization_id: string | null;
           source_type: string;
           updated_at: string;
@@ -919,6 +1131,8 @@ export type Database = {
           is_approved?: boolean;
           is_verified?: boolean;
           name: string;
+          content_kind?: string;
+          language_codes?: string[];
           organization_id?: string | null;
           source_type: string;
           updated_at?: string;
@@ -934,6 +1148,8 @@ export type Database = {
           is_approved?: boolean;
           is_verified?: boolean;
           name?: string;
+          content_kind?: string;
+          language_codes?: string[];
           organization_id?: string | null;
           source_type?: string;
           updated_at?: string;
@@ -957,6 +1173,7 @@ export type Database = {
           created_at: string;
           display_name: string;
           id: string;
+          phone_number: string | null;
           photo_url: string | null;
           role_title: string | null;
           specialties: string[] | null;
@@ -970,6 +1187,7 @@ export type Database = {
           created_at?: string;
           display_name: string;
           id?: string;
+          phone_number?: string | null;
           photo_url?: string | null;
           role_title?: string | null;
           specialties?: string[] | null;
@@ -983,6 +1201,7 @@ export type Database = {
           created_at?: string;
           display_name?: string;
           id?: string;
+          phone_number?: string | null;
           photo_url?: string | null;
           role_title?: string | null;
           specialties?: string[] | null;
@@ -1103,13 +1322,44 @@ export type Database = {
         };
         Relationships: [];
       };
+      notification_preferences: {
+        Row: {
+          events_enabled: boolean;
+          mentorship_enabled: boolean;
+          push_enabled: boolean;
+          social_enabled: boolean;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          events_enabled?: boolean;
+          mentorship_enabled?: boolean;
+          push_enabled?: boolean;
+          social_enabled?: boolean;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          events_enabled?: boolean;
+          mentorship_enabled?: boolean;
+          push_enabled?: boolean;
+          social_enabled?: boolean;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       notifications: {
         Row: {
           body: string | null;
           category: string;
           created_at: string;
+          deep_link: string | null;
+          delivered_at: string | null;
           id: string;
+          priority: string;
           read: boolean;
+          read_at: string | null;
           title: string;
           user_id: string;
         };
@@ -1117,8 +1367,12 @@ export type Database = {
           body?: string | null;
           category?: string;
           created_at?: string;
+          deep_link?: string | null;
+          delivered_at?: string | null;
           id?: string;
+          priority?: string;
           read?: boolean;
+          read_at?: string | null;
           title: string;
           user_id: string;
         };
@@ -1126,8 +1380,12 @@ export type Database = {
           body?: string | null;
           category?: string;
           created_at?: string;
+          deep_link?: string | null;
+          delivered_at?: string | null;
           id?: string;
+          priority?: string;
           read?: boolean;
+          read_at?: string | null;
           title?: string;
           user_id?: string;
         };
@@ -1435,7 +1693,7 @@ export type Database = {
           is_anonymous: boolean;
           prayer_count: number;
           title: string | null;
-          user_id: string;
+          user_id: string | null;
         };
         Insert: {
           body: string;
@@ -1444,7 +1702,7 @@ export type Database = {
           is_anonymous?: boolean;
           prayer_count?: number;
           title?: string | null;
-          user_id: string;
+          user_id?: string | null;
         };
         Update: {
           body?: string;
@@ -1453,7 +1711,7 @@ export type Database = {
           is_anonymous?: boolean;
           prayer_count?: number;
           title?: string | null;
-          user_id?: string;
+          user_id?: string | null;
         };
         Relationships: [];
       };
@@ -1479,6 +1737,13 @@ export type Database = {
             columns: ["prayer_id"];
             isOneToOne: false;
             referencedRelation: "prayer_requests";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "prayer_support_prayer_id_fkey";
+            columns: ["prayer_id"];
+            isOneToOne: false;
+            referencedRelation: "prayer_wall";
             referencedColumns: ["id"];
           },
         ];
@@ -2181,12 +2446,14 @@ export type Database = {
           context_note: string | null;
           created_at: string;
           discussion_prompt: string | null;
+          hero_words: string[] | null;
           id: string;
           introduction: string | null;
           main_teaching: string | null;
           position: number;
           practical_action: string | null;
           prayer: string | null;
+          pull_quote: string | null;
           reflection_questions: string[];
           series_id: string;
           title: string;
@@ -2197,12 +2464,14 @@ export type Database = {
           context_note?: string | null;
           created_at?: string;
           discussion_prompt?: string | null;
+          hero_words?: string[] | null;
           id?: string;
           introduction?: string | null;
           main_teaching?: string | null;
           position: number;
           practical_action?: string | null;
           prayer?: string | null;
+          pull_quote?: string | null;
           reflection_questions?: string[];
           series_id: string;
           title: string;
@@ -2213,12 +2482,14 @@ export type Database = {
           context_note?: string | null;
           created_at?: string;
           discussion_prompt?: string | null;
+          hero_words?: string[] | null;
           id?: string;
           introduction?: string | null;
           main_teaching?: string | null;
           position?: number;
           practical_action?: string | null;
           prayer?: string | null;
+          pull_quote?: string | null;
           reflection_questions?: string[];
           series_id?: string;
           title?: string;
@@ -2606,18 +2877,117 @@ export type Database = {
           },
         ];
       };
+      verse_highlights: {
+        Row: {
+          color: string;
+          created_at: string;
+          id: string;
+          reference: string;
+          user_id: string;
+          verse: number;
+          verse_text: string;
+        };
+        Insert: {
+          color?: string;
+          created_at?: string;
+          id?: string;
+          reference: string;
+          user_id: string;
+          verse: number;
+          verse_text: string;
+        };
+        Update: {
+          color?: string;
+          created_at?: string;
+          id?: string;
+          reference?: string;
+          user_id?: string;
+          verse?: number;
+          verse_text?: string;
+        };
+        Relationships: [];
+      };
+      web_push_subscriptions: {
+        Row: {
+          auth: string;
+          created_at: string;
+          enabled: boolean;
+          endpoint: string;
+          expiration_time: number | null;
+          id: string;
+          last_seen_at: string;
+          p256dh: string;
+          updated_at: string;
+          user_agent: string | null;
+          user_id: string;
+        };
+        Insert: {
+          auth: string;
+          created_at?: string;
+          enabled?: boolean;
+          endpoint: string;
+          expiration_time?: number | null;
+          id?: string;
+          last_seen_at?: string;
+          p256dh: string;
+          updated_at?: string;
+          user_agent?: string | null;
+          user_id: string;
+        };
+        Update: {
+          auth?: string;
+          created_at?: string;
+          enabled?: boolean;
+          endpoint?: string;
+          expiration_time?: number | null;
+          id?: string;
+          last_seen_at?: string;
+          p256dh?: string;
+          updated_at?: string;
+          user_agent?: string | null;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
-      [_ in never]: never;
+      prayer_wall: {
+        Row: {
+          body: string | null;
+          created_at: string | null;
+          id: string | null;
+          is_anonymous: boolean | null;
+          prayer_count: number | null;
+          title: string | null;
+          user_id: string | null;
+        };
+        Insert: {
+          body?: string | null;
+          created_at?: string | null;
+          id?: string | null;
+          is_anonymous?: boolean | null;
+          prayer_count?: number | null;
+          title?: string | null;
+          user_id?: never;
+        };
+        Update: {
+          body?: string | null;
+          created_at?: string | null;
+          id?: string | null;
+          is_anonymous?: boolean | null;
+          prayer_count?: number | null;
+          title?: string | null;
+          user_id?: never;
+        };
+        Relationships: [];
+      };
     };
     Functions: {
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"];
-          _user_id: string;
-        };
-        Returns: boolean;
-      };
+      get_nuru_admin_overview: { Args: never; Returns: Json };
+      consume_nuru_rate_limit: { Args: { p_action: string }; Returns: Json };
+      get_nuru_pilot_metrics: { Args: never; Returns: Json };
+      get_web_push_server_config: { Args: never; Returns: Json };
+      record_nuru_activity: { Args: never; Returns: undefined };
     };
     Enums: {
       app_role:

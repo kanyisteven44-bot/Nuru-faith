@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { BookOpen, Music2 } from "lucide-react";
+import { BadgeCheck, BookOpen, Music2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { resolveMedia } from "@/lib/media";
+import { generatedAvatar } from "@/lib/avatar";
 import type { Reel } from "@/services/reels";
 
 /** Creator, caption, Scripture chip, topic chip and the audio ticker. */
@@ -29,16 +29,22 @@ export function ReelCaption({
     <div className="min-w-0 flex-1 text-white">
       <div className="flex items-center gap-2">
         <img
-          src={resolveMedia(reel.creator_avatar_url)}
+          src={reel.creator_avatar_url || generatedAvatar(reel.creator_name, reel.creator_name)}
+          onError={(event) => {
+            event.currentTarget.onerror = null;
+            event.currentTarget.src = generatedAvatar(reel.creator_name, reel.creator_name);
+          }}
           alt=""
           width={32}
           height={32}
           loading="lazy"
-          className="h-8 w-8 rounded-full object-cover"
+          className="h-8 w-8 rounded-full object-cover ring-2 ring-primary"
         />
-        <p className="min-w-0 truncate text-sm font-semibold drop-shadow">
-          {reel.creator_name}
-          {reel.churches?.verified && <span className="ml-1 text-cyan">✓</span>}
+        <p className="flex min-w-0 items-center gap-1 truncate text-sm font-semibold drop-shadow">
+          <span className="truncate">{reel.creator_name}</span>
+          {reel.churches?.verified && (
+            <BadgeCheck className="h-3.5 w-3.5 shrink-0 fill-leaf text-background" />
+          )}
         </p>
         {canFollow && (
           <button
@@ -48,8 +54,10 @@ export function ReelCaption({
               isFollowing ? `Unfollow ${reel.creator_name}` : `Follow ${reel.creator_name}`
             }
             className={cn(
-              "shrink-0 rounded-full border px-3 py-1 text-[11px] font-semibold transition-transform duration-150 active:scale-95",
-              isFollowing ? "border-white/50 text-white/90" : "border-white bg-white/10 text-white",
+              "shrink-0 rounded-full px-3 py-1 text-[11px] font-semibold transition-transform duration-150 active:scale-95",
+              isFollowing
+                ? "border border-white/50 text-white/90"
+                : "nuru-gradient-bg text-primary-foreground",
             )}
           >
             {isFollowing ? "Following" : "Follow"}
@@ -82,7 +90,7 @@ export function ReelCaption({
             type="button"
             onClick={onOpenScripture}
             aria-label={`Open ${reel.scripture_ref}`}
-            className="inline-flex items-center gap-1 rounded-full bg-primary/30 px-2.5 py-1 font-semibold text-cyan ring-1 ring-inset ring-cyan/30 backdrop-blur-md"
+            className="inline-flex items-center gap-1 rounded-full bg-primary/30 px-2.5 py-1 font-semibold text-leaf ring-1 ring-inset ring-leaf/30 backdrop-blur-md"
           >
             <BookOpen className="h-3 w-3" /> {reel.scripture_ref}
           </button>

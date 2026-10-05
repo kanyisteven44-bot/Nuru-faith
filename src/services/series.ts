@@ -38,6 +38,10 @@ export type SeriesSession = {
   prayer: string | null;
   practical_action: string | null;
   discussion_prompt: string | null;
+  /** Optional handwritten words stacked over the session hero. */
+  hero_words: string[] | null;
+  /** Optional handwritten phrase set beside the Scripture card. */
+  pull_quote: string | null;
 };
 
 export type SeriesProgress = {
@@ -50,16 +54,47 @@ export type SeriesProgress = {
 const SERIES_COLUMNS =
   "id, title, slug, description, cover_image, category, difficulty, estimated_duration, session_count, status, is_featured, church_id";
 
-export async function fetchSeries(search?: string): Promise<SeriesRow[]> {
+export const SERIES_PAGE_SIZE = 60;
+
+export async function fetchSeries(
+  search?: string,
+  category?: string,
+  page = 0,
+  pageSize = SERIES_PAGE_SIZE,
+): Promise<SeriesRow[]> {
+  const from = Math.max(0, page) * pageSize;
   let q = supabase
     .from("scripture_series")
     .select(SERIES_COLUMNS)
     .eq("status", "published")
     .order("is_featured", { ascending: false })
-    .order("title");
-  if (search)
-    q = q.or(`title.ilike.%${search}%,description.ilike.%${search}%,category.ilike.%${search}%`);
+    .order("title")
+    .range(from, from + pageSize - 1);
+
+  const cleanedSearch = search?.trim().replace(/[%_,()]/g, " ");
+  if (cleanedSearch) {
+    q = q.or(
+      `title.ilike.%${cleanedSearch}%,description.ilike.%${cleanedSearch}%,category.ilike.%${cleanedSearch}%`,
+    );
+  }
+  if (category) q = q.eq("category", category);
+
   const { data, error } = await q;
+  if (error) throw new Error(error.message);
+  return (data ?? []) as SeriesRow[];
+}
+
+/**
+ * The library seed (`nuru-library-*` slugs) generates 1,200 filler series
+ * for browse/search volume. Screens that spotlight Nuru's hand-written
+ * series (Series home) fetch by slug directly so that bulk content never
+ * crowds out the curated set.
+ */
+export async function fetchCuratedSeries(slugs: string[]): Promise<SeriesRow[]> {
+  const { data, error } = await supabase
+    .from("scripture_series")
+    .select(SERIES_COLUMNS)
+    .in("slug", slugs);
   if (error) throw new Error(error.message);
   return (data ?? []) as SeriesRow[];
 }
@@ -249,5 +284,85 @@ export async function removeSavedScripture(userId: string, reference: string) {
     .delete()
     .eq("user_id", userId)
     .eq("reference", reference);
+  if (error) throw new Error(error.message);
+}
+
+/* ---------- verse highlights ---------- */
+
+/**
+ * Highlight colours, retuned onto the design system v2 palette.
+ *
+ * The `key` of each is what is stored against a verse, so the keys must not
+ * change or every saved highlight would stop resolving. Only the swatch,
+ * the label and the wash over the text are new.
+ */
+export const HIGHLIGHT_COLORS = [
+  { key: "yellow", label: "Sand", swatch: "#e6b566", bgClass: "bg-[rgba(230,181,102,0.28)]" },
+  { key: "green", label: "Leaf", swatch: "#86c29a", bgClass: "bg-[rgba(134,194,154,0.26)]" },
+  { key: "blue", label: "Sky", swatch: "#7fd3ff", bgClass: "bg-[rgba(127,211,255,0.22)]" },
+  { key: "pink", label: "Rose", swatch: "#ee8b7b", bgClass: "bg-[rgba(238,139,123,0.26)]" },
+  { key: "purple", label: "Clay", swatch: "#b96445", bgClass: "bg-[rgba(185,100,69,0.32)]" },
+] as const;
+export type HighlightColor = (typeof HIGHLIGHT_COLORS)[number]["key"];
+
+export type VerseHighlight = {
+  id: string;
+  reference: string;
+  verse: number;
+  verse_text: string;
+  color: HighlightColor;
+  created_at: string;
+};
+
+export async function fetchHighlights(
+  userId: string,
+  reference: string,
+): Promise<VerseHighlight[]> {
+  const { data, error } = await supabase
+    .from("verse_highlights")
+    .select("id, reference, verse, verse_text, color, created_at")
+    .eq("user_id", userId)
+    .eq("reference", reference);
+  if (error) throw new Error(error.message);
+  return (data ?? []) as VerseHighlight[];
+}
+
+export async function fetchAllHighlights(userId: string): Promise<VerseHighlight[]> {
+  const { data, error } = await supabase
+    .from("verse_highlights")
+    .select("id, reference, verse, verse_text, color, created_at")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as VerseHighlight[];
+}
+
+export async function setHighlight(input: {
+  userId: string;
+  reference: string;
+  verse: number;
+  verseText: string;
+  color: HighlightColor;
+}) {
+  const { error } = await supabase.from("verse_highlights").upsert(
+    {
+      user_id: input.userId,
+      reference: input.reference,
+      verse: input.verse,
+      verse_text: input.verseText,
+      color: input.color,
+    },
+    { onConflict: "user_id,reference,verse" },
+  );
+  if (error) throw new Error(error.message);
+}
+
+export async function removeHighlight(userId: string, reference: string, verse: number) {
+  const { error } = await supabase
+    .from("verse_highlights")
+    .delete()
+    .eq("user_id", userId)
+    .eq("reference", reference)
+    .eq("verse", verse);
   if (error) throw new Error(error.message);
 }

@@ -1,3 +1,4 @@
+import { resolveMedia } from "@/lib/media";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   BookOpen,
@@ -14,7 +15,6 @@ import {
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
 import { IconTile, ScreenHero, SectionHeader } from "@/components/nuru/Primitives";
 import { TAGLINE } from "@/constants/nuru";
-import heroBg from "@/assets/quiet-night.jpg";
 
 export const Route = createFileRoute("/_authenticated/hub")({
   head: () => ({
@@ -36,7 +36,7 @@ const GROUPS = [
     title: "Grow",
     items: [
       { to: "/bible", label: "Bible & devotionals", icon: BookOpen },
-      { to: "/learn", label: "Courses", icon: GraduationCap },
+      { to: "/series", label: "Series", icon: GraduationCap },
       { to: "/ai", label: "Nuru AI", icon: Sparkles },
     ],
   },
@@ -69,7 +69,7 @@ function HubScreen() {
   return (
     <AppShell>
       <ScreenHeader title="Nuru Faith Hub" subtitle={TAGLINE} />
-      <ScreenHero image={heroBg} />
+      <ScreenHero image={resolveMedia("asset:quiet-night")} />
       <div className="space-y-7 px-4 py-4">
         {GROUPS.map((g) => (
           <section key={g.title}>

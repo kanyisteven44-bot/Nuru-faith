@@ -141,7 +141,7 @@ export function CallPanel({
         ) {
           appliedAnswer.current = true;
           await peerConnection.current.setRemoteDescription(
-            session.answer as RTCSessionDescriptionInit,
+            session.answer as unknown as RTCSessionDescriptionInit,
           );
           setStatus("Connecting…");
         }

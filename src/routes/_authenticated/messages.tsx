@@ -1,31 +1,37 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
   MessageCircle,
+  Phone,
   Search,
-  Send,
   SquarePen,
   Users,
+  Video,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchMentors } from "@/services/content";
 import {
-  CHAT_LIMIT,
-  fetchChatMessages,
-  fetchChatNames,
   fetchChatProfiles,
   fetchDirectThreads,
   fetchMentorThreads,
-  sendChatMessage,
-  type ChatMessage,
+  markDirectMessagesDelivered,
   type ChatProfile,
   type ChatTarget,
 } from "@/services/messaging";
+import {
+  endCallSession,
+  fetchIncomingCall,
+  type CallKind,
+} from "@/services/calls";
 import { AppShell, Avatar, ScreenHeader } from "@/components/nuru/AppShell";
+import { CallPanel } from "@/components/nuru/CallPanel";
+import { CoverImage } from "@/components/nuru/CoverImage";
+import { RichChatThread } from "@/components/nuru/RichChatThread";
 import { CardSkeleton, EmptyState, ErrorState } from "@/components/nuru/Primitives";
+import { resolveMedia } from "@/lib/media";
 import { cn } from "@/lib/utils";
 import { z } from "zod";
 
@@ -45,10 +51,23 @@ export const Route = createFileRoute("/_authenticated/messages")({
 const INBOX_TABS = ["All", "People", "Groups"] as const;
 type InboxTab = (typeof INBOX_TABS)[number];
 
+type ActiveCall = {
+  kind: CallKind;
+  peer: ChatProfile;
+  incoming?: {
+    id: string;
+    kind: string;
+    offer: unknown;
+    caller_id: string;
+  };
+};
+
 function MessagesScreen() {
   const { userId } = useAuth();
+  const qc = useQueryClient();
   const search = Route.useSearch();
   const [tab, setTab] = useState<InboxTab>("All");
+  const [activeCall, setActiveCall] = useState<ActiveCall | null>(null);
 
   const mentors = useQuery({ queryKey: ["mentors"], queryFn: fetchMentors });
   const groups = useQuery({
@@ -57,7 +76,7 @@ function MessagesScreen() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("group_members")
-        .select("group_id, groups(id,name)")
+        .select("group_id, groups(id,name,cover_url)")
         .eq("user_id", userId!);
       if (error) throw error;
       return (data ?? []).flatMap((row) => (row.groups ? [row.groups] : []));
@@ -73,16 +92,30 @@ function MessagesScreen() {
     queryKey: ["direct-threads", userId],
     queryFn: () => fetchDirectThreads(userId!),
     enabled: !!userId,
-    refetchInterval: 10000,
+    refetchInterval: 5000,
   });
+  const incoming = useQuery({
+    queryKey: ["incoming-call", userId],
+    queryFn: () => fetchIncomingCall(userId!),
+    enabled: !!userId && !activeCall,
+    refetchInterval: activeCall ? false : 2000,
+  });
+
+  useEffect(() => {
+    if (!userId) return;
+    void markDirectMessagesDelivered(userId).then(() => {
+      void qc.invalidateQueries({ queryKey: ["direct-threads", userId] });
+    });
+  }, [qc, userId]);
 
   const participantIds = useMemo(() => {
     const ids = new Set<string>();
     for (const thread of directThreads.data ?? []) ids.add(thread.peer_id);
     for (const thread of mentorThreads.data ?? []) ids.add(thread.requester_id);
     if (search.user) ids.add(search.user);
+    if (incoming.data?.caller_id) ids.add(incoming.data.caller_id);
     return [...ids];
-  }, [directThreads.data, mentorThreads.data, search.user]);
+  }, [directThreads.data, incoming.data?.caller_id, mentorThreads.data, search.user]);
 
   const profiles = useQuery({
     queryKey: ["message-profiles", participantIds],
@@ -131,13 +164,65 @@ function MessagesScreen() {
     mentorThreads.isError ||
     directThreads.isError;
 
+  const incomingProfile = incoming.data?.caller_id
+    ? profiles.data?.[incoming.data.caller_id]
+    : undefined;
+
+  function startCall(kind: CallKind) {
+    if (!directProfile) return;
+    setActiveCall({ kind, peer: directProfile });
+  }
+
+  async function declineIncoming() {
+    if (!incoming.data) return;
+    try {
+      await endCallSession(incoming.data.id, "declined");
+      await incoming.refetch();
+    } catch {
+      // The next poll will reconcile call state.
+    }
+  }
+
+  function acceptIncoming() {
+    if (!incoming.data || !incomingProfile) return;
+    setActiveCall({
+      kind: incoming.data.kind as CallKind,
+      peer: incomingProfile,
+      incoming: {
+        id: incoming.data.id,
+        kind: incoming.data.kind,
+        offer: incoming.data.offer,
+        caller_id: incoming.data.caller_id,
+      },
+    });
+  }
+
   return (
-    <AppShell>
+    <AppShell hideNav={inThread || !!activeCall}>
       <ScreenHeader
         title={title}
         back={inThread}
         right={
-          !inThread ? (
+          search.user && directProfile ? (
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => startCall("audio")}
+                aria-label="Start audio call"
+                className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-surface-2"
+              >
+                <Phone className="h-5 w-5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => startCall("video")}
+                aria-label="Start video call"
+                className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-surface-2"
+              >
+                <Video className="h-5 w-5" />
+              </button>
+            </div>
+          ) : !inThread ? (
             <div className="flex items-center gap-1">
               <Link
                 to="/explore"
@@ -160,13 +245,24 @@ function MessagesScreen() {
         }
       />
 
-      <div className="px-4 pb-6">
+      <div className={cn("px-4", inThread ? "pb-4" : "pb-6")}>
+        {incoming.data && incomingProfile && !activeCall && (
+          <IncomingCallCard
+            profile={incomingProfile}
+            kind={incoming.data.kind as CallKind}
+            onAccept={acceptIncoming}
+            onDecline={() => void declineIncoming()}
+          />
+        )}
+
         {inThread ? (
           <ThreadView
             target={target}
             userId={userId}
             searchUser={search.user}
             directProfile={directProfile}
+            groupCover={group?.cover_url ?? null}
+            groupName={group?.name}
             loading={loading || profiles.isLoading}
             failed={failed || profiles.isError}
           />
@@ -216,7 +312,65 @@ function MessagesScreen() {
           </>
         )}
       </div>
+
+      {activeCall && userId && (
+        <CallPanel
+          userId={userId}
+          peer={activeCall.peer}
+          kind={activeCall.kind}
+          incoming={activeCall.incoming ?? null}
+          onClose={() => {
+            setActiveCall(null);
+            void incoming.refetch();
+          }}
+        />
+      )}
     </AppShell>
+  );
+}
+
+function IncomingCallCard({
+  profile,
+  kind,
+  onAccept,
+  onDecline,
+}: {
+  profile: ChatProfile;
+  kind: CallKind;
+  onAccept: () => void;
+  onDecline: () => void;
+}) {
+  const name = profile.full_name || profile.username || "Nuru member";
+  return (
+    <section className="mb-4 flex items-center gap-3 rounded-2xl border border-primary/25 bg-primary/8 p-3 shadow-sm">
+      <Avatar
+        url={profile.avatar_url}
+        name={name}
+        seed={profile.id}
+        size="md"
+        className="h-12 w-12"
+      />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-bold">{name}</p>
+        <p className="text-xs text-muted-foreground">
+          Incoming {kind === "video" ? "video" : "audio"} call
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={onDecline}
+        className="min-h-10 rounded-full border border-destructive/30 px-3 text-xs font-bold text-destructive"
+      >
+        Decline
+      </button>
+      <button
+        type="button"
+        onClick={onAccept}
+        className="min-h-10 rounded-full bg-growth px-3 text-xs font-bold text-white"
+      >
+        Answer
+      </button>
+    </section>
   );
 }
 
@@ -225,6 +379,8 @@ function ThreadView({
   userId,
   searchUser,
   directProfile,
+  groupCover,
+  groupName,
   loading,
   failed,
 }: {
@@ -232,6 +388,8 @@ function ThreadView({
   userId: string | null;
   searchUser: string | undefined;
   directProfile: ChatProfile | undefined;
+  groupCover: string | null;
+  groupName: string | undefined;
   loading: boolean;
   failed: boolean;
 }) {
@@ -260,16 +418,23 @@ function ThreadView({
         <Link
           to="/discovery/$kind/$id"
           params={{ kind: "profile", id: searchUser }}
-          className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3"
+          className="relative flex min-h-24 items-center gap-4 overflow-hidden rounded-2xl border border-border bg-card p-4"
         >
+          <CoverImage
+            src={resolveMedia("asset:friends-dusk")}
+            alt=""
+            className="absolute inset-0 h-full w-full opacity-16"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-card via-card/92 to-card/60" />
           <Avatar
             url={directProfile.avatar_url}
             name={directProfile.full_name || directProfile.username || ""}
             seed={searchUser}
-            size="sm"
+            size="md"
+            className="relative h-14 w-14"
           />
-          <span className="min-w-0">
-            <span className="block truncate text-sm font-semibold">
+          <span className="relative min-w-0">
+            <span className="block truncate text-base font-bold">
               {directProfile.full_name || directProfile.username || "Nuru member"}
             </span>
             {directProfile.username && (
@@ -277,11 +442,33 @@ function ThreadView({
                 @{directProfile.username}
               </span>
             )}
+            <span className="mt-1 block text-[11px] text-muted-foreground">
+              Tap to view profile
+            </span>
           </span>
         </Link>
       )}
 
-      <ChatThread key={JSON.stringify(target)} target={target} userId={userId} />
+      {"group" in target && (
+        <Link
+          to="/groups"
+          search={{ group: target.group }}
+          className="relative flex min-h-24 items-end overflow-hidden rounded-2xl border border-border bg-card p-4"
+        >
+          <CoverImage
+            src={resolveMedia(groupCover || "asset:topic-prayer")}
+            alt=""
+            className="absolute inset-0 h-full w-full"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+          <span className="relative text-white">
+            <span className="block text-base font-bold">{groupName || "Group chat"}</span>
+            <span className="block text-xs text-white/75">Open group activity</span>
+          </span>
+        </Link>
+      )}
+
+      <RichChatThread target={target} userId={userId} maxHeight="62dvh" />
     </div>
   );
 }
@@ -301,7 +488,7 @@ function Inbox({
   mentorThreads: Awaited<ReturnType<typeof fetchMentorThreads>>;
   profiles: Awaited<ReturnType<typeof fetchChatProfiles>>;
   mentors: Awaited<ReturnType<typeof fetchMentors>>;
-  groups: { id: string; name: string }[];
+  groups: { id: string; name: string; cover_url: string | null }[];
 }) {
   const showPeople = tab === "All" || tab === "People";
   const showGroups = tab === "All" || tab === "Groups";
@@ -319,6 +506,12 @@ function Inbox({
             {directThreads.map((thread) => {
               const person = profiles[thread.peer_id];
               const name = person?.full_name || person?.username || "Nuru member";
+              const preview =
+                thread.message_type === "voice"
+                  ? "🎤 Voice note"
+                  : thread.message_type === "sticker"
+                    ? `Sticker ${thread.body}`
+                    : thread.body;
               return (
                 <Link
                   key={thread.peer_id}
@@ -330,13 +523,14 @@ function Inbox({
                     url={person?.avatar_url ?? null}
                     name={name}
                     seed={thread.peer_id}
-                    size="sm"
+                    size="md"
+                    className="h-12 w-12"
                   />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-semibold">{name}</span>
                     <span className="block truncate text-xs text-muted-foreground">
                       {thread.sender_id === userId ? "You: " : ""}
-                      {thread.body}
+                      {preview}
                     </span>
                   </span>
                   <time className="shrink-0 text-[10px] text-muted-foreground" dateTime={thread.created_at}>
@@ -361,7 +555,7 @@ function Inbox({
                   search={{ mentor: thread.mentor_id, requester: thread.requester_id }}
                   className="flex min-h-18 items-center gap-3 border-b border-border/60 p-3 last:border-b-0 hover:bg-surface-2"
                 >
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                     <MessageCircle className="h-5 w-5" />
                   </span>
                   <span className="min-w-0 flex-1">
@@ -400,24 +594,31 @@ function Inbox({
       {showGroups && (
         <section>
           <h2 className="mb-2 px-1 font-display text-lg font-semibold">Groups</h2>
-          <div className="overflow-hidden rounded-2xl border border-border bg-card">
+          <div className="grid gap-2">
             {groups.map((group) => (
               <Link
                 key={group.id}
                 to="/messages"
                 search={{ group: group.id }}
-                className="flex min-h-16 items-center gap-3 border-b border-border/60 p-3 last:border-b-0 hover:bg-surface-2"
+                className="flex min-h-20 items-center gap-3 overflow-hidden rounded-2xl border border-border bg-card p-2 hover:bg-surface-2"
               >
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-growth/10 text-growth">
-                  <Users className="h-5 w-5" />
+                <CoverImage
+                  src={resolveMedia(group.cover_url || "asset:topic-prayer")}
+                  alt=""
+                  className="h-16 w-20 shrink-0 rounded-xl object-cover"
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-bold">{group.name}</span>
+                  <span className="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground">
+                    <Users className="h-3.5 w-3.5" /> Group conversation
+                  </span>
                 </span>
-                <span className="font-semibold">{group.name}</span>
               </Link>
             ))}
             {!hasGroups && (
-              <div className="p-5 text-center">
+              <div className="rounded-2xl border border-border bg-card p-5 text-center">
                 <p className="text-sm text-muted-foreground">You have no group chats yet.</p>
-                <Link to="/groups" className="mt-2 inline-flex min-h-10 items-center text-sm font-semibold text-primary">
+                <Link to="/groups" search={{}} className="mt-2 inline-flex min-h-10 items-center text-sm font-semibold text-primary">
                   Find a group →
                 </Link>
               </div>
@@ -436,183 +637,4 @@ function formatInboxTime(value: string) {
   return sameDay
     ? date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })
     : date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-}
-
-function ChatThread({ target, userId }: { target: ChatTarget; userId: string }) {
-  const qc = useQueryClient();
-  const key = ["chat-messages", userId, target];
-  const messages = useQuery({
-    queryKey: key,
-    queryFn: () => fetchChatMessages(target),
-    refetchInterval: 5000,
-    refetchIntervalInBackground: false,
-  });
-  const [older, setOlder] = useState<ChatMessage[]>([]);
-  const [loadingOlder, setLoadingOlder] = useState(false);
-  const [hasOlder, setHasOlder] = useState(true);
-  const [draft, setDraft] = useState("");
-  const [sending, setSending] = useState(false);
-  const [error, setError] = useState("");
-  const pending = useRef<{ body: string; id: string } | null>(null);
-  const bottom = useRef<HTMLDivElement>(null);
-  const rows = [
-    ...new Map(
-      [...(messages.isError ? [] : older), ...(messages.isError ? [] : (messages.data ?? []))].map(
-        (message) => [message.id, message],
-      ),
-    ).values(),
-  ].sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id));
-  const names = useQuery({
-    queryKey: ["chat-names", rows.map((message) => message.sender_id)],
-    queryFn: () => fetchChatNames(rows.map((message) => message.sender_id)),
-    enabled: rows.length > 0,
-  });
-
-  useEffect(() => {
-    if (messages.data)
-      setOlder((previous) => [
-        ...new Map([...previous, ...messages.data!].map((message) => [message.id, message])).values(),
-      ]);
-  }, [messages.data]);
-
-  const latest = messages.data?.at(-1)?.id;
-  useEffect(() => {
-    bottom.current?.scrollIntoView({ behavior: "instant", block: "nearest" });
-  }, [latest]);
-
-  async function loadOlder() {
-    if (!rows.length) return;
-    setLoadingOlder(true);
-    setError("");
-    try {
-      const page = await fetchChatMessages(target, rows[0]!);
-      setOlder((previous) => [...page, ...previous]);
-      setHasOlder(page.length === CHAT_LIMIT);
-    } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Couldn't load earlier messages.");
-    } finally {
-      setLoadingOlder(false);
-    }
-  }
-
-  async function send() {
-    if (sending || !draft.trim()) return;
-    setSending(true);
-    setError("");
-    if (pending.current?.body !== draft.trim())
-      pending.current = { body: draft.trim(), id: crypto.randomUUID() };
-    try {
-      await sendChatMessage(target, userId, pending.current.body, pending.current.id);
-      pending.current = null;
-      setDraft("");
-      await Promise.all([
-        qc.invalidateQueries({ queryKey: key }),
-        qc.invalidateQueries({ queryKey: ["mentor-threads", userId] }),
-        qc.invalidateQueries({ queryKey: ["direct-threads", userId] }),
-      ]);
-    } catch (sendError) {
-      setError(sendError instanceof Error ? sendError.message : "Couldn't send your message.");
-    } finally {
-      setSending(false);
-    }
-  }
-
-  return (
-    <section className="overflow-hidden rounded-2xl border border-border bg-card">
-      <p className="border-b border-border px-4 py-3 text-xs text-muted-foreground">
-        Only conversation participants can read these messages.
-      </p>
-      <div
-        className="max-h-[58dvh] min-h-64 space-y-3 overflow-y-auto bg-surface/40 p-4"
-        role="log"
-        aria-label="Conversation messages"
-        aria-live="polite"
-      >
-        {messages.isLoading && <CardSkeleton count={2} height="h-12" />}
-        {messages.isError && <ErrorState onRetry={() => void messages.refetch()} />}
-        {rows.length >= CHAT_LIMIT && hasOlder && (
-          <button
-            className="min-h-10 w-full text-sm font-semibold text-primary"
-            disabled={loadingOlder}
-            onClick={() => void loadOlder()}
-          >
-            {loadingOlder ? "Loading…" : "Load earlier messages"}
-          </button>
-        )}
-        {!messages.isLoading && !messages.isError && !rows.length && (
-          <p className="py-10 text-center text-sm text-muted-foreground">
-            Start the conversation with a hello 👋
-          </p>
-        )}
-        {rows.map((message) => (
-          <div
-            key={message.id}
-            className={`flex ${message.sender_id === userId ? "justify-end" : "justify-start"}`}
-          >
-            <div
-              className={cn(
-                "max-w-[85%] rounded-2xl px-3 py-2",
-                message.sender_id === userId
-                  ? "rounded-br-md bg-primary text-primary-foreground"
-                  : "rounded-bl-md bg-card text-secondary-foreground shadow-sm",
-              )}
-            >
-              <p className="mb-1 text-[11px] font-semibold opacity-75">
-                {message.sender_id === userId
-                  ? "You"
-                  : names.data?.[message.sender_id] ?? "Nuru member"}
-              </p>
-              <p className="whitespace-pre-wrap break-words text-sm">{message.body}</p>
-              <time className="mt-1 block text-[10px] opacity-65" dateTime={message.created_at}>
-                {new Date(message.created_at).toLocaleString(undefined, {
-                  month: "short",
-                  day: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </time>
-            </div>
-          </div>
-        ))}
-        <div ref={bottom} />
-      </div>
-
-      <form
-        className="border-t border-border bg-card p-3"
-        onSubmit={(event) => {
-          event.preventDefault();
-          void send();
-        }}
-      >
-        {error && (
-          <p role="alert" className="mb-2 text-sm text-destructive">
-            {error}
-          </p>
-        )}
-        <label htmlFor="chat-message" className="sr-only">
-          Your message
-        </label>
-        <div className="flex items-end gap-2">
-          <textarea
-            id="chat-message"
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            maxLength={2000}
-            disabled={sending}
-            rows={1}
-            placeholder="Message…"
-            className="min-h-12 min-w-0 flex-1 resize-none rounded-2xl border border-border-strong bg-surface-2 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary"
-          />
-          <button
-            type="submit"
-            disabled={sending || !draft.trim() || messages.isError}
-            aria-label={sending ? "Sending message" : "Send message"}
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground disabled:opacity-50"
-          >
-            <Send className="h-5 w-5" />
-          </button>
-        </div>
-      </form>
-    </section>
-  );
 }

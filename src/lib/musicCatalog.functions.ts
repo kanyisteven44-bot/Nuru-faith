@@ -170,12 +170,18 @@ export const importReviewedCatalogPage = createServerFn({ method: "POST" })
       const ids = page.items.map((item) => item.contentDetails.videoId);
       const response = ids.length
         ? z
-            .object({ items: z.array(videoSchema).default([]) })
+            .object({ items: z.array(z.unknown()).default([]) })
             .parse(
               await call("videos", { part: "snippet,status,contentDetails", id: ids.join(",") }),
             )
         : { items: [] };
       const rows = response.items
+        .flatMap((item) => {
+          // Upcoming/deleted uploads may lack duration or status metadata.
+          // Reject only that incomplete video, preserving valid items in its page.
+          const parsed = videoSchema.safeParse(item);
+          return parsed.success ? [parsed.data] : [];
+        })
         .filter((video) =>
           (data.kind === "music" ? eligibleMusicVideo : eligiblePodcastVideo)(video, channelId),
         )

@@ -610,10 +610,13 @@ function ReelsScreen() {
                 onShare={() => void share(reel)}
                 onMore={() => setMoreFor(reel)}
                 onProfile={() => {
-                  if (reel.external_url) {
+                  if (reel.author_id) {
+                    void navigate({
+                      to: "/discovery/$kind/$id",
+                      params: { kind: "profile", id: reel.author_id },
+                    });
+                  } else if (reel.external_url) {
                     window.open(reel.external_url, "_blank", "noopener,noreferrer");
-                  } else {
-                    void navigate({ to: "/profile" });
                   }
                 }}
                 onRead={() => setReadFor(reel)}

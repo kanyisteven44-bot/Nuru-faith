@@ -73,7 +73,7 @@ export function DiscoveryResults({
               width={64}
               height={64}
               loading="lazy"
-              className="h-16 w-16 shrink-0 rounded-xl object-cover"
+              className={`h-16 w-16 shrink-0 object-cover ${kind === "profile" ? "rounded-full ring-2 ring-primary/20" : "rounded-xl"}`}
             />
           )}
           <span className="min-w-0 flex-1">

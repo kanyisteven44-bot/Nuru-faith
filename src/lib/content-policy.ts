@@ -1,4 +1,5 @@
 ﻿export const DISCOVERY_KINDS = [
+  "profile",
   "reels",
   "series",
   "bible",
@@ -13,6 +14,7 @@
 ] as const;
 export type DiscoveryKind = (typeof DISCOVERY_KINDS)[number];
 export const DISCOVERY_LABELS: Record<DiscoveryKind, string> = {
+  profile: "People",
   reels: "Christian Reels",
   series: "Scripture Series",
   bible: "Bible topics",

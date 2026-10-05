@@ -38,6 +38,19 @@ export async function updateProfile(userId: string, patch: ProfilePatch) {
   if (error) throw new Error(error.message);
 }
 
+export async function checkUsernameAvailability(username: string, userId: string) {
+  const handle = username.trim().replace(/^@+/, "").toLowerCase();
+  if (!handle) return true;
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("username", handle)
+    .neq("id", userId)
+    .limit(1);
+  if (error) throw new Error(error.message);
+  return (data ?? []).length === 0;
+}
+
 export async function fetchMyRoles(userId: string) {
   const { data, error } = await supabase
     .from("user_roles")

@@ -76,6 +76,26 @@ export const searchDiscovery = createServerFn({ method: "POST" })
     }
     if (id && !z.string().uuid().safeParse(id).success) return { items: [], hasMore: false };
     switch (kind) {
+      case "profile": {
+        let q = supabase
+          .from("profiles")
+          .select("id,full_name,username,bio,avatar_url");
+        if (id) q = q.eq("id", id);
+        else if (query) q = q.or(searchFilter(["full_name", "username", "bio"], query));
+        const { data: rows, error } = await q
+          .order("full_name", { nullsFirst: false })
+          .order("username", { nullsFirst: false })
+          .order("id")
+          .range(start, start + PAGE_SIZE);
+        if (error) throw error;
+        items = (rows ?? []).map((r) => {
+          const displayName = r.full_name?.trim() || r.username?.trim() || "Nuru member";
+          const handle = r.username ? `@${r.username}` : "Choose a username";
+          const description = [handle, r.bio].filter(Boolean).join(" · ");
+          return base(r.id, displayName, description, r.avatar_url);
+        });
+        break;
+      }
       case "reels": {
         let q = supabase
           .from("reels")

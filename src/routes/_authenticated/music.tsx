@@ -52,9 +52,7 @@ const MUSIC_MODES = ["Audio", "Video"] as const;
 type Tab = (typeof TABS)[number];
 type MusicMode = (typeof MUSIC_MODES)[number];
 
-type NowPlaying =
-  | { kind: "youtube-video"; id: string; title: string }
-  | { kind: "youtube-playlist"; id: string; title: string };
+type NowPlaying = { kind: "youtube-playlist"; id: string; title: string };
 
 function MusicScreen() {
   const { userId } = useAuth();
@@ -94,8 +92,25 @@ function MusicScreen() {
   });
 
   const openVideo = (v: YouTubeVideo) => {
-    setSelectedMedia(null);
-    setNowPlaying({ kind: "youtube-video", id: v.youtubeVideoId, title: v.title });
+    setNowPlaying(null);
+    setSelectedMedia({
+      id: `youtube:${v.youtubeVideoId}`,
+      source: "youtube",
+      external_id: v.youtubeVideoId,
+      title: v.title,
+      description: v.description || null,
+      thumbnail_url: v.thumbnail || null,
+      media_type: "music",
+      category: "video",
+      creator_name: v.channelName,
+      youtube_channel_id: v.channelId,
+      church_id: null,
+      audio_url: null,
+      duration_seconds: null,
+      scripture_ref: null,
+      can_download: false,
+      is_featured: false,
+    });
   };
   const openPlaylist = (p: YouTubePlaylist) => {
     setSelectedMedia(null);
@@ -342,9 +357,7 @@ function MusicScreen() {
             </div>
             <YouTubePlayer
               title={nowPlaying.title}
-              {...(nowPlaying.kind === "youtube-video"
-                ? { videoId: nowPlaying.id }
-                : { playlistId: nowPlaying.id })}
+              playlistId={nowPlaying.id}
               autoplay
               muted={false}
             />
@@ -354,11 +367,7 @@ function MusicScreen() {
               title={nowPlaying.title}
               contextType="media"
               contextId={nowPlaying.id}
-              shareUrl={
-                nowPlaying.kind === "youtube-video"
-                  ? `https://www.youtube.com/watch?v=${nowPlaying.id}`
-                  : `https://www.youtube.com/playlist?list=${nowPlaying.id}`
-              }
+              shareUrl={`https://www.youtube.com/playlist?list=${nowPlaying.id}`}
             />
           </div>
         </div>

@@ -5,6 +5,7 @@ import type { Database } from "@/integrations/supabase/types";
 export type ChatMessage = { id: string; sender_id: string; body: string; created_at: string };
 export type MentorMessage = ChatMessage & { mentor_id: string; requester_id: string };
 type GroupMessage = ChatMessage & { group_id: string };
+export type DirectMessage = ChatMessage & { recipient_id: string };
 type Table<Row extends ChatMessage> = {
   Row: Row;
   Insert: Omit<Row, "created_at">;
@@ -16,6 +17,7 @@ type ChatDatabase = {
     Tables: Database["public"]["Tables"] & {
       mentor_chat_messages: Table<MentorMessage>;
       group_chat_messages: Table<GroupMessage>;
+      direct_messages: Table<DirectMessage>;
     };
     Functions: Database["public"]["Functions"] & {
       create_chat_group: {
@@ -29,8 +31,26 @@ type ChatDatabase = {
   };
 };
 const chat = supabase as unknown as SupabaseClient<ChatDatabase>;
-export type ChatTarget = { mentor: string; requester: string } | { group: string };
+export type ChatTarget =
+  | { mentor: string; requester: string }
+  | { group: string }
+  | { user: string };
 export const CHAT_LIMIT = 50;
+
+export type DirectThread = {
+  peer_id: string;
+  body: string;
+  created_at: string;
+  sender_id: string;
+};
+
+export type ChatProfile = {
+  id: string;
+  full_name: string | null;
+  username: string | null;
+  avatar_url: string | null;
+  verified: boolean;
+};
 
 export async function fetchChatMessages(
   target: ChatTarget,
@@ -39,11 +59,18 @@ export async function fetchChatMessages(
   let q =
     "group" in target
       ? chat.from("group_chat_messages").select("*").eq("group_id", target.group)
-      : chat
-          .from("mentor_chat_messages")
-          .select("*")
-          .eq("mentor_id", target.mentor)
-          .eq("requester_id", target.requester);
+      : "user" in target
+        ? chat
+            .from("direct_messages")
+            .select("*")
+            .or(
+              `and(sender_id.eq.${(await supabase.auth.getUser()).data.user?.id ?? "00000000-0000-0000-0000-000000000000"},recipient_id.eq.${target.user}),and(sender_id.eq.${target.user},recipient_id.eq.${(await supabase.auth.getUser()).data.user?.id ?? "00000000-0000-0000-0000-000000000000"})`,
+            )
+        : chat
+            .from("mentor_chat_messages")
+            .select("*")
+            .eq("mentor_id", target.mentor)
+            .eq("requester_id", target.requester);
   if (before)
     q = q.or(
       `created_at.lt.${before.created_at},and(created_at.eq.${before.created_at},id.lt.${before.id})`,
@@ -53,7 +80,7 @@ export async function fetchChatMessages(
     .order("id", { ascending: false })
     .limit(CHAT_LIMIT);
   if (error) throw new Error("Couldn't load messages. Please retry.");
-  return (data ?? []).reverse();
+  return (data ?? []).reverse() as ChatMessage[];
 }
 
 export async function sendChatMessage(
@@ -68,12 +95,39 @@ export async function sendChatMessage(
   const { error } =
     "group" in target
       ? await chat.from("group_chat_messages").insert({ ...row, group_id: target.group })
-      : await chat
-          .from("mentor_chat_messages")
-          .insert({ ...row, mentor_id: target.mentor, requester_id: target.requester });
+      : "user" in target
+        ? await chat.from("direct_messages").insert({ ...row, recipient_id: target.user })
+        : await chat
+            .from("mentor_chat_messages")
+            .insert({ ...row, mentor_id: target.mentor, requester_id: target.requester });
   // A retry of the same UUID cannot deliver the message twice.
   if (error && error.code !== "23505")
     throw new Error("Message wasn't confirmed. Check your connection and retry.");
+}
+
+export async function fetchDirectThreads(userId: string) {
+  const { data, error } = await chat
+    .from("direct_messages")
+    .select("*")
+    .or(`sender_id.eq.${userId},recipient_id.eq.${userId}`)
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
+    .limit(500);
+  if (error) throw new Error("Couldn't load direct conversations.");
+
+  const threads = new Map<string, DirectThread>();
+  for (const message of data ?? []) {
+    const peerId = message.sender_id === userId ? message.recipient_id : message.sender_id;
+    if (!threads.has(peerId)) {
+      threads.set(peerId, {
+        peer_id: peerId,
+        body: message.body,
+        created_at: message.created_at,
+        sender_id: message.sender_id,
+      });
+    }
+  }
+  return [...threads.values()];
 }
 
 export async function fetchMentorThreads() {
@@ -92,15 +146,20 @@ export async function fetchMentorThreads() {
   return threads;
 }
 
-export async function fetchChatNames(ids: string[]) {
-  if (!ids.length) return {} as Record<string, string>;
+export async function fetchChatProfiles(ids: string[]) {
+  if (!ids.length) return {} as Record<string, ChatProfile>;
   const { data, error } = await supabase
     .from("profiles")
-    .select("id,full_name,username")
+    .select("id,full_name,username,avatar_url,verified")
     .in("id", [...new Set(ids)]);
-  if (error) throw new Error("Couldn't load participant names.");
+  if (error) throw new Error("Couldn't load participant profiles.");
+  return Object.fromEntries((data ?? []).map((profile) => [profile.id, profile]));
+}
+
+export async function fetchChatNames(ids: string[]) {
+  const profiles = await fetchChatProfiles(ids);
   return Object.fromEntries(
-    (data ?? []).map((p) => [p.id, p.full_name || p.username || "Nuru member"]),
+    Object.values(profiles).map((p) => [p.id, p.full_name || p.username || "Nuru member"]),
   );
 }
 

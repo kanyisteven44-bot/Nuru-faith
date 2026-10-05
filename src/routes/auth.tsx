@@ -6,8 +6,8 @@ import { Loader2, Lock, Mail, Phone, User as UserIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { NuruMark } from "@/components/nuru/Logo";
-import { MfaChallenge, MfaSecurityPanel } from "@/components/nuru/MfaSecurity";
-import { getMfaRequirement, newPasswordError } from "@/lib/accountSecurity";
+import { newPasswordError } from "@/lib/accountSecurity";
+import { authAvailability } from "@/lib/authAvailability.functions";
 
 const searchSchema = z.object({
   mode: z.enum(["login", "signup", "forgot", "mfa", "mfa-setup"]).optional().default("login"),
@@ -51,38 +51,43 @@ function AuthPage() {
   const [otpSent, setOtpSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [providers, setProviders] = useState<{
+    google: boolean | null;
+    phone: boolean | null;
+  } | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    void authAvailability()
+      .then((flags) => {
+        if (active) setProviders(flags);
+      })
+      .catch(() => {
+        if (active) setProviders({ google: null, phone: null });
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (mode === "mfa" || mode === "mfa-setup") return;
 
-    void supabase.auth.getSession().then(async ({ data }) => {
-      if (!data.session) return;
-      const requirement = await getMfaRequirement().catch(() => "none" as const);
-      if (requirement === "challenge") {
-        void navigate({ to: "/auth", search: { mode: "mfa" }, replace: true });
-      } else if (requirement === "setup") {
-        void navigate({ to: "/auth", search: { mode: "mfa-setup" }, replace: true });
-      } else {
-        void navigate({ to: "/home", replace: true });
-      }
+    void supabase.auth.getSession().then(({ data }) => {
+      if (data.session) void navigate({ to: "/home", replace: true });
     });
   }, [navigate, mode]);
 
   async function continueAfterSignIn(fallback: "/home" | "/onboarding") {
-    const requirement = await getMfaRequirement();
-    if (requirement === "challenge") {
-      void navigate({ to: "/auth", search: { mode: "mfa" }, replace: true });
-      return;
-    }
-    if (requirement === "setup") {
-      void navigate({ to: "/auth", search: { mode: "mfa-setup" }, replace: true });
-      return;
-    }
+    // Temporary owner-requested bypass: keep normal Supabase authentication,
+    // but do not force MFA enrollment/challenge while the factor flow is repaired.
     void navigate({ to: fallback, replace: true });
   }
 
   async function submitEmail(e: React.FormEvent) {
     e.preventDefault();
+    setAuthError(null);
     setBusy(true);
     try {
       if (mode === "forgot") {
@@ -128,7 +133,9 @@ function AuthPage() {
         await continueAfterSignIn("/home");
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Something went wrong");
+      const message = err instanceof Error ? err.message : "Something went wrong";
+      setAuthError(message);
+      toast.error(message);
     } finally {
       setBusy(false);
     }
@@ -176,11 +183,13 @@ function AuthPage() {
   }
 
   async function google() {
+    setAuthError(null);
     setBusy(true);
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
+          skipBrowserRedirect: true,
           redirectTo: `${window.location.origin}/auth-callback`,
           queryParams: {
             access_type: "offline",
@@ -195,28 +204,16 @@ function AuthPage() {
       // with skipBrowserRedirect in a future release.
       window.location.assign(data.url);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Sign-in isn't available right now");
+      const message = err instanceof Error ? err.message : "Sign-in isn't available right now";
+      setAuthError(message);
+      toast.error(message);
       setBusy(false);
     }
   }
 
-  if (mode === "mfa") {
-    return (
-      <AuthSecurityShell>
-        <MfaChallenge onSuccess={() => void navigate({ to: "/home", replace: true })} />
-      </AuthSecurityShell>
-    );
-  }
-
-  if (mode === "mfa-setup") {
-    return (
-      <AuthSecurityShell>
-        <MfaSecurityPanel
-          required
-          onReady={() => void navigate({ to: "/home", replace: true })}
-        />
-      </AuthSecurityShell>
-    );
+  if (mode === "mfa" || mode === "mfa-setup") {
+    void navigate({ to: "/home", replace: true });
+    return null;
   }
 
   return (
@@ -225,7 +222,7 @@ function AuthPage() {
         <div className="flex flex-col items-center pt-4 text-center">
           <NuruMark className="h-16 w-16" />
           <h1 className="mt-4 font-display text-[26px] leading-none font-bold tracking-tight">
-            Nuru <span className="text-cyan">Faith</span>
+            Nuru <span className="text-leaf">Faith</span>
           </h1>
           <p className="mt-2 text-[12px] tracking-wide text-secondary-foreground">
             Connect • Grow • Live Your Faith
@@ -289,12 +286,12 @@ function AuthPage() {
           <div className="nuru-card mt-6 space-y-3 p-5 text-sm text-secondary-foreground">
             <p className="font-display text-base font-semibold text-foreground">Check your email</p>
             <p>
-              We sent a link to <span className="text-cyan">{email}</span>. Open it on this device
+              We sent a link to <span className="text-leaf">{email}</span>. Open it on this device
               to continue.
             </p>
             <button
               type="button"
-              className="text-cyan hover:underline"
+              className="text-leaf hover:underline"
               onClick={() => {
                 setSent(false);
                 void navigate({ to: "/auth", search: { mode: "login" } });
@@ -320,7 +317,7 @@ function AuthPage() {
             <Link
               to="/auth"
               search={{ mode: "login" }}
-              className="block pt-1 text-center text-[13px] text-cyan hover:underline"
+              className="block pt-1 text-center text-[13px] text-leaf hover:underline"
             >
               Back to sign in
             </Link>
@@ -329,12 +326,17 @@ function AuthPage() {
           <>
             <button
               type="button"
-              disabled={busy}
+              disabled={busy || !providers || providers.google === false}
               onClick={() => void google()}
               className="mt-6 flex min-h-12 w-full items-center justify-center gap-3 rounded-xl bg-white text-sm font-semibold text-slate-900 transition-opacity hover:opacity-95 disabled:opacity-60"
             >
               <GoogleGlyph /> Continue with Google
             </button>
+            {providers?.google === false && (
+              <p role="status" className="mt-2 text-center text-xs text-muted-foreground">
+                Google sign-in is not enabled yet. Use email and password to continue.
+              </p>
+            )}
 
             <div className="flex items-center gap-3 py-4">
               <span className="h-px flex-1 bg-border" />
@@ -354,6 +356,9 @@ function AuthPage() {
                 <button
                   key={m.value}
                   type="button"
+                  disabled={
+                    busy || (m.value === "phone" && (!providers || providers.phone === false))
+                  }
                   onClick={() => setMethod(m.value)}
                   className={cn(
                     "flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-[13px] font-semibold transition-colors",
@@ -362,10 +367,23 @@ function AuthPage() {
                       : "text-muted-foreground hover:text-secondary-foreground",
                   )}
                 >
-                  <m.icon className="h-4 w-4 text-cyan" /> {m.label}
+                  <m.icon className="h-4 w-4 text-leaf" /> {m.label}
                 </button>
               ))}
             </div>
+            {providers?.phone === false && (
+              <p className="mt-2 text-center text-xs text-muted-foreground">
+                SMS sign-in is not enabled yet.
+              </p>
+            )}
+            {authError && (
+              <p
+                role="alert"
+                className="mt-3 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-foreground"
+              >
+                {authError}
+              </p>
+            )}
 
             {method === "email" ? (
               <form onSubmit={submitEmail} className="mt-4 space-y-3">
@@ -416,7 +434,7 @@ function AuthPage() {
                   <Link
                     to="/auth"
                     search={{ mode: "forgot" }}
-                    className="block pt-1 text-center text-[13px] text-cyan hover:underline"
+                    className="block pt-1 text-center text-[13px] text-leaf hover:underline"
                   >
                     Forgot password?
                   </Link>
@@ -476,7 +494,7 @@ function AuthPage() {
                       setOtpSent(false);
                       setOtp("");
                     }}
-                    className="block w-full pt-1 text-center text-[13px] text-cyan hover:underline"
+                    className="block w-full pt-1 text-center text-[13px] text-leaf hover:underline"
                   >
                     Use a different number
                   </button>
@@ -556,7 +574,6 @@ function GoogleGlyph() {
     </svg>
   );
 }
-
 
 function AuthSecurityShell({ children }: { children: React.ReactNode }) {
   return (

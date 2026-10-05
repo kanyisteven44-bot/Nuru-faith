@@ -37,6 +37,7 @@ export function useRotatingMedia(
   }, [pool, slot, surfaceKey]);
 }
 
+// Banners and topic covers resolve to the bundled photographer-sourced library.
 export const NURU_PHOTO_POOLS = {
   home: [
     "asset:mountain-dawn",
@@ -45,40 +46,22 @@ export const NURU_PHOTO_POOLS = {
     "asset:cross-sunrise",
     "asset:bible-candle",
     "asset:quiet-night",
-    "asset:topic-faith-purpose",
-    "asset:topic-hope-healing",
   ],
   bible: [
     "asset:bible-candle",
-    "asset:topic-faith",
     "asset:cross-sunrise",
+    "asset:church-interior",
     "asset:quiet-night",
     "asset:mountain-dawn",
-    "asset:topic-discipleship",
-    "asset:topic-prayer",
-    "asset:topic-faith-purpose",
   ],
-  music: [
-    "asset:worship-night",
+  music: ["asset:worship-night", "asset:church-interior"],
+  courses: [
+    "asset:walk-purpose",
+    "asset:bible-candle",
+    "asset:mountain-dawn",
     "asset:church-interior",
     "asset:friends-dusk",
     "asset:cross-sunrise",
-    "asset:mountain-dawn",
-    "asset:quiet-night",
-    "asset:topic-faith",
-    "asset:topic-hope-healing",
-  ],
-  courses: [
-    "asset:walk-purpose",
-    "asset:topic-discipleship",
-    "asset:topic-faith",
-    "asset:topic-prayer",
-    "asset:topic-personal-growth",
-    "asset:topic-relationships",
-    "asset:topic-life-skills",
-    "asset:topic-faith-purpose",
-    "asset:topic-hope-healing",
-    "asset:friends-dusk",
   ],
   eventsFallback: [
     "asset:church-interior",
@@ -86,6 +69,5 @@ export const NURU_PHOTO_POOLS = {
     "asset:friends-dusk",
     "asset:cross-sunrise",
     "asset:mountain-dawn",
-    "asset:topic-faith",
   ],
 } as const;

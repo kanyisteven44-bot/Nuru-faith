@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { BadgeCheck, MessageCircle, Phone, UserRound } from "lucide-react";
 import { toast } from "sonner";
@@ -84,21 +84,21 @@ function MentorDetail() {
                 className="h-28 w-28 rounded-full object-cover ring-2 ring-border-strong"
               />
             ) : (
-              <span className="flex h-28 w-28 items-center justify-center rounded-full border border-border-strong bg-surface-2 text-cyan">
+              <span className="flex h-28 w-28 items-center justify-center rounded-full border border-border-strong bg-surface-2 text-leaf">
                 <UserRound className="h-10 w-10" />
               </span>
             )}
             <span className="mt-3 flex items-center gap-1.5">
               <h1 className="font-display text-xl font-bold">{mentor.data.display_name}</h1>
               {mentor.data.verified && (
-                <BadgeCheck className="h-4.5 w-4.5 text-cyan" aria-label="Verified mentor" />
+                <BadgeCheck className="h-4.5 w-4.5 text-leaf" aria-label="Verified mentor" />
               )}
             </span>
             {mentor.data.role_title && (
               <p className="text-sm text-muted-foreground">{mentor.data.role_title}</p>
             )}
             {mentor.data.church_name && (
-              <p className="text-xs text-cyan">{mentor.data.church_name}</p>
+              <p className="text-xs text-leaf">{mentor.data.church_name}</p>
             )}
 
             {(mentor.data.specialties ?? []).length > 0 && (
@@ -112,6 +112,15 @@ function MentorDetail() {
             )}
           </section>
 
+          {mentor.data.user_id && mentor.data.user_id !== userId && (
+            <Link
+              to="/messages"
+              search={{ mentor: id }}
+              className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-primary-foreground"
+            >
+              <MessageCircle className="h-4.5 w-4.5" /> Message in Nuru
+            </Link>
+          )}
           {mentor.data.phone_number && (
             <section className="grid grid-cols-2 gap-3">
               <a

@@ -79,7 +79,7 @@ function GoogleAuthCallback() {
           </>
         ) : (
           <>
-            <Loader2 className="mx-auto mt-5 h-6 w-6 animate-spin text-cyan" />
+            <Loader2 className="mx-auto mt-5 h-6 w-6 animate-spin text-leaf" />
             <h1 className="mt-3 font-display text-xl font-semibold">Finishing your sign-in</h1>
             <p className="mt-2 text-sm text-muted-foreground">
               Please wait while Google returns you to Nuru Faith.

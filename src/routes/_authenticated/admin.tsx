@@ -28,6 +28,7 @@ import {
 import { CardSkeleton, ComingSoon, EmptyState, SectionHeader } from "@/components/nuru/Primitives";
 import { NuruLogo } from "@/components/nuru/Logo";
 import { MusicCatalogImport } from "@/components/youtube/MusicCatalogImport";
+import { MusicSourceDiscovery } from "@/components/youtube/MusicSourceDiscovery";
 import { getPilotMetrics } from "@/lib/pilot.functions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
@@ -156,6 +157,7 @@ function AdminScreen() {
       </header>
 
       <main className="mx-auto max-w-5xl space-y-8 px-6 py-8">
+        {(isSuper || isModerator) && <MusicSourceDiscovery />}
         {(isSuper || isModerator) && <MusicCatalogImport />}
         <div>
           <h1 className="font-display text-2xl font-semibold">Nuru operations dashboard</h1>

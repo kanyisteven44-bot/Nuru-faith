@@ -29,33 +29,37 @@ export function initialsOf(name: string): string {
   );
 }
 
-/** Hues that sit comfortably on the app's deep navy ground. */
-const HUES = [210, 225, 250, 270, 290, 320, 340, 160, 185, 30];
+/**
+ * The five avatar grounds the design system defines — forest, clay, olive,
+ * sky and rose — each with the ink that sits on it. A person always lands on
+ * the same one because it is picked from the hash of their id.
+ */
+const GROUNDS = [
+  { bg: "#2E4A37", ink: "#DDEFE2", ring: "rgba(134,194,154,.3)" },
+  { bg: "#6E3A28", ink: "#FBE3D8", ring: "rgba(224,142,109,.35)" },
+  { bg: "#27413A", ink: "#CFEBDD", ring: "rgba(134,194,154,.3)" },
+  { bg: "#1C3A4E", ink: "#D3ECFA", ring: "rgba(127,211,255,.3)" },
+  { bg: "#4E2A33", ink: "#F4D2DA", ring: "rgba(238,139,123,.3)" },
+] as const;
 
 export function generatedAvatar(seed: string, name: string): string {
   const h = hash(seed || name || "nuru");
-  const hue = HUES[h % HUES.length]!;
-  const hue2 = HUES[(h >> 8) % HUES.length]!;
-  const angle = h % 360;
+  const g = GROUNDS[h % GROUNDS.length]!;
   const initials = initialsOf(name);
 
+  // Flat ground with a soft top-left lift, matching the system's avatars.
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96">
 <defs>
-<linearGradient id="g" gradientTransform="rotate(${angle} 0.5 0.5)">
-<stop offset="0" stop-color="hsl(${hue} 85% 62%)"/>
-<stop offset="1" stop-color="hsl(${hue2} 80% 42%)"/>
-</linearGradient>
-<radialGradient id="s" cx="32%" cy="26%" r="62%">
-<stop offset="0" stop-color="#ffffff" stop-opacity="0.45"/>
+<radialGradient id="s" cx="34%" cy="26%" r="70%">
+<stop offset="0" stop-color="#ffffff" stop-opacity="0.10"/>
 <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
 </radialGradient>
 </defs>
-<rect width="96" height="96" fill="url(#g)"/>
-<circle cx="30" cy="24" r="34" fill="url(#s)"/>
-<circle cx="76" cy="82" r="26" fill="hsl(${hue2} 80% 30%)" opacity="0.35"/>
-<text x="48" y="49" text-anchor="middle" dominant-baseline="central"
- font-family="Outfit, ui-sans-serif, system-ui, sans-serif" font-size="36" font-weight="600"
- fill="#ffffff" fill-opacity="0.95">${initials}</text>
+<rect width="96" height="96" fill="${g.bg}"/>
+<rect width="96" height="96" fill="url(#s)"/>
+<text x="48" y="50" text-anchor="middle" dominant-baseline="central"
+ font-family="Manrope, ui-sans-serif, system-ui, sans-serif" font-size="34" font-weight="800"
+ letter-spacing="0.5" fill="${g.ink}">${initials}</text>
 </svg>`;
 
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;

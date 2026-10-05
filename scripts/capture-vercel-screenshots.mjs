@@ -2,7 +2,10 @@ import { chromium } from "playwright";
 import fs from "node:fs/promises";
 import path from "node:path";
 
-const BASE = "https://nuru-faith-vortiqora.vercel.app";
+const BASE = (process.env.NURU_QA_BASE ?? "https://nuru-faith-vortiqora.vercel.app").replace(
+  /\/$/,
+  "",
+);
 const OUT = "screenshots-vercel";
 await fs.mkdir(OUT, { recursive: true });
 
@@ -52,9 +55,11 @@ await capture("05-reset-password", "/reset-password");
 const email = process.env.NURU_QA_EMAIL;
 const password = process.env.NURU_QA_PASSWORD;
 if (!email || !password) {
-  console.log("SKIP_PROTECTED: set NURU_QA_EMAIL and NURU_QA_PASSWORD to capture signed-in screens");
+  console.log(
+    "SKIP_PROTECTED: set NURU_QA_EMAIL and NURU_QA_PASSWORD to capture signed-in screens",
+  );
   await browser.close();
-  process.exit(0);
+  process.exit(2);
 }
 
 await page.goto(BASE + "/auth?mode=login", { waitUntil: "domcontentloaded", timeout: 45000 });
@@ -62,15 +67,22 @@ await page.waitForTimeout(1200);
 await page.getByPlaceholder("you@email.com").fill(email);
 await page.locator('input[type="password"]').fill(password);
 await page.getByRole("button", { name: "Sign In" }).click();
-await page.waitForFunction(() => location.pathname === "/onboarding" || location.pathname === "/home", { timeout: 30000 }).catch(() => {});
+await page
+  .waitForFunction(() => location.pathname === "/onboarding" || location.pathname === "/home", {
+    timeout: 30000,
+  })
+  .catch(() => {});
 await page.waitForTimeout(1500);
 
 if (!page.url().includes("/onboarding") && !page.url().includes("/home")) {
   console.log("AUTH_UNEXPECTED_URL", page.url());
   await page.screenshot({ path: path.join(OUT, "06-login-unexpected-state.png"), fullPage: true });
-  await fs.writeFile(path.join(OUT, "AUTH_FAILED.txt"), "Unexpected post-login URL: " + page.url() + "\\n");
+  await fs.writeFile(
+    path.join(OUT, "AUTH_FAILED.txt"),
+    "Unexpected post-login URL: " + page.url() + "\\n",
+  );
   await browser.close();
-  process.exit(0);
+  process.exit(1);
 }
 
 // Capture real onboarding before completing it.
@@ -81,14 +93,14 @@ if (page.url().includes("/onboarding")) {
   const nameInput = page.locator("#ob-name");
   if (await nameInput.count()) await nameInput.fill("Nuru Vercel QA");
   const userInput = page.locator("#ob-user");
-  if (await userInput.count()) await userInput.fill("nuru_vercel_qa_" + email.match(/[0-9]{10,}/)[0].slice(-6));
+  if (await userInput.count()) await userInput.fill("nuru_vercel_qa_" + Date.now().toString(36));
 
   await page.getByRole("button", { name: "Continue" }).click();
   await page.waitForTimeout(500);
   await page.getByRole("button", { name: "Continue" }).click();
   await page.waitForTimeout(500);
 
-  const interestButtons = page.locator('button[aria-pressed]');
+  const interestButtons = page.locator("button[aria-pressed]");
   const count = await interestButtons.count();
   for (let i = 0; i < Math.min(3, count); i++) await interestButtons.nth(i).click();
 
@@ -123,12 +135,41 @@ const protectedRoutes = [
   ["27-messages", "/messages", 2200],
   ["28-notifications", "/notifications", 2200],
   ["29-create", "/create", 2200],
-  ["30-admin", "/admin", 2200],
+  ["31-grow", "/grow", 2800],
+  ["32-faith-courses", "/faith-courses", 2800],
+  ["33-faith-course-lesson", "/faith-courses/understanding-baptism", 2800],
 ];
 
+let failed = false;
 for (const [name, route, wait] of protectedRoutes) {
-  await capture(name, route, wait);
+  const captured = await capture(name, route, wait);
+  if (!captured || new URL(page.url()).pathname !== route) {
+    console.log("PROTECTED_ROUTE_FAILED", name, page.url());
+    failed = true;
+  } else if (!(await page.locator("body").innerText()).trim()) {
+    console.log("PROTECTED_ROUTE_EMPTY", name);
+    failed = true;
+  }
+}
+
+// Verify lesson progress survives a reload, then restore the QA account's state.
+await page.goto(BASE + "/faith-courses/understanding-baptism", { waitUntil: "domcontentloaded" });
+try {
+  const mark = page.getByRole("button", { name: "Mark lesson complete" });
+  const complete = page.getByRole("button", { name: "Lesson completed ✓" });
+  await page.getByText("Course progress").waitFor();
+  const wasCompleted = await complete.isVisible();
+  await (wasCompleted ? complete : mark).click();
+  await page.waitForTimeout(500);
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await (wasCompleted ? mark : complete).waitFor({ timeout: 15000 });
+  await (wasCompleted ? mark : complete).click();
+  console.log("COURSE_PROGRESS_PERSISTS_AFTER_RELOAD");
+} catch (error) {
+  console.log("COURSE_PROGRESS_FAILED", error?.message ?? String(error));
+  failed = true;
 }
 
 await browser.close();
 console.log("DONE", OUT);
+if (failed) process.exitCode = 1;

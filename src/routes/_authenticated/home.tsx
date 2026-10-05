@@ -83,8 +83,9 @@ function HomeScreen() {
   });
 
   useEffect(() => {
-    if (profile.data && profile.data.onboarded === false)
+    if (profile.data && profile.data.onboarded === false) {
       void navigate({ to: "/onboarding", replace: true });
+    }
   }, [profile.data, navigate]);
 
   const reference = verse.data?.reference ?? verseOfTheDayRef();

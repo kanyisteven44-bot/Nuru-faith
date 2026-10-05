@@ -1,8 +1,6 @@
-import { CoverImage } from "@/components/nuru/CoverImage";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { BookOpen, ChevronRight, GraduationCap, Sparkles, Sunrise } from "lucide-react";
+import { BookOpen, ChevronRight, GraduationCap, Sunrise } from "lucide-react";
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
-import { NURU_PHOTO_POOLS, useRotatingMedia } from "@/lib/rotatingMedia";
 
 export const Route = createFileRoute("/_authenticated/grow")({
   head: () => ({
@@ -10,84 +8,73 @@ export const Route = createFileRoute("/_authenticated/grow")({
       { title: "Learning — Nuru Faith" },
       {
         name: "description",
-        content: "Courses, daily devotionals and Scripture Series in one learning hub.",
+        content: "Courses, devotionals and Scripture Series in one learning hub.",
       },
     ],
   }),
   component: GrowScreen,
 });
 
-function GrowScreen() {
-  const hero = useRotatingMedia(NURU_PHOTO_POOLS.courses, "grow-hub");
+const LEARNING_OPTIONS = [
+  {
+    to: "/faith-courses",
+    label: "Courses",
+    eyebrow: "Structured learning",
+    description: "Lesson-by-lesson learning for faith, discipleship, prayer and Christian living.",
+    icon: BookOpen,
+    tone: "text-primary bg-primary/10 border-primary/25",
+  },
+  {
+    to: "/devotionals",
+    label: "Devotions",
+    eyebrow: "Daily",
+    description: "Short Bible-centred readings for prayer, reflection and everyday faith.",
+    icon: Sunrise,
+    tone: "text-growth bg-growth/10 border-growth/25",
+  },
+  {
+    to: "/series",
+    label: "Series",
+    eyebrow: "Deep study",
+    description: "Multi-session Scripture studies with teaching, reflection, prayer and action.",
+    icon: GraduationCap,
+    tone: "text-warning bg-warning/10 border-warning/25",
+  },
+] as const;
 
+function GrowScreen() {
   return (
     <AppShell>
       <ScreenHeader title="Learning" subtitle="Courses, devotions and Scripture Series" />
 
-      <div className="space-y-5 px-4 pb-6">
-        <section className="nuru-card relative h-48 overflow-hidden">
-          <CoverImage src={hero} alt="" className="absolute inset-0 h-full w-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-r from-background via-background/78 to-background/20" />
-          <div className="relative flex h-full max-w-[80%] flex-col justify-end p-4">
-            <p className="text-[10px] font-bold tracking-[0.15em] text-leaf uppercase">
-              Grow in Scripture
-            </p>
-            <h1 className="mt-1 font-display text-2xl font-bold text-white">
-              One place for daily reflection and deeper study.
-            </h1>
-          </div>
-        </section>
-
-        <Link to="/devotionals" className="nuru-card flex items-center gap-4 p-4 active:opacity-90">
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl nuru-disc">
-            <Sunrise className="h-6 w-6" />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-[10px] font-bold tracking-[0.14em] text-growth uppercase">
-              Daily
-            </span>
-            <span className="mt-0.5 block font-display text-lg font-bold">Devotionals</span>
-            <span className="mt-1 block text-[12px] leading-relaxed text-muted-foreground">
-              Short Bible-centred readings for prayer, reflection and everyday faith.
-            </span>
-          </span>
-          <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
-        </Link>
-
-        <Link to="/series" className="nuru-card flex items-center gap-4 p-4 active:opacity-90">
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl nuru-disc nuru-disc-sand">
-            <GraduationCap className="h-6 w-6" />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-[10px] font-bold tracking-[0.14em] text-warning uppercase">
-              Deep study
-            </span>
-            <span className="mt-0.5 block font-display text-lg font-bold">Scripture Series</span>
-            <span className="mt-1 block text-[12px] leading-relaxed text-muted-foreground">
-              Multi-session studies with context, teaching, reflection, prayer and action.
-            </span>
-          </span>
-          <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
-        </Link>
-
-        <Link
-          to="/faith-courses"
-          className="relative overflow-hidden rounded-2xl border border-primary/30 bg-primary/10 p-4 active:opacity-90"
-        >
-          <div className="flex items-start gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-primary/30 bg-primary/10 text-leaf">
-              <Sparkles className="h-5 w-5" />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-sm font-semibold">Need structured learning?</span>
-              <span className="mt-1 block text-[12px] leading-relaxed text-muted-foreground">
-                Faith Courses turns topics like baptism, prayer and discipleship into
-                lesson-by-lesson learning.
+      <div className="mx-auto w-full max-w-3xl px-4 pb-8 pt-2">
+        <div className="grid gap-4">
+          {LEARNING_OPTIONS.map(({ to, label, eyebrow, description, icon: Icon, tone }) => (
+            <Link
+              key={to}
+              to={to}
+              className="nuru-card flex min-h-28 items-center gap-4 p-4 transition-transform active:scale-[0.99]"
+            >
+              <span
+                className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border ${tone}`}
+              >
+                <Icon className="h-6 w-6" />
               </span>
-            </span>
-            <BookOpen className="h-4 w-4 shrink-0 text-leaf" />
-          </div>
-        </Link>
+
+              <span className="min-w-0 flex-1">
+                <span className="block text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                  {eyebrow}
+                </span>
+                <span className="mt-0.5 block font-display text-xl font-bold">{label}</span>
+                <span className="mt-1 block text-[12px] leading-relaxed text-muted-foreground">
+                  {description}
+                </span>
+              </span>
+
+              <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+            </Link>
+          ))}
+        </div>
       </div>
     </AppShell>
   );

@@ -1,40 +1,35 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 
-export type ChatMessage = { id: string; sender_id: string; body: string; created_at: string };
-export type MentorMessage = ChatMessage & { mentor_id: string; requester_id: string };
-type GroupMessage = ChatMessage & { group_id: string };
-export type DirectMessage = ChatMessage & { recipient_id: string };
-type Table<Row extends ChatMessage> = {
-  Row: Row;
-  Insert: Omit<Row, "created_at">;
-  Update: never;
-  Relationships: [];
+type DirectRow = Database["public"]["Tables"]["direct_messages"]["Row"];
+type GroupRow = Database["public"]["Tables"]["group_chat_messages"]["Row"];
+type MentorRow = Database["public"]["Tables"]["mentor_chat_messages"]["Row"];
+
+export type MessageType = "text" | "voice" | "sticker";
+
+export type ChatMessage = {
+  id: string;
+  sender_id: string;
+  body: string;
+  created_at: string;
+  message_type: MessageType;
+  attachment_path: string | null;
+  attachment_duration_ms: number | null;
+  sticker_code: string | null;
+  delivered_at: string | null;
+  read_at: string | null;
 };
-type ChatDatabase = {
-  public: Omit<Database["public"], "Tables" | "Views" | "Functions"> & {
-    Tables: Database["public"]["Tables"] & {
-      mentor_chat_messages: Table<MentorMessage>;
-      group_chat_messages: Table<GroupMessage>;
-      direct_messages: Table<DirectMessage>;
-    };
-    Functions: Database["public"]["Functions"] & {
-      create_chat_group: {
-        Args: { group_name: string; group_description: string };
-        Returns: string;
-      };
-    };
-    Views: Database["public"]["Views"] & {
-      mentor_chat_threads: { Row: MentorMessage; Relationships: [] };
-    };
-  };
+
+export type MentorMessage = ChatMessage & {
+  mentor_id: string;
+  requester_id: string;
 };
-const chat = supabase as unknown as SupabaseClient<ChatDatabase>;
+
 export type ChatTarget =
   | { mentor: string; requester: string }
   | { group: string }
   | { user: string; self: string };
+
 export const CHAT_LIMIT = 50;
 
 export type DirectThread = {
@@ -42,6 +37,9 @@ export type DirectThread = {
   body: string;
   created_at: string;
   sender_id: string;
+  message_type: MessageType;
+  delivered_at: string | null;
+  read_at: string | null;
 };
 
 export type ChatProfile = {
@@ -52,35 +50,85 @@ export type ChatProfile = {
   verified: boolean;
 };
 
+export type SendMessageOptions = {
+  messageType?: MessageType;
+  attachmentPath?: string | null;
+  attachmentDurationMs?: number | null;
+  stickerCode?: string | null;
+};
+
+function normalizeMessage(row: DirectRow | GroupRow | MentorRow): ChatMessage {
+  const rich = row as DirectRow | GroupRow;
+  return {
+    id: row.id,
+    sender_id: row.sender_id,
+    body: row.body,
+    created_at: row.created_at,
+    message_type: ("message_type" in rich ? rich.message_type : "text") as MessageType,
+    attachment_path: "attachment_path" in rich ? rich.attachment_path : null,
+    attachment_duration_ms:
+      "attachment_duration_ms" in rich ? rich.attachment_duration_ms : null,
+    sticker_code: "sticker_code" in rich ? rich.sticker_code : null,
+    delivered_at: "delivered_at" in rich ? rich.delivered_at : null,
+    read_at: "read_at" in rich ? rich.read_at : null,
+  };
+}
+
 export async function fetchChatMessages(
   target: ChatTarget,
   before?: Pick<ChatMessage, "created_at" | "id">,
 ) {
-  let q =
-    "group" in target
-      ? chat.from("group_chat_messages").select("*").eq("group_id", target.group)
-      : "user" in target
-        ? chat
-            .from("direct_messages")
-            .select("*")
-            .or(
-              `and(sender_id.eq.${target.self},recipient_id.eq.${target.user}),and(sender_id.eq.${target.user},recipient_id.eq.${target.self})`,
-            )
-        : chat
-            .from("mentor_chat_messages")
-            .select("*")
-            .eq("mentor_id", target.mentor)
-            .eq("requester_id", target.requester);
-  if (before)
+  if ("group" in target) {
+    let q = supabase.from("group_chat_messages").select("*").eq("group_id", target.group);
+    if (before) {
+      q = q.or(
+        `created_at.lt.${before.created_at},and(created_at.eq.${before.created_at},id.lt.${before.id})`,
+      );
+    }
+    const { data, error } = await q
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .limit(CHAT_LIMIT);
+    if (error) throw new Error("Couldn't load messages. Please retry.");
+    return (data ?? []).reverse().map(normalizeMessage);
+  }
+
+  if ("user" in target) {
+    let q = supabase
+      .from("direct_messages")
+      .select("*")
+      .or(
+        `and(sender_id.eq.${target.self},recipient_id.eq.${target.user}),and(sender_id.eq.${target.user},recipient_id.eq.${target.self})`,
+      );
+    if (before) {
+      q = q.or(
+        `created_at.lt.${before.created_at},and(created_at.eq.${before.created_at},id.lt.${before.id})`,
+      );
+    }
+    const { data, error } = await q
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .limit(CHAT_LIMIT);
+    if (error) throw new Error("Couldn't load messages. Please retry.");
+    return (data ?? []).reverse().map(normalizeMessage);
+  }
+
+  let q = supabase
+    .from("mentor_chat_messages")
+    .select("*")
+    .eq("mentor_id", target.mentor)
+    .eq("requester_id", target.requester);
+  if (before) {
     q = q.or(
       `created_at.lt.${before.created_at},and(created_at.eq.${before.created_at},id.lt.${before.id})`,
     );
+  }
   const { data, error } = await q
     .order("created_at", { ascending: false })
     .order("id", { ascending: false })
     .limit(CHAT_LIMIT);
   if (error) throw new Error("Couldn't load messages. Please retry.");
-  return (data ?? []).reverse() as ChatMessage[];
+  return (data ?? []).reverse().map(normalizeMessage);
 }
 
 export async function sendChatMessage(
@@ -88,25 +136,116 @@ export async function sendChatMessage(
   senderId: string,
   body: string,
   id: string,
+  options: SendMessageOptions = {},
 ) {
+  const messageType = options.messageType ?? "text";
   const text = body.trim();
-  if (!text || text.length > 2000) throw new Error("Write a message of up to 2,000 characters.");
-  const row = { id, sender_id: senderId, body: text };
-  const { error } =
-    "group" in target
-      ? await chat.from("group_chat_messages").insert({ ...row, group_id: target.group })
-      : "user" in target
-        ? await chat.from("direct_messages").insert({ ...row, recipient_id: target.user })
-        : await chat
-            .from("mentor_chat_messages")
-            .insert({ ...row, mentor_id: target.mentor, requester_id: target.requester });
-  // A retry of the same UUID cannot deliver the message twice.
-  if (error && error.code !== "23505")
+  if (!text || text.length > 2000) {
+    throw new Error("Write a message of up to 2,000 characters.");
+  }
+
+  if ("group" in target) {
+    const { error } = await supabase.from("group_chat_messages").insert({
+      id,
+      group_id: target.group,
+      sender_id: senderId,
+      body: text,
+      message_type: messageType,
+      attachment_path: options.attachmentPath ?? null,
+      attachment_duration_ms: options.attachmentDurationMs ?? null,
+      sticker_code: options.stickerCode ?? null,
+    });
+    if (error && error.code !== "23505") {
+      throw new Error("Message wasn't confirmed. Check your connection and retry.");
+    }
+    return;
+  }
+
+  if ("user" in target) {
+    const { error } = await supabase.from("direct_messages").insert({
+      id,
+      sender_id: senderId,
+      recipient_id: target.user,
+      body: text,
+      message_type: messageType,
+      attachment_path: options.attachmentPath ?? null,
+      attachment_duration_ms: options.attachmentDurationMs ?? null,
+      sticker_code: options.stickerCode ?? null,
+    });
+    if (error && error.code !== "23505") {
+      throw new Error("Message wasn't confirmed. Check your connection and retry.");
+    }
+    return;
+  }
+
+  if (messageType !== "text") {
+    throw new Error("Voice notes and stickers are available in people and group chats.");
+  }
+  const { error } = await supabase.from("mentor_chat_messages").insert({
+    id,
+    sender_id: senderId,
+    body: text,
+    mentor_id: target.mentor,
+    requester_id: target.requester,
+  });
+  if (error && error.code !== "23505") {
     throw new Error("Message wasn't confirmed. Check your connection and retry.");
+  }
+}
+
+export async function uploadVoiceNote(
+  target: ChatTarget,
+  senderId: string,
+  blob: Blob,
+) {
+  if ("mentor" in target) throw new Error("Voice notes are not available in mentor chats yet.");
+  const extension = blob.type.includes("ogg") ? "ogg" : blob.type.includes("mp4") ? "m4a" : "webm";
+  const id = crypto.randomUUID();
+  const path =
+    "group" in target
+      ? `group/${target.group}/${senderId}/${id}.${extension}`
+      : `direct/${senderId}/${target.user}/${id}.${extension}`;
+  const { error } = await supabase.storage.from("chat-media").upload(path, blob, {
+    contentType: blob.type || "audio/webm",
+    upsert: false,
+  });
+  if (error) throw new Error("Couldn't upload the voice note. Please try again.");
+  return path;
+}
+
+export async function removeChatMedia(path: string) {
+  await supabase.storage.from("chat-media").remove([path]);
+}
+
+export async function createChatMediaSignedUrl(path: string) {
+  const { data, error } = await supabase.storage.from("chat-media").createSignedUrl(path, 60 * 60);
+  if (error || !data?.signedUrl) throw new Error("Couldn't load this voice note.");
+  return data.signedUrl;
+}
+
+export async function markDirectMessagesDelivered(userId: string) {
+  const now = new Date().toISOString();
+  const { error } = await supabase
+    .from("direct_messages")
+    .update({ delivered_at: now })
+    .eq("recipient_id", userId)
+    .is("delivered_at", null);
+  if (error) throw new Error(error.message);
+}
+
+export async function markDirectThreadRead(userId: string, peerId: string) {
+  const now = new Date().toISOString();
+  const { error } = await supabase
+    .from("direct_messages")
+    .update({ delivered_at: now, read_at: now })
+    .eq("recipient_id", userId)
+    .eq("sender_id", peerId)
+    .is("read_at", null);
+  if (error) throw new Error(error.message);
 }
 
 export async function fetchDirectThreads(userId: string) {
-  const { data, error } = await chat
+  const { data, error } = await supabase
     .from("direct_messages")
     .select("*")
     .or(`sender_id.eq.${userId},recipient_id.eq.${userId}`)
@@ -124,6 +263,9 @@ export async function fetchDirectThreads(userId: string) {
         body: message.body,
         created_at: message.created_at,
         sender_id: message.sender_id,
+        message_type: message.message_type as MessageType,
+        delivered_at: message.delivered_at,
+        read_at: message.read_at,
       });
     }
   }
@@ -133,14 +275,20 @@ export async function fetchDirectThreads(userId: string) {
 export async function fetchMentorThreads() {
   const threads: MentorMessage[] = [];
   for (let offset = 0; ; offset += 500) {
-    const { data, error } = await chat
+    const { data, error } = await supabase
       .from("mentor_chat_threads")
       .select("*")
       .order("created_at", { ascending: false })
       .order("id", { ascending: false })
       .range(offset, offset + 499);
     if (error) throw new Error("Couldn't load conversations.");
-    threads.push(...(data ?? []));
+    threads.push(
+      ...(data ?? []).map((row) => ({
+        ...normalizeMessage(row as MentorRow),
+        mentor_id: row.mentor_id!,
+        requester_id: row.requester_id!,
+      })),
+    );
     if (!data || data.length < 500) break;
   }
   return threads;
@@ -164,7 +312,7 @@ export async function fetchChatNames(ids: string[]) {
 }
 
 export async function createChatGroup(name: string, description: string) {
-  const { data, error } = await chat.rpc("create_chat_group", {
+  const { data, error } = await supabase.rpc("create_chat_group", {
     group_name: name.trim(),
     group_description: description.trim(),
   });

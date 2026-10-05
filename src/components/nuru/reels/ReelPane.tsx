@@ -445,20 +445,20 @@ export function ReelPane(props: ReelPaneProps) {
           </div>
 
           <div className="min-w-0 flex-1">
-            <ReelFaithActions
-              hasScripture={!!reel.scripture_ref}
-              onRead={props.onRead}
-              onPray={props.onPray}
-              onAskAi={props.onAskAi}
-              onDiscuss={props.onDiscuss}
+            <ReelCaption
+              reel={reel}
+              isFollowing={props.isFollowing}
+              canFollow={!props.isMine && !!reel.author_id}
+              onFollow={props.onFollow}
+              onOpenScripture={props.onRead}
             />
-            <div className="mt-2">
-              <ReelCaption
-                reel={reel}
-                isFollowing={props.isFollowing}
-                canFollow={!props.isMine && !!reel.author_id}
-                onFollow={props.onFollow}
-                onOpenScripture={props.onRead}
+            <div className="mt-3">
+              <ReelFaithActions
+                hasScripture={!!reel.scripture_ref}
+                onRead={props.onRead}
+                onPray={props.onPray}
+                onAskAi={props.onAskAi}
+                onDiscuss={props.onDiscuss}
               />
             </div>
           </div>

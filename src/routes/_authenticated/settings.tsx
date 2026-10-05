@@ -29,6 +29,7 @@ import { z } from "zod";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell, BoardHeader } from "@/components/nuru/AppShell";
+import { AccountSecurityPanel } from "@/components/nuru/AccountSecurityPanel";
 import { MfaSecurityPanel } from "@/components/nuru/MfaSecurity";
 import { ProfileSettingsPanel } from "@/components/nuru/ProfileSettingsPanel";
 import { useAuth } from "@/hooks/useAuth";
@@ -51,7 +52,7 @@ export const Route = createFileRoute("/_authenticated/settings")({
   component: SettingsScreen,
 });
 
-const COMPANY_EMAIL = "tech@gmail.co.ke.com";
+const COMPANY_EMAIL = "vortiqoratechn@gmail.com";
 const HELPLINES = [
   { display: "+254 117 499 067", tel: "+254117499067", wa: "254117499067" },
   { display: "+254 116 096 909", tel: "+254116096909", wa: "254116096909" },
@@ -101,8 +102,12 @@ function SettingsScreen() {
   }
 
   async function logOut() {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast.error("Could not sign out. Please retry.");
+      return;
+    }
     qc.clear();
-    await supabase.auth.signOut();
     void navigate({ to: "/auth", search: { mode: "login" }, replace: true });
   }
 
@@ -148,11 +153,11 @@ function SettingsScreen() {
           <Panel>
             <h3 className="font-display text-lg font-semibold">Privacy & Security</h3>
             <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-              Manage multi-factor authentication for this account. Staff accounts require the
-              stronger AAL2 security level before protected administrative changes are accepted.
+              Change your password, manage two-factor authentication or delete your account.
             </p>
             <div className="mt-4">
               <MfaSecurityPanel required={staffMfaRequired} />
+              <AccountSecurityPanel />
             </div>
           </Panel>
         )}
@@ -190,7 +195,9 @@ function SettingsScreen() {
                     <span className="block text-[15px] font-semibold">{label}</span>
                     <span className="block truncate text-[12.5px] text-ink-3">{hint}</span>
                   </span>
-                  {active && <Check className="h-4.5 w-4.5 shrink-0 text-primary" strokeWidth={2.4} />}
+                  {active && (
+                    <Check className="h-4.5 w-4.5 shrink-0 text-primary" strokeWidth={2.4} />
+                  )}
                 </label>
               );
             })}
@@ -214,7 +221,9 @@ function SettingsScreen() {
               <Languages className="h-5 w-5 text-primary" />
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-semibold">English</span>
-                <span className="block text-xs text-muted-foreground">Current interface language</span>
+                <span className="block text-xs text-muted-foreground">
+                  Current interface language
+                </span>
               </span>
               <Check className="h-4 w-4 text-primary" />
             </div>
@@ -335,9 +344,16 @@ function SettingsScreen() {
             </div>
 
             <div className="mt-5 rounded-xl border border-border bg-surface-2 p-4 text-xs leading-relaxed text-muted-foreground">
-              <p><strong className="text-foreground">Company:</strong> Vortiqora Technologies</p>
-              <p className="mt-1"><strong className="text-foreground">Email:</strong> {COMPANY_EMAIL}</p>
-              <p className="mt-1"><strong className="text-foreground">Helpline:</strong> {HELPLINES.map((line) => line.display).join(" · ")}</p>
+              <p>
+                <strong className="text-foreground">Company:</strong> Vortiqora Technologies
+              </p>
+              <p className="mt-1">
+                <strong className="text-foreground">Email:</strong> {COMPANY_EMAIL}
+              </p>
+              <p className="mt-1">
+                <strong className="text-foreground">Helpline:</strong>{" "}
+                {HELPLINES.map((line) => line.display).join(" · ")}
+              </p>
             </div>
           </Panel>
         )}

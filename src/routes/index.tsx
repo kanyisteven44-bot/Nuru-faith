@@ -1,9 +1,6 @@
-import { CoverImage } from "@/components/nuru/CoverImage";
-import { resolveMedia } from "@/lib/media";
 import { useEffect } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { NuruMark } from "@/components/nuru/Logo";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -49,37 +46,5 @@ function Splash() {
       clearTimeout(timer);
     };
   }, [navigate]);
-
-  return (
-    <div className="relative min-h-dvh overflow-hidden bg-background">
-      <CoverImage
-        src={resolveMedia("asset:mountain-dawn")}
-        alt=""
-        width={1024}
-        height={640}
-        className="absolute inset-0 h-full w-full object-cover opacity-55"
-      />
-      <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/45 to-background" />
-
-      <div className="relative mx-auto flex min-h-dvh max-w-xl flex-col items-center justify-center px-8 text-center">
-        <NuruMark className="h-24 w-24" />
-
-        <h1 className="mt-6 font-display text-[40px] leading-none font-bold tracking-tight">
-          Nuru <span className="text-leaf">Faith</span>
-        </h1>
-        <p className="mt-3 text-[13px] tracking-wide text-secondary-foreground">
-          Connect • Grow • Live Your Faith
-        </p>
-
-        <p className="script mt-10 text-3xl leading-snug text-leaf/95">
-          Faith Today
-          <br />A Brighter Tomorrow
-        </p>
-
-        <p className="absolute inset-x-0 bottom-10 text-xs text-muted-foreground">
-          A generation for more.
-        </p>
-      </div>
-    </div>
-  );
+  return <div className="min-h-dvh bg-[#07111f]" aria-label="Opening Nuru Faith" />;
 }

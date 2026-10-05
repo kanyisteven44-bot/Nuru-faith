@@ -182,7 +182,7 @@ function RootComponent() {
         <Outlet />
         <Toaster position="top-center" />
         <OfflineNotice />
-        <SplashScreen />
+        <SplashScreen initialOnly />
       </ThemeProvider>
     </QueryClientProvider>
   );

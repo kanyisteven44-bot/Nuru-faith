@@ -22,9 +22,11 @@ const ARCH = "M40 244V124C40 74 68 38 100 12C132 38 160 74 160 124V244";
 /** Lightweight CSS 3D: no video, generated photo, WebGL or external asset. */
 export function SplashScreen({
   preview = false,
+  initialOnly = false,
   onComplete,
 }: {
   preview?: boolean;
+  initialOnly?: boolean;
   onComplete?: () => void;
 }) {
   const { loading } = useAuth();
@@ -51,7 +53,12 @@ export function SplashScreen({
 
   useEffect(() => {
     // The public preview owns its own scene; avoid two overlapping openings.
-    if (!preview && (window.location.pathname === "/opening" || alreadyShown())) {
+    if (
+      !preview &&
+      (window.location.pathname === "/opening" ||
+        (initialOnly && window.location.pathname !== "/") ||
+        alreadyShown())
+    ) {
       setStage("gone");
       return;
     }
@@ -71,7 +78,7 @@ export function SplashScreen({
       clearTimeout(min);
       clearTimeout(max);
     };
-  }, [preview, exit]);
+  }, [preview, initialOnly, exit]);
 
   useEffect(() => {
     if (!preview && stage === "playing" && minElapsed.current && !loading) exit();

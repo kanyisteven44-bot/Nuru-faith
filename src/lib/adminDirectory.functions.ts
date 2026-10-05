@@ -29,11 +29,19 @@ export const getAdminDirectory = createServerFn({ method: "GET" })
       context.supabase.from("mentors").select("id", { count: "exact", head: true }),
       // Only an aggregate count leaves the server; conversation contents are never read.
       (async () => {
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        return supabaseAdmin.from("ai_conversations").select("id", { count: "exact", head: true });
+        if (!process.env["SUPABASE_SERVICE_ROLE_KEY"]) return { count: null };
+        try {
+          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+          const result = await supabaseAdmin
+            .from("ai_conversations")
+            .select("id", { count: "exact", head: true });
+          return { count: result.error ? null : result.count };
+        } catch {
+          return { count: null };
+        }
       })(),
     ]);
-    for (const response of [users, churches, mentors, conversations])
+    for (const response of [users, churches, mentors])
       if (response.error) throw new Error(response.error.message);
     if (data.churchId) {
       const members = await context.supabase
@@ -124,9 +132,9 @@ export const createAdminDirectoryEntry = createServerFn({ method: "POST" })
       if (result.error) throw new Error(result.error.message);
       return result.data;
     }
-    // Mentor insertion has no permissive RLS policy. Privileged insert is narrowly
-    // gated by the fresh database role lookup, AAL2 and validated fields above.
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // Use the authenticated client; the mentor insert policy independently
+    // requires Super Admin, AAL2 and an unverified existing member profile.
+    const supabaseAdmin = context.supabase;
     const existing = await supabaseAdmin
       .from("profiles")
       .select("id")

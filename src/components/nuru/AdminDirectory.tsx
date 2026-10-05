@@ -44,7 +44,7 @@ export function AdminDirectory({
       {directory.isPending && <p role="status">Loading directory…</p>}
       {directory.isError && (
         <p role="alert">
-          Directory could not load.{" "}
+          Directory could not load: {directory.error.message}.{" "}
           <button className="underline" onClick={() => void directory.refetch()}>
             Try again
           </button>

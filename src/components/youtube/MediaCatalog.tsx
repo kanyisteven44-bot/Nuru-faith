@@ -31,7 +31,13 @@ export function MediaCatalog({
       fetchMediaCatalog({ mediaType, query, language, videoOnly, page: pageParam }),
     getNextPageParam: (page, pages) => (page.hasMore ? pages.length : undefined),
   });
-  const items = catalog.data?.pages.flatMap((page) => page.items) ?? [];
+  // Imports can shift offset pages between requests; render each saved item once.
+  const items = Array.from(
+    new Map(
+      catalog.data?.pages.flatMap((page) => page.items.map((item) => [item.id, item] as const)),
+    ).values(),
+  );
+  const total = Math.max(0, ...(catalog.data?.pages.map((page) => page.total) ?? []));
   const { hasNextPage, isFetchingNextPage, isFetchNextPageError, fetchNextPage } = catalog;
   useEffect(() => {
     const marker = nextPageMarker.current;
@@ -66,8 +72,8 @@ export function MediaCatalog({
         </h2>
         {catalog.data && (
           <span className="text-xs text-muted-foreground" role="status" aria-live="polite">
-            {items.length.toLocaleString()} of{" "}
-            {(catalog.data.pages[0]?.total ?? 0).toLocaleString()} {query ? "matches" : "available"}
+            {items.length.toLocaleString()} of {total.toLocaleString()}{" "}
+            {query ? "matches" : "available"}
           </span>
         )}
       </div>
@@ -141,8 +147,9 @@ export function MediaCatalog({
       )}
       {catalog.data && !catalog.hasNextPage && items.length > 0 && (
         <p className="text-xs text-muted-foreground" role="status">
-          All {items.length.toLocaleString()} {query ? "matching" : "available"}{" "}
-          {mediaType === "music" ? "songs" : "episodes"} are displayed.
+          {items.length >= total
+            ? `All ${items.length.toLocaleString()} ${query ? "matching" : "available"} ${mediaType === "music" ? "songs" : "episodes"} are displayed.`
+            : "The catalogue changed while you were browsing. Refresh to see the latest collection."}
         </p>
       )}
       {catalog.isFetchNextPageError && (

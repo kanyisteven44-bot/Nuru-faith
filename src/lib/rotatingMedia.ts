@@ -37,8 +37,7 @@ export function useRotatingMedia(
   }, [pool, slot, surfaceKey]);
 }
 
-// Large rotating banners use the 1024px library originals. Topic illustrations
-// are thumbnail-sized and stay with their corresponding content cards.
+// Banners and topic covers resolve to the bundled photographer-sourced library.
 export const NURU_PHOTO_POOLS = {
   home: [
     "asset:mountain-dawn",
@@ -55,13 +54,7 @@ export const NURU_PHOTO_POOLS = {
     "asset:quiet-night",
     "asset:mountain-dawn",
   ],
-  music: [
-    "asset:worship-night",
-    "asset:church-interior",
-    "asset:friends-dusk",
-    "asset:cross-sunrise",
-    "asset:quiet-night",
-  ],
+  music: ["asset:worship-night", "asset:church-interior"],
   courses: [
     "asset:walk-purpose",
     "asset:bible-candle",

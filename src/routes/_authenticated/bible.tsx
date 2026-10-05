@@ -1,4 +1,6 @@
 import { CoverImage } from "@/components/nuru/CoverImage";
+import { BibleReadAloud } from "@/components/nuru/BibleReadAloud";
+import { resolveMedia } from "@/lib/media";
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -11,10 +13,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Highlighter,
+  BookOpen,
   Search,
   Share2,
-  Layers,
-  SlidersHorizontal,
   Sparkles,
   SquarePen,
   Trash2,
@@ -26,9 +27,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { NEW_TESTAMENT, OLD_TESTAMENT, type BibleBook } from "@/lib/bible";
 import { fetchChapterPassage } from "@/lib/bibleChapter";
 import { BIBLE_TOPICS } from "@/lib/content-policy";
+import { fetchReadingPlans } from "@/services/content";
 import {
   fetchAllHighlights,
   fetchHighlights,
+  fetchSeries,
   fetchSavedScriptures,
   HIGHLIGHT_COLORS,
   removeHighlight,
@@ -36,13 +39,13 @@ import {
   saveScripture,
   setHighlight,
   type HighlightColor,
+  type SeriesRow,
 } from "@/services/series";
 import { useShareSheet } from "@/hooks/useShareSheet";
 import { BOOK_ART, bookAbbr } from "@/lib/bookArt";
-import { AppShell } from "@/components/nuru/AppShell";
-import { CardSkeleton, EmptyState, PillTabs } from "@/components/nuru/Primitives";
+import { AppShell, BrandBar } from "@/components/nuru/AppShell";
+import { CardSkeleton, EmptyState, PillTabs, PrimaryButton } from "@/components/nuru/Primitives";
 import { Sheet } from "@/components/nuru/Sheet";
-import { NURU_PHOTO_POOLS, useRotatingMedia } from "@/lib/rotatingMedia";
 
 const ALL_BOOKS: BibleBook[] = [...OLD_TESTAMENT, ...NEW_TESTAMENT];
 
@@ -62,7 +65,7 @@ export const Route = createFileRoute("/_authenticated/bible")({
   component: BibleScreen,
 });
 
-const TABS = ["Books", "Topics", "Highlights", "My Notes"] as const;
+const TABS = ["Books", "Topics", "Highlights", "Notes"] as const;
 type Tab = (typeof TABS)[number];
 type ReaderTarget = { book: BibleBook; chapter: number };
 
@@ -71,7 +74,10 @@ function BibleScreen() {
   const [reader, setReader] = useState<ReaderTarget | null>(null);
   const [book, setBook] = useState<BibleBook | null>(null);
   const [query, setQuery] = useState("");
-  const bibleHero = useRotatingMedia(NURU_PHOTO_POOLS.bible, "bible-hero");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [testament, setTestament] = useState<"Old" | "New">("Old");
+  /** What the jump-back row offers — the last book opened this session. */
+  const [lastBook, setLastBook] = useState<BibleBook>(OLD_TESTAMENT[0]!);
 
   if (reader)
     return (
@@ -92,71 +98,75 @@ function BibleScreen() {
       />
     );
 
+  const openBook = (b: BibleBook) => {
+    setLastBook(b);
+    setBook(b);
+  };
+
   const match = (b: BibleBook) => b.name.toLowerCase().includes(query.trim().toLowerCase());
+
+  const testamentBooks = (testament === "Old" ? OLD_TESTAMENT : NEW_TESTAMENT).filter(match);
 
   return (
     <AppShell>
-      <header className="relative overflow-hidden">
-        <CoverImage
-          src={bibleHero}
-          loading="eager"
-          alt=""
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-background via-background/85 to-background/30" />
-        <div className="relative flex items-start justify-between gap-3 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-5">
-          <div>
-            <h1 className="font-display text-[34px] leading-none font-bold tracking-tight">
-              Bible
-            </h1>
-            <p className="mt-1.5 text-[13px] text-secondary-foreground">
-              Read <span className="text-muted-foreground">•</span> Learn{" "}
-              <span className="text-muted-foreground">•</span>{" "}
-              <span className="text-cyan">Grow</span>{" "}
-              <span className="text-muted-foreground">•</span> Live
-            </p>
-          </div>
-          <p className="script max-w-[7.5rem] text-right text-[22px] leading-[1.1] text-white/90">
-            Grow
-            <span className="block text-[17px]">in His Word</span>
-          </p>
-        </div>
-      </header>
+      <BrandBar />
 
-      <div className="space-y-3 px-4 pb-1">
-        <div className="relative">
-          <Search className="pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search books, topics or verses…"
-            aria-label="Search the Bible"
-            className="input-nuru pr-12 pl-11"
-          />
-          <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 rounded-lg bg-surface-2 p-1.5 text-cyan">
-            <SlidersHorizontal className="h-4 w-4" />
-          </span>
+      <div className="px-4">
+        {/* Serif title with the search control beside it, per the board. */}
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="font-display text-[40px] leading-none">Bible</h1>
+          <button
+            type="button"
+            onClick={() => setSearchOpen((v) => !v)}
+            aria-label={searchOpen ? "Close search" : "Search the Bible"}
+            aria-expanded={searchOpen}
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border-strong bg-[linear-gradient(180deg,#143254,#0C2440)] text-ink-2"
+          >
+            {searchOpen ? <X className="h-4.5 w-4.5" /> : <Search className="h-4.5 w-4.5" />}
+          </button>
         </div>
-        <PillTabs tabs={TABS} value={tab} onChange={setTab} />
+
+        {searchOpen && (
+          <div className="relative mt-3">
+            <Search className="pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-ink-3" />
+            <input
+              autoFocus
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search books, topics or verses…"
+              aria-label="Search the Bible"
+              className="input-nuru pl-11"
+            />
+          </div>
+        )}
+
+        {/* Jump straight back into the book last opened. */}
+        <button
+          type="button"
+          onClick={() => setBook(lastBook)}
+          className="mt-4 flex w-full items-center gap-3 rounded-2xl border border-border bg-[linear-gradient(180deg,#12304F,#0D2541)] p-2.5 text-left"
+        >
+          <span className="nuru-disc h-10 w-10">
+            <BookOpen className="h-[18px] w-[18px]" strokeWidth={1.9} />
+          </span>
+          <span className="min-w-0 flex-1 truncate font-display text-[19px]">{lastBook.name}</span>
+          <ChevronDown className="h-4 w-4 shrink-0 text-ink-3" strokeWidth={2} />
+        </button>
+
+        <Segmented
+          className="mt-3"
+          options={["Old Testament", "New Testament"]}
+          value={testament === "Old" ? "Old Testament" : "New Testament"}
+          onChange={(v) => setTestament(v === "Old Testament" ? "Old" : "New")}
+        />
+
+        <PillTabs className="mt-3" tabs={TABS} value={tab} onChange={setTab} />
       </div>
 
       {tab === "Books" && (
-        <div className="px-4 pt-3">
-          <VerseOfTheDay onOpen={(reference) => openTopicReference(reference, setReader)} />
-          <Testament
-            title="Old Testament"
-            caption="From creation to the coming Messiah"
-            books={OLD_TESTAMENT.filter(match)}
-            total={OLD_TESTAMENT.length}
-            onOpen={setBook}
-          />
-          <Testament
-            title="New Testament"
-            caption="The life of Jesus and the early church"
-            books={NEW_TESTAMENT.filter(match)}
-            total={NEW_TESTAMENT.length}
-            onOpen={setBook}
-          />
+        <div className="px-4 pt-4">
+          <ReadingPlans />
+          <Testament books={testamentBooks} onOpen={openBook} />
         </div>
       )}
 
@@ -173,7 +183,7 @@ function BibleScreen() {
               >
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-semibold">{t.title}</span>
-                  <span className="block truncate text-[11px] text-cyan">{t.reference}</span>
+                  <span className="block truncate text-[11px] text-leaf">{t.reference}</span>
                 </span>
               </button>
             </li>
@@ -185,7 +195,7 @@ function BibleScreen() {
         <MyHighlights onOpen={(reference) => openTopicReference(reference, setReader)} />
       )}
 
-      {tab === "My Notes" && (
+      {tab === "Notes" && (
         <SavedVerses onOpen={(reference) => openTopicReference(reference, setReader)} />
       )}
     </AppShell>
@@ -238,77 +248,157 @@ async function fetchScripturePassage(reference: string) {
 }
 
 /** The verse card the design puts above the book list. */
-function VerseOfTheDay({ onOpen }: { onOpen: (reference: string) => void }) {
-  const reference = "Psalm 119:105";
-  const verseArt = useRotatingMedia(NURU_PHOTO_POOLS.bible, "bible-verse-card");
+/** Design system v2 segmented control: a capsule with one filled option. */
+function Segmented({
+  options,
+  value,
+  onChange,
+  className,
+}: {
+  options: readonly string[];
+  value: string;
+  onChange: (v: string) => void;
+  className?: string;
+}) {
   return (
-    <section className="nuru-card relative mb-6 overflow-hidden">
-      <CoverImage
-        src={verseArt}
-        alt=""
-        className="absolute inset-y-0 right-0 h-full w-1/2 object-cover"
-      />
-      <div className="absolute inset-0 bg-gradient-to-r from-[#04244d] via-[#04244d]/90 to-transparent" />
-      <div className="relative max-w-[62%] p-4">
-        <p className="text-[10px] font-semibold tracking-[0.18em] text-muted-foreground uppercase">
-          Verse of the day
-        </p>
-        <blockquote className="mt-2">
-          <p className="font-display text-[17px] leading-snug font-bold text-white">
-            “Your word is a lamp to my feet and a light to my path.”
-          </p>
-          <cite className="mt-1.5 block text-[12px] text-white/70 not-italic">{reference}</cite>
-        </blockquote>
-        <button
-          type="button"
-          onClick={() => onOpen(reference)}
-          className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-full bg-primary px-4 text-[12px] font-semibold text-primary-foreground nuru-glow-sm"
+    <div
+      role="tablist"
+      className={cn(
+        "inline-flex w-full gap-0.5 rounded-full border border-border bg-[#0C2440] p-1",
+        className,
+      )}
+    >
+      {options.map((o) => {
+        const active = o === value;
+        return (
+          <button
+            key={o}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            onClick={() => onChange(o)}
+            className={cn(
+              "h-9 flex-1 rounded-full text-[13px] font-bold transition-colors",
+              active
+                ? "nuru-raise bg-[linear-gradient(180deg,var(--forest-hi),var(--primary))] text-foreground"
+                : "text-ink-3 hover:text-ink-2",
+            )}
+          >
+            {o}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * The board's "Reading plans" strip. Rather than invent plans, this shows the
+ * Scripture Series that already exist in the library — real multi-session
+ * studies — in the board's photo-card treatment.
+ */
+/** The columns the plan strip needs from a reading_plans row. */
+type ReadingPlanRow = {
+  id: string;
+  title: string;
+  description: string | null;
+  days: number | null;
+  cover_url: string | null;
+};
+
+function ReadingPlans() {
+  // The real reading plans lead; published series fill the strip out. Both
+  // are actual library rows — nothing here is a placeholder plan.
+  const plans = useQuery({ queryKey: ["reading-plans"], queryFn: fetchReadingPlans });
+  const series = useQuery({
+    queryKey: ["series", "reading-plans"],
+    queryFn: () => fetchSeries(undefined, undefined, 0, 2),
+  });
+
+  const cards: {
+    key: string;
+    title: string;
+    caption: string | null;
+    cover: string | null;
+    to: { to: "/devotionals" } | { to: "/series/$slug"; params: { slug: string } };
+  }[] = [
+    ...(plans.data ?? []).map((p: ReadingPlanRow) => ({
+      key: `plan-${p.id}`,
+      title: p.title,
+      caption: p.days ? `A ${p.days}-day journey` : p.description,
+      cover: p.cover_url,
+      to: { to: "/devotionals" as const },
+    })),
+    ...(series.data ?? []).map((s: SeriesRow) => ({
+      key: `series-${s.id}`,
+      title: s.title,
+      caption: s.description,
+      cover: s.cover_image,
+      to: { to: "/series/$slug" as const, params: { slug: s.slug } },
+    })),
+  ].slice(0, 2);
+
+  if (plans.isLoading || series.isLoading) return <CardSkeleton count={2} height="h-[104px]" />;
+  if (cards.length === 0) return null;
+
+  return (
+    <section className="mb-6">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <h2 className="font-display text-[22px] leading-none">Reading plans</h2>
+        <Link
+          to="/series"
+          className="flex shrink-0 items-center gap-1 text-[13px] font-semibold text-ink-2"
         >
-          Read Now <ArrowRight className="h-3.5 w-3.5" />
-        </button>
+          View all
+          <ChevronRight className="h-4 w-4" strokeWidth={2} />
+        </Link>
       </div>
+      <ul className="space-y-2.5">
+        {cards.map((c) => (
+          <li key={c.key}>
+            <Link
+              {...c.to}
+              className="relative block overflow-hidden rounded-2xl border border-border"
+            >
+              <CoverImage
+                src={resolveMedia(c.cover)}
+                alt=""
+                className="h-[104px] w-full object-cover"
+              />
+              <span className="absolute inset-0 bg-[linear-gradient(to_right,rgba(17,23,21,0.92),rgba(17,23,21,0.55)_65%,rgba(17,23,21,0.25))]" />
+              <span className="absolute inset-0 flex items-center gap-3 px-4 text-white">
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-display text-[21px] leading-tight">
+                    {c.title}
+                  </span>
+                  {c.caption && (
+                    <span className="mt-0.5 block truncate text-[12px] text-white/85">
+                      {c.caption}
+                    </span>
+                  )}
+                </span>
+                <span className="nuru-disc nuru-disc-terra h-10 w-10 shrink-0">
+                  <ArrowRight className="h-[18px] w-[18px]" strokeWidth={2.2} />
+                </span>
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }
 
-const TESTAMENT_PREVIEW = 8;
+const TESTAMENT_PREVIEW = 10;
 
-function Testament({
-  title,
-  caption,
-  books,
-  total,
-  onOpen,
-}: {
-  title: string;
-  caption: string;
-  books: BibleBook[];
-  total: number;
-  onOpen: (b: BibleBook) => void;
-}) {
+/** The book list for whichever testament the segmented control has selected. */
+function Testament({ books, onOpen }: { books: BibleBook[]; onOpen: (b: BibleBook) => void }) {
   const [expanded, setExpanded] = useState(false);
-  if (books.length === 0) return null;
+  if (books.length === 0)
+    return <p className="py-6 text-center text-[13px] text-ink-3">No books match that search.</p>;
   const shown = expanded ? books : books.slice(0, TESTAMENT_PREVIEW);
   return (
     <section className="pb-5">
-      <div className="mb-3 flex items-start gap-2">
-        <Layers className="mt-0.5 h-5 w-5 shrink-0 text-cyan" />
-        <div className="min-w-0 flex-1">
-          <h2 className="font-display text-[19px] font-bold">{title}</h2>
-          <p className="text-[12px] text-muted-foreground">
-            {total} books <span className="px-0.5">•</span> {caption}
-          </p>
-        </div>
-        {books.length > TESTAMENT_PREVIEW && (
-          <button
-            type="button"
-            onClick={() => setExpanded((v) => !v)}
-            className="shrink-0 rounded-xl bg-primary px-3.5 py-2 text-[12px] font-semibold text-primary-foreground"
-          >
-            {expanded ? "Show less" : "View All"}
-          </button>
-        )}
-      </div>
       <ul className="space-y-2">
         {shown.map((b) => {
           const art = BOOK_ART[b.name];
@@ -322,7 +412,7 @@ function Testament({
                 <span className="relative h-14 w-20 shrink-0 overflow-hidden rounded-xl">
                   {art ? (
                     <CoverImage
-                      src={art.art}
+                      src={resolveMedia(art.art)}
                       alt=""
                       loading="lazy"
                       className="h-full w-full object-cover"
@@ -331,29 +421,36 @@ function Testament({
                     <span className="block h-full w-full bg-surface-2" />
                   )}
                   <span
-                    className="absolute top-1/2 left-1/2 flex h-9 w-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-xl text-[12px] font-bold text-white shadow-lg shadow-black/40"
+                    className="absolute top-1/2 left-1/2 flex h-9 w-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full text-[12px] font-bold text-white shadow-lg shadow-black/40"
                     style={{ backgroundColor: art?.badge ?? "var(--surface-2)" }}
                   >
                     {bookAbbr(b.name)}
                   </span>
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[15px] font-semibold">{b.name}</span>
-                  <span className="block text-[12px] text-muted-foreground">
-                    {b.chapters} chapters
+                  <span className="block truncate font-display text-[18px] leading-tight">
+                    {b.name}
                   </span>
+                  <span className="block text-[12px] text-ink-3">{b.chapters} chapters</span>
                   {art && (
-                    <span className="block truncate text-[12px] text-secondary-foreground">
-                      {art.tagline}
-                    </span>
+                    <span className="block truncate text-[12px] text-ink-2">{art.tagline}</span>
                   )}
                 </span>
-                <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+                <ChevronRight className="h-5 w-5 shrink-0 text-ink-3" />
               </button>
             </li>
           );
         })}
       </ul>
+      {books.length > TESTAMENT_PREVIEW && (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="mt-3 h-11 w-full rounded-full border border-border-strong bg-[linear-gradient(180deg,#143254,#0C2440)] text-[13px] font-bold text-ink-2"
+        >
+          {expanded ? "Show fewer books" : `Show all ${books.length} books`}
+        </button>
+      )}
     </section>
   );
 }
@@ -405,8 +502,8 @@ function ChapterTile({
       className={cn(
         "flex h-12 items-center justify-center rounded-xl border text-sm font-bold transition-colors",
         active
-          ? "border-transparent bg-[#f4c453] text-[#2a2314] shadow-[0_4px_14px_-6px_rgba(244,196,83,0.7)]"
-          : "border-black/[0.08] bg-[#f8f2e2] text-[#2a2314] hover:bg-[#f2e9d1]",
+          ? "nuru-raise border-leaf/25 bg-[linear-gradient(180deg,var(--forest-hi),var(--primary))] text-foreground"
+          : "border-border-strong bg-[linear-gradient(180deg,#143254,#0C2440)] text-ink-2 hover:text-foreground",
       )}
     >
       {label}
@@ -588,17 +685,19 @@ function Reader({
           <EmptyState
             title="Couldn't load that passage"
             description="Check your connection and try again."
+            action={<PrimaryButton onClick={() => void passage.refetch()}>Try again</PrimaryButton>}
           />
         )}
         {passage.data && (
-          <div className="rounded-3xl bg-[#f8f2e2] p-5 text-[#2a2314] shadow-lg shadow-black/20">
+          <div className="nuru-card p-5">
+            <BibleReadAloud key={reference} verses={passage.data.verses} />
             <ol className="space-y-3.5">
               {passage.data.verses.map((v) => {
                 const activeColor = highlightByVerse.get(v.verse);
                 const swatch = HIGHLIGHT_COLORS.find((c) => c.key === activeColor);
                 return (
                   <li key={`${v.chapter}:${v.verse}`} className="flex gap-2.5">
-                    <span className="mt-0.5 shrink-0 text-[11px] font-bold text-amber-700">
+                    <span className="mt-0.5 shrink-0 text-[11px] font-bold text-terra-lt">
                       {v.verse}
                     </span>
                     <button
@@ -612,7 +711,7 @@ function Reader({
                       }}
                       className={cn(
                         "flex-1 rounded px-1 text-left font-serif text-[15px] leading-relaxed transition-colors",
-                        swatch ? swatch.bgClass : "hover:bg-black/[0.03]",
+                        swatch ? swatch.bgClass : "hover:bg-white/[0.05]",
                       )}
                     >
                       {v.text}
@@ -621,13 +720,13 @@ function Reader({
                 );
               })}
             </ol>
-            <p className="pt-5 text-[11px] text-[#8a7a52]">{passage.data.translation}</p>
+            <p className="pt-5 text-[11px] text-ink-3">{passage.data.translation}</p>
           </div>
         )}
       </div>
 
       <div className="fixed inset-x-0 bottom-20 z-30 mx-auto max-w-xl px-4">
-        <div className="flex items-center justify-around rounded-2xl border border-black/10 bg-[#f8f2e2] py-2 shadow-lg shadow-black/20 backdrop-blur-xl">
+        <div className="flex items-center justify-around nuru-card border border-border py-2 backdrop-blur-xl">
           <ReaderAction
             icon={Highlighter}
             label="Highlight"
@@ -646,20 +745,16 @@ function Reader({
       {bookSheetOpen && (
         <Sheet title="Choose a book" onClose={() => setBookSheetOpen(false)} label="Choose a book">
           <div className="px-4 pb-4">
+            <h3 className="nuru-eyebrow mb-2">Old Testament</h3>
             <Testament
-              title="Old Testament"
-              caption="From creation to the coming Messiah"
-              total={OLD_TESTAMENT.length}
               books={OLD_TESTAMENT}
               onOpen={(b) => {
                 onNavigate(b, 1);
                 setBookSheetOpen(false);
               }}
             />
+            <h3 className="nuru-eyebrow mb-2">New Testament</h3>
             <Testament
-              title="New Testament"
-              caption="The life of Jesus and the early church"
-              total={NEW_TESTAMENT.length}
               books={NEW_TESTAMENT}
               onOpen={(b) => {
                 onNavigate(b, 1);
@@ -754,7 +849,7 @@ function ReaderAction({
     </>
   );
   const cls =
-    "flex flex-1 flex-col items-center gap-1 text-[#5a4d2f] transition-colors hover:text-[#2a2314]";
+    "flex flex-1 flex-col items-center gap-1 text-ink-3 transition-colors hover:text-foreground";
   if (to)
     return (
       <Link to={to.to} search={to.search} className={cls}>
@@ -810,7 +905,7 @@ function SavedVerses({ onOpen }: { onOpen: (ref: string) => void }) {
             onClick={() => onOpen(s.reference)}
             className="min-w-0 flex-1 text-left"
           >
-            <span className="block truncate text-sm font-semibold text-cyan">{s.reference}</span>
+            <span className="block truncate text-sm font-semibold text-leaf">{s.reference}</span>
             <span className="block text-[11px] text-muted-foreground">
               Saved {new Date(s.created_at).toLocaleDateString()}
             </span>
@@ -819,7 +914,7 @@ function SavedVerses({ onOpen }: { onOpen: (ref: string) => void }) {
             to="/ai"
             search={{ contextType: "verse", contextLabel: s.reference }}
             aria-label={`Ask Nuru AI about ${s.reference}`}
-            className="shrink-0 rounded-full p-2 text-cyan"
+            className="shrink-0 rounded-full p-2 text-leaf"
           >
             <Sparkles className="h-4 w-4" />
           </Link>
@@ -879,7 +974,7 @@ function MyHighlights({ onOpen }: { onOpen: (ref: string) => void }) {
           <li key={h.id} className="nuru-card flex items-center gap-3 px-4 py-3">
             <span
               className="mt-0.5 h-3 w-3 shrink-0 rounded-full"
-              style={{ backgroundColor: swatch?.swatch ?? "#f4c453" }}
+              style={{ backgroundColor: swatch?.swatch ?? "#e6b566" }}
               aria-hidden
             />
             <button
@@ -887,7 +982,7 @@ function MyHighlights({ onOpen }: { onOpen: (ref: string) => void }) {
               onClick={() => onOpen(h.reference)}
               className="min-w-0 flex-1 text-left"
             >
-              <span className="block truncate text-sm font-semibold text-cyan">
+              <span className="block truncate text-sm font-semibold text-leaf">
                 {h.reference}:{h.verse}
               </span>
               <span className="block truncate text-[11px] text-muted-foreground">

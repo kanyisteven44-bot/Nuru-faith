@@ -32,4 +32,3 @@ export async function recordNuruActivity(): Promise<void> {
 
   window.localStorage.setItem(ACTIVITY_KEY, String(now));
 }
-

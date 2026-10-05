@@ -29,7 +29,12 @@ type ProfilePatch = Partial<{
 }>;
 
 export async function updateProfile(userId: string, patch: ProfilePatch) {
-  const { error } = await supabase.from("profiles").update(patch).eq("id", userId);
+  const { error } = await supabase
+    .from("profiles")
+    .update(patch)
+    .eq("id", userId)
+    .select("id")
+    .single();
   if (error) throw new Error(error.message);
 }
 
@@ -67,9 +72,23 @@ export async function fetchInterests(userId: string) {
 /* ---------- churches & groups ---------- */
 
 export const fetchChurches = async (search?: string) => {
-  let q = supabase.from("churches").select("*").order("verified", { ascending: false }).limit(30);
-  if (search) q = q.ilike("name", `%${search}%`);
-  return unwrap(await q);
+  const rows: import("@/integrations/supabase/types").Database["public"]["Tables"]["churches"]["Row"][] =
+    [];
+  for (let start = 0; ; start += 500) {
+    let q = supabase
+      .from("churches")
+      .select("*")
+      .order("region", { nullsFirst: false })
+      .order("city", { nullsFirst: false })
+      .order("denomination", { nullsFirst: false })
+      .order("name")
+      .order("id");
+    if (search) q = q.ilike("name", `%${search}%`);
+    const page = unwrap(await q.range(start, start + 499));
+    rows.push(...page);
+    if (page.length < 500) break;
+  }
+  return rows;
 };
 
 export async function fetchChurchBySlug(slug: string) {
@@ -465,19 +484,91 @@ export const fetchPodcasts = async () =>
 
 /* ---------- prayer & notifications ---------- */
 
-export const fetchPrayerRequests = async () =>
-  unwrap(
+export type PrayerRequestRow = {
+  id: string;
+  body: string;
+  title: string | null;
+  is_anonymous: boolean;
+  created_at: string;
+  /** Whether this is the caller's own request, so they can delete it. */
+  is_mine: boolean;
+};
+
+/**
+ * Prayer requests are read without author identity on purpose. There is no FK
+ * from prayer_requests to profiles (unlike posts and reel_comments), so names
+ * cannot be embedded anyway — and a prayer request is sensitive enough that
+ * attributing one is a product decision, not a default. The caller's own rows
+ * are marked so they can delete them.
+ *
+ * Note the row is still only as private as the table: the SELECT policy is
+ * `USING (true)`, so user_id is reachable by anyone calling the REST API
+ * directly, anonymous rows included. Closing that needs a database-side view.
+ */
+export async function fetchPrayerRequests(userId: string | null): Promise<PrayerRequestRow[]> {
+  const rows = unwrap(
     await supabase
       .from("prayer_requests")
-      .select("*")
+      .select("id, body, title, is_anonymous, created_at, user_id")
       .order("created_at", { ascending: false })
       .limit(30),
-  );
+  ) as {
+    id: string;
+    body: string;
+    title: string | null;
+    is_anonymous: boolean;
+    created_at: string;
+    user_id: string | null;
+  }[];
+
+  return rows.map(({ user_id, ...row }) => ({
+    ...row,
+    is_mine: !!userId && user_id === userId,
+  }));
+}
 
 export async function createPrayerRequest(userId: string, body: string, isAnonymous: boolean) {
   const { error } = await supabase
     .from("prayer_requests")
     .insert({ user_id: userId, body, is_anonymous: isAnonymous });
+  if (error) throw new Error(error.message);
+}
+
+export async function deletePrayerRequest(id: string) {
+  const { error } = await supabase.from("prayer_requests").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+/**
+ * "I prayed for this" lives in prayer_support. Note what this can and cannot
+ * tell you: the table's RLS is `USING (user_id = auth.uid())`, so a SELECT only
+ * ever returns the caller's own rows — there is no way to read how many other
+ * people prayed. prayer_requests.prayer_count is no help either: nothing
+ * maintains it and authenticated has no UPDATE policy on the table. So the UI
+ * shows whether *you* prayed, and no supporter total.
+ */
+export async function fetchMyPrayerSupport(userId: string): Promise<Set<string>> {
+  const { data, error } = await supabase
+    .from("prayer_support")
+    .select("prayer_id")
+    .eq("user_id", userId);
+  if (error) throw new Error(error.message);
+  return new Set((data ?? []).map((row) => row.prayer_id));
+}
+
+export async function addPrayerSupport(userId: string, prayerId: string) {
+  const { error } = await supabase
+    .from("prayer_support")
+    .insert({ user_id: userId, prayer_id: prayerId });
+  if (error && !error.message.includes("duplicate")) throw new Error(error.message);
+}
+
+export async function removePrayerSupport(userId: string, prayerId: string) {
+  const { error } = await supabase
+    .from("prayer_support")
+    .delete()
+    .eq("user_id", userId)
+    .eq("prayer_id", prayerId);
   if (error) throw new Error(error.message);
 }
 
@@ -655,7 +746,6 @@ export async function fetchPeoplePage(userId: string, page: number): Promise<Per
   return (data ?? []) as PersonRow[];
 }
 
-
 /* ---------- moderation ---------- */
 
 export type ModerationItem = {
@@ -734,12 +824,22 @@ export async function updateModerationStatus(
   status: "reviewing" | "resolved" | "dismissed",
 ) {
   const table =
-    source === "report"
-      ? "reports"
-      : source === "reel"
-        ? "reel_reports"
-        : "external_reel_reports";
+    source === "report" ? "reports" : source === "reel" ? "reel_reports" : "external_reel_reports";
 
   const { error } = await supabase.from(table).update({ status }).eq("id", id);
   if (error) throw new Error(error.message);
+}
+
+export async function fetchDevotionalLibrary(search = "", page = 0) {
+  let q = supabase
+    .from("devotionals")
+    .select("*")
+    .lte("publish_date", new Date().toISOString().slice(0, 10))
+    .order("publish_date", { ascending: false })
+    .order("id")
+    .range(page * 24, page * 24 + 23);
+  const term = search.trim().replace(/[%_,()]/g, " ");
+  if (term)
+    q = q.or(`title.ilike.%${term}%,subtitle.ilike.%${term}%,scripture_ref.ilike.%${term}%`);
+  return unwrap(await q);
 }

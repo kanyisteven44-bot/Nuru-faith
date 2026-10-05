@@ -10,10 +10,11 @@ export function CoverImage({
   loading = "lazy",
   decoding = "async",
   onError,
+  fallbackSrc = FALLBACK_IMAGE,
   ...props
-}: ImgHTMLAttributes<HTMLImageElement> & { alt: string }) {
+}: ImgHTMLAttributes<HTMLImageElement> & { alt: string; fallbackSrc?: string }) {
   const [failedSource, setFailedSource] = useState<string | undefined>();
-  const source = !src || failedSource === src ? FALLBACK_IMAGE : src;
+  const source = !src || failedSource === src ? fallbackSrc : src;
 
   return (
     <img
@@ -24,7 +25,7 @@ export function CoverImage({
       decoding={decoding}
       className={cn("bg-surface-2 object-cover object-[50%_45%]", className)}
       onError={(event) => {
-        if (source !== FALLBACK_IMAGE) setFailedSource(src);
+        if (source !== fallbackSrc) setFailedSource(src);
         onError?.(event);
       }}
     />

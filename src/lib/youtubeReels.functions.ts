@@ -80,7 +80,9 @@ function initialCursor(): FeedCursor {
 function decodeCursor(raw?: string | null): FeedCursor {
   if (!raw) return initialCursor();
   try {
-    const parsed = JSON.parse(Buffer.from(raw, "base64url").toString("utf8")) as Partial<FeedCursor>;
+    const parsed = JSON.parse(
+      Buffer.from(raw, "base64url").toString("utf8"),
+    ) as Partial<FeedCursor>;
     if (parsed.v !== 1) return initialCursor();
 
     const tokens: Record<string, string> = {};
@@ -168,7 +170,9 @@ function decodeXmlText(value: string): string {
 
 function xmlTag(block: string, tag: string): string {
   const safeTag = tag.replace(":", "\\:");
-  const match = new RegExp("<" + safeTag + "[^>]*>([\\s\\S]*?)<\\/" + safeTag + ">", "i").exec(block);
+  const match = new RegExp("<" + safeTag + "[^>]*>([\\s\\S]*?)<\\/" + safeTag + ">", "i").exec(
+    block,
+  );
   return match ? decodeXmlText(match[1] ?? "") : "";
 }
 
@@ -246,7 +250,9 @@ async function fetchPlayableUploadPage(
     const body = await playlistResponse.text().catch(() => "");
     if (playlistResponse.status === 403 || playlistResponse.status === 429) {
       quotaCooldownUntil = Date.now() + QUOTA_COOLDOWN_MS;
-      console.warn(`[youtube-reels] quota unavailable; pausing API calls for 6h (${playlistResponse.status})`);
+      console.warn(
+        `[youtube-reels] quota unavailable; pausing API calls for 6h (${playlistResponse.status})`,
+      );
       throw new Error("quota");
     }
     console.warn(

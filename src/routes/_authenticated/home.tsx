@@ -1,111 +1,66 @@
 import { CoverImage } from "@/components/nuru/CoverImage";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
-  ArrowRight,
+  Bell,
   BookOpen,
-  Check,
-  Church,
+  ChevronRight,
   Clapperboard,
   GraduationCap,
+  Library,
   HandHeart,
   Music2,
-  Share2,
   Sparkles,
-  Sunrise,
-  Target,
+  UserRoundCheck,
+  type LucideIcon,
 } from "lucide-react";
-import { toast } from "sonner";
-import { cn } from "@/lib/utils";
-import { resolveMedia } from "@/lib/media";
 import { useAuth } from "@/hooks/useAuth";
-import { useShareSheet } from "@/hooks/useShareSheet";
-import { fetchVerseOfTheDay } from "@/lib/bible";
-import { fetchDevotionals, fetchEvents, fetchProfile } from "@/services/content";
-import { AppShell, BrandBar } from "@/components/nuru/AppShell";
-import { CardSkeleton } from "@/components/nuru/Primitives";
-import { NURU_PHOTO_POOLS, useRotatingMedia } from "@/lib/rotatingMedia";
+import { resolveMedia } from "@/lib/media";
+import { fetchVerseOfTheDay, verseOfTheDayRef } from "@/lib/bible";
+import { fetchDevotionals, fetchProfile, fetchUnreadNotificationCount } from "@/services/content";
+import { fetchMyProgress, fetchSeries } from "@/services/series";
+import { AppShell, Avatar, BoardHeader } from "@/components/nuru/AppShell";
+import { ProgressBar } from "@/components/nuru/Primitives";
 
 export const Route = createFileRoute("/_authenticated/home")({
   head: () => ({
     meta: [
-      { title: "Today — Nuru Faith" },
+      { title: "Home — Nuru Faith" },
       {
         name: "description",
-        content: "Your daily verse, devotional, church events and community in one place.",
+        content: "Today's verse, your devotionals and the quickest way back into Scripture.",
       },
-      { property: "og:title", content: "Today — Nuru Faith" },
-      { property: "og:description", content: "Your daily verse, devotional and community." },
+      { property: "og:title", content: "Home — Nuru Faith" },
+      { property: "og:description", content: "Today's verse and your daily reading." },
     ],
   }),
   component: HomeScreen,
 });
 
-const QUICK_ACCESS = [
-  {
-    to: "/reels",
-    label: "Reels",
-    icon: Clapperboard,
-    tint: "bg-gradient-to-br from-fuchsia-400 to-pink-600",
-  },
-  {
-    to: "/ai",
-    label: "Nuru AI",
-    icon: Sparkles,
-    tint: "bg-gradient-to-br from-cyan-300 to-blue-600",
-  },
-  {
-    to: "/church",
-    label: "My Church",
-    icon: Church,
-    tint: "bg-gradient-to-br from-indigo-400 to-violet-600",
-  },
-  {
-    to: "/bible",
-    label: "Bible",
-    icon: BookOpen,
-    tint: "bg-gradient-to-br from-blue-500 to-indigo-600",
-  },
-  {
-    to: "/music",
-    label: "Music",
-    icon: Music2,
-    tint: "bg-gradient-to-br from-amber-300 to-yellow-600",
-  },
-  {
-    to: "/grow",
-    label: "Devotions + Series",
-    icon: Sunrise,
-    tint: "bg-gradient-to-br from-emerald-400 to-green-600",
-  },
-  {
-    to: "/faith-courses",
-    label: "Faith Courses",
-    icon: GraduationCap,
-    tint: "bg-gradient-to-br from-orange-400 to-amber-600",
-  },
-  {
-    to: "/mentors",
-    label: "Mentors",
-    icon: HandHeart,
-    tint: "bg-gradient-to-br from-rose-400 to-red-600",
-  },
-] as const;
+/**
+ * The hero photo is pinned rather than drawn from the rotating pool, which
+ * also holds night and candle shots that leave the headline unreadable.
+ */
+const HERO_PHOTO = "asset:mountain-dawn";
 
-const CHALLENGES = [
-  "Spend 10 minutes in prayer today and write one thing you're thankful for.",
-  "Send an encouraging message to someone who needs it today.",
-  "Read one chapter slowly and note a single verse to carry with you.",
-  "Thank God for three specific things before you sleep tonight.",
+/** The quick-access tiles the board puts under Quick Access. Every one is a real route. */
+const QUICK_ACCESS: { to: string; label: string; icon: LucideIcon }[] = [
+  { to: "/bible", label: "Bible", icon: BookOpen },
+  { to: "/prayer", label: "Pray", icon: HandHeart },
+  { to: "/music", label: "Music", icon: Music2 },
+  { to: "/reels", label: "Reels", icon: Clapperboard },
+  { to: "/ai", label: "Nuru AI", icon: Sparkles },
+  // Matches the sidebar's Mentorship glyph, and stays distinct from Pray.
+  { to: "/mentors", label: "Mentors", icon: UserRoundCheck },
+  { to: "/faith-courses", label: "Courses", icon: GraduationCap },
+  { to: "/devotionals", label: "Devotionals", icon: BookOpen },
+  { to: "/series", label: "Series", icon: Library },
 ];
 
 function HomeScreen() {
   const navigate = useNavigate();
   const { userId } = useAuth();
-  const shareSheet = useShareSheet();
-  const [acceptedChallenge, setAcceptedChallenge] = useState(false);
-  const todayPhoto = useRotatingMedia(NURU_PHOTO_POOLS.home, "home-todays-light");
 
   const profile = useQuery({
     queryKey: ["profile", userId],
@@ -114,326 +69,257 @@ function HomeScreen() {
   });
   const verse = useQuery({ queryKey: ["verse-of-day"], queryFn: fetchVerseOfTheDay });
   const devotionals = useQuery({ queryKey: ["devotionals"], queryFn: fetchDevotionals });
-  const events = useQuery({ queryKey: ["events"], queryFn: fetchEvents });
+  const progress = useQuery({
+    queryKey: ["series-progress", userId],
+    queryFn: () => fetchMyProgress(userId!),
+    enabled: !!userId,
+  });
+  const series = useQuery({ queryKey: ["series"], queryFn: () => fetchSeries() });
+  const { data: unread = 0 } = useQuery({
+    queryKey: ["notification-unread-count", userId],
+    queryFn: () => fetchUnreadNotificationCount(userId!),
+    enabled: !!userId,
+    staleTime: 30_000,
+  });
 
   useEffect(() => {
     if (profile.data && profile.data.onboarded === false)
       void navigate({ to: "/onboarding", replace: true });
   }, [profile.data, navigate]);
 
-  const firstName = profile.data?.full_name?.split(" ")[0] ?? "friend";
-  const today = new Date();
-  const challenge = CHALLENGES[Math.floor(Date.now() / 86400000) % CHALLENGES.length]!;
-  const devotional = devotionals.data?.[0] ?? null;
-  const nextEvent =
-    (events.data ?? [])
-      .filter((e) => new Date(e.starts_at).getTime() >= Date.now() - 3600_000)
-      .sort((a, b) => +new Date(a.starts_at) - +new Date(b.starts_at))[0] ?? null;
+  const reference = verse.data?.reference ?? verseOfTheDayRef();
+  const verseText = verse.data?.text ?? "";
+
+  const devotional = (devotionals.data?.[0] ?? null) as {
+    id: string;
+    title: string;
+    subtitle: string | null;
+    cover_url: string | null;
+    read_minutes: number | null;
+  } | null;
+
+  // "Continue reading" is a real started-but-unfinished series, or nothing.
+  const resume = (() => {
+    const started = (progress.data ?? [])
+      .filter((p) => p.progress_percent > 0 && p.progress_percent < 100)
+      .sort((a, b) => b.progress_percent - a.progress_percent)[0];
+    if (!started) return null;
+    const row = (series.data ?? []).find((s) => s.id === started.series_id);
+    return row ? { ...row, percent: started.progress_percent } : null;
+  })();
 
   return (
-    <AppShell wide="xl">
-      <BrandBar />
+    <AppShell>
+      <BoardHeader
+        right={
+          <>
+            <Link
+              to="/notifications"
+              aria-label={unread > 0 ? `Notifications, ${unread} unread` : "Notifications"}
+              className="relative flex h-10 w-10 items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            >
+              <Bell className="h-5 w-5" strokeWidth={1.8} />
+              {unread > 0 && (
+                <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary ring-2 ring-[var(--background)]" />
+              )}
+            </Link>
+            <Link to="/profile" aria-label="Your profile">
+              <Avatar
+                url={profile.data?.avatar_url ?? null}
+                name={profile.data?.full_name ?? ""}
+                seed={userId}
+                size="sm"
+                className="h-9 w-9"
+              />
+            </Link>
+          </>
+        }
+      />
 
-      <div className="space-y-6 px-4 pt-2 lg:grid lg:grid-cols-12 lg:items-start lg:gap-6 lg:space-y-0 lg:px-4 xl:gap-7">
-        {/* Greeting */}
-        <section className="lg:col-span-12 lg:flex lg:items-end lg:justify-between lg:gap-4">
-          <div>
-            <p className="mb-2 hidden text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan lg:block">
-              Your daily space
-            </p>
-            <h1 className="font-display text-[26px] font-bold tracking-tight lg:text-4xl">
-              Shalom, {firstName}! <span className="align-middle">👋</span>
-            </h1>
-            <p className="mt-2 hidden text-sm text-muted-foreground lg:block">
-              Take a moment. What does your heart need today?
-            </p>
-          </div>
-          <p className="hidden shrink-0 pb-1 text-xs text-muted-foreground xl:block">
-            {today.toLocaleDateString(undefined, {
-              weekday: "long",
-              month: "long",
-              day: "numeric",
-            })}
-          </p>
-        </section>
-
-        {/* Today's Light */}
-        <section className="min-w-0 lg:col-span-7 lg:row-span-3 lg:self-stretch">
-          <div className="nuru-card relative overflow-hidden lg:flex lg:h-full lg:flex-col">
-            <div className="relative h-56 w-full lg:h-auto lg:min-h-[400px] lg:flex-1">
+      <div className="px-5 pb-8 lg:px-0">
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:items-start lg:gap-6">
+          <div className="grid gap-5">
+            {/* Daily Scripture lives inside the landscape, with room for long passages. */}
+            <section
+              className="relative isolate overflow-hidden rounded-3xl"
+              aria-label="Today's verse"
+            >
               <CoverImage
-                src={todayPhoto}
-                loading="eager"
-                fetchPriority="high"
+                src={resolveMedia(HERO_PHOTO)}
                 alt=""
                 className="absolute inset-0 h-full w-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/25" />
-              <div className="absolute inset-x-0 top-0 flex items-center justify-between p-3.5 lg:p-6">
-                <span className="font-display text-base font-semibold drop-shadow">
-                  Today's Light
-                </span>
-                <span className="rounded-full bg-background/65 px-2.5 py-1 text-[11px] font-medium backdrop-blur">
-                  {today.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-                </span>
-              </div>
-              <div className="absolute inset-x-0 bottom-0 px-3.5 pb-3 lg:px-7 lg:pb-7">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-black/20" />
+              <div className="relative flex min-h-[420px] flex-col justify-end p-6 lg:min-h-[480px] lg:p-8">
+                <h1 className="mb-8 font-display text-[36px] leading-tight font-semibold text-white lg:text-[44px]">
+                  A Brighter You.
+                </h1>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h2 className="text-[11px] font-semibold tracking-[0.14em] text-white/85 uppercase">
+                    Today's verse
+                  </h2>
+                  <span className="text-[11px] text-white/75">{verse.data?.translation ?? ""}</span>
+                </div>
                 {verse.isLoading ? (
-                  <div className="h-10 animate-pulse rounded-lg bg-white/10" />
-                ) : verse.data ? (
-                  <blockquote>
-                    <p className="line-clamp-3 text-[15px] leading-relaxed font-medium text-white italic drop-shadow-[0_2px_6px_rgba(0,0,0,0.85)] lg:line-clamp-none lg:font-display lg:text-2xl lg:leading-relaxed lg:not-italic">
-                      “{verse.data.text}”
-                    </p>
-                    <cite className="mt-1 block text-[11px] font-semibold text-cyan not-italic drop-shadow-[0_2px_6px_rgba(0,0,0,0.85)]">
-                      {verse.data.reference}
-                      {verse.data?.translation ? ` (${verse.data.translation})` : ""}
-                    </cite>
-                  </blockquote>
-                ) : (
                   <div
-                    role="status"
-                    className="rounded-xl border border-white/15 bg-background/65 p-4 backdrop-blur"
+                    className="mt-4 space-y-2"
+                    aria-busy="true"
+                    aria-label="Loading today's verse"
                   >
-                    <p className="text-sm text-white/90">
-                      Today’s verse couldn’t load. Take a moment with your Bible instead.
-                    </p>
+                    <div className="h-5 w-full animate-pulse rounded bg-white/20" />
+                    <div className="h-5 w-4/5 animate-pulse rounded bg-white/20" />
+                  </div>
+                ) : verse.isError ? (
+                  <div className="mt-4 text-white" role="alert">
+                    <p className="text-sm">Today's verse could not load.</p>
                     <button
                       type="button"
+                      className="mt-2 min-h-11 rounded-full border border-white/50 px-4 text-sm font-semibold"
                       onClick={() => void verse.refetch()}
-                      disabled={verse.isFetching}
-                      className="mt-3 min-h-10 text-sm font-semibold text-cyan disabled:opacity-50"
                     >
-                      {verse.isFetching ? "Trying again…" : "Try again"}
+                      Try again
                     </button>
                   </div>
-                )}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2 p-3 lg:gap-3 lg:border-t lg:border-border lg:p-4">
-              <Link
-                to="/bible"
-                className="nuru-tactile flex min-h-11 items-center justify-center gap-1.5 rounded-lg bg-primary text-xs font-semibold text-primary-foreground"
-              >
-                <BookOpen className="h-3.5 w-3.5" /> Read Bible
-              </Link>
-              <Link
-                to="/ai"
-                search={{
-                  contextType: "verse",
-                  contextLabel: verse.data
-                    ? `${verse.data.reference}: ${verse.data.text.trim()}`
-                    : "Reflect on Scripture",
-                }}
-                className="nuru-tactile flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-border bg-surface-2 text-xs font-semibold text-secondary-foreground"
-              >
-                <Sparkles className="h-3.5 w-3.5" /> Reflect
-              </Link>
-              <button
-                type="button"
-                onClick={() => {
-                  const text = verse.data
-                    ? `${verse.data.text.trim()} — ${verse.data.reference}`
-                    : "Take a moment with Scripture on Nuru Faith.";
-                  void shareSheet.share({
-                    title: "Today's Light — Nuru Faith",
-                    text,
-                    url: `${window.location.origin}/bible`,
-                  });
-                }}
-                className="nuru-tactile flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-border bg-surface-2 text-xs font-semibold text-secondary-foreground"
-              >
-                <Share2 className="h-3.5 w-3.5" /> Share
-              </button>
-            </div>
-          </div>
-        </section>
-
-        {/* Quick Access */}
-        <section className="lg:col-span-5 lg:rounded-2xl lg:border lg:border-border lg:bg-surface/55 lg:p-5 xl:p-6">
-          <h2 className="mb-3 font-display text-[15px] font-semibold lg:mb-5 lg:text-lg">
-            Quick Access
-          </h2>
-          <div className="grid grid-cols-4 gap-x-2 gap-y-4 lg:gap-x-2 lg:gap-y-5">
-            {QUICK_ACCESS.map(({ to, label, icon: Icon, tint }) => (
-              <Link
-                key={to}
-                to={to}
-                {...(to === "/ai" ? { search: {} } : {})}
-                className="group flex flex-col items-center gap-2 text-center"
-              >
-                <span
-                  className={cn(
-                    "nuru-tactile nuru-quick-tile flex h-14 w-14 items-center justify-center rounded-2xl text-white lg:h-12 lg:w-12 xl:h-14 xl:w-14",
-                    tint,
-                  )}
-                >
-                  <Icon className="h-6 w-6" strokeWidth={2} />
-                </span>
-                <span className="text-[11px] font-medium text-secondary-foreground">{label}</span>
-              </Link>
-            ))}
-          </div>
-        </section>
-
-        {/* Today's Challenge — an amber badge beside the prompt, with the
-            accept control sitting to the trailing edge, per the reference. */}
-        <section className="nuru-card flex gap-3 p-4 lg:col-span-5">
-          <span
-            aria-hidden="true"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-warning text-[#3a2206]"
-          >
-            <Target className="h-5 w-5" strokeWidth={2.2} />
-          </span>
-
-          <div className="min-w-0 flex-1">
-            <h2 className="font-display text-[14px] font-semibold text-warning">
-              Today&apos;s Challenge
-            </h2>
-            <p className="mt-0.5 text-[13px] leading-snug text-secondary-foreground">{challenge}</p>
-
-            <div className="mt-2.5 flex justify-end">
-              <button
-                type="button"
-                disabled={acceptedChallenge}
-                onClick={() => {
-                  setAcceptedChallenge(true);
-                  toast.success("You're in — one step at a time.");
-                }}
-                className={cn(
-                  "nuru-tactile group inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-5 text-[13px] font-semibold transition-all",
-                  "active:scale-[0.97] disabled:active:scale-100",
-                  acceptedChallenge
-                    ? // Done reads as its own state, not a greyed-out button.
-                      "border border-growth/50 bg-growth/12 text-growth"
-                    : "bg-[linear-gradient(100deg,var(--primary),var(--brand-violet))] text-primary-foreground shadow-[0_6px_20px_-6px_var(--brand-violet)] hover:brightness-110",
-                )}
-              >
-                {acceptedChallenge ? (
-                  <>
-                    <Check className="h-4 w-4" strokeWidth={2.6} />
-                    Accepted
-                  </>
                 ) : (
                   <>
-                    Accept Challenge
-                    <ArrowRight
-                      className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
-                      strokeWidth={2.4}
-                    />
+                    <blockquote className="mt-3 font-display text-[22px] leading-relaxed text-white lg:text-[27px]">
+                      &ldquo;{verseText}&rdquo;
+                    </blockquote>
+                    <p className="mt-3 text-[12px] font-semibold tracking-[0.08em] text-white/85 uppercase">
+                      {reference}
+                    </p>
                   </>
                 )}
-              </button>
-            </div>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Link
+                    to="/bible"
+                    className="nuru-soft-control nuru-soft-primary inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full bg-primary px-4 text-[14px] font-semibold whitespace-nowrap text-primary-foreground transition-colors hover:brightness-105 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+                  >
+                    <BookOpen className="h-4 w-4 shrink-0" strokeWidth={2} />
+                    Read Bible
+                  </Link>
+                  <Link
+                    to="/ai"
+                    search={{ contextType: "verse", contextLabel: reference }}
+                    className="nuru-soft-control inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full border border-border bg-surface px-4 text-[14px] font-semibold whitespace-nowrap text-foreground transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                  >
+                    <Sparkles className="h-4 w-4 shrink-0" strokeWidth={2} />
+                    Reflect
+                  </Link>
+                </div>
+                <Link
+                  to="/devotionals"
+                  className="mt-4 inline-flex min-h-11 items-center gap-1 text-[13px] font-semibold text-white underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
+                >
+                  Explore Devotionals <ChevronRight className="h-4 w-4" />
+                </Link>
+              </div>
+            </section>
           </div>
-        </section>
 
-        {/* Upcoming Event */}
-        <section className="min-w-0 lg:col-span-5">
-          <h2 className="mb-3 font-display text-[15px] font-semibold lg:text-lg">Upcoming Event</h2>
-          {events.isLoading ? (
-            <CardSkeleton count={1} height="h-20" />
-          ) : nextEvent ? (
-            <div className="nuru-card flex items-center gap-3 p-3">
-              <span className="flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-xl border border-primary/35 bg-primary/12">
-                <span className="text-[10px] font-semibold uppercase tracking-wide text-cyan">
-                  {new Date(nextEvent.starts_at).toLocaleDateString(undefined, { month: "short" })}
-                </span>
-                <span className="font-display text-lg leading-none font-bold">
-                  {new Date(nextEvent.starts_at).getDate()}
-                </span>
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-semibold">{nextEvent.title}</span>
-                <span className="block truncate text-[11px] text-muted-foreground">
-                  {nextEvent.host ?? nextEvent.location ?? "Nuru Faith"}
-                </span>
-              </span>
-              <Link
-                to="/events"
-                className="nuru-tactile shrink-0 rounded-xl bg-primary px-3.5 py-2 text-[11px] font-semibold text-primary-foreground"
-              >
-                RSVP
-              </Link>
-            </div>
-          ) : (
-            <p className="nuru-card p-4 text-[13px] text-muted-foreground">
-              No upcoming events yet — your church can add them here.
-            </p>
-          )}
-        </section>
-        <section className="hidden lg:col-span-12 lg:block">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-display text-xl font-semibold">A little more for your day</h2>
-            <Link to="/grow" className="text-xs font-semibold text-cyan hover:underline">
-              Explore learning
-            </Link>
-          </div>
-          <div className="grid gap-5 xl:grid-cols-2">
-            <Link
-              to="/devotionals"
-              className="nuru-card group flex min-h-44 min-w-0 items-center gap-5 p-5 transition-colors hover:border-border-strong"
-            >
-              {devotional?.cover_url ? (
-                <CoverImage
-                  src={resolveMedia(devotional.cover_url)}
-                  alt=""
-                  loading="lazy"
-                  className="h-32 w-28 shrink-0 rounded-xl object-cover"
-                />
+          <div className="grid gap-5 lg:content-start">
+            {/* Quick Access */}
+            <section>
+              <h2 className="px-1 pb-2.5 text-[11px] font-semibold tracking-[0.14em] text-ink-3 uppercase">
+                Quick access
+              </h2>
+              <ul className="grid grid-cols-3 gap-2.5">
+                {QUICK_ACCESS.map(({ to, label, icon: Icon }) => (
+                  <li key={label}>
+                    <Link
+                      to={to}
+                      className="nuru-soft-control flex flex-col items-center gap-2 rounded-2xl border border-border bg-card px-1 py-3.5 transition-colors hover:border-border-strong hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                    >
+                      <span className="nuru-soft-inset flex h-11 w-11 items-center justify-center rounded-full bg-accent text-primary">
+                        <Icon className="h-5 w-5" strokeWidth={1.9} />
+                      </span>
+                      <span className="text-[12.5px] font-semibold">{label}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+
+            {/* Continue Reading */}
+            <section>
+              <div className="flex items-end justify-between gap-3 px-1 pb-2.5">
+                <h2 className="text-[11px] font-semibold tracking-[0.14em] text-ink-3 uppercase">
+                  Continue reading
+                </h2>
+                <Link
+                  to="/devotionals"
+                  className="shrink-0 text-[13px] font-semibold text-primary hover:underline"
+                >
+                  See all
+                </Link>
+              </div>
+
+              {resume ? (
+                <Link
+                  to="/series/$slug"
+                  params={{ slug: resume.slug }}
+                  className="flex gap-3.5 rounded-2xl border border-border bg-card p-3.5 transition-colors hover:border-border-strong focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                >
+                  <span className="h-[72px] w-[72px] shrink-0 overflow-hidden rounded-xl bg-surface-2">
+                    {resume.cover_image && (
+                      <CoverImage
+                        src={resolveMedia(resume.cover_image)}
+                        alt=""
+                        loading="lazy"
+                        className="h-full w-full object-cover"
+                      />
+                    )}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-display text-[17px] leading-tight font-semibold">
+                      {resume.title}
+                    </span>
+                    <ProgressBar
+                      className="mt-2"
+                      value={resume.percent}
+                      label={`${Math.round(resume.percent)}% complete`}
+                    />
+                  </span>
+                </Link>
+              ) : devotional ? (
+                <Link
+                  to="/devotionals"
+                  className="flex gap-3.5 rounded-2xl border border-border bg-card p-3.5 transition-colors hover:border-border-strong focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                >
+                  <span className="h-[72px] w-[72px] shrink-0 overflow-hidden rounded-xl bg-surface-2">
+                    {devotional.cover_url && (
+                      <CoverImage
+                        src={resolveMedia(devotional.cover_url)}
+                        alt=""
+                        loading="lazy"
+                        className="h-full w-full object-cover"
+                      />
+                    )}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-display text-[17px] leading-tight font-semibold">
+                      {devotional.title}
+                    </span>
+                    {devotional.subtitle && (
+                      <span className="mt-0.5 line-clamp-2 block text-[13px] leading-snug text-ink-2">
+                        {devotional.subtitle}
+                      </span>
+                    )}
+                    <span className="mt-1.5 block text-[12px] text-ink-3">
+                      {devotional.read_minutes ?? 3} min read
+                    </span>
+                  </span>
+                  <ChevronRight className="mt-6 h-4.5 w-4.5 shrink-0 text-ink-3" strokeWidth={2} />
+                </Link>
               ) : (
-                <span className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-cyan">
-                  <BookOpen className="h-8 w-8" />
-                </span>
+                <p className="rounded-2xl border border-border bg-card p-4 text-[13.5px] text-ink-3">
+                  Start a devotional or a series and it will wait for you here.
+                </p>
               )}
-              <div className="min-w-0 flex-1">
-                <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-cyan">
-                  Daily devotional
-                </p>
-                <h3 className="font-display text-xl font-semibold">
-                  {devotionals.isLoading
-                    ? "Loading today’s reading…"
-                    : (devotional?.title ?? "Make time for Scripture")}
-                </h3>
-                <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
-                  {devotional?.subtitle ?? "Explore devotionals and take a moment to reflect."}
-                </p>
-                <span className="mt-3 flex items-center gap-2 text-xs font-semibold text-cyan">
-                  {devotional
-                    ? `${devotional.read_minutes} min read · Browse devotionals`
-                    : "Browse devotionals"}
-                  <ArrowRight className="h-4 w-4" />
-                </span>
-              </div>
-            </Link>
-            <Link
-              to="/mentors"
-              className="nuru-card flex min-h-44 min-w-0 items-center gap-5 p-5 transition-colors hover:border-border-strong"
-            >
-              <span className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl border border-violet/30 bg-violet/10 text-violet">
-                <HandHeart className="h-8 w-8" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-violet">
-                  Someone to walk with
-                </p>
-                <h3 className="font-display text-xl font-semibold">
-                  You don’t have to grow alone.
-                </h3>
-                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-                  Explore mentors for faith, relationships, leadership and everyday life.
-                </p>
-                <span className="mt-3 flex items-center gap-2 text-xs font-semibold text-cyan">
-                  Explore mentorship
-                  <ArrowRight className="h-4 w-4" />
-                </span>
-              </div>
-            </Link>
+            </section>
           </div>
-        </section>
+        </div>
       </div>
-      {shareSheet.node}
     </AppShell>
   );
 }

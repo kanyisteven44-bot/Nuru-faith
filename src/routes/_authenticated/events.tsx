@@ -148,8 +148,55 @@ function EventsScreen() {
           />
         )}
 
-        <ul className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-5 lg:space-y-0">
-          {rows.map((e, i) => {
+        {featured && (
+          <article className="nuru-card relative overflow-hidden">
+            <div className="relative h-44 lg:h-72 xl:h-80">
+              <CoverImage
+                src={featured.cover_url ? resolveMedia(featured.cover_url) : heroBg}
+                loading="eager"
+                alt=""
+                className="h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-card via-card/50 to-transparent" />
+              <span className="absolute right-3 top-3 rounded-full bg-primary px-2.5 py-1 text-[10px] font-semibold text-primary-foreground">
+                Featured
+              </span>
+            </div>
+            <div className="p-4">
+              <h2 className="font-display text-base font-semibold">{featured.title}</h2>
+              {featured.description && (
+                <p className="mt-1 line-clamp-2 text-[13px] text-muted-foreground">
+                  {featured.description}
+                </p>
+              )}
+              <p className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <CalendarDays className="h-3.5 w-3.5 text-leaf" />
+                {eventDate(featured.starts_at)}
+              </p>
+              {featured.location && (
+                <p className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                  <MapPin className="h-3.5 w-3.5 text-leaf" />
+                  {featured.location}
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={() => void rsvp(featured.id, going.has(featured.id))}
+                className={cn(
+                  "mt-3 min-h-10 w-full rounded-lg text-sm font-semibold transition-colors",
+                  going.has(featured.id)
+                    ? "border border-border-strong bg-surface-2 text-secondary-foreground"
+                    : "bg-primary text-primary-foreground nuru-glow-sm",
+                )}
+              >
+                {going.has(featured.id) ? "Going" : "Register"}
+              </button>
+            </div>
+          </article>
+        )}
+
+        <div className="space-y-2">
+          {rest.map((e) => {
             const isGoing = going.has(e.id);
             const when = new Date(e.starts_at);
             return (

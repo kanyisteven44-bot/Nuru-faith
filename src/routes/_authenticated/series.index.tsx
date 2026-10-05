@@ -1,45 +1,31 @@
 import { CoverImage } from "@/components/nuru/CoverImage";
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import {
-  BookOpen,
-  Compass,
-  Heart,
-  LifeBuoy,
-  Play,
-  Sparkles,
-  Sprout,
-  type LucideIcon,
-} from "lucide-react";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { ArrowRight } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { resolveMedia } from "@/lib/media";
 import { fetchCuratedSeries, fetchMyProgress, type SeriesRow } from "@/services/series";
 import { AppShell } from "@/components/nuru/AppShell";
 import { FeatureHeaderBar } from "@/components/nuru/FeatureHeader";
-import {
-  CardSkeleton,
-  Chip,
-  EmptyState,
-  ErrorState,
-  ProgressBar,
-} from "@/components/nuru/Primitives";
+import { CardSkeleton, EmptyState, ErrorState } from "@/components/nuru/Primitives";
+import { supabase } from "@/integrations/supabase/client";
+import { LearningLinks } from "@/components/nuru/LearningLinks";
 
 export const Route = createFileRoute("/_authenticated/series/")({
   head: () => ({
     meta: [
-      { title: "Scripture Series — Nuru Faith" },
+      { title: "Bible series — Nuru Faith" },
       {
         name: "description",
         content:
           "Study real-life topics through connected Bible passages, reflection, prayer and practical action.",
       },
-      { property: "og:title", content: "Scripture Series — Nuru Faith" },
+      { property: "og:title", content: "Bible series — Nuru Faith" },
       {
         property: "og:description",
         content: "Topic-led Bible study: read, understand, reflect, pray, apply.",
       },
-      { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
@@ -57,17 +43,38 @@ const CURATED_SLUGS = [
   "when-youre-anxious",
 ];
 
-const CATEGORIES: { name: string; icon: LucideIcon; tint: string }[] = [
-  { name: "Purpose & Calling", icon: Compass, tint: "from-warning/85 to-warning/50" },
-  { name: "Discipleship", icon: BookOpen, tint: "from-violet/85 to-violet/50" },
-  { name: "Life Skills", icon: Sprout, tint: "from-growth/85 to-growth/50" },
-  { name: "Relationships", icon: Heart, tint: "from-magenta/85 to-magenta/50" },
-  { name: "Difficult Seasons", icon: LifeBuoy, tint: "from-cyan/85 to-cyan/50" },
-];
-
 function SeriesHome() {
   const { userId } = useAuth();
-  const [filter, setFilter] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const library = useInfiniteQuery({
+    queryKey: ["reading-series-library", search],
+    initialPageParam: 0,
+    queryFn: async ({ pageParam }) => {
+      let query = supabase
+        .from("scripture_series")
+        .select(
+          "id,title,slug,description,cover_image,category,difficulty,estimated_duration,session_count,status,is_featured,church_id",
+          { count: "exact" },
+        )
+        .eq("status", "published")
+        .not("slug", "like", "nuru-library-%")
+        .order("title")
+        .order("id");
+      const term = search
+        .trim()
+        .replace(/[^\p{L}\p{N}\s-]/gu, " ")
+        .trim();
+      if (term) query = query.or(`title.ilike.%${term}%,description.ilike.%${term}%`);
+      const { data, error, count } = await query.range(pageParam * 24, pageParam * 24 + 23);
+      if (error) throw error;
+      return {
+        rows: (data ?? []) as SeriesRow[],
+        total: count ?? 0,
+        next: (pageParam + 1) * 24 < (count ?? 0) ? pageParam + 1 : undefined,
+      };
+    },
+    getNextPageParam: (page) => page.next,
+  });
 
   const series = useQuery({
     queryKey: ["curated-series"],
@@ -84,196 +91,145 @@ function SeriesHome() {
     () => new Map((progress.data ?? []).map((p) => [p.series_id, p.progress_percent])),
     [progress.data],
   );
-  const inProgress = useMemo(
-    () => all.filter((s) => (progressMap.get(s.id) ?? 0) > 0 && (progressMap.get(s.id) ?? 0) < 100),
-    [all, progressMap],
-  );
-  const filtered = useMemo(
-    () => (filter ? all.filter((s) => s.category === filter) : all),
-    [all, filter],
-  );
 
   return (
     <AppShell>
-      <FeatureHeaderBar
-        right={
-          <p className="script max-w-[110px] text-right text-[15px] leading-[1.15] text-white/70">
-            More Than A Sunday Faith <Heart className="inline h-3 w-3 -translate-y-0.5" />
-          </p>
-        }
-      />
+      <FeatureHeaderBar />
+      <LearningLinks active="Series" />
 
-      <div className="space-y-6 px-4 pt-4 pb-6">
-        <div>
-          <h1 className="font-display text-2xl font-bold">Series</h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">Go deeper. Grow further.</p>
+      <div className="px-4 pb-6">
+        <h1 className="font-display text-[40px] leading-none">Bible series</h1>
+        <p className="mt-1.5 text-[14px] text-ink-2">
+          Lessons that walk a topic through Scripture, reflection and prayer.
+        </p>
+
+        <div className="mt-5">
+          <h2 className="mb-3 font-display text-xl">Start with a topical series</h2>
+          {series.isLoading && <CardSkeleton count={3} height="h-[164px]" />}
+          {series.isError && <ErrorState onRetry={() => void series.refetch()} />}
+          {!series.isLoading && !series.isError && all.length === 0 && (
+            <EmptyState
+              title="No series yet"
+              description="Bible series will appear here as they're published."
+            />
+          )}
+
+          {all.length > 0 && (
+            <ul className="space-y-3.5">
+              {all.map((s) => (
+                <li key={s.id}>
+                  <SeriesCard series={s} percent={progressMap.get(s.id) ?? 0} />
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
-        {series.isLoading && <CardSkeleton count={1} height="h-52" />}
-        {series.isError && <ErrorState onRetry={() => void series.refetch()} />}
-        {!series.isLoading && all.length === 0 && (
-          <EmptyState
-            title="No series yet"
-            description="Scripture Series will appear here as they're published."
+        <section className="mt-8" aria-label="Scripture reading journeys">
+          <h2 className="font-display text-2xl">Explore reading journeys</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Chapter-by-chapter Scripture journeys and topical studies. Read, reflect and pray at
+            your own pace.
+          </p>
+          <input
+            className="input-nuru mt-4"
+            aria-label="Search Scripture series"
+            placeholder="Search a Bible book or topic"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
           />
-        )}
+          {library.data && (
+            <p className="my-3 text-xs text-muted-foreground" role="status">
+              {library.data.pages.flatMap((page) => page.rows).length} of{" "}
+              {library.data.pages[0]?.total ?? 0} journeys
+            </p>
+          )}
+          {library.isPending && <CardSkeleton count={3} height="h-40" />}
+          {library.isError && <ErrorState onRetry={() => void library.refetch()} />}
+          {!library.isPending && !library.isError && !library.data?.pages[0]?.rows.length && (
+            <p className="py-5 text-sm text-muted-foreground">No journeys match this search.</p>
+          )}
+          <ul className="grid gap-4 lg:grid-cols-2">
+            {library.data?.pages
+              .flatMap((page) => page.rows)
+              .map((row) => (
+                <li key={row.id}>
+                  <SeriesCard series={row} percent={progressMap.get(row.id) ?? 0} />
+                </li>
+              ))}
+          </ul>
+          {library.hasNextPage && (
+            <button
+              className="mt-5 min-h-11 rounded-xl border border-border px-5 text-sm font-semibold"
+              disabled={library.isFetchingNextPage}
+              onClick={() => void library.fetchNextPage()}
+            >
+              {library.isFetchingNextPage ? "Loading…" : "Load more journeys"}
+            </button>
+          )}
+        </section>
 
-        {all.length > 0 && (
-          <>
-            <section>
-              <SectionTitle title="Made for You" />
-              <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
-                {all.map((s) => (
-                  <MadeForYouCard key={s.id} series={s} percent={progressMap.get(s.id)} />
-                ))}
-              </div>
-            </section>
-
-            {inProgress.length > 0 && (
-              <section>
-                <SectionTitle title="Continue Learning" />
-                <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
-                  {inProgress.map((s) => (
-                    <ContinueCard key={s.id} series={s} percent={progressMap.get(s.id)!} />
-                  ))}
-                </div>
-              </section>
-            )}
-
-            <section>
-              <SectionTitle title="Trending Topics" />
-              <div className="no-scrollbar -mx-4 flex gap-2.5 overflow-x-auto px-4 pb-1">
-                {CATEGORIES.map((c) => {
-                  const active = filter === c.name;
-                  return (
-                    <button
-                      key={c.name}
-                      type="button"
-                      onClick={() => setFilter(active ? null : c.name)}
-                      className={`flex h-20 w-28 shrink-0 flex-col items-start justify-between rounded-2xl bg-gradient-to-br p-3 text-left transition-transform active:scale-[0.97] ${c.tint} ${active ? "ring-2 ring-white/80" : ""}`}
-                    >
-                      <c.icon className="h-4.5 w-4.5 text-white" />
-                      <span className="text-[12px] leading-tight font-bold text-white">
-                        {c.name}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
-
-            <section>
-              <SectionTitle title={filter ?? "All Series"} />
-              <div className="space-y-2.5">
-                {filtered.map((s) => (
-                  <SeriesRowCard key={s.id} series={s} percent={progressMap.get(s.id)} />
-                ))}
-              </div>
-            </section>
-          </>
-        )}
-
-        <p className="flex items-start gap-2 rounded-2xl bg-surface-2 px-4 py-3 text-xs text-muted-foreground">
-          <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-cyan" />
-          Scripture Series are written to help you understand the Bible in context — not to replace
-          your church, pastor or your own reading.
+        <p className="mt-6 rounded-2xl border border-border bg-surface px-4 py-3 text-xs text-ink-3">
+          Bible series are written to help you understand the Bible in context — not to replace your
+          church, pastor or your own reading.
         </p>
       </div>
     </AppShell>
   );
 }
 
-function SectionTitle({ title }: { title: string }) {
-  return <h2 className="mb-3 font-display text-[15px] font-semibold">{title}</h2>;
-}
-
-function MadeForYouCard({ series, percent }: { series: SeriesRow; percent?: number | undefined }) {
-  const active = percent !== undefined && percent > 0 && percent < 100;
-  const completed = percent === 100;
+/**
+ * The board's series card: a full-bleed photo with the title and subtitle set
+ * over it, a leaf progress bar and the lesson count along the bottom, and the
+ * terracotta arrow that carries every "open this" action in the system.
+ */
+function SeriesCard({ series, percent }: { series: SeriesRow; percent: number }) {
+  const done = Math.round((percent / 100) * series.session_count);
   return (
     <Link
       to="/series/$slug"
       params={{ slug: series.slug }}
-      className="nuru-card relative block h-52 w-60 shrink-0 overflow-hidden active:opacity-95"
+      className="relative block overflow-hidden rounded-2xl border border-border"
     >
-      <CoverImage
-        src={resolveMedia(series.cover_image)}
-        alt=""
-        loading="lazy"
-        className="absolute inset-0 h-full w-full object-cover"
-      />
-      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-background/10" />
-      <div className="absolute inset-x-0 bottom-0 space-y-1.5 p-3">
-        <h3 className="font-display text-lg leading-tight font-bold text-white">{series.title}</h3>
-        <p className="text-[11px] text-white/75">{series.session_count} Episodes</p>
-        {active ? (
-          <ProgressBar value={percent!} label={`${percent}%`} />
-        ) : completed ? (
-          <span className="inline-flex items-center gap-1 rounded-full bg-growth/90 px-2 py-0.5 text-[10px] font-bold text-background">
-            Completed
-          </span>
-        ) : (
-          <Chip tone="brand">{series.category}</Chip>
-        )}
-      </div>
-    </Link>
-  );
-}
-
-function ContinueCard({ series, percent }: { series: SeriesRow; percent: number }) {
-  const current = Math.max(1, Math.round((percent / 100) * series.session_count));
-  return (
-    <Link
-      to="/series/$slug"
-      params={{ slug: series.slug }}
-      className="block w-36 shrink-0 active:opacity-90"
-    >
-      <div className="relative h-24 overflow-hidden rounded-xl">
+      {series.cover_image ? (
         <CoverImage
           src={resolveMedia(series.cover_image)}
           alt=""
           loading="lazy"
-          className="h-full w-full object-cover"
+          className="h-[164px] w-full object-cover"
         />
-        <div className="absolute inset-0 bg-black/25" />
-        <span className="absolute top-1/2 left-1/2 flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/90">
-          <Play className="h-3.5 w-3.5 fill-background text-background" />
-        </span>
-      </div>
-      <p className="mt-1.5 truncate text-[13px] font-semibold">{series.title}</p>
-      <p className="text-[11px] text-muted-foreground">
-        Session {current} of {series.session_count}
-      </p>
-      <ProgressBar value={percent} className="mt-1" />
-    </Link>
-  );
-}
+      ) : (
+        <span className="block h-[164px] w-full bg-[linear-gradient(120deg,#143254,#0f2a49)]" />
+      )}
+      <span className="absolute inset-0 bg-[linear-gradient(to_top,rgba(17,23,21,0.95)_12%,rgba(17,23,21,0.45)_55%,rgba(17,23,21,0.15))]" />
 
-function SeriesRowCard({ series, percent }: { series: SeriesRow; percent?: number | undefined }) {
-  const active = percent !== undefined && percent > 0 && percent < 100;
-  return (
-    <Link
-      to="/series/$slug"
-      params={{ slug: series.slug }}
-      className="nuru-card flex items-center gap-3 p-2.5 active:opacity-90"
-    >
-      <CoverImage
-        src={resolveMedia(series.cover_image)}
-        alt=""
-        loading="lazy"
-        className="h-14 w-14 shrink-0 rounded-xl object-cover"
-      />
-      <div className="min-w-0 flex-1 space-y-0.5">
-        <p className="text-[10px] font-bold tracking-wide text-cyan uppercase">{series.category}</p>
-        <h3 className="truncate font-display text-sm font-semibold">{series.title}</h3>
-        {active ? (
-          <ProgressBar value={percent!} className="mt-1 max-w-[120px]" />
-        ) : (
-          <p className="text-[11px] text-muted-foreground">
-            {series.session_count} sessions &middot; {series.estimated_duration} min
-          </p>
-        )}
-      </div>
+      <span className="absolute inset-x-0 top-0 flex items-start gap-3 p-4">
+        <span className="min-w-0 flex-1">
+          <span className="block truncate font-display text-[24px] leading-tight text-white">
+            {series.title}
+          </span>
+          {series.description && (
+            <span className="mt-0.5 block truncate text-[13px] text-white/80">
+              {series.description}
+            </span>
+          )}
+        </span>
+        <span className="nuru-disc nuru-disc-terra h-10 w-10 shrink-0">
+          <ArrowRight className="h-[18px] w-[18px]" strokeWidth={2.2} />
+        </span>
+      </span>
+
+      <span className="absolute inset-x-0 bottom-0 flex items-center gap-3 px-4 pb-3.5">
+        <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-[rgba(241,238,230,0.16)]">
+          <span
+            className="block h-full rounded-full bg-[linear-gradient(90deg,var(--primary),var(--leaf))]"
+            style={{ width: `${Math.max(0, Math.min(100, percent))}%` }}
+          />
+        </span>
+        <span className="shrink-0 text-[11px] font-semibold text-white/80">
+          {done} of {series.session_count} lessons
+        </span>
+      </span>
     </Link>
   );
 }

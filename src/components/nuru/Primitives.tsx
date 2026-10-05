@@ -182,7 +182,6 @@ export function IconTile({
         : size === "xl"
           ? "h-6 w-6"
           : "h-5 w-5";
-  const { glyph: glyphTone, fill } = ICON_TONES[tone];
   return (
     <span className={cn("nuru-icon-tile", ICON_TONES[tone], box, className)}>
       <Icon className={glyph} />

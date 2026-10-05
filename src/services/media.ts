@@ -53,6 +53,18 @@ export async function fetchMediaItems(options?: {
   return (data ?? []) as MediaItem[];
 }
 
+export async function fetchMediaItemBySourceExternalId(source: string, externalId: string) {
+  const { data, error } = await supabase
+    .from("media_items")
+    .select(ITEM_COLUMNS)
+    .eq("is_approved", true)
+    .eq("source", source)
+    .eq("external_id", externalId)
+    .maybeSingle();
+  if (error) throw error;
+  return (data ?? null) as MediaItem | null;
+}
+
 /** Page the stored catalogue rather than loading 10,000 rows into the browser. */
 export async function fetchMediaCatalog(options: {
   mediaType: "music" | "podcast";

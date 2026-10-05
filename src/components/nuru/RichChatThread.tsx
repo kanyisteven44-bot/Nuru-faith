@@ -14,10 +14,9 @@ import {
   type ChatTarget,
 } from "@/services/messaging";
 import { CardSkeleton, ErrorState } from "@/components/nuru/Primitives";
+import { ChatReactionPicker, ChatStickerArt } from "@/components/nuru/ChatReactionPicker";
+import { STICKER_BY_ID } from "@/lib/chatReactions";
 import { cn } from "@/lib/utils";
-
-const EMOJIS = ["😀", "😂", "😊", "🙏", "❤️", "🙌", "🔥", "✨", "😇", "🕊️"];
-const STICKERS = ["🙏", "❤️‍🔥", "🙌", "✨", "🕊️", "📖", "💙", "🌅"];
 
 export function RichChatThread({
   target,
@@ -169,10 +168,16 @@ export function RichChatThread({
     setShowStickers(false);
     setError("");
     try {
-      await sendChatMessage(target, userId, stickerCode, crypto.randomUUID(), {
-        messageType: "sticker",
-        stickerCode,
-      });
+      await sendChatMessage(
+        target,
+        userId,
+        STICKER_BY_ID.get(stickerCode)?.label || stickerCode,
+        crypto.randomUUID(),
+        {
+          messageType: "sticker",
+          stickerCode,
+        },
+      );
       await refresh();
     } catch (sendError) {
       setError(sendError instanceof Error ? sendError.message : "Couldn't send that sticker.");
@@ -339,8 +344,11 @@ export function RichChatThread({
                   {mine ? "You" : (names.data?.[message.sender_id] ?? "Nuru member")}
                 </p>
                 {message.message_type === "sticker" ? (
-                  <div className="py-1 text-5xl leading-none" aria-label="Sticker">
-                    {message.sticker_code || message.body}
+                  <div className="py-2">
+                    <ChatStickerArt
+                      code={message.sticker_code || message.body}
+                      fallback={message.body}
+                    />
                   </div>
                 ) : message.message_type === "voice" && message.attachment_path ? (
                   <VoiceNote
@@ -382,34 +390,24 @@ export function RichChatThread({
           </p>
         )}
 
-        {showEmoji && (
-          <div className="mb-2 flex flex-wrap gap-1 rounded-2xl border border-border bg-surface-2 p-2">
-            {EMOJIS.map((emoji) => (
-              <button
-                key={emoji}
-                type="button"
-                onClick={() => setDraft((value) => value + emoji)}
-                className="flex h-10 w-10 items-center justify-center rounded-xl text-xl hover:bg-card"
-              >
-                {emoji}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {showStickers && richMediaAllowed && (
-          <div className="mb-2 grid grid-cols-4 gap-2 rounded-2xl border border-border bg-surface-2 p-2">
-            {STICKERS.map((stickerCode) => (
-              <button
-                key={stickerCode}
-                type="button"
-                onClick={() => void sendSticker(stickerCode)}
-                className="flex aspect-square items-center justify-center rounded-2xl bg-card text-4xl shadow-sm hover:scale-[1.02]"
-              >
-                {stickerCode}
-              </button>
-            ))}
-          </div>
+        {(showEmoji || (showStickers && richMediaAllowed)) && (
+          <ChatReactionPicker
+            key={showEmoji ? "emoji" : "sticker"}
+            kind={showEmoji ? "emoji" : "sticker"}
+            onEmoji={(symbol) => {
+              if (draft.length + symbol.length > 2000) {
+                setError("Your message is limited to 2,000 characters.");
+                return;
+              }
+              setDraft((value) => value + symbol);
+            }}
+            onSticker={(code) => void sendSticker(code)}
+            onClose={() => {
+              setShowEmoji(false);
+              setShowStickers(false);
+            }}
+            disabled={sending || recording}
+          />
         )}
 
         {recording && (

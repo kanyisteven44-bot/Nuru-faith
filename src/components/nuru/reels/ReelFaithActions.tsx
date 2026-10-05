@@ -4,10 +4,10 @@ import { cn } from "@/lib/utils";
 type Tone = "gradient" | "green" | "amber" | "neutral";
 
 const TONE_CLASSES: Record<Tone, string> = {
-  gradient: "nuru-gradient-bg text-primary-foreground",
-  green: "bg-growth/15 text-growth ring-1 ring-inset ring-growth/45",
-  amber: "bg-warning/15 text-warning ring-1 ring-inset ring-warning/45",
-  neutral: "bg-white/15 text-white",
+  gradient: "border border-[#77A9E9] bg-white/95 text-[#286FC8] shadow-[0_5px_14px_rgba(33,79,137,0.2)]",
+  green: "border border-white/80 bg-white/95 text-[#182033] shadow-[0_5px_14px_rgba(24,32,51,0.18)]",
+  amber: "border border-white/80 bg-white/95 text-[#182033] shadow-[0_5px_14px_rgba(24,32,51,0.18)]",
+  neutral: "border border-white/80 bg-white/95 text-[#182033] shadow-[0_5px_14px_rgba(24,32,51,0.18)]",
 };
 
 function Pill({
@@ -32,7 +32,7 @@ function Pill({
       disabled={disabled}
       aria-label={aria}
       className={cn(
-        "inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-semibold backdrop-blur-md transition-transform duration-150 active:scale-95 disabled:opacity-40 motion-reduce:active:scale-100",
+        "inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-2xl px-3 text-[11px] font-semibold backdrop-blur-md transition-transform duration-150 active:scale-95 disabled:opacity-40 motion-reduce:active:scale-100",
         TONE_CLASSES[tone],
       )}
     >
@@ -57,7 +57,7 @@ export function ReelFaithActions({
   onDiscuss: () => void;
 }) {
   return (
-    <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
+    <div className="no-scrollbar grid grid-cols-4 gap-2 overflow-x-auto pb-1">
       <Pill
         icon={<BookOpen className="h-3.5 w-3.5" />}
         label="Read"

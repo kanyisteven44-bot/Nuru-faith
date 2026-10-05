@@ -22,6 +22,7 @@ import {
   type FaithCourse,
 } from "@/data/faithCourses";
 import { NURU_PHOTO_POOLS, useRotatingMedia } from "@/lib/rotatingMedia";
+import { LearningLinks } from "@/components/nuru/LearningLinks";
 
 export const Route = createFileRoute("/faith-courses/")({
   head: () => ({
@@ -68,6 +69,7 @@ function FaithCoursesScreen() {
   return (
     <AppShell>
       <ScreenHeader title="Faith Courses" subtitle="Learn deeply. Live faithfully." />
+      <LearningLinks active="Courses" />
 
       <div className="space-y-6 px-4 pb-6">
         <section className="nuru-card relative h-52 overflow-hidden lg:h-80">

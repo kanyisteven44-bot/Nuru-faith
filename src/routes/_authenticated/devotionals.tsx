@@ -9,6 +9,7 @@ import { resolveMedia } from "@/lib/media";
 import { fetchProfile } from "@/services/content";
 import { supabase } from "@/integrations/supabase/client";
 import { DevotionalReader } from "@/components/nuru/DevotionalReader";
+import { LearningLinks } from "@/components/nuru/LearningLinks";
 import { readSavedDevotionalIds, toggleSavedDevotional } from "@/lib/devotionalBookmarks";
 import { AppShell } from "@/components/nuru/AppShell";
 import { FeatureHeaderBar } from "@/components/nuru/FeatureHeader";
@@ -109,6 +110,7 @@ function DevotionalsScreen() {
   return (
     <AppShell>
       <FeatureHeaderBar />
+      <LearningLinks active="Devotionals" />
       <ScreenHero image={resolveMedia("asset:topic-faith")} />
 
       <div className="px-4 pb-6">
@@ -203,11 +205,11 @@ function DevotionalsScreen() {
                     <span className="absolute inset-0 flex items-end gap-3 p-4">
                       <span className="min-w-0 flex-1">
                         {label && <span className="nuru-eyebrow block">{label}</span>}
-                        <span className="mt-1 block truncate font-display text-[22px] leading-tight">
+                        <span className="mt-1 block truncate font-display text-[22px] leading-tight text-white">
                           {d.title}
                         </span>
                         {d.scripture_ref && (
-                          <span className="mt-0.5 block truncate text-[12px] text-ink-2">
+                          <span className="mt-0.5 block truncate text-[12px] text-white/80">
                             {d.scripture_ref}
                           </span>
                         )}

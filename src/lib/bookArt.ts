@@ -1,60 +1,59 @@
-import { pexelsImage } from "@/lib/media";
-
-const artGenesis = pexelsImage(11696719, 800);
-const artExodus = pexelsImage(34612053, 800);
-const artLeviticus = pexelsImage(5206052, 800);
-const artNumbers = pexelsImage(2258251, 800);
-const artDeuteronomy = pexelsImage(8955288, 800);
-const artJoshua = pexelsImage(6860381, 800);
-const artJudges = pexelsImage(34356171, 800);
-const artRuth = pexelsImage(9407893, 800);
-const art1Samuel = pexelsImage(1105392, 800);
-const art2Samuel = pexelsImage(34533557, 800);
-const art1Kings = pexelsImage(33494797, 800);
-const art2Kings = pexelsImage(34611897, 800);
-const art1Chronicles = pexelsImage(11696719, 800);
-const art2Chronicles = pexelsImage(34612053, 800);
-const artEzra = pexelsImage(5206052, 800);
-const artNehemiah = pexelsImage(2258251, 800);
-const artEsther = pexelsImage(8955288, 800);
-const artJob = pexelsImage(6860381, 800);
-const artPsalms = pexelsImage(34356171, 800);
-const artProverbs = pexelsImage(9407893, 800);
-const artEcclesiastes = pexelsImage(1105392, 800);
-const artSongOfSolomon = pexelsImage(34533557, 800);
-const artIsaiah = pexelsImage(33494797, 800);
-const artJeremiah = pexelsImage(34611897, 800);
-const artLamentations = pexelsImage(11696719, 800);
-const artEzekiel = pexelsImage(34612053, 800);
-const artDaniel = pexelsImage(5206052, 800);
-const artHosea = pexelsImage(2258251, 800);
-const artJoel = pexelsImage(8955288, 800);
-const artAmos = pexelsImage(6860381, 800);
-const artObadiah = pexelsImage(34356171, 800);
-const artJonah = pexelsImage(9407893, 800);
-const artMicah = pexelsImage(1105392, 800);
-const artNahum = pexelsImage(34533557, 800);
-const artHabakkuk = pexelsImage(33494797, 800);
-const artZephaniah = pexelsImage(34611897, 800);
-const artHaggai = pexelsImage(11696719, 800);
-const artZechariah = pexelsImage(34612053, 800);
-const artMalachi = pexelsImage(5206052, 800);
-const artMatthew = pexelsImage(2258251, 800);
-const artMark = pexelsImage(8955288, 800);
-const artLuke = pexelsImage(6860381, 800);
-const artJohn = pexelsImage(34356171, 800);
-const artActs = pexelsImage(9407893, 800);
-const artRomans = pexelsImage(1105392, 800);
-const art1Corinthians = pexelsImage(34533557, 800);
-const art2Corinthians = pexelsImage(33494797, 800);
-const artGalatians = pexelsImage(34611897, 800);
-const artEphesians = pexelsImage(11696719, 800);
-const artPhilippians = pexelsImage(34612053, 800);
+const artGenesis = "/photos/open-bible.jpg";
+const artExodus = "/photos/reading-scripture.jpg";
+const artLeviticus = "/photos/church-sunlight.jpg";
+const artNumbers = "/photos/alpine-reflections.jpg";
+const artDeuteronomy = "/photos/mountain-lake.jpg";
+const artJoshua = "/photos/prayer-community.jpg";
+const artJudges = "/photos/open-bible.jpg";
+const artRuth = "/photos/reading-scripture.jpg";
+const art1Samuel = "/photos/church-sunlight.jpg";
+const art2Samuel = "/photos/alpine-reflections.jpg";
+const art1Kings = "/photos/mountain-lake.jpg";
+const art2Kings = "/photos/prayer-community.jpg";
+const art1Chronicles = "/photos/open-bible.jpg";
+const art2Chronicles = "/photos/reading-scripture.jpg";
+const artEzra = "/photos/church-sunlight.jpg";
+const artNehemiah = "/photos/alpine-reflections.jpg";
+const artEsther = "/photos/mountain-lake.jpg";
+const artJob = "/photos/prayer-community.jpg";
+const artPsalms = "/photos/open-bible.jpg";
+const artProverbs = "/photos/reading-scripture.jpg";
+const artEcclesiastes = "/photos/church-sunlight.jpg";
+const artSongOfSolomon = "/photos/alpine-reflections.jpg";
+const artIsaiah = "/photos/mountain-lake.jpg";
+const artJeremiah = "/photos/prayer-community.jpg";
+const artLamentations = "/photos/open-bible.jpg";
+const artEzekiel = "/photos/reading-scripture.jpg";
+const artDaniel = "/photos/church-sunlight.jpg";
+const artHosea = "/photos/alpine-reflections.jpg";
+const artJoel = "/photos/mountain-lake.jpg";
+const artAmos = "/photos/prayer-community.jpg";
+const artObadiah = "/photos/open-bible.jpg";
+const artJonah = "/photos/reading-scripture.jpg";
+const artMicah = "/photos/church-sunlight.jpg";
+const artNahum = "/photos/alpine-reflections.jpg";
+const artHabakkuk = "/photos/mountain-lake.jpg";
+const artZephaniah = "/photos/prayer-community.jpg";
+const artHaggai = "/photos/open-bible.jpg";
+const artZechariah = "/photos/reading-scripture.jpg";
+const artMalachi = "/photos/church-sunlight.jpg";
+const artMatthew = "/photos/alpine-reflections.jpg";
+const artMark = "/photos/mountain-lake.jpg";
+const artLuke = "/photos/prayer-community.jpg";
+const artJohn = "/photos/open-bible.jpg";
+const artActs = "/photos/reading-scripture.jpg";
+const artRomans = "/photos/church-sunlight.jpg";
+const art1Corinthians = "/photos/alpine-reflections.jpg";
+const art2Corinthians = "/photos/mountain-lake.jpg";
+const artGalatians = "/photos/prayer-community.jpg";
+const artEphesians = "/photos/open-bible.jpg";
+const artPhilippians = "/photos/reading-scripture.jpg";
 
 /**
  * Per-book cover art, badge colour and tagline, taken from the Bible page
- * design. The first fifty books use curated Pexels photographs; the remaining
- * sixteen use a neutral cover and retain their existing copy.
+ * design. Symbolic real photographs are used for the first fifty books; the remaining
+ * sixteen fall back to a neutral cover and show no tagline until a cover exists
+ * for them, rather than being given invented copy.
  */
 export type BookArt = { abbr: string; badge: string; tagline: string; art: string };
 

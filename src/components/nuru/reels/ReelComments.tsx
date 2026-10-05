@@ -134,7 +134,7 @@ export function ReelComments({
                 onClick={() => setSort(s)}
                 className={cn(
                   "rounded-full px-2.5 py-1 text-[11px] font-semibold",
-                  sort === s ? "bg-surface-2 text-cyan" : "text-muted-foreground",
+                  sort === s ? "bg-surface-2 text-leaf" : "text-muted-foreground",
                 )}
               >
                 {s}
@@ -153,7 +153,7 @@ export function ReelComments({
               <span className="text-muted-foreground">
                 Replying to {replyTo.profiles?.full_name ?? replyTo.profiles?.username ?? "member"}
               </span>
-              <button type="button" onClick={() => setReplyTo(null)} className="text-cyan">
+              <button type="button" onClick={() => setReplyTo(null)} className="text-leaf">
                 Cancel
               </button>
             </div>
@@ -271,9 +271,9 @@ function CommentRow({
       <div className="min-w-0 flex-1">
         <p className="flex flex-wrap items-center gap-1.5 text-xs">
           <span className="font-semibold">{mine && comment.pending ? "You" : name}</span>
-          {comment.profiles?.verified && <span className="text-cyan">✓</span>}
+          {comment.profiles?.verified && <span className="text-leaf">✓</span>}
           {comment.pinned && (
-            <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[10px] text-cyan">
+            <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[10px] text-leaf">
               Pinned
             </span>
           )}
@@ -290,7 +290,7 @@ function CommentRow({
         {comment.failed ? (
           <button
             onClick={onRetry}
-            className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-cyan"
+            className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-leaf"
           >
             <RotateCcw className="h-3.5 w-3.5" /> Retry
           </button>

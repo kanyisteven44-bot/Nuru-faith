@@ -1,4 +1,4 @@
-import { resolveMedia as resolvePexelsMedia } from "@/lib/media";
+import { resolveMedia } from "@/lib/media";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   BookOpen,
@@ -69,7 +69,7 @@ function HubScreen() {
   return (
     <AppShell>
       <ScreenHeader title="Nuru Faith Hub" subtitle={TAGLINE} />
-      <ScreenHero image={resolvePexelsMedia("asset:quiet-night")} />
+      <ScreenHero image={resolveMedia("asset:quiet-night")} />
       <div className="space-y-7 px-4 py-4">
         {GROUPS.map((g) => (
           <section key={g.title}>

@@ -1,11 +1,12 @@
-const CACHE_NAME = "nuru-static-v3";
+const CACHE_NAME = "nuru-static-v6-arch-icon";
 const PRECACHE = [
   "/offline.html",
+  "/photos/mountain-lake.jpg",
   "/manifest.webmanifest",
-  "/favicon.png",
-  "/icons/icon-192.png",
-  "/icons/icon-512.png",
-  "/icons/maskable-512.png",
+  "/favicon.png?v=arch1",
+  "/icons/icon-192.png?v=arch1",
+  "/icons/icon-512.png?v=arch1",
+  "/icons/maskable-512.png?v=arch1",
 ];
 
 self.addEventListener("install", (event) => {
@@ -88,8 +89,8 @@ self.addEventListener("push", (event) => {
   event.waitUntil(
     self.registration.showNotification(title, {
       body,
-      icon: "/icons/icon-192.png",
-      badge: "/icons/icon-192.png",
+      icon: "/icons/icon-192.png?v=arch1",
+      badge: "/icons/icon-192.png?v=arch1",
       tag: id ? `nuru-${id}` : undefined,
       data: { url },
     }),

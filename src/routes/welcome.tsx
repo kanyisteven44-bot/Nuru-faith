@@ -1,4 +1,5 @@
-import { resolveMedia as resolvePexelsMedia } from "@/lib/media";
+import { CoverImage } from "@/components/nuru/CoverImage";
+import { resolveMedia } from "@/lib/media";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowRight, HandHeart, Sprout, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -28,17 +29,23 @@ function Welcome() {
 
   return (
     <div className="relative min-h-dvh overflow-hidden bg-background">
-      <img
-        src={resolvePexelsMedia("asset:quiet-night")}
+      <CoverImage
+        src={resolveMedia("asset:quiet-night")}
         alt=""
         width={1024}
         height={640}
-        className="absolute inset-x-0 bottom-0 h-[55%] w-full object-cover opacity-60"
+        className="absolute inset-x-0 bottom-0 h-[55%] w-full object-cover opacity-100"
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-background via-background/85 to-background/55" />
+      <div className="absolute inset-0 bg-gradient-to-b from-background via-background/45 to-background/25" />
 
       <div className="relative mx-auto flex min-h-dvh max-w-xl flex-col px-7 pb-10 pt-[max(1.5rem,env(safe-area-inset-top))]">
-        <div className="flex justify-end">
+        <div className="flex items-center justify-between">
+          <Link
+            to="/opening"
+            className="inline-flex min-h-11 items-center rounded-full px-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+          >
+            Replay opening
+          </Link>
           <Link
             to="/auth"
             search={{ mode: "login" }}
@@ -52,7 +59,7 @@ function Welcome() {
           <h1 className="font-display text-[34px] leading-[1.15] font-bold tracking-tight">
             Welcome to
             <br />
-            Nuru <span className="text-cyan">Faith</span>
+            Nuru <span className="text-leaf">Faith</span>
           </h1>
           <p className="mt-3 max-w-[17rem] text-sm leading-relaxed text-secondary-foreground">
             A safe, Christ-centered community for young people.
@@ -62,7 +69,7 @@ function Welcome() {
         <ul className="space-y-4 pt-10">
           {VALUES.map(({ icon: Icon, title, copy }) => (
             <li key={title} className="flex items-center gap-4">
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-primary/40 bg-primary/12 text-cyan">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-primary/40 bg-primary/12 text-leaf">
                 <Icon className="h-5.5 w-5.5" strokeWidth={1.8} />
               </span>
               <span>
@@ -80,7 +87,7 @@ function Welcome() {
                 key={i}
                 className={cn(
                   "h-1.5 rounded-full transition-all",
-                  i === 0 ? "w-5 bg-cyan" : "w-1.5 bg-surface-2",
+                  i === 0 ? "w-5 bg-leaf" : "w-1.5 bg-surface-2",
                 )}
               />
             ))}

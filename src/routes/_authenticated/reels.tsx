@@ -68,12 +68,20 @@ const YOUTUBE_BATCH_SIZE = 12;
 
 function readMuted() {
   if (typeof window === "undefined") return true;
-  return window.localStorage.getItem(MUTED_KEY) !== "false";
+  try {
+    return window.localStorage.getItem(MUTED_KEY) !== "false";
+  } catch {
+    return true;
+  }
 }
 
 function dataSaverOn() {
   if (typeof window === "undefined") return false;
-  if (window.localStorage.getItem(DATA_SAVER_KEY) === "on") return true;
+  try {
+    if (window.localStorage.getItem(DATA_SAVER_KEY) === "on") return true;
+  } catch {
+    /* use device preference */
+  }
   const conn = (navigator as unknown as { connection?: { saveData?: boolean } }).connection;
   return conn?.saveData === true;
 }
@@ -346,7 +354,11 @@ function ReelsScreen() {
   function toggleMuted() {
     setMuted((m) => {
       const next = !m;
-      window.localStorage.setItem(MUTED_KEY, String(next));
+      try {
+        window.localStorage.setItem(MUTED_KEY, String(next));
+      } catch {
+        /* playback still works without storage */
+      }
       return next;
     });
   }
@@ -469,7 +481,7 @@ function ReelsScreen() {
 
   return (
     <AppShell flush>
-      <div className="relative h-[calc(100dvh-4.5rem-env(safe-area-inset-bottom))] w-full bg-black">
+      <div className="relative h-[calc(100dvh-4.5rem-env(safe-area-inset-bottom))] w-full overflow-hidden bg-slate-950 md:rounded-3xl">
         <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-center pt-[max(0.75rem,env(safe-area-inset-top))]">
           <div className="pointer-events-auto">
             <ReelFeedTabs value={feed} onChange={setFeed} />
@@ -521,7 +533,7 @@ function ReelsScreen() {
         {items.length > 0 && view === "feed" && (
           <div
             ref={scrollerRef}
-            className="no-scrollbar h-full snap-y snap-mandatory overflow-y-auto overscroll-contain"
+            className="no-scrollbar mx-auto mt-16 h-[calc(100%_-_4rem)] w-full max-w-[440px] snap-y snap-mandatory overflow-y-auto overscroll-contain md:rounded-t-2xl"
           >
             {items.map((reel, i) => (
               <ReelPane

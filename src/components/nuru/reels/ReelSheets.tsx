@@ -24,7 +24,7 @@ export function ReadSheet({ reel, onClose }: { reel: Reel; onClose: () => void }
       onClose={onClose}
       height="max-h-[75dvh]"
       title={
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-cyan">
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-leaf">
           {reel.scripture_ref}
         </p>
       }
@@ -48,7 +48,7 @@ export function ReadSheet({ reel, onClose }: { reel: Reel; onClose: () => void }
             className="mt-4 flex items-center justify-between rounded-2xl bg-surface-2 p-3 text-sm font-semibold"
           >
             Study this deeper in a Scripture Series
-            <span className="text-cyan">Open</span>
+            <span className="text-leaf">Open</span>
           </Link>
         )}
       </div>

@@ -1,4 +1,5 @@
-import { resolveMedia as resolvePexelsMedia } from "@/lib/media";
+import { CoverImage } from "@/components/nuru/CoverImage";
+import { resolveMedia } from "@/lib/media";
 import { useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -44,6 +45,8 @@ function Onboarding() {
   const [stage, setStage] = useState("growing");
   const [interests, setInterests] = useState<string[]>([]);
   const [churchId, setChurchId] = useState<string | null>(null);
+  const [churchSearch, setChurchSearch] = useState("");
+  const [churchLimit, setChurchLimit] = useState(30);
   const [saving, setSaving] = useState(false);
 
   const { data: churches = [] } = useQuery({
@@ -51,9 +54,21 @@ function Onboarding() {
     queryFn: () => fetchChurches(),
   });
 
-  const filteredChurches = denomination
-    ? churches.filter((c) => c.denomination === denomination || !c.denomination)
+  const denominationChurches = denomination
+    ? churches.filter(
+        (c) =>
+          c.denomination === denomination ||
+          !c.denomination ||
+          (denomination === "Presbyterian (PCEA)" && c.denomination === "Presbyterian"),
+      )
     : churches;
+  const filteredChurches = denominationChurches.filter((c) =>
+    [c.name, c.region, c.city, c.denomination]
+      .filter(Boolean)
+      .join(" ")
+      .toLocaleLowerCase()
+      .includes(churchSearch.trim().toLocaleLowerCase()),
+  );
 
   async function finish() {
     if (!userId) return;
@@ -86,8 +101,8 @@ function Onboarding() {
 
   return (
     <div className="relative min-h-dvh bg-background">
-      <img
-        src={resolvePexelsMedia("asset:walk-purpose")}
+      <CoverImage
+        src={resolveMedia("asset:walk-purpose")}
         alt=""
         loading="eager"
         className="absolute inset-x-0 top-0 h-64 w-full object-cover opacity-30"
@@ -233,19 +248,42 @@ function Onboarding() {
           {step === 3 && (
             <>
               <p className="text-sm text-muted-foreground">
-                Join your church community — you can change this later.
+                Choose your church — you can change this later. Map listings do not mean a church
+                has joined Nuru Faith.
+              </p>
+              <input
+                aria-label="Find your church"
+                className="input-nuru w-full"
+                placeholder="Church name, county or town"
+                value={churchSearch}
+                onChange={(event) => {
+                  setChurchSearch(event.target.value);
+                  setChurchLimit(30);
+                }}
+              />
+              <p className="text-xs text-muted-foreground">
+                {filteredChurches.length} churches found
               </p>
               <div className="space-y-2">
-                {filteredChurches.map((c) => (
+                {filteredChurches.slice(0, churchLimit).map((c) => (
                   <SelectCard
                     key={c.id}
                     selected={churchId === c.id}
                     onClick={() => setChurchId(churchId === c.id ? null : c.id)}
                     title={c.name}
-                    hint={[c.denomination, c.city].filter(Boolean).join(" · ")}
+                    hint={[c.region, c.city, c.denomination].filter(Boolean).join(" · ")}
                   />
                 ))}
               </div>
+              {churchLimit < filteredChurches.length && (
+                <button
+                  type="button"
+                  className="btn-nuru-ghost min-h-11"
+                  onClick={() => setChurchLimit((limit) => limit + 30)}
+                >
+                  Show more churches
+                </button>
+              )}
             </>
           )}
         </div>
@@ -307,14 +345,14 @@ function SelectCard({
       aria-pressed={selected}
       className={cn(
         "flex min-h-14 w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-colors",
-        selected ? "border-cyan bg-surface-2" : "border-border bg-surface hover:bg-surface-2",
+        selected ? "border-leaf bg-surface-2" : "border-border bg-surface hover:bg-surface-2",
       )}
     >
       <span className="flex-1">
         <span className="block text-sm font-semibold">{title}</span>
         {hint && <span className="block text-xs text-muted-foreground">{hint}</span>}
       </span>
-      {selected && <Check className="h-4 w-4 text-cyan" />}
+      {selected && <Check className="h-4 w-4 text-leaf" />}
     </button>
   );
 }

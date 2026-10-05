@@ -1,8 +1,8 @@
+import { CoverImage } from "@/components/nuru/CoverImage";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { BookOpen, ChevronRight, GraduationCap, Sparkles, Sunrise } from "lucide-react";
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
-import { PhotoCredit } from "@/components/nuru/PhotoCredit";
-import { NURU_PHOTO_POOLS, usePexelsRotatingMedia } from "@/lib/rotatingMedia";
+import { NURU_PHOTO_POOLS, useRotatingMedia } from "@/lib/rotatingMedia";
 
 export const Route = createFileRoute("/_authenticated/grow")({
   head: () => ({
@@ -18,35 +18,28 @@ export const Route = createFileRoute("/_authenticated/grow")({
 });
 
 function GrowScreen() {
-  const hero = usePexelsRotatingMedia("courses", NURU_PHOTO_POOLS.courses, "grow-hub");
+  const hero = useRotatingMedia(NURU_PHOTO_POOLS.courses, "grow-hub");
 
   return (
     <AppShell>
       <ScreenHeader title="Devotions & Series" subtitle="Read daily. Go deeper." />
 
-      <div className="grid gap-5 px-4 pb-6 lg:grid-cols-2 lg:px-6">
-        <section className="nuru-card relative h-64 overflow-hidden lg:col-span-2 lg:h-80">
-          <img src={hero.src} alt="" className="absolute inset-0 h-full w-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent" />
-          <div className="relative flex h-full max-w-[85%] flex-col justify-end p-6 lg:max-w-[55%] lg:p-9">
-            <p className="text-[10px] font-bold tracking-[0.24em] text-cyan uppercase">
-              The reading room
+      <div className="space-y-5 px-4 pb-6">
+        <section className="nuru-card relative h-48 overflow-hidden">
+          <CoverImage src={hero} alt="" className="absolute inset-0 h-full w-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-r from-background via-background/78 to-background/20" />
+          <div className="relative flex h-full max-w-[80%] flex-col justify-end p-4">
+            <p className="text-[10px] font-bold tracking-[0.15em] text-leaf uppercase">
+              Grow in Scripture
             </p>
-            <h1 className="mt-3 font-display text-3xl leading-tight font-semibold text-white lg:text-5xl">
-              Make room for a deeper faith.
+            <h1 className="mt-1 font-display text-2xl font-bold text-white">
+              One place for daily reflection and deeper study.
             </h1>
-            <p className="mt-3 text-sm leading-relaxed text-white/75">
-              Daily reflection, thoughtful study, and a path to keep growing.
-            </p>
           </div>
-          <PhotoCredit photo={hero.credit} />
         </section>
 
-        <Link
-          to="/devotionals"
-          className="nuru-card flex min-h-40 items-center gap-5 p-5 transition-colors hover:border-primary/40 active:opacity-90 lg:p-7"
-        >
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 to-green-600 text-white shadow-lg shadow-black/25">
+        <Link to="/devotionals" className="nuru-card flex items-center gap-4 p-4 active:opacity-90">
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl nuru-disc">
             <Sunrise className="h-6 w-6" />
           </span>
           <span className="min-w-0 flex-1">
@@ -61,11 +54,8 @@ function GrowScreen() {
           <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
         </Link>
 
-        <Link
-          to="/series"
-          className="nuru-card flex min-h-40 items-center gap-5 p-5 transition-colors hover:border-primary/40 active:opacity-90 lg:p-7"
-        >
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-400 to-amber-600 text-white shadow-lg shadow-black/25">
+        <Link to="/series" className="nuru-card flex items-center gap-4 p-4 active:opacity-90">
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl nuru-disc nuru-disc-sand">
             <GraduationCap className="h-6 w-6" />
           </span>
           <span className="min-w-0 flex-1">
@@ -82,10 +72,10 @@ function GrowScreen() {
 
         <Link
           to="/faith-courses"
-          className="relative overflow-hidden rounded-2xl border border-primary/30 bg-primary/10 p-5 active:opacity-90 lg:col-span-2 lg:p-7"
+          className="relative overflow-hidden rounded-2xl border border-primary/30 bg-primary/10 p-4 active:opacity-90"
         >
           <div className="flex items-start gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-primary/30 bg-primary/10 text-cyan">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-primary/30 bg-primary/10 text-leaf">
               <Sparkles className="h-5 w-5" />
             </span>
             <span className="min-w-0 flex-1">
@@ -95,7 +85,7 @@ function GrowScreen() {
                 lesson-by-lesson learning.
               </span>
             </span>
-            <BookOpen className="h-4 w-4 shrink-0 text-cyan" />
+            <BookOpen className="h-4 w-4 shrink-0 text-leaf" />
           </div>
         </Link>
       </div>

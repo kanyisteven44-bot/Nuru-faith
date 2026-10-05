@@ -1,7 +1,7 @@
 import { Bookmark, Heart, MessageCircle, MoreHorizontal, Share2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { compactNumber } from "@/lib/format";
-import { resolveMedia } from "@/lib/media";
+import { generatedAvatar } from "@/lib/avatar";
 
 function RailButton({
   icon,
@@ -28,7 +28,7 @@ function RailButton({
         className={cn(
           "flex h-9 w-9 items-center justify-center rounded-full bg-black/25 backdrop-blur-sm",
           tint === "destructive" && "bg-destructive/25",
-          tint === "cyan" && "bg-cyan/20",
+          tint === "cyan" && "bg-leaf/20",
         )}
       >
         {icon}
@@ -75,7 +75,11 @@ export function ReelActions({
         className="transition-transform duration-150 active:scale-90"
       >
         <img
-          src={resolveMedia(avatarUrl)}
+          src={avatarUrl || generatedAvatar(creatorName, creatorName)}
+          onError={(event) => {
+            event.currentTarget.onerror = null;
+            event.currentTarget.src = generatedAvatar(creatorName, creatorName);
+          }}
           alt=""
           width={44}
           height={44}
@@ -102,7 +106,7 @@ export function ReelActions({
         aria={saved ? "Remove Reel from saved" : "Save Reel"}
         onClick={onSave}
         tint={saved ? "cyan" : undefined}
-        icon={<Bookmark className={cn("h-5.5 w-5.5", saved && "fill-cyan text-cyan")} />}
+        icon={<Bookmark className={cn("h-5.5 w-5.5", saved && "fill-leaf text-leaf")} />}
       />
       <RailButton
         aria="More options for this Reel"

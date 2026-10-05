@@ -81,7 +81,7 @@ export function PostCard({
   }
 
   return (
-    <article className="border-b border-border pb-4 last:border-b-0">
+    <article className="nuru-card p-3.5">
       <div className="flex items-center gap-3 px-1 pb-3">
         <Avatar src={avatar} name={name} seed={post.author_id} />
         <div className="min-w-0 flex-1">
@@ -98,7 +98,7 @@ export function PostCard({
       )}
 
       {post.scripture_ref && (
-        <p className="px-1 pb-3 text-xs font-semibold text-cyan">{post.scripture_ref}</p>
+        <p className="px-1 pb-3 text-xs font-semibold text-leaf">{post.scripture_ref}</p>
       )}
 
       {post.media_url && (
@@ -113,7 +113,7 @@ export function PostCard({
       )}
 
       {post.hashtags?.length ? (
-        <p className="px-1 pt-3 text-xs text-cyan">{post.hashtags.join(" ")}</p>
+        <p className="px-1 pt-3 text-xs text-leaf">{post.hashtags.join(" ")}</p>
       ) : null}
 
       <div className="flex items-center gap-1 pt-1">
@@ -164,7 +164,7 @@ export function PostCard({
             })
           }
         >
-          <Bookmark className={cn("h-4.5 w-4.5", saved && "fill-cyan text-cyan")} />
+          <Bookmark className={cn("h-4.5 w-4.5", saved && "fill-leaf text-leaf")} />
         </ActionButton>
 
         <ActionButton
@@ -248,18 +248,20 @@ export function Avatar({
   seed?: string | null | undefined;
   size?: "sm" | "md" | "lg" | undefined;
 }) {
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const dim =
     size === "sm"
       ? "h-7 w-7 text-[10px]"
       : size === "lg"
         ? "h-16 w-16 text-lg"
         : "h-10 w-10 text-xs";
-  if (src) {
+  if (src && src !== failedSrc) {
     return (
       <img
         src={resolveMedia(src)}
         alt=""
         loading="lazy"
+        onError={() => setFailedSrc(src)}
         className={cn("shrink-0 rounded-full object-cover ring-1 ring-border-strong", dim)}
       />
     );
@@ -291,7 +293,7 @@ function ActionButton({
       onClick={onClick}
       className={cn(
         "inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-full px-3 text-xs font-medium transition-colors hover:bg-surface-2",
-        active ? "text-cyan" : "text-muted-foreground",
+        active ? "text-leaf" : "text-ink-3",
       )}
     >
       {children}

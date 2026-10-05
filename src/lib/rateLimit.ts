@@ -12,10 +12,7 @@ export async function enforceNuruRateLimit(
 
   if (!error) return;
 
-  if (
-    error.message.includes("RATE_LIMITED") ||
-    error.details?.includes("Too many requests")
-  ) {
+  if (error.message.includes("RATE_LIMITED") || error.details?.includes("Too many requests")) {
     throw new Error(message);
   }
 

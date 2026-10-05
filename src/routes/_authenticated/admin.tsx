@@ -1,3 +1,4 @@
+import { AdminDirectory } from "@/components/nuru/AdminDirectory";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -25,14 +26,11 @@ import {
   updateModerationStatus,
   type ModerationItem,
 } from "@/services/content";
-import {
-  CardSkeleton,
-  ComingSoon,
-  EmptyState,
-  SectionHeader,
-} from "@/components/nuru/Primitives";
+import { CardSkeleton, EmptyState, SectionHeader } from "@/components/nuru/Primitives";
 import { NuruLogo } from "@/components/nuru/Logo";
+import { MusicCatalogImport } from "@/components/youtube/MusicCatalogImport";
 import { getPilotMetrics } from "@/lib/pilot.functions";
+import { AdminOperations } from "@/components/nuru/AdminOperations";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -101,9 +99,10 @@ function AdminScreen() {
   });
 
   const myChurchIds = (roles.data ?? []).map((r) => r.church_id).filter(Boolean);
-  const scoped = isSuper || isModerator
-    ? (churches.data ?? [])
-    : (churches.data ?? []).filter((c) => myChurchIds.includes(c.id));
+  const scoped =
+    isSuper || isModerator
+      ? (churches.data ?? [])
+      : (churches.data ?? []).filter((c) => myChurchIds.includes(c.id));
 
   if (roles.isLoading) {
     return (
@@ -120,7 +119,7 @@ function AdminScreen() {
           title="Admin access only"
           description="This dashboard is for church admins and Nuru moderation staff."
           action={
-            <Link to="/home" className="mt-2 text-sm font-semibold text-cyan">
+            <Link to="/home" className="mt-2 text-sm font-semibold text-leaf">
               Back to Nuru Faith
             </Link>
           }
@@ -149,22 +148,26 @@ function AdminScreen() {
       <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-surface/90 px-6 py-4 backdrop-blur-xl">
         <div className="flex items-center gap-4">
           <NuruLogo compact />
-          <span className="hidden items-center gap-1.5 rounded-full bg-surface-2 px-3 py-1 text-xs text-cyan sm:flex">
+          <span className="hidden items-center gap-1.5 rounded-full bg-surface-2 px-3 py-1 text-xs text-leaf sm:flex">
             <ShieldCheck className="h-3.5 w-3.5" /> {roleLabel}
           </span>
         </div>
-        <Link to="/home" className="text-sm font-medium text-cyan">
+        <Link to="/home" className="text-sm font-medium text-leaf">
           Back to app
         </Link>
       </header>
 
       <main className="mx-auto max-w-5xl space-y-8 px-6 py-8">
+        {isSuper && userId && <AdminDirectory userId={userId} churches={churches.data ?? []} />}
+        {(isSuper || isModerator) && <MusicCatalogImport />}
         <div>
           <h1 className="font-display text-2xl font-semibold">Nuru operations dashboard</h1>
           <p className="text-sm text-muted-foreground">
             Manage community activity, gatherings and reports within your authorized scope.
           </p>
         </div>
+
+        {isSuper && <AdminOperations churches={churches.data ?? []} />}
 
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <Metric label="Churches" value={scoped.length} icon={LayoutDashboard} />
@@ -191,11 +194,17 @@ function AdminScreen() {
                   <Metric label="Members" value={pilotMetrics.profiles} icon={Users} />
                   <Metric label="Active today" value={pilotMetrics.active_today} icon={Activity} />
                   <Metric label="7-day active" value={pilotMetrics.active_7d} icon={UserCheck} />
-                  <Metric label="Push enabled" value={pilotMetrics.push_enabled_users} icon={BellRing} />
+                  <Metric
+                    label="Push enabled"
+                    value={pilotMetrics.push_enabled_users}
+                    icon={BellRing}
+                  />
                 </div>
                 <div className="mt-3 grid gap-3 md:grid-cols-2">
                   <div className="nuru-card p-4">
-                    <p className="text-xs font-medium text-muted-foreground">Onboarding completion</p>
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Onboarding completion
+                    </p>
                     <p className="mt-1 font-display text-2xl font-semibold">{onboardingRate}%</p>
                     <p className="mt-1 text-[11px] text-muted-foreground">
                       {pilotMetrics.onboarded} of {pilotMetrics.profiles} profiles onboarded
@@ -205,7 +214,8 @@ function AdminScreen() {
                     <p className="text-xs font-medium text-muted-foreground">Core activation</p>
                     <p className="mt-1 font-display text-2xl font-semibold">{activationRate}%</p>
                     <p className="mt-1 text-[11px] text-muted-foreground">
-                      A user counts as activated after a Reel view, follow, post or mentorship request.
+                      A user counts as activated after a Reel view, follow, post or mentorship
+                      request.
                     </p>
                   </div>
                 </div>
@@ -228,13 +238,13 @@ function AdminScreen() {
                 No church is linked to your current administrative scope.
               </p>
             )}
-            {scoped.map((c) => (
+            {scoped.slice(0, 12).map((c) => (
               <article key={c.id} className="nuru-card p-4">
                 <p className="text-sm font-semibold">{c.name}</p>
                 <p className="text-xs text-muted-foreground">
                   {[c.denomination, c.city].filter(Boolean).join(" · ")}
                 </p>
-                <p className="mt-2 text-[11px] text-cyan">
+                <p className="mt-2 text-[11px] text-leaf">
                   {c.verified ? "Verified" : "Pending verification"}
                 </p>
               </article>
@@ -268,7 +278,7 @@ function AdminScreen() {
                         {item.target}
                       </p>
                     </div>
-                    <span className="rounded-full border border-border-strong bg-surface-2 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-cyan">
+                    <span className="rounded-full border border-border-strong bg-surface-2 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-leaf">
                       {item.status}
                     </span>
                   </div>
@@ -333,7 +343,7 @@ function AdminScreen() {
                   <p className="truncate text-sm font-semibold">{e.title}</p>
                   <p className="text-xs text-muted-foreground">{eventDate(e.starts_at)}</p>
                 </div>
-                <span className="text-[11px] text-cyan">{e.churches?.name}</span>
+                <span className="text-[11px] text-leaf">{e.churches?.name}</span>
               </div>
             ))}
           </div>
@@ -351,16 +361,22 @@ function AdminScreen() {
           </div>
         </section>
 
-        <section className="grid gap-3 md:grid-cols-2">
-          <Panel title="Publish content" icon={LayoutDashboard} />
-          <Panel title="Member management" icon={Users} />
+        <section className="grid gap-3 md:grid-cols-3" aria-label="Learning library">
+          <Link to="/faith-courses" className="nuru-card p-4 font-semibold">
+            Courses & studies
+          </Link>
+          <Link to="/devotionals" className="nuru-card p-4 font-semibold">
+            Devotional library
+          </Link>
+          <Link to="/series" className="nuru-card p-4 font-semibold">
+            Scripture series
+          </Link>
         </section>
-
-        <p className="text-[11px] text-muted-foreground">
-          Mentors in scope: {mentors.data?.length ?? 0}. Administrative actions are still enforced
-          by Supabase row-level security; hiding a control in this dashboard is not treated as an
-          authorization boundary.
-        </p>
+        {!isSuper && (
+          <p className="text-xs text-muted-foreground">
+            Mentors available: {mentors.data?.length ?? 0}
+          </p>
+        )}
       </main>
     </div>
   );
@@ -377,19 +393,9 @@ function Metric({
 }) {
   return (
     <div className="nuru-card p-4">
-      <Icon className="h-4 w-4 text-cyan" />
+      <Icon className="h-4 w-4 text-leaf" />
       <p className="mt-2 font-display text-2xl font-semibold">{value}</p>
       <p className="text-xs text-muted-foreground">{label}</p>
-    </div>
-  );
-}
-
-function Panel({ title, icon: Icon }: { title: string; icon: typeof Users }) {
-  return (
-    <div className="nuru-card flex items-center gap-3 p-4">
-      <Icon className="h-4 w-4 text-cyan" />
-      <span className="flex-1 text-sm font-semibold">{title}</span>
-      <ComingSoon label="Soon" />
     </div>
   );
 }

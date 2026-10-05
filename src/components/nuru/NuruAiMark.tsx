@@ -22,8 +22,8 @@ export function NuruAiMark({ className }: { className?: string }) {
           y2="106"
           gradientUnits="userSpaceOnUse"
         >
-          <stop offset="0" stopColor="#7fe7ff" />
-          <stop offset="1" stopColor="#a9cf68" />
+          <stop offset="0" stopColor="#BDEBFF" />
+          <stop offset="1" stopColor="#48BFFF" />
         </linearGradient>
         <radialGradient id="nuru-ai-face" cx="0.5" cy="0.38" r="0.75">
           <stop offset="0" stopColor="#0a1c33" />

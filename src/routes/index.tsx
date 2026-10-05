@@ -1,4 +1,5 @@
-import { resolveMedia as resolvePexelsMedia } from "@/lib/media";
+import { CoverImage } from "@/components/nuru/CoverImage";
+import { resolveMedia } from "@/lib/media";
 import { useEffect } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
@@ -51,8 +52,8 @@ function Splash() {
 
   return (
     <div className="relative min-h-dvh overflow-hidden bg-background">
-      <img
-        src={resolvePexelsMedia("asset:mountain-dawn")}
+      <CoverImage
+        src={resolveMedia("asset:mountain-dawn")}
         alt=""
         width={1024}
         height={640}
@@ -64,13 +65,13 @@ function Splash() {
         <NuruMark className="h-24 w-24" />
 
         <h1 className="mt-6 font-display text-[40px] leading-none font-bold tracking-tight">
-          Nuru <span className="text-cyan">Faith</span>
+          Nuru <span className="text-leaf">Faith</span>
         </h1>
         <p className="mt-3 text-[13px] tracking-wide text-secondary-foreground">
           Connect • Grow • Live Your Faith
         </p>
 
-        <p className="script mt-10 text-3xl leading-snug text-cyan/95">
+        <p className="script mt-10 text-3xl leading-snug text-leaf/95">
           Faith Today
           <br />A Brighter Tomorrow
         </p>

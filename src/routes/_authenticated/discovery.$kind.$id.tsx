@@ -1,4 +1,5 @@
-﻿import { createFileRoute, Link } from "@tanstack/react-router";
+import { CoverImage } from "@/components/nuru/CoverImage";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BadgeCheck, Church, UserPlus } from "lucide-react";
 import { toast } from "sonner";
@@ -45,7 +46,7 @@ function ContentDetail({ kindParam, id }: { kindParam: string; id: string }) {
         <Link
           to="/explore"
           search={{ q: "", kind: "all" }}
-          className="inline-flex min-h-11 items-center text-sm text-cyan"
+          className="inline-flex min-h-11 items-center text-sm text-leaf"
         >
           Back to Explore
         </Link>
@@ -61,7 +62,7 @@ function ContentDetail({ kindParam, id }: { kindParam: string; id: string }) {
           <article className="nuru-card space-y-4 overflow-hidden p-4">
             <h1 className="font-display text-xl font-semibold break-words">{item.title}</h1>
             {item.image && (
-              <img
+              <CoverImage
                 src={resolveMedia(item.image)}
                 alt=""
                 className="max-h-64 w-full rounded-xl object-cover"
@@ -71,6 +72,30 @@ function ContentDetail({ kindParam, id }: { kindParam: string; id: string }) {
               {item.description}
             </p>
             {item.reference && <ScriptureText reference={item.reference} />}
+            {item.kind === "churches" && item.sourceUrl && (
+              <div className="space-y-2">
+                <a
+                  href={item.sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-h-11 items-center rounded-full border border-primary/40 px-5 text-sm font-semibold text-primary"
+                >
+                  View church on map
+                </a>
+                <p className="text-xs text-muted-foreground">
+                  Map data © OpenStreetMap contributors, licensed under{" "}
+                  <a
+                    href="https://opendatacommons.org/licenses/odbl/1-0/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline"
+                  >
+                    ODbL
+                  </a>
+                  . Confirm details with the church before visiting.
+                </p>
+              </div>
+            )}
             {item.source === "youtube" && item.externalId && (
               <YouTubePlayer videoId={item.externalId} title={item.title} />
             )}
@@ -79,7 +104,7 @@ function ContentDetail({ kindParam, id }: { kindParam: string; id: string }) {
             )}
             {item.kind === "series" && item.slug && (
               <Link
-                className="inline-flex min-h-11 items-center text-cyan"
+                className="inline-flex min-h-11 items-center text-leaf"
                 to="/series/$slug"
                 params={{ slug: item.slug }}
               >
@@ -88,7 +113,7 @@ function ContentDetail({ kindParam, id }: { kindParam: string; id: string }) {
             )}
             {item.kind === "reels" && (
               <a
-                className="inline-flex min-h-11 items-center text-cyan"
+                className="inline-flex min-h-11 items-center text-leaf"
                 href={`/reels?reel=${item.id}`}
               >
                 Watch this Reel
@@ -182,21 +207,20 @@ function PublicProfileDetail({ id }: { id: string }) {
               <h1 className="flex items-center gap-1.5 font-display text-xl font-bold">
                 <span className="truncate">{name}</span>
                 {p.verified && (
-                  <BadgeCheck
-                    aria-label="Verified"
-                    className="h-4.5 w-4.5 shrink-0 text-cyan"
-                  />
+                  <BadgeCheck aria-label="Verified" className="h-4.5 w-4.5 shrink-0 text-leaf" />
                 )}
               </h1>
               {p.username && (
                 <p className="mt-0.5 truncate text-[13px] text-muted-foreground">@{p.username}</p>
               )}
               {p.bio && (
-                <p className="mt-3 text-[13px] leading-relaxed text-secondary-foreground">{p.bio}</p>
+                <p className="mt-3 text-[13px] leading-relaxed text-secondary-foreground">
+                  {p.bio}
+                </p>
               )}
               {p.churches?.name && (
                 <p className="mt-3 flex items-center gap-1.5 text-[12px] text-muted-foreground">
-                  <Church className="h-3.5 w-3.5 text-cyan" />
+                  <Church className="h-3.5 w-3.5 text-leaf" />
                   {p.churches.name}
                 </p>
               )}

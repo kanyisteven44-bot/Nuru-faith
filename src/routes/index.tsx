@@ -28,13 +28,14 @@ function Splash() {
 
   useEffect(() => {
     let done = false;
-    const go = (to: "/home" | "/welcome") => {
+    const go = (to: "/home" | "/auth") => {
       if (done) return;
       done = true;
-      void navigate({ to, replace: true });
+      if (to === "/auth") void navigate({ to, search: { mode: "login" }, replace: true });
+      else void navigate({ to, replace: true });
     };
 
-    const timer = setTimeout(() => go("/welcome"), SPLASH_MS);
+    const timer = setTimeout(() => go("/auth"), SPLASH_MS);
     void supabase.auth.getSession().then(({ data }) => {
       if (data.session) {
         clearTimeout(timer);

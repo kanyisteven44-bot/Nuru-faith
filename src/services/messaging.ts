@@ -34,7 +34,7 @@ const chat = supabase as unknown as SupabaseClient<ChatDatabase>;
 export type ChatTarget =
   | { mentor: string; requester: string }
   | { group: string }
-  | { user: string };
+  | { user: string; self: string };
 export const CHAT_LIMIT = 50;
 
 export type DirectThread = {
@@ -64,7 +64,7 @@ export async function fetchChatMessages(
             .from("direct_messages")
             .select("*")
             .or(
-              `and(sender_id.eq.${(await supabase.auth.getUser()).data.user?.id ?? "00000000-0000-0000-0000-000000000000"},recipient_id.eq.${target.user}),and(sender_id.eq.${target.user},recipient_id.eq.${(await supabase.auth.getUser()).data.user?.id ?? "00000000-0000-0000-0000-000000000000"})`,
+              `and(sender_id.eq.${target.self},recipient_id.eq.${target.user}),and(sender_id.eq.${target.user},recipient_id.eq.${target.self})`,
             )
         : chat
             .from("mentor_chat_messages")

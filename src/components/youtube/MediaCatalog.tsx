@@ -1,13 +1,16 @@
 import { useEffect, useRef, useState } from "react";
-import { useInfiniteQuery } from "@tanstack/react-query";
-import { Minimize2, Pause, Play, Video, X } from "lucide-react";
-import { fetchMediaCatalog, type MediaItem } from "@/services/media";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Bookmark, ChevronDown, Pause, Play, Repeat2, Share2, Volume2, VolumeX } from "lucide-react";
+import { fetchMediaCatalog, fetchMySavedMediaIds, toggleSavedMedia, type MediaItem } from "@/services/media";
 import { CoverImage } from "@/components/nuru/CoverImage";
 import { CardSkeleton, EmptyState, PrimaryButton } from "@/components/nuru/Primitives";
 import { resolveMedia } from "@/lib/media";
 import { playableAudioUrl, videoArtwork, youtubeVideoId } from "@/lib/mediaPlayback";
 import { duration } from "@/lib/format";
 import { InAppMediaPlayer as YouTubePlayer } from "./InAppMediaPlayer";
+import { useAuth } from "@/hooks/useAuth";
+import { useShareSheet } from "@/hooks/useShareSheet";
+import { toast } from "sonner";
 
 export function MediaCatalog({
   mediaType,
@@ -173,27 +176,51 @@ export function MediaCatalog({
 }
 
 export function MediaPlayback({ item, onClose }: { item: MediaItem; onClose: () => void }) {
+  const { userId } = useAuth();
+  const qc = useQueryClient();
+  const shareSheet = useShareSheet();
   const audioRef = useRef<HTMLAudioElement>(null);
   const [audioFailed, setAudioFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [playing, setPlaying] = useState(false);
-  const [showVideo, setShowVideo] = useState(false);
+  const [muted, setMuted] = useState(false);
+  const [repeat, setRepeat] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [audioDuration, setAudioDuration] = useState(0);
+
   useEffect(() => {
     setAudioFailed(false);
     setPlaying(false);
-    setShowVideo(false);
+    setMuted(false);
+    setRepeat(false);
     setCurrentTime(0);
     setAudioDuration(0);
   }, [item.id]);
+
   const video = item.source === "youtube" ? youtubeVideoId(item.external_id) : null;
   const audio = playableAudioUrl(item.audio_url);
   const artwork = videoArtwork(item.source, item.external_id, resolveMedia(item.thumbnail_url));
+  const isVideo = !!video;
+
+  const savedIds = useQuery({
+    queryKey: ["saved-media-ids", userId],
+    queryFn: () => fetchMySavedMediaIds(userId!),
+    enabled: !!userId,
+    staleTime: 30_000,
+  });
+  const saved = !!savedIds.data?.has(item.id);
+
+  const saveMutation = useMutation({
+    mutationFn: () => toggleSavedMedia(userId!, item.id, saved),
+    onSuccess: async (nextSaved) => {
+      await qc.invalidateQueries({ queryKey: ["saved-media-ids", userId] });
+      toast.success(nextSaved ? "Saved" : "Removed from saved");
+    },
+    onError: () => toast.error("Couldn't update saved media"),
+  });
 
   async function togglePlayback() {
     if (video) {
-      if (!showVideo) setShowVideo(true);
       setPlaying((value) => !value);
       return;
     }
@@ -212,135 +239,221 @@ export function MediaPlayback({ item, onClose }: { item: MediaItem; onClose: () 
     }
   }
 
+  function toggleRepeat() {
+    setRepeat((value) => {
+      const next = !value;
+      if (audioRef.current) audioRef.current.loop = next;
+      return next;
+    });
+  }
+
+  function share() {
+    const url = video
+      ? `https://www.youtube.com/watch?v=${video}`
+      : typeof window !== "undefined"
+        ? window.location.href
+        : "";
+    void shareSheet.share({
+      title: item.title,
+      text: item.creator_name ?? "Nuru Faith",
+      url,
+    });
+  }
+
+  const softButton =
+    "flex h-12 w-12 items-center justify-center rounded-full border border-white/75 bg-[#F3F6FB] text-[#5D687A] shadow-[7px_7px_16px_rgba(166,177,195,0.34),-7px_-7px_16px_rgba(255,255,255,0.95)] transition-transform active:scale-95";
+  const primaryButton =
+    "flex h-20 w-20 items-center justify-center rounded-full border border-[#2F78D8] bg-[#3F83DC] text-white shadow-[8px_10px_24px_rgba(47,120,216,0.34),inset_0_1px_0_rgba(255,255,255,0.5)] transition-transform active:scale-95";
+
   return (
     <div
-      className="fixed inset-0 z-[90] overflow-y-auto bg-background/96 backdrop-blur-2xl"
+      className="fixed inset-0 z-[90] overflow-y-auto bg-[#F3F6FB] text-[#182033]"
       role="dialog"
       aria-modal="true"
       aria-label={`Now playing ${item.title}`}
     >
-      <div className="mx-auto flex min-h-dvh w-full max-w-5xl flex-col px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] sm:px-6">
-        <header className="flex items-center justify-between gap-3">
-          <button type="button" onClick={onClose} className="nuru-soft-control flex h-11 w-11 items-center justify-center rounded-2xl" aria-label="Back">
-            <X className="h-5 w-5" />
+      <div className="mx-auto flex min-h-dvh w-full max-w-3xl flex-col px-5 pb-[max(1.75rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] sm:px-8">
+        <header className="grid grid-cols-[3rem_1fr_3rem] items-center gap-3">
+          <button type="button" onClick={onClose} className={softButton} aria-label="Close player">
+            <ChevronDown className="h-5 w-5" strokeWidth={2.2} />
           </button>
           <div className="min-w-0 text-center">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-primary">Now playing</p>
-            <p className="truncate text-sm font-semibold">{item.title}</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-[#7A8597]">
+              Now playing
+            </p>
+            <p className="mt-1 truncate text-xs font-semibold text-[#667185]">
+              {isVideo ? "Video music" : item.media_type === "podcast" ? "Audio podcast" : "Audio music"}
+            </p>
           </div>
-          <span className="h-11 w-11" aria-hidden="true" />
+          <button type="button" onClick={share} className={softButton} aria-label="Share">
+            <Share2 className="h-5 w-5" />
+          </button>
         </header>
 
-        <div className="mx-auto mt-8 grid w-full max-w-4xl gap-8 md:grid-cols-[minmax(0,1fr)_minmax(320px,420px)] md:items-center">
-          <div className="flex flex-col items-center">
+        <main className="mx-auto flex w-full max-w-xl flex-1 flex-col items-center pt-7 sm:pt-10">
+          {isVideo ? (
+            <div className="w-full overflow-hidden rounded-[28px] border border-white/80 bg-black shadow-[0_24px_50px_rgba(66,76,95,0.22)]">
+              <YouTubePlayer
+                key={`${video}:${attempt}`}
+                videoId={video}
+                title={item.title}
+                muted={muted}
+                playing={playing}
+                loop={repeat}
+                controls
+                onPlaybackChange={setPlaying}
+                className="aspect-video min-h-0 rounded-none"
+              />
+            </div>
+          ) : (
             <div className="relative">
-              <div className="absolute inset-[-12%] rounded-full bg-primary/10 blur-3xl" />
+              <div className="absolute inset-3 rounded-full bg-[#8FB8EF]/25 blur-3xl" />
               <CoverImage
                 src={artwork}
                 alt=""
                 width={720}
                 height={720}
-                className="relative aspect-square w-[min(72vw,360px)] rounded-full border border-white/10 object-cover shadow-2xl ring-1 ring-primary/15 sm:w-[360px]"
+                className="relative aspect-square w-[min(78vw,390px)] rounded-full border-[9px] border-white object-cover shadow-[0_26px_55px_rgba(62,76,101,0.24)]"
               />
-              <div className="absolute inset-[42%] rounded-full border border-white/20 bg-background/70 shadow-inner" />
             </div>
+          )}
 
-            <div className="mt-7 max-w-xl text-center">
-              <h2 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">{item.title}</h2>
-              <p className="mt-2 text-sm text-muted-foreground">{item.creator_name || "Nuru Faith"}</p>
-              <p className="mt-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">{item.media_type === "podcast" ? "Podcast episode" : "Gospel • Worship"}</p>
-            </div>
+          <div className={isVideo ? "mt-7 text-center" : "mt-8 text-center"}>
+            <h2 className="font-display text-[30px] font-semibold leading-tight tracking-tight text-[#151D2D] sm:text-4xl">
+              {item.title}
+            </h2>
+            <p className="mt-2 text-[17px] text-[#647084]">
+              {item.creator_name || "Nuru Faith"}
+            </p>
+          </div>
 
-            {audio && (
-              <div className="mt-7 w-full max-w-xl">
-                <input
-                  type="range"
-                  min={0}
-                  max={Math.max(audioDuration, 1)}
-                  step={1}
-                  value={Math.min(currentTime, Math.max(audioDuration, 1))}
-                  onChange={(event) => {
-                    const next = Number(event.target.value);
-                    setCurrentTime(next);
-                    if (audioRef.current) audioRef.current.currentTime = next;
-                  }}
-                  aria-label="Audio position"
-                  className="w-full accent-primary"
-                />
-                <div className="mt-2 flex justify-between text-[11px] text-muted-foreground">
-                  <span>{duration(Math.floor(currentTime))}</span>
-                  <span>{audioDuration ? duration(Math.floor(audioDuration)) : "Loading…"}</span>
-                </div>
+          <div className="mt-6 flex items-center justify-center gap-7">
+            <button
+              type="button"
+              disabled={!userId || saveMutation.isPending}
+              onClick={() => {
+                if (!userId) return toast.error("Sign in to save media");
+                saveMutation.mutate();
+              }}
+              aria-pressed={saved}
+              aria-label={saved ? "Remove from saved" : "Save"}
+              className={softButton}
+            >
+              <Bookmark className={saved ? "h-5 w-5 fill-[#6E8ED6] text-[#6E8ED6]" : "h-5 w-5"} />
+            </button>
+            <button
+              type="button"
+              onClick={toggleRepeat}
+              aria-pressed={repeat}
+              aria-label={repeat ? "Turn repeat off" : "Repeat"}
+              className={softButton}
+            >
+              <Repeat2 className={repeat ? "h-5 w-5 text-[#3F83DC]" : "h-5 w-5"} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setMuted((value) => !value)}
+              aria-label={muted ? "Turn sound on" : "Mute"}
+              className={softButton}
+            >
+              {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+            </button>
+          </div>
+
+          {audio && (
+            <div className="mt-8 w-full">
+              <input
+                type="range"
+                min={0}
+                max={Math.max(audioDuration, 1)}
+                step={1}
+                value={Math.min(currentTime, Math.max(audioDuration, 1))}
+                onChange={(event) => {
+                  const next = Number(event.target.value);
+                  setCurrentTime(next);
+                  if (audioRef.current) audioRef.current.currentTime = next;
+                }}
+                aria-label="Audio position"
+                className="h-2 w-full cursor-pointer accent-[#3F83DC]"
+              />
+              <div className="mt-2 flex justify-between text-[13px] font-medium text-[#8A94A6]">
+                <span>{duration(Math.floor(currentTime))}</span>
+                <span>
+                  {audioDuration
+                    ? `-${duration(Math.max(0, Math.floor(audioDuration - currentTime)))}`
+                    : "Loading…"}
+                </span>
               </div>
-            )}
+            </div>
+          )}
 
-            <div className="mt-6 flex items-center justify-center">
-              <button type="button" onClick={() => void togglePlayback()} className="flex h-20 w-20 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl shadow-primary/25" aria-label={playing ? "Pause" : "Play"}>
-                {playing ? <Pause className="h-8 w-8 fill-current" /> : <Play className="ml-1 h-8 w-8 fill-current" />}
+          <div className="mt-8 flex items-center justify-center">
+            <button
+              type="button"
+              onClick={() => void togglePlayback()}
+              className={primaryButton}
+              aria-label={playing ? "Pause" : "Play"}
+            >
+              {playing ? (
+                <Pause className="h-9 w-9 fill-current" />
+              ) : (
+                <Play className="ml-1 h-9 w-9 fill-current" />
+              )}
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setMuted((value) => !value)}
+            className="mt-6 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-[#7A8597]"
+          >
+            {muted ? <VolumeX className="h-4.5 w-4.5" /> : <Volume2 className="h-4.5 w-4.5" />}
+            {muted ? "Sound off" : "Sound on"}
+          </button>
+
+          {!isVideo && (
+            <audio
+              ref={audioRef}
+              key={`${item.id}:${attempt}`}
+              src={audio ?? undefined}
+              preload="metadata"
+              muted={muted}
+              loop={repeat}
+              className="hidden"
+              onLoadedMetadata={(event) => setAudioDuration(event.currentTarget.duration || 0)}
+              onDurationChange={(event) => setAudioDuration(event.currentTarget.duration || 0)}
+              onTimeUpdate={(event) => setCurrentTime(event.currentTarget.currentTime)}
+              onPlay={() => setPlaying(true)}
+              onPause={() => setPlaying(false)}
+              onEnded={() => setPlaying(false)}
+              onError={() => setAudioFailed(true)}
+            />
+          )}
+
+          {audioFailed && (
+            <div role="alert" className="mt-5 w-full rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+              <p>The publisher's audio could not load.</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setAudioFailed(false);
+                  setAttempt((value) => value + 1);
+                }}
+                className="mt-2 font-semibold underline"
+              >
+                Retry playback
               </button>
             </div>
+          )}
 
-            {video && (
-              <div className="mt-7 flex justify-center">
-                <button type="button" onClick={() => setShowVideo((value) => !value)} className="nuru-soft-control inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-medium">
-                  {showVideo ? <Minimize2 className="h-4 w-4" /> : <Video className="h-4 w-4" />}
-                  {showVideo ? "Hide video" : "Watch video"}
-                </button>
-              </div>
-            )}
-          </div>
-
-          <div className="w-full">
-            {video && showVideo ? (
-              <div className="nuru-card overflow-hidden rounded-3xl p-3">
-                <YouTubePlayer
-                  key={`${video}:${attempt}`}
-                  videoId={video}
-                  title={item.title}
-                  muted={false}
-                  playing={playing}
-                  onPlaybackChange={setPlaying}
-                />
-                <div className="mt-3 flex items-center justify-between gap-3">
-                  <p className="text-xs leading-relaxed text-muted-foreground">
-                    Video playback is provided by YouTube inside Nuru Faith.
-                  </p>
-                  <button type="button" onClick={() => setAttempt((value) => value + 1)} className="shrink-0 text-xs font-semibold text-primary">Reload</button>
-                </div>
-              </div>
-            ) : audio ? (
-              <div className="nuru-card rounded-3xl p-5">
-                <audio
-                  ref={audioRef}
-                  key={`${item.id}:${attempt}`}
-                  src={audio}
-                  preload="metadata"
-                  className="w-full"
-                  onLoadedMetadata={(event) => setAudioDuration(event.currentTarget.duration || 0)}
-                  onDurationChange={(event) => setAudioDuration(event.currentTarget.duration || 0)}
-                  onTimeUpdate={(event) => setCurrentTime(event.currentTarget.currentTime)}
-                  onPlay={() => setPlaying(true)}
-                  onPause={() => setPlaying(false)}
-                  onEnded={() => setPlaying(false)}
-                  onError={() => setAudioFailed(true)}
-                />
-                <p className="text-sm font-semibold">Nuru audio</p>
-                <p className="mt-1 text-xs text-muted-foreground">Audio streams directly from the approved publisher.</p>
-                {audioFailed && (
-                  <div role="alert" className="mt-4 space-y-2 text-sm">
-                    <p>The publisher’s audio could not load.</p>
-                    <PrimaryButton onClick={() => { setAudioFailed(false); setAttempt((value) => value + 1); }}>Retry playback</PrimaryButton>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="nuru-card rounded-3xl p-5 text-sm text-muted-foreground">
-                {video ? "Tap Watch video to open the official video player." : "This item has no available playback source."}
-              </div>
-            )}
-          </div>
-        </div>
+          <p className="mt-auto max-w-lg pt-9 text-center text-[12px] leading-relaxed text-[#919AAA]">
+            {isVideo
+              ? "Played through YouTube's official player. Nothing is hosted or downloadable in Nuru Faith."
+              : "Streamed from the approved publisher. Nothing is hosted or downloadable in Nuru Faith."}
+          </p>
+        </main>
       </div>
+      {shareSheet.node}
     </div>
   );
 }

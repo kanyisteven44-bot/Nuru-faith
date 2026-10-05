@@ -24,9 +24,9 @@ export function MusicDiscovery({
   mediaType?: "music" | "podcast";
 }) {
   const [selected, setSelected] = useState<Creator | null>(null);
-  const [view, setView] = useState("All");
   const [language, setLanguage] = useState("all");
   const isMusic = mediaType === "music";
+  const [view, setView] = useState(isMusic ? "Songs" : "Episodes");
   const creatorLabel = isMusic ? "Artists" : "Creators";
   const contentLabel = isMusic ? "Songs" : "Episodes";
   const directory = useInfiniteQuery({
@@ -290,7 +290,7 @@ export function MusicDiscovery({
           </>
         )}
       </div>
-      {!selected && view !== creatorLabel && (
+      {!selected && (
         <MediaCatalog
           mediaType={mediaType}
           query={query}

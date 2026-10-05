@@ -28,7 +28,7 @@ export function AppShell({
   flush?: boolean;
   hideNav?: boolean;
 }) {
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const avatar = user?.user_metadata?.["avatar_url"] ?? user?.user_metadata?.["picture"];
 
   useEffect(() => {
     void recordNuruActivity();
@@ -298,7 +298,6 @@ export function ScreenHeader({
         <h1 className="truncate font-display text-[22px] font-semibold tracking-tight">{title}</h1>
         {subtitle && <p className="truncate text-xs text-muted-foreground">{subtitle}</p>}
       </div>
-      {right && <div className="flex shrink-0 items-center gap-2">{right}</div>}
     </header>
   );
 }

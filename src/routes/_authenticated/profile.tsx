@@ -1,7 +1,7 @@
 import { CoverImage } from "@/components/nuru/CoverImage";
 import { useRef, useState } from "react";
 import { profilePhotoExtension } from "@/lib/profilePhoto";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   BadgeCheck,
@@ -65,7 +65,6 @@ function compactCount(value: number) {
 
 function ProfileScreen() {
   const { userId } = useAuth();
-  const navigate = useNavigate();
   const qc = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState("");
@@ -195,18 +194,19 @@ function ProfileScreen() {
     }
   }
 
-  async function signOut() {
-    await supabase.auth.signOut();
-    void navigate({ to: "/auth", search: { mode: "login" }, replace: true });
-  }
 
   return (
     <AppShell>
       <ScreenHeader
         title="Profile"
         right={
-          <Link to="/settings" aria-label="Settings" className="p-1 text-secondary-foreground">
-            <Settings className="h-5 w-5" />
+          <Link
+            to="/settings"
+            aria-label="Open settings"
+            className="nuru-soft-control inline-flex min-h-10 items-center gap-2 rounded-full px-3 text-[13px] font-semibold text-secondary-foreground"
+          >
+            <Settings className="h-[18px] w-[18px]" />
+            <span>Settings</span>
           </Link>
         }
       />
@@ -486,14 +486,6 @@ function ProfileScreen() {
             )}
           </section>
 
-          {/* Faith journey */}
-          <button
-            type="button"
-            onClick={() => void signOut()}
-            className="mt-4 min-h-12 w-full rounded-xl border border-destructive/40 bg-destructive/10 text-sm font-semibold text-destructive"
-          >
-            Log Out
-          </button>
         </div>
       )}
 

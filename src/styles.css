@@ -6,8 +6,8 @@
  * NURU FAITH DESIGN SYSTEM
  * "Light for This Generation"
  *
- * Deep midnight-navy surfaces, electric-blue + cyan light, sparing violet.
- * Flat dark-navy cards with a thin blue border and a soft shadow — not
+ * Soft charcoal-blue surfaces, electric-blue + cyan light, sparing violet.
+ * Flat charcoal cards with a thin blue border and a soft shadow — not
  * glassmorphism, not a wall of glowing gradients.
  *
  * Never hardcode colours in components; use these semantic tokens.
@@ -73,12 +73,17 @@
      oversized bubbles. Keep one radius scale across every screen. */
   --radius: 0.75rem;
 
-  /* deep midnight surfaces — near-black navy climbing to a lifted card */
-  --background: #00132f;
-  --surface: #02244b;
-  --surface-2: #073565;
+  /* Near-black surfaces that keep the brand's blue in them.
+     The old ramp sat at 100% saturation, which is what made it read as navy
+     rather than as black — every step here holds the same hue (220) and the
+     same 7–9% lightness band, with the saturation pulled back so the ground
+     reads black while still belonging to the blue. Saturation eases off
+     further as each step lifts, so cards separate by tone, not by hue. */
+  --background: #0a111e;
+  --surface: #131d2f;
+  --surface-2: #243351;
   --foreground: oklch(0.99 0.004 250);
-  --card: #032955;
+  --card: #1a263d;
   --card-foreground: oklch(0.99 0.004 250);
   --popover: oklch(0.208 0.04 260);
   --popover-foreground: oklch(0.99 0.004 250);
@@ -102,9 +107,9 @@
   --destructive: oklch(0.68 0.2 15);
   --destructive-foreground: oklch(0.99 0.004 250);
 
-  /* thin electric-blue borders */
-  --border: rgb(36 154 255 / 34%);
-  --border-strong: rgb(53 217 255 / 58%);
+  /* quiet borders let cards separate without turning the ground navy */
+  --border: rgb(100 136 178 / 30%);
+  --border-strong: rgb(83 190 235 / 52%);
   --input: oklch(0.7 0.12 254 / 22%);
   --ring: oklch(0.66 0.19 264);
 

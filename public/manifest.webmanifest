@@ -6,8 +6,8 @@
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#06152A",
-  "theme_color": "#06152A",
+  "background_color": "#0A111E",
+  "theme_color": "#0A111E",
   "description": "A Christian platform for young people: Scripture, devotionals, community, mentorship, music and events.",
   "categories": ["lifestyle", "education", "social"],
   "icons": [

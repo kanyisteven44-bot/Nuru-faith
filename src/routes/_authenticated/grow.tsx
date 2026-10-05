@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { BookOpen, ChevronRight, GraduationCap, Sunrise } from "lucide-react";
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
+import { CoverImage } from "@/components/nuru/CoverImage";
+import { resolveMedia } from "@/lib/media";
 
 export const Route = createFileRoute("/_authenticated/grow")({
   head: () => ({
@@ -22,6 +24,7 @@ const LEARNING_OPTIONS = [
     eyebrow: "Structured learning",
     description: "Lesson-by-lesson learning for faith, discipleship, prayer and Christian living.",
     icon: BookOpen,
+    image: "asset:reading-scripture",
     tone: "text-primary bg-primary/10 border-primary/25",
   },
   {
@@ -30,6 +33,7 @@ const LEARNING_OPTIONS = [
     eyebrow: "Daily",
     description: "Short Bible-centred readings for prayer, reflection and everyday faith.",
     icon: Sunrise,
+    image: "asset:cross-sunrise",
     tone: "text-growth bg-growth/10 border-growth/25",
   },
   {
@@ -38,6 +42,7 @@ const LEARNING_OPTIONS = [
     eyebrow: "Deep study",
     description: "Multi-session Scripture studies with teaching, reflection, prayer and action.",
     icon: GraduationCap,
+    image: "asset:bible-candle",
     tone: "text-warning bg-warning/10 border-warning/25",
   },
 ] as const;
@@ -49,19 +54,25 @@ function GrowScreen() {
 
       <div className="mx-auto w-full max-w-3xl px-4 pb-8 pt-2">
         <div className="grid gap-4">
-          {LEARNING_OPTIONS.map(({ to, label, eyebrow, description, icon: Icon, tone }) => (
+          {LEARNING_OPTIONS.map(({ to, label, eyebrow, description, icon: Icon, image, tone }) => (
             <Link
               key={to}
               to={to}
-              className="nuru-card flex min-h-28 items-center gap-4 p-4 transition-transform active:scale-[0.99]"
+              className="nuru-card group flex min-h-32 items-stretch gap-4 overflow-hidden p-0 transition-transform active:scale-[0.99]"
             >
-              <span
-                className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border ${tone}`}
-              >
-                <Icon className="h-6 w-6" />
+              <span className="relative w-28 shrink-0 overflow-hidden sm:w-36">
+                <CoverImage
+                  src={resolveMedia(image)}
+                  alt=""
+                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+                <span className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent" />
+                <span className={`absolute bottom-3 left-3 flex h-9 w-9 items-center justify-center rounded-xl border bg-card/90 backdrop-blur ${tone}`}>
+                  <Icon className="h-4.5 w-4.5" />
+                </span>
               </span>
 
-              <span className="min-w-0 flex-1">
+              <span className="min-w-0 flex flex-1 flex-col justify-center py-4 pr-1">
                 <span className="block text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
                   {eyebrow}
                 </span>
@@ -71,7 +82,7 @@ function GrowScreen() {
                 </span>
               </span>
 
-              <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+              <ChevronRight className="mr-4 self-center h-5 w-5 shrink-0 text-muted-foreground" />
             </Link>
           ))}
         </div>

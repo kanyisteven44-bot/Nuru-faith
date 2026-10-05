@@ -68,12 +68,20 @@ const YOUTUBE_BATCH_SIZE = 12;
 
 function readMuted() {
   if (typeof window === "undefined") return true;
-  return window.localStorage.getItem(MUTED_KEY) !== "false";
+  try {
+    return window.localStorage.getItem(MUTED_KEY) !== "false";
+  } catch {
+    return true;
+  }
 }
 
 function dataSaverOn() {
   if (typeof window === "undefined") return false;
-  if (window.localStorage.getItem(DATA_SAVER_KEY) === "on") return true;
+  try {
+    if (window.localStorage.getItem(DATA_SAVER_KEY) === "on") return true;
+  } catch {
+    /* use device preference */
+  }
   const conn = (navigator as unknown as { connection?: { saveData?: boolean } }).connection;
   return conn?.saveData === true;
 }
@@ -346,7 +354,11 @@ function ReelsScreen() {
   function toggleMuted() {
     setMuted((m) => {
       const next = !m;
-      window.localStorage.setItem(MUTED_KEY, String(next));
+      try {
+        window.localStorage.setItem(MUTED_KEY, String(next));
+      } catch {
+        /* playback still works without storage */
+      }
       return next;
     });
   }

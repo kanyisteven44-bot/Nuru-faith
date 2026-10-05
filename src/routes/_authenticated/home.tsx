@@ -7,6 +7,8 @@ import {
   BookOpen,
   ChevronRight,
   Clapperboard,
+  GraduationCap,
+  Library,
   HandHeart,
   Music2,
   Sparkles,
@@ -51,6 +53,9 @@ const QUICK_ACCESS: { to: string; label: string; icon: LucideIcon }[] = [
   { to: "/ai", label: "Nuru AI", icon: Sparkles },
   // Matches the sidebar's Mentorship glyph, and stays distinct from Pray.
   { to: "/mentors", label: "Mentors", icon: UserRoundCheck },
+  { to: "/faith-courses", label: "Courses", icon: GraduationCap },
+  { to: "/devotionals", label: "Devotionals", icon: BookOpen },
+  { to: "/series", label: "Series", icon: Library },
 ];
 
 function HomeScreen() {

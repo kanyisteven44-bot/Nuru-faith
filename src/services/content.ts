@@ -829,3 +829,17 @@ export async function updateModerationStatus(
   const { error } = await supabase.from(table).update({ status }).eq("id", id);
   if (error) throw new Error(error.message);
 }
+
+export async function fetchDevotionalLibrary(search = "", page = 0) {
+  let q = supabase
+    .from("devotionals")
+    .select("*")
+    .lte("publish_date", new Date().toISOString().slice(0, 10))
+    .order("publish_date", { ascending: false })
+    .order("id")
+    .range(page * 24, page * 24 + 23);
+  const term = search.trim().replace(/[%_,()]/g, " ");
+  if (term)
+    q = q.or(`title.ilike.%${term}%,subtitle.ilike.%${term}%,scripture_ref.ilike.%${term}%`);
+  return unwrap(await q);
+}

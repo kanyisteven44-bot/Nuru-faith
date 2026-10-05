@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { BadgeCheck, MessageCircle, Phone, UserRound } from "lucide-react";
 import { toast } from "sonner";
@@ -112,6 +112,15 @@ function MentorDetail() {
             )}
           </section>
 
+          {mentor.data.user_id && mentor.data.user_id !== userId && (
+            <Link
+              to="/messages"
+              search={{ mentor: id }}
+              className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-primary-foreground"
+            >
+              <MessageCircle className="h-4.5 w-4.5" /> Message in Nuru
+            </Link>
+          )}
           {mentor.data.phone_number && (
             <section className="grid grid-cols-2 gap-3">
               <a

@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { trustedChannel } from "./content-policy";
 import { eligibleMusicVideo, eligiblePodcastVideo, isoSeconds } from "./musicImport";
 
 const thumb = z.object({ url: z.string() });
@@ -29,18 +30,15 @@ const videoSchema = z.object({
 });
 
 /** One bounded batch; the admin screen drives resumable progress to 10,000. */
-export const importMusicCatalogPage = createServerFn({ method: "POST" })
+export const importReviewedCatalogPage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
     z.object({
       kind: z.enum(["music", "podcast"]).default("music"),
-      channelId: z.string().max(64).nullable().default(null),
-      pageToken: z.string().max(500).nullable().default(null),
+      restart: z.boolean().default(false),
     }),
   )
   .handler(async ({ data, context }) => {
-    // Temporary: catalogue import is still restricted to super_admin/moderator below.
-    // MFA enforcement is disabled here while the existing-factor enrollment bug is repaired.
     const { data: roles, error: roleError } = await context.supabase
       .from("user_roles")
       .select("role")
@@ -63,120 +61,197 @@ export const importMusicCatalogPage = createServerFn({ method: "POST" })
         );
       return response.json();
     }
-    const db = context.supabase;
-    const songCount = async () => {
-      const { count, error } = await db
-        .from("media_items")
-        .select("id", { head: true, count: "exact" })
-        .eq("source", "youtube")
-        .eq("media_type", data.kind)
-        .eq("is_approved", true);
-      if (error) throw error;
-      return count ?? 0;
-    };
-    const before = await songCount();
-    if (before >= 10000) return { total: before, added: 0, next: null, targetReached: true };
-    function sourceQuery() {
-      return db
-        .from("media_sources")
-        .select("id,name,youtube_channel_id,language_codes")
-        .eq("is_approved", true)
-        .eq("source_type", "youtube")
-        .in("content_kind", [data.kind, "mixed"])
-        .not("youtube_channel_id", "is", null);
-    }
-    let query = sourceQuery();
-    if (data.channelId) query = query.eq("youtube_channel_id", data.channelId);
-    const { data: sources, error } = await query.order("id").limit(1);
-    if (error) throw error;
-    const source = sources?.[0];
-    if (!source) {
-      if (data.channelId) throw new Error("This source is no longer approved. Start a fresh scan.");
-      return { total: before, added: 0, next: null, targetReached: false };
-    }
-    const { data: following, error: nextError } = await sourceQuery()
-      .gt("id", source.id)
-      .order("id")
-      .limit(1);
-    if (nextError) throw nextError;
-    const nextChannel = following?.[0]?.youtube_channel_id;
-    const channelId = source.youtube_channel_id!;
-    const channel = z
-      .object({
-        items: z
-          .array(
-            z.object({
-              contentDetails: z.object({ relatedPlaylists: z.object({ uploads: z.string() }) }),
-            }),
-          )
-          .default([]),
-      })
-      .parse(await call("channels", { part: "contentDetails", id: channelId }));
-    const uploads = channel.items[0]?.contentDetails.relatedPlaylists.uploads;
-    if (!uploads)
-      return {
-        total: before,
-        added: 0,
-        next: nextChannel ? { channelId: nextChannel, pageToken: null } : null,
-        targetReached: false,
+    // This owner-authorized metadata worker cannot change source approvals or user data.
+    // Authenticate/authorize before loading the server-only privileged client.
+    const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
+    const leaseToken = crypto.randomUUID();
+    const now = new Date().toISOString();
+    const { data: progress, error: leaseError } = await db
+      .from("media_catalog_imports")
+      .update({ lease_token: leaseToken, lease_until: new Date(Date.now() + 90000).toISOString() })
+      .eq("kind", data.kind)
+      .or(`lease_until.is.null,lease_until.lt.${now}`)
+      .select("*")
+      .maybeSingle();
+    if (leaseError) throw new Error(`Import progress unavailable (${leaseError.code}).`);
+    if (!progress) throw new Error("Another import batch is running. Wait before resuming.");
+    const cursor = data.restart
+      ? { channelId: null, pageToken: null }
+      : { channelId: progress.channel_id, pageToken: progress.page_token };
+    async function batch() {
+      const songCount = async () => {
+        const { count, error } = await db
+          .from("media_items")
+          .select("id", { head: true, count: "exact" })
+          .eq("source", "youtube")
+          .eq("media_type", data.kind)
+          .eq("is_approved", true);
+        if (error) throw new Error(`Catalogue database error (${error.code}): ${error.message}`);
+        return count ?? 0;
       };
-    const page = z
-      .object({
-        items: z.array(z.object({ contentDetails: z.object({ videoId: z.string() }) })).default([]),
-        nextPageToken: z.string().optional(),
-      })
-      .parse(
-        await call("playlistItems", {
-          part: "contentDetails",
-          playlistId: uploads,
-          maxResults: "50",
-          ...(data.pageToken ? { pageToken: data.pageToken } : {}),
-        }),
-      );
-    const ids = page.items.map((item) => item.contentDetails.videoId);
-    const response = ids.length
-      ? z
-          .object({ items: z.array(videoSchema).default([]) })
-          .parse(await call("videos", { part: "snippet,status,contentDetails", id: ids.join(",") }))
-      : { items: [] };
-    const rows = response.items
-      .filter((video) =>
-        (data.kind === "music" ? eligibleMusicVideo : eligiblePodcastVideo)(video, channelId),
-      )
-      .map((video) => ({
-        source: "youtube",
-        external_id: video.id,
-        source_id: source.id,
-        title: video.snippet.title,
-        creator_name: video.snippet.channelTitle,
-        youtube_channel_id: channelId,
-        media_type: data.kind,
-        category: data.kind === "music" ? "worship" : "faith",
-        language_code:
-          video.snippet.defaultAudioLanguage?.split("-")[0] ?? source.language_codes[0] ?? "und",
-        thumbnail_url:
-          video.snippet.thumbnails.high?.url ?? video.snippet.thumbnails.medium?.url ?? null,
-        duration_seconds: isoSeconds(video.contentDetails.duration),
-        published_at: video.snippet.publishedAt,
-        is_approved: true,
-        can_download: false,
-      }));
-    if (rows.length) {
-      const { error } = await db
-        .from("media_items")
-        .upsert(rows, { onConflict: "source,external_id", ignoreDuplicates: true });
-      if (error) throw error;
+      const before = await songCount();
+      if (before >= 10000) return { total: before, added: 0, next: null, targetReached: true };
+      function sourceQuery() {
+        return db
+          .from("media_sources")
+          .select("id,name,youtube_channel_id,language_codes")
+          .eq("is_approved", true)
+          .eq("is_verified", true)
+          .eq("source_type", "youtube")
+          .in("content_kind", [data.kind, "mixed"])
+          .not("youtube_channel_id", "is", null);
+      }
+      let query = sourceQuery();
+      if (cursor.channelId) query = query.eq("youtube_channel_id", cursor.channelId);
+      const { data: sources, error } = await query.order("id").limit(1);
+      if (error) throw new Error(`Catalogue database error (${error.code}): ${error.message}`);
+      const source = sources?.[0];
+      if (!source) {
+        if (cursor.channelId)
+          throw new Error("This source is no longer approved. Start a fresh scan.");
+        return { total: before, added: 0, next: null, targetReached: false };
+      }
+      const { data: following, error: nextError } = await sourceQuery()
+        .gt("id", source.id)
+        .order("id")
+        .limit(1);
+      if (nextError)
+        throw new Error(`Catalogue source error (${nextError.code}): ${nextError.message}`);
+      const nextChannel = following?.[0]?.youtube_channel_id;
+      const channelId = source.youtube_channel_id!;
+      const { data: trust, error: trustError } = await db
+        .from("approved_youtube_channels")
+        .select("trust_level,is_verified")
+        .eq("channel_id", channelId)
+        .maybeSingle();
+      if (trustError) throw new Error("Channel trust review is unavailable.");
+      if (!trust?.is_verified || !trustedChannel(trust.trust_level))
+        return {
+          total: before,
+          added: 0,
+          next: nextChannel ? { channelId: nextChannel, pageToken: null } : null,
+          targetReached: false,
+        };
+
+      const channel = z
+        .object({
+          items: z
+            .array(
+              z.object({
+                contentDetails: z.object({ relatedPlaylists: z.object({ uploads: z.string() }) }),
+              }),
+            )
+            .default([]),
+        })
+        .parse(await call("channels", { part: "contentDetails", id: channelId }));
+      const uploads = channel.items[0]?.contentDetails.relatedPlaylists.uploads;
+      if (!uploads)
+        return {
+          total: before,
+          added: 0,
+          next: nextChannel ? { channelId: nextChannel, pageToken: null } : null,
+          targetReached: false,
+        };
+      const page = z
+        .object({
+          items: z
+            .array(z.object({ contentDetails: z.object({ videoId: z.string() }) }))
+            .default([]),
+          nextPageToken: z.string().optional(),
+        })
+        .parse(
+          await call("playlistItems", {
+            part: "contentDetails",
+            playlistId: uploads,
+            maxResults: "50",
+            ...(cursor.pageToken ? { pageToken: cursor.pageToken } : {}),
+          }),
+        );
+      const ids = page.items.map((item) => item.contentDetails.videoId);
+      const response = ids.length
+        ? z
+            .object({ items: z.array(z.unknown()).default([]) })
+            .parse(
+              await call("videos", { part: "snippet,status,contentDetails", id: ids.join(",") }),
+            )
+        : { items: [] };
+      const rows = response.items
+        .flatMap((item) => {
+          // Upcoming/deleted uploads may lack duration or status metadata.
+          // Reject only that incomplete video, preserving valid items in its page.
+          const parsed = videoSchema.safeParse(item);
+          return parsed.success ? [parsed.data] : [];
+        })
+        .filter((video) =>
+          (data.kind === "music" ? eligibleMusicVideo : eligiblePodcastVideo)(video, channelId),
+        )
+        .map((video) => ({
+          source: "youtube",
+          external_id: video.id,
+          source_id: source.id,
+          title: video.snippet.title,
+          creator_name: video.snippet.channelTitle,
+          youtube_channel_id: channelId,
+          media_type: data.kind,
+          category: data.kind === "music" ? "worship" : "faith",
+          language_code:
+            video.snippet.defaultAudioLanguage?.split("-")[0] ?? source.language_codes[0] ?? "und",
+          thumbnail_url:
+            video.snippet.thumbnails.high?.url ?? video.snippet.thumbnails.medium?.url ?? null,
+          duration_seconds: isoSeconds(video.contentDetails.duration),
+          published_at: video.snippet.publishedAt,
+          is_approved: true,
+          can_download: false,
+        }));
+      if (rows.length) {
+        const { error } = await db
+          .from("media_items")
+          .upsert(rows, { onConflict: "source,external_id", ignoreDuplicates: true });
+        if (error) throw new Error(`Catalogue database error (${error.code}): ${error.message}`);
+      }
+      const total = await songCount();
+      const next = page.nextPageToken
+        ? { channelId, pageToken: page.nextPageToken }
+        : nextChannel
+          ? { channelId: nextChannel, pageToken: null }
+          : null;
+      return {
+        total,
+        added: total - before,
+        next: total >= 10000 ? null : next,
+        targetReached: total >= 10000,
+      };
     }
-    const total = await songCount();
-    const next = page.nextPageToken
-      ? { channelId, pageToken: page.nextPageToken }
-      : nextChannel
-        ? { channelId: nextChannel, pageToken: null }
-        : null;
-    return {
-      total,
-      added: total - before,
-      next: total >= 10000 ? null : next,
-      targetReached: total >= 10000,
-    };
+    try {
+      const result = await batch();
+      const { error } = await db
+        .from("media_catalog_imports")
+        .update({
+          channel_id: result.next?.channelId ?? null,
+          page_token: result.next?.pageToken ?? null,
+          imported_total: result.total,
+          pages_processed: progress.pages_processed + 1,
+          status: result.targetReached ? "complete" : result.next ? "running" : "exhausted",
+          last_error: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("kind", data.kind)
+        .eq("lease_token", leaseToken);
+      if (error) throw new Error(`Could not checkpoint catalogue progress (${error.code}).`);
+      return result;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Catalogue import paused.";
+      await db
+        .from("media_catalog_imports")
+        .update({ status: "paused", last_error: message, updated_at: new Date().toISOString() })
+        .eq("kind", data.kind)
+        .eq("lease_token", leaseToken);
+      throw new Error(message);
+    } finally {
+      await db
+        .from("media_catalog_imports")
+        .update({ lease_token: null, lease_until: null })
+        .eq("kind", data.kind)
+        .eq("lease_token", leaseToken);
+    }
   });

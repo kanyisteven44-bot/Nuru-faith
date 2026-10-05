@@ -8,6 +8,45 @@ export type Database = {
   };
   public: {
     Tables: {
+      media_catalog_imports: {
+        Row: {
+          kind: string;
+          channel_id: string | null;
+          page_token: string | null;
+          status: string;
+          imported_total: number;
+          pages_processed: number;
+          last_error: string | null;
+          lease_token: string | null;
+          lease_until: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          kind: string;
+          channel_id?: string | null;
+          page_token?: string | null;
+          status?: string;
+          imported_total?: number;
+          pages_processed?: number;
+          last_error?: string | null;
+          lease_token?: string | null;
+          lease_until?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          kind?: string;
+          channel_id?: string | null;
+          page_token?: string | null;
+          status?: string;
+          imported_total?: number;
+          pages_processed?: number;
+          last_error?: string | null;
+          lease_token?: string | null;
+          lease_until?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       ai_conversations: {
         Row: {
           context_id: string | null;
@@ -2944,6 +2983,7 @@ export type Database = {
       };
     };
     Functions: {
+      get_nuru_admin_overview: { Args: never; Returns: Json };
       consume_nuru_rate_limit: { Args: { p_action: string }; Returns: Json };
       get_nuru_pilot_metrics: { Args: never; Returns: Json };
       get_web_push_server_config: { Args: never; Returns: Json };

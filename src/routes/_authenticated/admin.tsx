@@ -1,3 +1,4 @@
+import { AdminDirectory } from "@/components/nuru/AdminDirectory";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -25,10 +26,11 @@ import {
   updateModerationStatus,
   type ModerationItem,
 } from "@/services/content";
-import { CardSkeleton, ComingSoon, EmptyState, SectionHeader } from "@/components/nuru/Primitives";
+import { CardSkeleton, EmptyState, SectionHeader } from "@/components/nuru/Primitives";
 import { NuruLogo } from "@/components/nuru/Logo";
 import { MusicCatalogImport } from "@/components/youtube/MusicCatalogImport";
 import { getPilotMetrics } from "@/lib/pilot.functions";
+import { AdminOperations } from "@/components/nuru/AdminOperations";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -156,6 +158,7 @@ function AdminScreen() {
       </header>
 
       <main className="mx-auto max-w-5xl space-y-8 px-6 py-8">
+        {isSuper && userId && <AdminDirectory userId={userId} churches={churches.data ?? []} />}
         {(isSuper || isModerator) && <MusicCatalogImport />}
         <div>
           <h1 className="font-display text-2xl font-semibold">Nuru operations dashboard</h1>
@@ -163,6 +166,8 @@ function AdminScreen() {
             Manage community activity, gatherings and reports within your authorized scope.
           </p>
         </div>
+
+        {isSuper && <AdminOperations churches={churches.data ?? []} />}
 
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <Metric label="Churches" value={scoped.length} icon={LayoutDashboard} />
@@ -233,7 +238,7 @@ function AdminScreen() {
                 No church is linked to your current administrative scope.
               </p>
             )}
-            {scoped.map((c) => (
+            {scoped.slice(0, 12).map((c) => (
               <article key={c.id} className="nuru-card p-4">
                 <p className="text-sm font-semibold">{c.name}</p>
                 <p className="text-xs text-muted-foreground">
@@ -356,16 +361,22 @@ function AdminScreen() {
           </div>
         </section>
 
-        <section className="grid gap-3 md:grid-cols-2">
-          <Panel title="Publish content" icon={LayoutDashboard} />
-          <Panel title="Member management" icon={Users} />
+        <section className="grid gap-3 md:grid-cols-3" aria-label="Learning library">
+          <Link to="/faith-courses" className="nuru-card p-4 font-semibold">
+            Courses & studies
+          </Link>
+          <Link to="/devotionals" className="nuru-card p-4 font-semibold">
+            Devotional library
+          </Link>
+          <Link to="/series" className="nuru-card p-4 font-semibold">
+            Scripture series
+          </Link>
         </section>
-
-        <p className="text-[11px] text-muted-foreground">
-          Mentors in scope: {mentors.data?.length ?? 0}. Administrative actions are still enforced
-          by Supabase row-level security; hiding a control in this dashboard is not treated as an
-          authorization boundary.
-        </p>
+        {!isSuper && (
+          <p className="text-xs text-muted-foreground">
+            Mentors available: {mentors.data?.length ?? 0}
+          </p>
+        )}
       </main>
     </div>
   );
@@ -385,16 +396,6 @@ function Metric({
       <Icon className="h-4 w-4 text-leaf" />
       <p className="mt-2 font-display text-2xl font-semibold">{value}</p>
       <p className="text-xs text-muted-foreground">{label}</p>
-    </div>
-  );
-}
-
-function Panel({ title, icon: Icon }: { title: string; icon: typeof Users }) {
-  return (
-    <div className="nuru-card flex items-center gap-3 p-4">
-      <Icon className="h-4 w-4 text-leaf" />
-      <span className="flex-1 text-sm font-semibold">{title}</span>
-      <ComingSoon label="Soon" />
     </div>
   );
 }

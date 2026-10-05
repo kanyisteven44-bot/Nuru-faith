@@ -257,7 +257,8 @@ function PublicProfileDetail({ id }: { id: string }) {
             <div className="mt-4 grid grid-cols-2 gap-2">
               {isSelf ? (
                 <Link
-                  to="/settings/profile"
+                  to="/settings"
+                  search={{ panel: "profile" }}
                   className="col-span-2 flex min-h-11 items-center justify-center rounded-xl border border-border-strong bg-surface-2 text-sm font-semibold"
                 >
                   Edit profile

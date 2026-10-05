@@ -82,10 +82,10 @@ export function PillTabs<T extends string>({
             aria-selected={active}
             onClick={() => onChange(tab)}
             className={cn(
-              "h-9 shrink-0 rounded-full border px-4 text-[13px] font-semibold transition-colors",
+              "nuru-soft-control min-h-11 shrink-0 rounded-full border px-4 text-[13px] font-semibold transition-colors",
               "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
               active
-                ? "border-primary bg-primary text-primary-foreground"
+                ? "nuru-soft-primary border-primary bg-primary text-primary-foreground"
                 : "border-border text-ink-2 hover:bg-surface-2 hover:text-foreground",
             )}
           >
@@ -97,7 +97,7 @@ export function PillTabs<T extends string>({
   );
 }
 
-/** Primary action — solid electric blue with a soft glow. */
+/** Primary action with a soft raised bevel and an inset pressed state. */
 export function GradientButton({
   children,
   className,
@@ -107,7 +107,7 @@ export function GradientButton({
     <button
       {...props}
       className={cn(
-        "inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:brightness-105 active:scale-[0.99] disabled:opacity-50",
+        "nuru-soft-control nuru-soft-primary inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:brightness-105 active:scale-[0.99] disabled:opacity-50",
         "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none",
         className,
       )}
@@ -128,7 +128,7 @@ export function GhostButton({
     <button
       {...props}
       className={cn(
-        "inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-border bg-surface px-5 text-sm font-semibold text-foreground transition-colors hover:bg-surface-2 disabled:opacity-50",
+        "nuru-soft-control inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-border bg-surface px-5 text-sm font-semibold text-foreground transition-colors hover:bg-surface-2 disabled:opacity-50",
         "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
         className,
       )}

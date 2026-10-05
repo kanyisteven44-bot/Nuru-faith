@@ -6,7 +6,7 @@ import {
   Compass,
   GraduationCap,
   Home,
-  Library,
+  MessageCircle,
   Music2,
   Search,
   Sparkles,
@@ -27,7 +27,7 @@ export const MOBILE_NAV: NavLink[] = [
   { to: "/home", label: "Home", icon: Home },
   { to: "/bible", label: "Bible", icon: BookOpen },
   { to: "/explore", label: "Search", icon: Search },
-  { to: "/library", label: "Library", icon: Library },
+  { to: "/messages", label: "Messages", icon: MessageCircle },
   { to: "/profile", label: "Profile", icon: User },
 ];
 

@@ -9,6 +9,7 @@ import {
   Clapperboard,
   GraduationCap,
   HandHeart,
+  Library,
   Music2,
   Sparkles,
   UserRoundCheck,
@@ -49,6 +50,7 @@ const QUICK_ACCESS: { to: string; label: string; icon: LucideIcon }[] = [
   { to: "/prayer", label: "Pray", icon: HandHeart },
   { to: "/music", label: "Music", icon: Music2 },
   { to: "/reels", label: "Reels", icon: Clapperboard },
+  { to: "/library", label: "Library", icon: Library },
   { to: "/ai", label: "Nuru AI", icon: Sparkles },
   // Matches the sidebar's Mentorship glyph, and stays distinct from Pray.
   { to: "/mentors", label: "Mentors", icon: UserRoundCheck },

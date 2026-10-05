@@ -55,7 +55,8 @@ export function ReelActions({
 }: {
   avatarUrl: string | null;
   creatorName: string;
-  likeCount: number;
+  /** YouTube's real count, or null when it could not be read. */
+  likeCount: number | null;
   commentCount: number;
   liked: boolean;
   saved: boolean;
@@ -91,7 +92,7 @@ export function ReelActions({
       <RailButton
         aria={liked ? "Unlike Reel" : "Like Reel"}
         onClick={onLike}
-        label={compactNumber(likeCount)}
+        label={likeCount === null ? "" : compactNumber(likeCount)}
         tint={liked ? "destructive" : undefined}
         icon={<Heart className={cn("h-6 w-6", liked && "fill-destructive text-destructive")} />}
       />

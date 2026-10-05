@@ -4,6 +4,7 @@ import { Send, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useShareSheet } from "@/hooks/useShareSheet";
+import { useYoutubeVideoStats } from "@/hooks/useYoutubeVideoStats";
 import type { Reel } from "@/services/reels";
 import {
   addExternalReelComment,
@@ -48,6 +49,8 @@ export function ReelInteractiveActions({
   const [commentsOpen, setCommentsOpen] = useState(false);
   const isExternal = reel.source_type === "youtube" && !!reel.external_id;
   const externalId = reel.external_id ?? "";
+
+  const { likes: youtubeLikes } = useYoutubeVideoStats(externalId, isExternal && near);
   const stateKey = ["external-reel-state", userId, externalId] as const;
 
   const state = useQuery({
@@ -120,7 +123,17 @@ export function ReelInteractiveActions({
       <ReelActions
         avatarUrl={reel.creator_avatar_url}
         creatorName={reel.creator_name}
-        likeCount={isExternal ? reel.like_count + (state.data?.liked ? 1 : 0) : reel.like_count}
+        // A YouTube reel belongs to its creator, so it shows YouTube's own
+        // like count, plus this viewer's own like if they just added one.
+        // When YouTube's number is unavailable the label is blank rather
+        // than a 0, which would read as "nobody liked this video".
+        likeCount={
+          isExternal
+            ? youtubeLikes === null
+              ? null
+              : youtubeLikes + (state.data?.liked ? 1 : 0)
+            : reel.like_count
+        }
         commentCount={isExternal ? (state.data?.commentCount ?? 0) : reel.comment_count}
         liked={isExternal ? !!state.data?.liked : liked}
         saved={isExternal ? !!state.data?.saved : saved}

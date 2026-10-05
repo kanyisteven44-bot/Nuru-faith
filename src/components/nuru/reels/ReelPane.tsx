@@ -1,3 +1,4 @@
+import { useYoutubeVideoStats } from "@/hooks/useYoutubeVideoStats";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Clapperboard, ExternalLink, Heart, Pause, Play, Volume2, VolumeX } from "lucide-react";
 import { CoverImage } from "@/components/nuru/CoverImage";
@@ -67,6 +68,10 @@ export function ReelPane(props: ReelPaneProps) {
   const commentsVisible = commentsOpen || externalCommentsOpen;
   const hasVideo = !!reel.video_url;
   const isYouTubeEmbed = reel.source_type === "youtube" && !!reel.external_id;
+  const { views: youtubeViews } = useYoutubeVideoStats(
+    reel.external_id ?? "",
+    isYouTubeEmbed && near,
+  );
   const isLinkOutOnly =
     (reel.source_type === "tiktok" || reel.source_type === "instagram") && !!reel.external_url;
   const shouldLoad = near && (autoplayAllowed || manualStart || active);
@@ -390,8 +395,14 @@ export function ReelPane(props: ReelPaneProps) {
         </div>
 
         <div className="pointer-events-auto flex items-center gap-2 px-2 pb-1">
+          {/* A YouTube reel shows YouTube's own view count, because Nuru's
+              counter only knows about plays inside this app. */}
           <span className="shrink-0 pl-1 text-[10px] text-white/70">
-            {compactNumber(reel.view_count)} views
+            {isYouTubeEmbed
+              ? youtubeViews === null
+                ? ""
+                : `${compactNumber(youtubeViews)} views on YouTube`
+              : `${compactNumber(reel.view_count)} views`}
           </span>
           {hasVideo ? (
             <ReelProgress videoRef={videoRef} />

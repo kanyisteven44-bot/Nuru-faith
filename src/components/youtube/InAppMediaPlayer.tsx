@@ -200,9 +200,12 @@ export function InAppMediaPlayer({
         )}
       />
       {notice && (
+        // Sits over the video rather than above it: as a sibling it pushed
+        // the picture down the screen, which looked like the player had
+        // broken in two.
         <div
           role="status"
-          className="order-first shrink-0 space-y-2 bg-slate-950 p-3 text-xs leading-relaxed text-white"
+          className="absolute inset-x-0 bottom-0 z-10 space-y-2 bg-black/85 p-3 text-xs leading-relaxed text-white backdrop-blur-sm"
         >
           <p>{notice}</p>
           <div className="flex flex-wrap gap-3">

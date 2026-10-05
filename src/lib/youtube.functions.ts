@@ -131,7 +131,15 @@ const responseSchema = z.object({
               uploadStatus: z.string().optional(),
             })
             .optional(),
-          statistics: z.object({ subscriberCount: z.string().optional() }).optional(),
+          statistics: z
+            .object({
+              subscriberCount: z.string().optional(),
+              // Present on videos; viewCount and likeCount are the publisher's
+              // own numbers, and likeCount is absent when they hide it.
+              viewCount: z.string().optional(),
+              likeCount: z.string().optional(),
+            })
+            .optional(),
         })
         .transform((item) => ({
           ...item,
@@ -499,3 +507,53 @@ export const youtubeLookup = createServerFn({ method: "POST" })
       return { item: null, error: err instanceof Error ? err.message : "unavailable" };
     }
   });
+
+/**
+ * YouTube's own view and like counts for videos Nuru did not publish.
+ *
+ * A reel sourced from YouTube belongs to its creator, so showing Nuru's
+ * internal counters next to it reads as that video having 0 likes, which is
+ * untrue. These are the publisher's real numbers, fetched as metadata only.
+ *
+ * Returns an empty map when the key is absent or the call fails, and the UI
+ * then shows nothing rather than a number it cannot stand behind.
+ */
+export const youtubeVideoStats = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        ids: z
+          .array(z.string().regex(/^[\w-]{11}$/))
+          .min(1)
+          .max(50),
+      })
+      .parse(data),
+  )
+  .handler(
+    async ({
+      data,
+    }): Promise<{
+      stats: Record<string, { viewCount: number | null; likeCount: number | null }>;
+      error: string | null;
+    }> => {
+      const key = process.env["YOUTUBE_API_KEY"];
+      if (!key) return { stats: {}, error: "not-configured" };
+      try {
+        const json = await call("videos", { part: "statistics", id: data.ids.join(",") }, key);
+        const stats: Record<string, { viewCount: number | null; likeCount: number | null }> = {};
+        for (const item of json.items ?? []) {
+          if (!item.id) continue;
+          const raw = item.statistics ?? {};
+          // likeCount is absent when a creator hides it; that is not a zero.
+          stats[item.id] = {
+            viewCount: raw.viewCount === undefined ? null : Number(raw.viewCount),
+            likeCount: raw.likeCount === undefined ? null : Number(raw.likeCount),
+          };
+        }
+        return { stats, error: null };
+      } catch (err) {
+        return { stats: {}, error: err instanceof Error ? err.message : "unavailable" };
+      }
+    },
+  );

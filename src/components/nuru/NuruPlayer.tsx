@@ -1,10 +1,15 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import {
   ChevronDown,
+  Heart,
   ListMusic,
   Pause,
   Play,
+  Repeat,
+  Repeat1,
   Shuffle,
   SkipBack,
   SkipForward,
@@ -12,6 +17,8 @@ import {
   VolumeX,
   X,
 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { fetchMySavedMediaIds, toggleSavedMedia } from "@/services/media";
 import { cn } from "@/lib/utils";
 import { duration } from "@/lib/format";
 import { resolveMedia } from "@/lib/media";
@@ -61,6 +68,9 @@ function PlayerSurface({ expanded }: { expanded: boolean }) {
     stop,
     setExpanded,
     toggleShuffle,
+    repeat,
+    cycleRepeat,
+    trackEnded,
     attachTransport,
   } = useNowPlaying();
 
@@ -71,6 +81,26 @@ function PlayerSurface({ expanded }: { expanded: boolean }) {
   const [muted, setMuted] = useState(false);
   const [scrubbing, setScrubbing] = useState<number | null>(null);
   const [showQueue, setShowQueue] = useState(false);
+
+  // The heart saves to the same library the rest of the app reads, so it is
+  // a real action rather than local decoration.
+  const { userId } = useAuth();
+  const queryClient = useQueryClient();
+  const savedIds = useQuery({
+    queryKey: ["saved-media-ids", userId],
+    queryFn: () => fetchMySavedMediaIds(userId!),
+    enabled: !!userId,
+    staleTime: 60_000,
+  });
+  const saved = !!track && !!savedIds.data?.has(track.id);
+  const favourite = useMutation({
+    mutationFn: () => toggleSavedMedia(userId!, track!.id, saved),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["saved-media-ids"] });
+      void queryClient.invalidateQueries({ queryKey: ["saved-media"] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
 
   const onReady = useCallback(
     (player: YoutubePlayer | null) => {
@@ -157,7 +187,7 @@ function PlayerSurface({ expanded }: { expanded: boolean }) {
         muted={muted}
         onPlaybackChange={onPlaybackChange}
         onReady={onReady}
-        onEnded={next}
+        onEnded={trackEnded}
       />
     </>
   ) : videoId ? (
@@ -172,7 +202,7 @@ function PlayerSurface({ expanded }: { expanded: boolean }) {
       frameClassName="h-full w-full"
       onPlaybackChange={onPlaybackChange}
       onReady={onReady}
-      onEnded={next}
+      onEnded={trackEnded}
     />
   ) : (
     <CoverImage src={artwork} alt="" className="h-full w-full" />
@@ -217,9 +247,18 @@ function PlayerSurface({ expanded }: { expanded: boolean }) {
         </header>
 
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] lg:mx-auto lg:w-full lg:max-w-5xl lg:flex-row lg:items-center lg:gap-10 lg:overflow-hidden">
-          {/* Artwork — the official player lives in here, framed as the sleeve. */}
+          {/* Audio gets a round sleeve, as a record would. Video keeps a
+              rectangle, because cropping a video to a circle loses the
+              picture — and YouTube's player has to stay whole anyway. */}
           <div className="mx-auto w-full max-w-[420px] shrink-0 lg:mx-0 lg:max-w-[52%]">
-            <div className="aspect-square w-full overflow-hidden rounded-3xl border border-border bg-black shadow-[0_24px_60px_-28px_rgb(17_24_39/45%)] lg:aspect-video">
+            <div
+              className={cn(
+                "w-full overflow-hidden bg-black shadow-[0_24px_60px_-28px_rgb(17_24_39/45%)]",
+                audioUrl
+                  ? "mx-auto aspect-square max-w-[320px] rounded-full ring-8 ring-[var(--surface)] lg:max-w-[380px]"
+                  : "aspect-video rounded-3xl border border-border",
+              )}
+            >
               <div className="relative flex h-full w-full items-center justify-center">{stage}</div>
             </div>
           </div>
@@ -227,13 +266,55 @@ function PlayerSurface({ expanded }: { expanded: boolean }) {
           {/* On desktop the transport stays put and only the queue scrolls,
               so opening the queue never pushes the controls out of view. */}
           <div className="mt-6 flex w-full min-w-0 flex-col lg:mt-0 lg:max-h-full lg:flex-1 lg:py-6">
-            <div className="shrink-0">
+            <div className="shrink-0 text-center lg:text-left">
               <h2 className="font-display text-[26px] leading-tight font-semibold lg:text-[32px]">
                 {track.title}
               </h2>
               <p className="mt-1.5 truncate text-[15px] text-ink-2">
                 {track.creator_name ?? "Unknown artist"}
               </p>
+            </div>
+
+            {/* Shuffle · favourite · repeat, as the reference lays them out. */}
+            <div className="mt-5 flex shrink-0 items-center justify-center gap-8 lg:justify-start">
+              <RoundButton
+                label="Shuffle the queue"
+                pressed={shuffle}
+                onClick={toggleShuffle}
+                size="sm"
+              >
+                <Shuffle className="h-[18px] w-[18px]" strokeWidth={2} />
+              </RoundButton>
+              <RoundButton
+                label={saved ? "Remove from your library" : "Save to your library"}
+                pressed={saved}
+                disabled={!userId || favourite.isPending}
+                onClick={() => favourite.mutate()}
+                size="sm"
+              >
+                <Heart
+                  className={cn("h-[18px] w-[18px]", saved && "fill-current")}
+                  strokeWidth={2}
+                />
+              </RoundButton>
+              <RoundButton
+                label={
+                  repeat === "off"
+                    ? "Repeat off"
+                    : repeat === "all"
+                      ? "Repeating the queue"
+                      : "Repeating this track"
+                }
+                pressed={repeat !== "off"}
+                onClick={cycleRepeat}
+                size="sm"
+              >
+                {repeat === "one" ? (
+                  <Repeat1 className="h-[18px] w-[18px]" strokeWidth={2} />
+                ) : (
+                  <Repeat className="h-[18px] w-[18px]" strokeWidth={2} />
+                )}
+              </RoundButton>
             </div>
 
             <Scrubber
@@ -247,59 +328,40 @@ function PlayerSurface({ expanded }: { expanded: boolean }) {
               }}
             />
 
-            <div className="mt-5 flex shrink-0 items-center justify-between gap-2">
+            {/* Previous · play · next, with the big soft key in the middle. */}
+            <div className="mt-6 flex shrink-0 items-center justify-center gap-7 lg:justify-start">
+              <RoundButton label="Previous track" onClick={previous}>
+                <SkipBack className="h-6 w-6 fill-current" strokeWidth={1.5} />
+              </RoundButton>
               <button
                 type="button"
-                onClick={toggleShuffle}
-                aria-label="Shuffle the queue"
-                aria-pressed={shuffle}
-                className={cn(
-                  "flex h-11 w-11 items-center justify-center rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-                  shuffle ? "bg-accent text-primary" : "text-ink-3 hover:bg-surface-2",
-                )}
+                onClick={toggle}
+                aria-label={playing ? "Pause" : "Play"}
+                className="nuru-soft-control nuru-soft-primary flex h-[72px] w-[72px] items-center justify-center rounded-full bg-primary text-primary-foreground transition-transform active:scale-95 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
               >
-                <Shuffle className="h-[18px] w-[18px]" strokeWidth={2} />
+                {playing ? (
+                  <Pause className="h-8 w-8 fill-current" strokeWidth={0} />
+                ) : (
+                  <Play className="ml-1 h-8 w-8 fill-current" strokeWidth={0} />
+                )}
               </button>
+              <RoundButton
+                label="Next track"
+                onClick={next}
+                disabled={index + 1 >= queue.length && repeat !== "all"}
+              >
+                <SkipForward className="h-6 w-6 fill-current" strokeWidth={1.5} />
+              </RoundButton>
+            </div>
 
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={previous}
-                  aria-label="Previous song"
-                  className="flex h-12 w-12 items-center justify-center rounded-full text-foreground transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                >
-                  <SkipBack className="h-6 w-6 fill-current" strokeWidth={1.5} />
-                </button>
-                <button
-                  type="button"
-                  onClick={toggle}
-                  aria-label={playing ? "Pause" : "Play"}
-                  className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-primary-foreground transition-transform hover:brightness-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
-                >
-                  {playing ? (
-                    <Pause className="h-7 w-7 fill-current" strokeWidth={0} />
-                  ) : (
-                    <Play className="ml-0.5 h-7 w-7 fill-current" strokeWidth={0} />
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={next}
-                  disabled={index + 1 >= queue.length}
-                  aria-label="Next song"
-                  className="flex h-12 w-12 items-center justify-center rounded-full text-foreground transition-colors hover:bg-surface-2 disabled:opacity-35 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                >
-                  <SkipForward className="h-6 w-6 fill-current" strokeWidth={1.5} />
-                </button>
-              </div>
-
+            <div className="mt-4 flex shrink-0 justify-center lg:justify-start">
               <button
                 type="button"
                 onClick={() => setMuted((on) => !on)}
                 aria-label={muted ? "Unmute" : "Mute"}
                 aria-pressed={muted}
                 className={cn(
-                  "flex h-11 w-11 items-center justify-center rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                  "flex h-11 items-center gap-2 rounded-full px-4 text-[12.5px] font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                   muted ? "bg-accent text-primary" : "text-ink-3 hover:bg-surface-2",
                 )}
               >
@@ -308,6 +370,7 @@ function PlayerSurface({ expanded }: { expanded: boolean }) {
                 ) : (
                   <Volume2 className="h-[18px] w-[18px]" strokeWidth={2} />
                 )}
+                {muted ? "Muted" : "Sound on"}
               </button>
             </div>
 
@@ -393,6 +456,45 @@ function PlayerSurface({ expanded }: { expanded: boolean }) {
         </span>
       </button>
     </>
+  );
+}
+
+/**
+ * The soft round key the reference player is built from. Pressed state uses
+ * the inset variant, so a toggle reads as pushed in rather than merely tinted.
+ */
+function RoundButton({
+  children,
+  label,
+  onClick,
+  pressed,
+  disabled,
+  size = "md",
+}: {
+  children: ReactNode;
+  label: string;
+  onClick: () => void;
+  pressed?: boolean;
+  disabled?: boolean;
+  size?: "sm" | "md";
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      {...(pressed === undefined ? {} : { "aria-pressed": pressed })}
+      className={cn(
+        "nuru-soft-control flex shrink-0 items-center justify-center rounded-full transition-transform active:scale-95",
+        "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+        "disabled:opacity-35 disabled:active:scale-100",
+        size === "sm" ? "h-11 w-11" : "h-14 w-14",
+        pressed ? "nuru-soft-inset text-primary" : "text-ink-2",
+      )}
+    >
+      {children}
+    </button>
   );
 }
 
@@ -529,9 +631,10 @@ function Scrubber({
           className="nuru-range absolute inset-0 w-full cursor-pointer appearance-none bg-transparent focus-visible:rounded-full focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         />
       </div>
+      {/* Elapsed on the left, time left on the right, as the reference shows. */}
       <div className="mt-1.5 flex justify-between text-[11.5px] tabular-nums text-ink-3">
         <span>{duration(Math.round(shown))}</span>
-        <span>{total > 0 ? duration(Math.round(total)) : "--:--"}</span>
+        <span>{total > 0 ? `-${duration(Math.max(0, Math.round(total - shown)))}` : "--:--"}</span>
       </div>
     </div>
   );

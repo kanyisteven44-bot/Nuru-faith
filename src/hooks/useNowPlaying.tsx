@@ -41,6 +41,9 @@ type Transport = {
   seekTo(seconds: number, allowSeekAhead: boolean): void;
 };
 
+/** Off, repeat the whole queue, or repeat this one track. */
+export type RepeatMode = "off" | "all" | "one";
+
 type NowPlayingValue = {
   queue: NowPlayingTrack[];
   index: number;
@@ -48,15 +51,19 @@ type NowPlayingValue = {
   playing: boolean;
   expanded: boolean;
   shuffle: boolean;
+  repeat: RepeatMode;
   /** Start a queue at a chosen track. */
   play(tracks: NowPlayingTrack[], startAt?: number): void;
   toggle(): void;
   setPlaying(value: boolean): void;
   next(): void;
+  /** The track reached its end on its own — repeat decides what happens. */
+  trackEnded(): void;
   previous(): void;
   stop(): void;
   setExpanded(value: boolean): void;
   toggleShuffle(): void;
+  cycleRepeat(): void;
   /** The player surface registers itself here; null when it unmounts. */
   attachTransport(transport: Transport | null): void;
   transport: React.RefObject<Transport | null>;
@@ -81,6 +88,7 @@ export function NowPlayingProvider({ children }: { children: ReactNode }) {
   const [playing, setPlaying] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [shuffle, setShuffle] = useState(false);
+  const [repeat, setRepeat] = useState<RepeatMode>("off");
   const transport = useRef<Transport | null>(null);
 
   const play = useCallback((tracks: NowPlayingTrack[], startAt = 0) => {
@@ -95,13 +103,31 @@ export function NowPlayingProvider({ children }: { children: ReactNode }) {
   const next = useCallback(() => {
     setIndex((current) => {
       if (current + 1 >= queue.length) {
+        // Pressing next past the end wraps only when repeating the queue.
+        if (repeat === "all" && queue.length > 0) {
+          setPlaying(true);
+          return 0;
+        }
         setPlaying(false);
         return current;
       }
       setPlaying(true);
       return current + 1;
     });
-  }, [queue.length]);
+  }, [queue.length, repeat]);
+
+  /**
+   * A track finishing on its own is not the same as pressing next: "repeat
+   * one" restarts it rather than advancing.
+   */
+  const trackEnded = useCallback(() => {
+    if (repeat === "one") {
+      transport.current?.seekTo(0, true);
+      setPlaying(true);
+      return;
+    }
+    next();
+  }, [repeat, next]);
 
   const previous = useCallback(() => {
     // Matches every music player: part-way in, the button restarts the song.
@@ -128,6 +154,10 @@ export function NowPlayingProvider({ children }: { children: ReactNode }) {
     });
   }, [index]);
 
+  const cycleRepeat = useCallback(() => {
+    setRepeat((mode) => (mode === "off" ? "all" : mode === "all" ? "one" : "off"));
+  }, []);
+
   const attachTransport = useCallback((value: Transport | null) => {
     transport.current = value;
   }, []);
@@ -140,14 +170,17 @@ export function NowPlayingProvider({ children }: { children: ReactNode }) {
       playing,
       expanded,
       shuffle,
+      repeat,
       play,
       toggle: () => setPlaying((on) => !on),
       setPlaying,
       next,
+      trackEnded,
       previous,
       stop,
       setExpanded,
       toggleShuffle,
+      cycleRepeat,
       attachTransport,
       transport,
     }),
@@ -157,11 +190,14 @@ export function NowPlayingProvider({ children }: { children: ReactNode }) {
       playing,
       expanded,
       shuffle,
+      repeat,
       play,
       next,
+      trackEnded,
       previous,
       stop,
       toggleShuffle,
+      cycleRepeat,
       attachTransport,
     ],
   );

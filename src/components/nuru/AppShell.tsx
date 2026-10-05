@@ -28,7 +28,7 @@ export function AppShell({
   flush?: boolean;
   hideNav?: boolean;
 }) {
-  const avatar = user?.user_metadata?.["avatar_url"] ?? user?.user_metadata?.["picture"];
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   useEffect(() => {
     void recordNuruActivity();

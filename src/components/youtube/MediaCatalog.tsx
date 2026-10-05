@@ -244,7 +244,7 @@ export function MediaPlayback({ item, onClose }: { item: MediaItem; onClose: () 
               <button type="button" className="nuru-soft-control flex h-12 w-12 items-center justify-center rounded-full" aria-label="Previous">
                 <SkipBack className="h-5 w-5 fill-current" />
               </button>
-              <button type="button" onClick={() => setPlaying((value) => !value)} className="flex h-20 w-20 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl shadow-primary/25" aria-label={playing ? "Pause" : "Play"}>
+              <button type="button" onClick={() => void togglePlayback()} className="flex h-20 w-20 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl shadow-primary/25" aria-label={playing ? "Pause" : "Play"}>
                 {playing ? <Pause className="h-8 w-8 fill-current" /> : <Play className="ml-1 h-8 w-8 fill-current" />}
               </button>
               <button type="button" className="nuru-soft-control flex h-12 w-12 items-center justify-center rounded-full" aria-label="Next">

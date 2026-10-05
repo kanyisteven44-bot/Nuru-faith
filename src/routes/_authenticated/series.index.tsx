@@ -1,7 +1,7 @@
 import { CoverImage } from "@/components/nuru/CoverImage";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { ArrowRight } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { resolveMedia } from "@/lib/media";
@@ -9,6 +9,8 @@ import { fetchCuratedSeries, fetchMyProgress, type SeriesRow } from "@/services/
 import { AppShell } from "@/components/nuru/AppShell";
 import { FeatureHeaderBar } from "@/components/nuru/FeatureHeader";
 import { CardSkeleton, EmptyState, ErrorState } from "@/components/nuru/Primitives";
+import { supabase } from "@/integrations/supabase/client";
+import { LearningLinks } from "@/components/nuru/LearningLinks";
 
 export const Route = createFileRoute("/_authenticated/series/")({
   head: () => ({
@@ -43,6 +45,36 @@ const CURATED_SLUGS = [
 
 function SeriesHome() {
   const { userId } = useAuth();
+  const [search, setSearch] = useState("");
+  const library = useInfiniteQuery({
+    queryKey: ["reading-series-library", search],
+    initialPageParam: 0,
+    queryFn: async ({ pageParam }) => {
+      let query = supabase
+        .from("scripture_series")
+        .select(
+          "id,title,slug,description,cover_image,category,difficulty,estimated_duration,session_count,status,is_featured,church_id",
+          { count: "exact" },
+        )
+        .eq("status", "published")
+        .not("slug", "like", "nuru-library-%")
+        .order("title")
+        .order("id");
+      const term = search
+        .trim()
+        .replace(/[^\p{L}\p{N}\s-]/gu, " ")
+        .trim();
+      if (term) query = query.or(`title.ilike.%${term}%,description.ilike.%${term}%`);
+      const { data, error, count } = await query.range(pageParam * 24, pageParam * 24 + 23);
+      if (error) throw error;
+      return {
+        rows: (data ?? []) as SeriesRow[],
+        total: count ?? 0,
+        next: (pageParam + 1) * 24 < (count ?? 0) ? pageParam + 1 : undefined,
+      };
+    },
+    getNextPageParam: (page) => page.next,
+  });
 
   const series = useQuery({
     queryKey: ["curated-series"],
@@ -63,6 +95,7 @@ function SeriesHome() {
   return (
     <AppShell>
       <FeatureHeaderBar />
+      <LearningLinks active="Series" />
 
       <div className="px-4 pb-6">
         <h1 className="font-display text-[40px] leading-none">Bible series</h1>
@@ -71,6 +104,7 @@ function SeriesHome() {
         </p>
 
         <div className="mt-5">
+          <h2 className="mb-3 font-display text-xl">Start with a topical series</h2>
           {series.isLoading && <CardSkeleton count={3} height="h-[164px]" />}
           {series.isError && <ErrorState onRetry={() => void series.refetch()} />}
           {!series.isLoading && !series.isError && all.length === 0 && (
@@ -90,6 +124,50 @@ function SeriesHome() {
             </ul>
           )}
         </div>
+
+        <section className="mt-8" aria-label="Scripture reading journeys">
+          <h2 className="font-display text-2xl">Explore reading journeys</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Chapter-by-chapter Scripture journeys and topical studies. Read, reflect and pray at
+            your own pace.
+          </p>
+          <input
+            className="input-nuru mt-4"
+            aria-label="Search Scripture series"
+            placeholder="Search a Bible book or topic"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          {library.data && (
+            <p className="my-3 text-xs text-muted-foreground" role="status">
+              {library.data.pages.flatMap((page) => page.rows).length} of{" "}
+              {library.data.pages[0]?.total ?? 0} journeys
+            </p>
+          )}
+          {library.isPending && <CardSkeleton count={3} height="h-40" />}
+          {library.isError && <ErrorState onRetry={() => void library.refetch()} />}
+          {!library.isPending && !library.isError && !library.data?.pages[0]?.rows.length && (
+            <p className="py-5 text-sm text-muted-foreground">No journeys match this search.</p>
+          )}
+          <ul className="grid gap-4 lg:grid-cols-2">
+            {library.data?.pages
+              .flatMap((page) => page.rows)
+              .map((row) => (
+                <li key={row.id}>
+                  <SeriesCard series={row} percent={progressMap.get(row.id) ?? 0} />
+                </li>
+              ))}
+          </ul>
+          {library.hasNextPage && (
+            <button
+              className="mt-5 min-h-11 rounded-xl border border-border px-5 text-sm font-semibold"
+              disabled={library.isFetchingNextPage}
+              onClick={() => void library.fetchNextPage()}
+            >
+              {library.isFetchingNextPage ? "Loading…" : "Load more journeys"}
+            </button>
+          )}
+        </section>
 
         <p className="mt-6 rounded-2xl border border-border bg-surface px-4 py-3 text-xs text-ink-3">
           Bible series are written to help you understand the Bible in context — not to replace your
@@ -127,11 +205,11 @@ function SeriesCard({ series, percent }: { series: SeriesRow; percent: number })
 
       <span className="absolute inset-x-0 top-0 flex items-start gap-3 p-4">
         <span className="min-w-0 flex-1">
-          <span className="block truncate font-display text-[24px] leading-tight">
+          <span className="block truncate font-display text-[24px] leading-tight text-white">
             {series.title}
           </span>
           {series.description && (
-            <span className="mt-0.5 block truncate text-[13px] text-ink-2">
+            <span className="mt-0.5 block truncate text-[13px] text-white/80">
               {series.description}
             </span>
           )}
@@ -148,7 +226,7 @@ function SeriesCard({ series, percent }: { series: SeriesRow; percent: number })
             style={{ width: `${Math.max(0, Math.min(100, percent))}%` }}
           />
         </span>
-        <span className="shrink-0 text-[11px] font-semibold text-ink-2">
+        <span className="shrink-0 text-[11px] font-semibold text-white/80">
           {done} of {series.session_count} lessons
         </span>
       </span>

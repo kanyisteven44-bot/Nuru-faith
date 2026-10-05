@@ -873,6 +873,15 @@ a {
     transform: none;
   }
 }
+.nuru-reader-copy {
+  line-height: 1.85;
+  overflow-wrap: anywhere;
+}
+.nuru-reader-copy p,
+.nuru-reader-copy li {
+  font-size: inherit;
+  line-height: inherit;
+}
 @media (forced-colors: active) {
   .nuru-soft-control,
   .nuru-tactile {

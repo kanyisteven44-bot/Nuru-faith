@@ -12,6 +12,7 @@ const LIBRARY: Record<string, string> = {
   "cross-sunrise": "/photos/alpine-reflections.jpg",
   "worship-night": "/photos/worship-gathering.jpg",
   "bible-candle": "/photos/open-bible.jpg",
+  "reading-scripture": "/photos/reading-scripture.jpg",
   "quiet-night": "/photos/alpine-reflections.jpg",
   "topic-prayer": "/photos/prayer-community.jpg",
   "topic-personal-growth": "/photos/forest-walk.jpg",

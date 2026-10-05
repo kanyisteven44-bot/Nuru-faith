@@ -195,8 +195,8 @@ function EventsScreen() {
           </article>
         )}
 
-        <div className="space-y-2">
-          {rest.map((e) => {
+        <ul className="space-y-2">
+          {rest.map((e, i) => {
             const isGoing = going.has(e.id);
             const when = new Date(e.starts_at);
             return (

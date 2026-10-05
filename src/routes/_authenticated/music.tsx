@@ -21,7 +21,7 @@ import { YouTubeNotice } from "@/components/youtube/YouTubePlayer";
 import { InAppMediaPlayer as YouTubePlayer } from "@/components/youtube/InAppMediaPlayer";
 import { YouTubeSearchResults } from "@/components/youtube/YouTubeSearchResults";
 import { MediaCategoryRail } from "@/components/youtube/MediaCategoryRail";
-import { MediaPlayback } from "@/components/youtube/MediaCatalog";
+import { MediaCatalog, MediaPlayback } from "@/components/youtube/MediaCatalog";
 import type { MediaItem } from "@/services/media";
 import { MusicDiscovery } from "@/components/youtube/MusicDiscovery";
 import { MediaActions } from "@/components/youtube/MediaActions";
@@ -48,7 +48,9 @@ export const Route = createFileRoute("/_authenticated/music")({
 });
 
 const TABS = ["Music", "Podcasts", "Sermons", "Videos"] as const;
+const MUSIC_MODES = ["Audio", "Video"] as const;
 type Tab = (typeof TABS)[number];
+type MusicMode = (typeof MUSIC_MODES)[number];
 
 type NowPlaying =
   | { kind: "youtube-video"; id: string; title: string }
@@ -57,6 +59,7 @@ type NowPlaying =
 function MusicScreen() {
   const { userId } = useAuth();
   const [tab, setTab] = useState<Tab>("Music");
+  const [musicMode, setMusicMode] = useState<MusicMode>("Video");
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
   const [nowPlaying, setNowPlaying] = useState<NowPlaying | null>(null);
@@ -149,19 +152,53 @@ function MusicScreen() {
           )}
         </div>
         <PillTabs tabs={TABS} value={tab} onChange={setTab} />
+        {tab === "Music" && (
+          <div className="space-y-2 rounded-2xl border border-border bg-card p-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold">Choose playback</p>
+                <p className="text-xs text-muted-foreground">
+                  Audio uses approved publisher-hosted files. Video uses the official YouTube player.
+                </p>
+              </div>
+            </div>
+            <PillTabs tabs={MUSIC_MODES} value={musicMode} onChange={setMusicMode} />
+          </div>
+        )}
       </div>
 
-      {(tab === "Music" || tab === "Podcasts") && (
+      {tab === "Music" && musicMode === "Video" && (
         <MusicDiscovery
-          mediaType={tab === "Music" ? "music" : "podcast"}
+          mediaType="music"
           query={debounced}
           onPlay={openVideo}
           onPlayItem={playCatalog}
+          catalogPlayback="video"
         />
       )}
 
-      {tab === "Music" && !debounced.trim() && !!tracks.data?.length && (
-        <NuruAudioSection tracks={tracks.data} loading={tracks.isLoading} onPlay={playCatalog} />
+      {tab === "Music" && musicMode === "Audio" && (
+        <>
+          <MediaCatalog
+            mediaType="music"
+            query={debounced}
+            playback="audio"
+            onPlay={playCatalog}
+          />
+          {!debounced.trim() && !!tracks.data?.length && (
+            <NuruAudioSection tracks={tracks.data} loading={tracks.isLoading} onPlay={playCatalog} />
+          )}
+        </>
+      )}
+
+      {tab === "Podcasts" && (
+        <MusicDiscovery
+          mediaType="podcast"
+          query={debounced}
+          onPlay={openVideo}
+          onPlayItem={playCatalog}
+          catalogPlayback="all"
+        />
       )}
 
       {debounced.trim() && tab !== "Music" && tab !== "Podcasts" ? (

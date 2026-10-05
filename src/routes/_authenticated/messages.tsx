@@ -318,7 +318,7 @@ function MessagesScreen() {
           userId={userId}
           peer={activeCall.peer}
           kind={activeCall.kind}
-          incoming={activeCall.incoming}
+          incoming={activeCall.incoming ?? null}
           onClose={() => {
             setActiveCall(null);
             void incoming.refetch();

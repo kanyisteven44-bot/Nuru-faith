@@ -1,18 +1,26 @@
 import { CoverImage } from "@/components/nuru/CoverImage";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { ArrowRight, Bookmark, Flame } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { resolveMedia } from "@/lib/media";
-import { fetchProfile, fetchDevotionals } from "@/services/content";
+import { fetchProfile } from "@/services/content";
+import { supabase } from "@/integrations/supabase/client";
+import { DevotionalReader } from "@/components/nuru/DevotionalReader";
 import { readSavedDevotionalIds, toggleSavedDevotional } from "@/lib/devotionalBookmarks";
 import { AppShell } from "@/components/nuru/AppShell";
 import { FeatureHeaderBar } from "@/components/nuru/FeatureHeader";
 import { CardSkeleton, EmptyState, ScreenHero } from "@/components/nuru/Primitives";
 
 export const Route = createFileRoute("/_authenticated/devotionals")({
+  validateSearch: (search: Record<string, unknown>): { reading?: string | undefined } => ({
+    reading:
+      typeof search["reading"] === "string" && /^[a-f\d-]{36}$/i.test(search["reading"])
+        ? search["reading"]
+        : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Devotionals — Nuru Faith" },
@@ -52,6 +60,8 @@ type DevotionalRow = {
 
 function DevotionalsScreen() {
   const { userId } = useAuth();
+  const { reading } = Route.useSearch();
+  const [search, setSearch] = useState("");
   const [savedIds, setSavedIds] = useState<Set<string>>(() => readSavedDevotionalIds(null));
 
   const profile = useQuery({
@@ -59,13 +69,42 @@ function DevotionalsScreen() {
     queryFn: () => fetchProfile(userId!),
     enabled: !!userId,
   });
-  const devotionals = useQuery({ queryKey: ["devotionals"], queryFn: fetchDevotionals });
-  const rows = (devotionals.data ?? []) as DevotionalRow[];
+  useEffect(() => setSavedIds(readSavedDevotionalIds(userId ?? null)), [userId]);
+  const devotionals = useInfiniteQuery({
+    queryKey: ["devotional-library", search],
+    initialPageParam: 0,
+    queryFn: async ({ pageParam }) => {
+      let query = supabase
+        .from("devotionals")
+        .select("id,title,subtitle,scripture_ref,cover_url,publish_date,read_minutes", {
+          count: "exact",
+        })
+        .order("publish_date", { ascending: false })
+        .order("title")
+        .order("id");
+      const term = search
+        .trim()
+        .replace(/[^\p{L}\p{N}\s-]/gu, " ")
+        .trim();
+      if (term) query = query.or(`title.ilike.%${term}%,scripture_ref.ilike.%${term}%`);
+      const { data, error, count } = await query.range(pageParam * 24, pageParam * 24 + 23);
+      if (error) throw error;
+      return {
+        rows: data ?? [],
+        total: count ?? 0,
+        next: (pageParam + 1) * 24 < (count ?? 0) ? pageParam + 1 : undefined,
+      };
+    },
+    getNextPageParam: (page) => page.next,
+  });
+  const rows = (devotionals.data?.pages.flatMap((page) => page.rows) ?? []) as DevotionalRow[];
   const streak = profile.data?.faith_streak ?? 0;
 
   function toggleSave(id: string) {
     setSavedIds(toggleSavedDevotional(userId ?? null, id));
   }
+
+  if (reading) return <DevotionalReader key={reading} id={reading} />;
 
   return (
     <AppShell>
@@ -102,6 +141,32 @@ function DevotionalsScreen() {
         </section>
 
         <h2 className="mt-6 mb-3 font-display text-[22px] leading-none">Daily devotionals</h2>
+        <label className="mb-4 block">
+          <span className="sr-only">Search devotionals</span>
+          <input
+            className="input-nuru"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search a devotional or Scripture passage"
+          />
+        </label>
+        {devotionals.data && (
+          <p className="mb-3 text-xs text-muted-foreground" role="status">
+            {rows.length} of {devotionals.data.pages[0]?.total ?? 0} readings
+          </p>
+        )}
+        {devotionals.isError && (
+          <div role="alert">
+            <p>Devotionals could not load.</p>
+            <button
+              type="button"
+              className="min-h-11 text-primary underline"
+              onClick={() => void devotionals.refetch()}
+            >
+              Retry devotionals
+            </button>
+          </div>
+        )}
 
         {devotionals.isLoading && <CardSkeleton count={3} height="h-[120px]" />}
 
@@ -118,9 +183,10 @@ function DevotionalsScreen() {
               const saved = savedIds.has(d.id);
               const label = dayLabel(d.publish_date);
               return (
-                <li key={d.id}>
+                <li key={d.id} className="relative">
                   <Link
-                    to="/bible"
+                    to="/devotionals"
+                    search={{ reading: d.id }}
                     className="relative block overflow-hidden rounded-2xl border border-border"
                   >
                     {d.cover_url ? (
@@ -150,23 +216,33 @@ function DevotionalsScreen() {
                         <ArrowRight className="h-[18px] w-[18px]" strokeWidth={2.2} />
                       </span>
                     </span>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        toggleSave(d.id);
-                      }}
-                      aria-label={saved ? "Remove bookmark" : "Save devotional"}
-                      aria-pressed={saved}
-                      className="absolute top-3 right-3 rounded-full bg-background/60 p-2 text-ink-2 backdrop-blur-sm"
-                    >
-                      <Bookmark className="h-3.5 w-3.5" fill={saved ? "currentColor" : "none"} />
-                    </button>
                   </Link>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      toggleSave(d.id);
+                    }}
+                    aria-label={saved ? "Remove bookmark" : "Save devotional"}
+                    aria-pressed={saved}
+                    className="absolute top-3 right-3 rounded-full bg-background/60 p-2 text-ink-2 backdrop-blur-sm"
+                  >
+                    <Bookmark className="h-3.5 w-3.5" fill={saved ? "currentColor" : "none"} />
+                  </button>
                 </li>
               );
             })}
           </ul>
+        )}
+        {devotionals.hasNextPage && (
+          <button
+            type="button"
+            disabled={devotionals.isFetchingNextPage}
+            className="mt-5 min-h-11 rounded-xl border border-border px-5 text-sm font-semibold"
+            onClick={() => void devotionals.fetchNextPage()}
+          >
+            {devotionals.isFetchingNextPage ? "Loading…" : "Load more devotionals"}
+          </button>
         )}
       </div>
     </AppShell>

@@ -21,6 +21,7 @@ import {
   fetchMentorThreads,
   sendChatMessage,
   type ChatMessage,
+  type ChatProfile,
   type ChatTarget,
 } from "@/services/messaging";
 import { AppShell, Avatar, ScreenHeader } from "@/components/nuru/AppShell";
@@ -229,14 +230,8 @@ function ThreadView({
 }: {
   target: ChatTarget | undefined;
   userId: string | null;
-  searchUser?: string;
-  directProfile?: {
-    id: string;
-    full_name: string | null;
-    username: string | null;
-    avatar_url: string | null;
-    verified: boolean;
-  };
+  searchUser: string | undefined;
+  directProfile: ChatProfile | undefined;
   loading: boolean;
   failed: boolean;
 }) {

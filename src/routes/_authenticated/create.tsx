@@ -29,11 +29,11 @@ const ATTACHMENTS = [
   {
     label: "Photo",
     icon: ImageIcon,
-    tint: "text-emerald-300 bg-emerald-500/15 border-emerald-400/30",
+    tint: "text-leaf bg-olive-soft border-leaf/30",
   },
-  { label: "Video", icon: Video, tint: "text-violet-300 bg-violet-500/15 border-violet-400/30" },
-  { label: "Live", icon: Radio, tint: "text-rose-300 bg-rose-500/15 border-rose-400/30" },
-  { label: "Poll", icon: BarChart3, tint: "text-amber-300 bg-amber-500/15 border-amber-400/30" },
+  { label: "Video", icon: Video, tint: "text-terra-lt bg-[#33280F] border-terra-lt/30" },
+  { label: "Live", icon: Radio, tint: "text-rose bg-rose-soft border-rose/30" },
+  { label: "Poll", icon: BarChart3, tint: "text-sand bg-sand-soft border-sand/30" },
 ] as const;
 
 function CreateScreen() {
@@ -189,7 +189,7 @@ function CreateScreen() {
                 <span
                   className={cn(
                     "h-4 w-4 rounded-full border",
-                    audience === a ? "border-cyan bg-cyan" : "border-border-strong",
+                    audience === a ? "border-leaf bg-leaf" : "border-border-strong",
                   )}
                 />
               </button>

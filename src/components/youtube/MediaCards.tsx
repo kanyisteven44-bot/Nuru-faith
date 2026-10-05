@@ -110,7 +110,7 @@ export function ChannelCard({
           {channel.description}
         </span>
       </span>
-      <Radio className="h-4 w-4 shrink-0 text-cyan" />
+      <Radio className="h-4 w-4 shrink-0 text-leaf" />
     </button>
   );
 }

@@ -1,3 +1,5 @@
+import { CoverImage } from "@/components/nuru/CoverImage";
+import { resolveMedia } from "@/lib/media";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -42,7 +44,6 @@ import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
 import { NuruAiMark } from "@/components/nuru/NuruAiMark";
 import { AiMarkdown } from "@/components/nuru/AiMarkdown";
 import { CardSkeleton, IconTile } from "@/components/nuru/Primitives";
-import heroBg from "@/assets/mountain-dawn.jpg";
 
 type Search = {
   contextType?: string | undefined;
@@ -83,19 +84,19 @@ const STARTERS: { prompt: string; hint: string; icon: LucideIcon; tint: string }
     prompt: "Explain this verse",
     hint: "Get a clear explanation",
     icon: BookOpen,
-    tint: "border-primary/45 bg-primary/15 text-cyan",
+    tint: "border-primary/45 bg-primary/15 text-leaf",
   },
   {
     prompt: "Help me pray",
     hint: "Guided and personal prayers",
     icon: HandHeart,
-    tint: "border-violet/45 bg-violet/15 text-violet",
+    tint: "border-terra/45 bg-terra/15 text-terra-lt",
   },
   {
     prompt: "What does the Bible say about anxiety?",
     hint: "Find peace in God's Word",
     icon: Brain,
-    tint: "border-magenta/45 bg-magenta/15 text-magenta",
+    tint: "border-terra/45 bg-terra/15 text-terra-lt",
   },
   {
     prompt: "Help me understand my church",
@@ -253,8 +254,8 @@ function AiScreen() {
     <AppShell>
       {messages.length === 0 && (
         <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10">
-          <img
-            src={heroBg}
+          <CoverImage
+            src={resolveMedia("asset:mountain-dawn")}
             alt=""
             loading="eager"
             className="h-full w-full object-cover opacity-40"
@@ -326,7 +327,7 @@ function AiScreen() {
 
       {context && (
         <div className="mx-4 mt-3 rounded-2xl border border-border bg-surface-2 p-3">
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-cyan">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-leaf">
             Asking about this {context.type}
           </p>
           <p className="mt-1 text-sm">{context.label}</p>
@@ -351,7 +352,7 @@ function AiScreen() {
                 <NuruAiMark className="mx-auto mt-2 h-28 w-28" />
 
                 <h2 className="mt-3 text-center font-display text-[24px] leading-tight font-bold">
-                  Hello, I'm <span className="text-cyan">Nuru AI</span>{" "}
+                  Hello, I'm <span className="text-leaf">Nuru AI</span>{" "}
                   <span className="align-middle">👋</span>
                 </h2>
                 <p className="mx-auto mt-2 max-w-[20rem] text-center text-[13px] leading-relaxed text-secondary-foreground">
@@ -363,7 +364,7 @@ function AiScreen() {
             </div>
 
             <div className="nuru-card flex items-start gap-3 p-4">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-primary/40 bg-primary/12 text-cyan">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-primary/40 bg-primary/12 text-leaf">
                 <ShieldCheck className="h-5 w-5" strokeWidth={1.8} />
               </span>
               <p className="text-[12px] leading-relaxed text-secondary-foreground">
@@ -414,7 +415,7 @@ function AiScreen() {
             <div key={m.id} className="nuru-card p-4">
               {m.pending ? (
                 <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Sparkles className="h-4 w-4 animate-pulse text-cyan" /> Thinking through
+                  <Sparkles className="h-4 w-4 animate-pulse text-leaf" /> Thinking through
                   Scripture…
                 </p>
               ) : (
@@ -478,7 +479,7 @@ function AiScreen() {
           }}
           className="flex items-center gap-2 rounded-full border border-border-strong bg-surface/95 p-1.5 shadow-[var(--shadow-raised)] backdrop-blur-xl"
         >
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-cyan">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-leaf">
             <Sparkles className="h-4.5 w-4.5" />
           </span>
           <input

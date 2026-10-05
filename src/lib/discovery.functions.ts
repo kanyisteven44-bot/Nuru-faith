@@ -15,14 +15,12 @@ export type DiscoveryItem = {
   source: string | null;
   externalId: string | null;
   audioUrl: string | null;
-  creatorName: string | null;
-  durationSeconds: number | null;
-  category: string | null;
+  sourceUrl?: string | null;
 };
 const input = z.object({
   kind: z.enum(DISCOVERY_KINDS),
   query: z.string().trim().max(120).default(""),
-  page: z.number().int().min(0).max(125000).default(0),
+  page: z.number().int().min(0).max(10000).default(0),
   id: z.string().max(80).optional(),
 });
 const PAGE_SIZE = 8;
@@ -115,15 +113,31 @@ export const searchDiscovery = createServerFn({ method: "POST" })
         break;
       }
       case "churches": {
-        let q = supabase.from("churches").select("id,name,description,cover_url");
+        let q = supabase
+          .from("churches")
+          .select("id,name,description,cover_url,region,city,denomination");
         if (id) q = q.eq("id", id);
-        else if (query) q = q.or(searchFilter(["name", "city", "denomination"], query));
+        else if (query) q = q.or(searchFilter(["name", "region", "city", "denomination"], query));
         const { data: rows, error } = await q
-          .order("verified", { ascending: false })
+          .order("region", { nullsFirst: false })
+          .order("city", { nullsFirst: false })
+          .order("denomination", { nullsFirst: false })
+          .order("name")
           .order("id")
           .range(start, start + PAGE_SIZE);
         if (error) throw error;
-        items = (rows ?? []).map((r) => base(r.id, r.name, r.description, r.cover_url));
+        items = (rows ?? []).map((r) => ({
+          ...base(
+            r.id,
+            r.name,
+            [r.region, r.city, r.denomination, r.description].filter(Boolean).join(" · "),
+            r.cover_url,
+          ),
+          sourceUrl:
+            r.description?.match(
+              /https:\/\/www\.openstreetmap\.org\/(?:node|way|relation)\/\d+\b/,
+            )?.[0] ?? null,
+        }));
         break;
       }
       case "groups": {

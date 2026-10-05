@@ -15,6 +15,8 @@ import { Toaster } from "@/components/ui/sonner";
 import { OfflineNotice } from "@/components/nuru/OfflineNotice";
 import { SplashScreen } from "@/components/nuru/SplashScreen";
 import { supabase } from "@/integrations/supabase/client";
+import { THEME_INIT_SCRIPT } from "@/lib/theme";
+import { ThemeProvider } from "@/hooks/useTheme";
 
 // Read directly (not through the `supabase` proxy, which throws if unset) so a
 // missing env var can never break page rendering — this link is a pure
@@ -44,7 +46,7 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+function ErrorComponent({ error, reset }: { error: unknown; reset: () => void }) {
   console.error(error);
   const router = useRouter();
   useEffect(() => {
@@ -93,7 +95,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content:
           "Nuru Faith is a Christian platform for young people: Scripture, devotionals, community, mentorship, music and events.",
       },
-      { name: "theme-color", content: "#06152A" },
+      { name: "theme-color", content: "#F5F7FA" },
       { name: "mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
@@ -118,10 +120,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         : []),
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Caveat:wght@500;600&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap",
       },
-      { rel: "icon", type: "image/png", href: "/favicon.png" },
-      { rel: "apple-touch-icon", href: "/icons/icon-192.png" },
+      { rel: "icon", type: "image/png", href: "/favicon.png?v=arch1" },
+      { rel: "apple-touch-icon", href: "/icons/icon-192.png?v=arch1" },
       { rel: "manifest", href: "/manifest.webmanifest" },
     ],
   }),
@@ -133,8 +135,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" suppressHydrationWarning>
       <head>
+        {/* Sets the theme class before anything paints, so there is never a
+            flash of the wrong one. Must stay ahead of HeadContent. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <HeadContent />
       </head>
       <body>
@@ -173,10 +178,12 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
-      <Toaster position="top-center" />
-      <OfflineNotice />
-      <SplashScreen />
+      <ThemeProvider>
+        <Outlet />
+        <Toaster position="top-center" />
+        <OfflineNotice />
+        <SplashScreen />
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

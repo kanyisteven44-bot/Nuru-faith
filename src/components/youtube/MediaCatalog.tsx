@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { Heart, ListMusic, Maximize2, Minimize2, MoreHorizontal, Pause, Play, Repeat2, Shuffle, SkipBack, SkipForward, Video, X } from "lucide-react";
+import { Minimize2, Pause, Play, Video, X } from "lucide-react";
 import { fetchMediaCatalog, type MediaItem } from "@/services/media";
 import { CoverImage } from "@/components/nuru/CoverImage";
 import { CardSkeleton, EmptyState, PrimaryButton } from "@/components/nuru/Primitives";
@@ -14,21 +14,21 @@ export function MediaCatalog({
   query = "",
   onPlay,
   language = "all",
-  videoOnly = false,
+  playback = "all",
 }: {
   mediaType: "music" | "podcast";
   query?: string;
   language?: string;
-  videoOnly?: boolean;
+  playback?: "all" | "audio" | "video";
   onPlay?: (item: MediaItem) => void;
 }) {
   const [selected, setSelected] = useState<MediaItem | null>(null);
   const nextPageMarker = useRef<HTMLDivElement>(null);
   const catalog = useInfiniteQuery({
-    queryKey: ["media-catalog", mediaType, query, language, videoOnly],
+    queryKey: ["media-catalog", mediaType, query, language, playback],
     initialPageParam: 0,
     queryFn: ({ pageParam }) =>
-      fetchMediaCatalog({ mediaType, query, language, videoOnly, page: pageParam }),
+      fetchMediaCatalog({ mediaType, query, language, playback, page: pageParam }),
     getNextPageParam: (page, pages) => (page.hasMore ? pages.length : undefined),
   });
   // Imports can shift offset pages between requests; render each saved item once.
@@ -68,7 +68,17 @@ export function MediaCatalog({
     >
       <div className="flex items-center justify-between gap-3">
         <h2 className="font-display text-lg font-semibold">
-          {mediaType === "music" ? "All songs" : videoOnly ? "Video episodes" : "Audio episodes"}
+          {mediaType === "music"
+            ? playback === "audio"
+              ? "Audio"
+              : playback === "video"
+                ? "Music videos"
+                : "All songs"
+            : playback === "video"
+              ? "Video episodes"
+              : playback === "audio"
+                ? "Audio episodes"
+                : "All episodes"}
         </h2>
         {catalog.data && (
           <span className="text-xs text-muted-foreground" role="status" aria-live="polite">
@@ -168,11 +178,14 @@ export function MediaPlayback({ item, onClose }: { item: MediaItem; onClose: () 
   const [attempt, setAttempt] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [showVideo, setShowVideo] = useState(false);
-  const [liked, setLiked] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [audioDuration, setAudioDuration] = useState(0);
   useEffect(() => {
     setAudioFailed(false);
     setPlaying(false);
     setShowVideo(false);
+    setCurrentTime(0);
+    setAudioDuration(0);
   }, [item.id]);
   const video = item.source === "youtube" ? youtubeVideoId(item.external_id) : null;
   const audio = playableAudioUrl(item.audio_url);
@@ -215,9 +228,7 @@ export function MediaPlayback({ item, onClose }: { item: MediaItem; onClose: () 
             <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-primary">Now playing</p>
             <p className="truncate text-sm font-semibold">{item.title}</p>
           </div>
-          <button type="button" className="nuru-soft-control flex h-11 w-11 items-center justify-center rounded-2xl" aria-label="More options">
-            <MoreHorizontal className="h-5 w-5" />
-          </button>
+          <span className="h-11 w-11" aria-hidden="true" />
         </header>
 
         <div className="mx-auto mt-8 grid w-full max-w-4xl gap-8 md:grid-cols-[minmax(0,1fr)_minmax(320px,420px)] md:items-center">
@@ -240,52 +251,43 @@ export function MediaPlayback({ item, onClose }: { item: MediaItem; onClose: () 
               <p className="mt-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">{item.media_type === "podcast" ? "Podcast episode" : "Gospel • Worship"}</p>
             </div>
 
-            <div className="mt-7 flex items-center justify-center gap-7">
-              <button type="button" className="text-muted-foreground transition-colors hover:text-foreground" aria-label="Shuffle">
-                <Shuffle className="h-5 w-5" />
-              </button>
-              <button type="button" onClick={() => setLiked((value) => !value)} className={liked ? "text-primary" : "text-muted-foreground"} aria-label={liked ? "Remove from favourites" : "Add to favourites"}>
-                <Heart className={`h-6 w-6 ${liked ? "fill-current" : ""}`} />
-              </button>
-              <button type="button" className="text-muted-foreground transition-colors hover:text-foreground" aria-label="Repeat">
-                <Repeat2 className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="mt-7 w-full max-w-xl">
-              <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                <div className="h-full w-[32%] rounded-full bg-primary" />
+            {audio && (
+              <div className="mt-7 w-full max-w-xl">
+                <input
+                  type="range"
+                  min={0}
+                  max={Math.max(audioDuration, 1)}
+                  step={1}
+                  value={Math.min(currentTime, Math.max(audioDuration, 1))}
+                  onChange={(event) => {
+                    const next = Number(event.target.value);
+                    setCurrentTime(next);
+                    if (audioRef.current) audioRef.current.currentTime = next;
+                  }}
+                  aria-label="Audio position"
+                  className="w-full accent-primary"
+                />
+                <div className="mt-2 flex justify-between text-[11px] text-muted-foreground">
+                  <span>{duration(Math.floor(currentTime))}</span>
+                  <span>{audioDuration ? duration(Math.floor(audioDuration)) : "Loading…"}</span>
+                </div>
               </div>
-              <div className="mt-2 flex justify-between text-[11px] text-muted-foreground">
-                <span>Listening</span>
-                <span>{item.duration_seconds ? duration(item.duration_seconds) : "Live"}</span>
-              </div>
-            </div>
+            )}
 
-            <div className="mt-6 flex items-center justify-center gap-6">
-              <button type="button" className="nuru-soft-control flex h-12 w-12 items-center justify-center rounded-full" aria-label="Previous">
-                <SkipBack className="h-5 w-5 fill-current" />
-              </button>
+            <div className="mt-6 flex items-center justify-center">
               <button type="button" onClick={() => void togglePlayback()} className="flex h-20 w-20 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl shadow-primary/25" aria-label={playing ? "Pause" : "Play"}>
                 {playing ? <Pause className="h-8 w-8 fill-current" /> : <Play className="ml-1 h-8 w-8 fill-current" />}
               </button>
-              <button type="button" className="nuru-soft-control flex h-12 w-12 items-center justify-center rounded-full" aria-label="Next">
-                <SkipForward className="h-5 w-5 fill-current" />
-              </button>
             </div>
 
-            <div className="mt-7 flex flex-wrap justify-center gap-2">
-              {video && (
+            {video && (
+              <div className="mt-7 flex justify-center">
                 <button type="button" onClick={() => setShowVideo((value) => !value)} className="nuru-soft-control inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-medium">
                   {showVideo ? <Minimize2 className="h-4 w-4" /> : <Video className="h-4 w-4" />}
                   {showVideo ? "Hide video" : "Watch video"}
                 </button>
-              )}
-              <button type="button" className="nuru-soft-control inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-medium">
-                <ListMusic className="h-4 w-4" />
-                Queue
-              </button>
-            </div>
+              </div>
+            )}
           </div>
 
           <div className="w-full">
@@ -314,8 +316,12 @@ export function MediaPlayback({ item, onClose }: { item: MediaItem; onClose: () 
                   src={audio}
                   preload="metadata"
                   className="w-full"
+                  onLoadedMetadata={(event) => setAudioDuration(event.currentTarget.duration || 0)}
+                  onDurationChange={(event) => setAudioDuration(event.currentTarget.duration || 0)}
+                  onTimeUpdate={(event) => setCurrentTime(event.currentTarget.currentTime)}
                   onPlay={() => setPlaying(true)}
                   onPause={() => setPlaying(false)}
+                  onEnded={() => setPlaying(false)}
                   onError={() => setAudioFailed(true)}
                 />
                 <p className="text-sm font-semibold">Nuru audio</p>

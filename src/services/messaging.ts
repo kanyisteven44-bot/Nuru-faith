@@ -1,4 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
+import { fetchCallHistory } from "./calls";
+import { callHistoryLabel } from "@/lib/callHistory";
 import type { Database } from "@/integrations/supabase/types";
 
 type DirectRow = Database["public"]["Tables"]["direct_messages"]["Row"];
@@ -262,7 +264,21 @@ export async function fetchDirectThreads(userId: string) {
       });
     }
   }
-  return [...threads.values()];
+  for (const call of await fetchCallHistory(userId)) {
+    const peerId = call.caller_id === userId ? call.callee_id : call.caller_id;
+    const previous = threads.get(peerId);
+    if (!previous || previous.created_at < call.created_at)
+      threads.set(peerId, {
+        peer_id: peerId,
+        body: callHistoryLabel(call, userId),
+        created_at: call.created_at,
+        sender_id: call.caller_id,
+        message_type: "text",
+        delivered_at: null,
+        read_at: null,
+      });
+  }
+  return [...threads.values()].sort((a, b) => b.created_at.localeCompare(a.created_at));
 }
 
 export async function fetchMentorThreads() {

@@ -1,6 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Mic, Send, Smile, Sticker, Square, Plus, ImagePlus, Video, MapPin, X } from "lucide-react";
+import {
+  Phone,
+  Mic,
+  Send,
+  Smile,
+  Sticker,
+  Square,
+  Plus,
+  ImagePlus,
+  Video,
+  MapPin,
+  X,
+} from "lucide-react";
 import {
   CHAT_LIMIT,
   createChatMediaSignedUrl,
@@ -17,6 +29,8 @@ import {
 import { CardSkeleton, ErrorState } from "@/components/nuru/Primitives";
 import { ChatReactionPicker, ChatStickerArt } from "@/components/nuru/ChatReactionPicker";
 import { STICKER_BY_ID } from "@/lib/chatReactions";
+import { fetchCallHistory } from "@/services/calls";
+import { callHistoryLabel, isMissedCall } from "@/lib/callHistory";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -36,6 +50,13 @@ export function RichChatThread({
     queryFn: () => fetchChatMessages(target),
     refetchInterval: 3000,
     refetchIntervalInBackground: false,
+  });
+  const callPeer = "user" in target ? target.user : null;
+  const callHistory = useQuery({
+    queryKey: ["call-history", userId, callPeer],
+    enabled: !!callPeer,
+    queryFn: () => fetchCallHistory(userId, callPeer!),
+    refetchInterval: 5000,
   });
   const [older, setOlder] = useState<ChatMessage[]>([]);
   const [loadingOlder, setLoadingOlder] = useState(false);
@@ -163,6 +184,20 @@ export function RichChatThread({
     ).values(),
   ].sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id));
 
+  const timeline = [
+    ...rows.map((message) => ({
+      id: message.id,
+      created_at: message.created_at,
+      message,
+      call: null,
+    })),
+    ...(callHistory.data ?? []).map((call) => ({
+      id: `call-${call.id}`,
+      created_at: call.created_at,
+      message: null,
+      call,
+    })),
+  ].sort((a, b) => a.created_at.localeCompare(b.created_at));
   const realtimeKind = "group" in target ? "group" : "user" in target ? "direct" : "mentor";
   const realtimeId =
     "group" in target ? target.group : "user" in target ? target.user : target.mentor;
@@ -215,9 +250,11 @@ export function RichChatThread({
   }, [messages.data]);
 
   const latest = messages.data?.at(-1)?.id;
+  const latestCallId = callHistory.data?.[0]?.id;
+  const latestCallStatus = callHistory.data?.[0]?.status;
   useEffect(() => {
     bottom.current?.scrollIntoView({ behavior: "instant", block: "nearest" });
-  }, [latest]);
+  }, [latest, latestCallId, latestCallStatus]);
 
   useEffect(() => {
     if (!("user" in target) || !latest) return;
@@ -448,13 +485,53 @@ export function RichChatThread({
             {loadingOlder ? "Loading…" : "Load earlier messages"}
           </button>
         )}
-        {!messages.isLoading && !messages.isError && !rows.length && (
+        {!messages.isLoading && !messages.isError && !rows.length && !callHistory.data?.length && (
           <p className="py-10 text-center text-sm text-muted-foreground">
             Start the conversation with a hello 👋
           </p>
         )}
 
-        {rows.map((message) => {
+        {callHistory.isError && (
+          <p className="text-center text-xs text-muted-foreground">
+            Call history unavailable.{" "}
+            <button type="button" onClick={() => void callHistory.refetch()} className="underline">
+              Retry
+            </button>
+          </p>
+        )}
+        {timeline.map((entry) => {
+          if (entry.call) {
+            const call = entry.call;
+            const missed = isMissedCall(call) && call.callee_id === userId;
+            return (
+              <div key={entry.id} className="flex justify-center">
+                <div
+                  className={cn(
+                    "flex items-center gap-3 rounded-2xl border border-border px-4 py-3 text-sm",
+                    missed ? "bg-rose-500/10 text-rose-400" : "bg-card text-muted-foreground",
+                  )}
+                >
+                  {call.kind === "video" ? (
+                    <Video className="h-5 w-5" />
+                  ) : (
+                    <Phone className="h-5 w-5" />
+                  )}
+                  <span>
+                    <strong className="block text-xs">{callHistoryLabel(call, userId)}</strong>
+                    <time className="text-[10px]" dateTime={call.created_at}>
+                      {new Date(call.created_at).toLocaleString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </time>
+                  </span>
+                </div>
+              </div>
+            );
+          }
+          const message = entry.message!;
           const mine = message.sender_id === userId;
           const status =
             mine && "user" in target

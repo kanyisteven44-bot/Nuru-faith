@@ -65,11 +65,16 @@ export async function answerCallSession(callId: string, answer: RTCSessionDescri
   if (error) throw new Error("This call is no longer ringing. Ask the caller to try again.");
 }
 
-export async function endCallSession(callId: string, status: "ended" | "declined" = "ended") {
-  const { error } = await supabase
+export async function endCallSession(
+  callId: string,
+  status: "ended" | "declined" | "missed" = "ended",
+) {
+  let query = supabase
     .from("call_sessions")
     .update({ status, ended_at: new Date().toISOString() })
     .eq("id", callId);
+  if (status === "missed") query = query.eq("status", "ringing");
+  const { error } = await query;
   if (error) throw new Error("Couldn't end the call.");
 }
 
@@ -88,4 +93,18 @@ export function waitForIceGatheringComplete(peer: RTCPeerConnection) {
       resolve();
     }, 8000);
   });
+}
+
+export async function fetchCallHistory(userId: string, peerId?: string) {
+  let query = supabase
+    .from("call_sessions")
+    .select("id,caller_id,callee_id,kind,status,created_at,answered_at,ended_at");
+  query = peerId
+    ? query.or(
+        `and(caller_id.eq.${userId},callee_id.eq.${peerId}),and(caller_id.eq.${peerId},callee_id.eq.${userId})`,
+      )
+    : query.or(`caller_id.eq.${userId},callee_id.eq.${userId}`);
+  const { data, error } = await query.order("created_at", { ascending: false }).limit(100);
+  if (error) throw new Error("Couldn't load call history.");
+  return data ?? [];
 }

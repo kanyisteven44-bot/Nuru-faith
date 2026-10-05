@@ -1,4 +1,5 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { MessageAlerts } from "@/components/nuru/MessageAlerts";
 import { CallManager } from "@/components/nuru/CallManager";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -25,6 +26,7 @@ export const Route = createFileRoute("/_authenticated")({
   },
   component: () => (
     <CallManager>
+      <MessageAlerts />
       <Outlet />
     </CallManager>
   ),

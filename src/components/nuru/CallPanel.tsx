@@ -233,9 +233,9 @@ export function CallPanel({
             if (disposed || pc.connectionState === "connected") return;
             setStatus("No answer");
             setError(
-              "This call was not connected. Check that the other person has Messages open, then try again.",
+              "This call was not connected. Check that the other person has Nuru open, then try again.",
             );
-            void endCallSession(session.id).catch(() => undefined);
+            void endCallSession(session.id, "missed").catch(() => undefined);
           }, 60000);
         }
       } catch (callError) {

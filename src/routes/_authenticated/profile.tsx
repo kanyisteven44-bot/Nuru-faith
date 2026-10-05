@@ -302,14 +302,6 @@ function ProfileScreen() {
             </div>
           </section>
 
-          <Link
-            to="/create"
-            className="mt-5 flex min-h-12 items-center justify-center gap-2 rounded-full bg-primary px-5 font-semibold text-primary-foreground"
-          >
-            <Plus className="h-5 w-5" />
-            Create post
-          </Link>
-
           {/* Three-up counts, as the board has them. */}
           <dl className="mt-5 grid grid-cols-3">
             <Stat label="Posts" value={counts.data?.posts} />
@@ -439,6 +431,14 @@ function ProfileScreen() {
                 {t}
               </button>
             ))}
+            <Link
+              to="/create"
+              aria-label="Create post"
+              className="ml-auto inline-flex min-h-9 items-center gap-1 rounded-full bg-primary/15 px-3 text-xs font-semibold text-primary"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Post
+            </Link>
           </div>
 
           <section className="pt-3">
@@ -461,6 +461,17 @@ function ProfileScreen() {
             {!active.isLoading && !active.isError && items.length === 0 && (
               <EmptyState
                 title={`No ${tab.toLowerCase()} yet`}
+                action={
+                  tab === "Posts" ? (
+                    <Link
+                      to="/create"
+                      className="inline-flex min-h-9 items-center gap-1 rounded-full bg-primary/15 px-3 text-xs font-semibold text-primary"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      Create post
+                    </Link>
+                  ) : undefined
+                }
                 description={
                   tab === "Saved"
                     ? "Posts you save will collect here."
@@ -470,8 +481,21 @@ function ProfileScreen() {
             )}
             {items.length > 0 && (
               <ul className="grid grid-cols-3 gap-2">
+                {tab === "Posts" && (
+                  <li>
+                    <Link
+                      to="/create"
+                      className="flex aspect-[3/4] flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-primary/30 bg-primary/5 text-primary"
+                    >
+                      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/15">
+                        <Plus className="h-4 w-4" />
+                      </span>
+                      <span className="text-xs font-semibold">New post</span>
+                    </Link>
+                  </li>
+                )}
                 {items.map((item) => (
-                  <li key={item.id}>
+                  <li key={item.id} className="relative">
                     <button
                       type="button"
                       onClick={() => setSelectedPost(item.id)}
@@ -496,6 +520,15 @@ function ProfileScreen() {
                         </span>
                       </span>
                     </button>
+                    {tab === "Posts" && (
+                      <Link
+                        to="/create"
+                        aria-label="Create another post"
+                        className="absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-black/55 text-white backdrop-blur"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                      </Link>
+                    )}
                   </li>
                 ))}
               </ul>

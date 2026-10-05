@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { createPost, fetchMyGroupIds, fetchGroups, fetchProfile } from "@/services/content";
 import { supabase } from "@/integrations/supabase/client";
 import { POST_MUSIC, POST_MUSIC_BY_ID } from "@/lib/postMusic";
-import { PostSoundtrack } from "@/components/nuru/PostMedia";
+import { PostSoundtrack, PostPresentation } from "@/components/nuru/PostMedia";
 import { AppShell, Avatar } from "@/components/nuru/AppShell";
 
 export const Route = createFileRoute("/_authenticated/create")({
@@ -32,6 +32,7 @@ function CreateScreen() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { userId } = useAuth();
+  const [step, setStep] = useState<"edit" | "review">("edit");
   const [body, setBody] = useState("");
   const [scripture, setScripture] = useState("");
   const [audience, setAudience] = useState<Audience>("Public");
@@ -141,253 +142,310 @@ function CreateScreen() {
           type="button"
           onClick={() => void navigate({ to: "/community" })}
           aria-label="Cancel"
+          disabled={busy}
           className="-ml-1 rounded-full p-1.5 text-secondary-foreground"
         >
           <X className="h-5 w-5" />
         </button>
-        <h1 className="font-display text-[17px] font-semibold">Create Post</h1>
+        <h1 className="font-display text-[17px] font-semibold">
+          {step === "edit" ? "New post" : "Ready to share"}
+        </h1>
         <button
           type="button"
-          onClick={() => void publish()}
+          onClick={() => {
+            if (step === "edit") setStep("review");
+            else void publish();
+          }}
           disabled={busy || (!body.trim() && !media)}
           className="rounded-lg bg-primary px-4 py-1.5 text-[13px] font-semibold text-primary-foreground disabled:opacity-50"
         >
-          {busy ? "Posting…" : "Post"}
+          {busy ? "Sharing…" : step === "edit" ? "Next" : "Share"}
         </button>
       </header>
 
-      <div className="px-4 pt-2">
-        <div className="flex items-center gap-3">
-          <Avatar
-            url={profile.data?.avatar_url ?? null}
-            name={profile.data?.full_name ?? ""}
-            seed={userId}
+      {step === "review" ? (
+        <div className="space-y-4 px-4 py-5">
+          <PostPresentation
+            url={media?.url ?? null}
+            kind={media?.file.type.startsWith("image/") ? "image" : "video"}
+            musicId={musicId}
+            start={musicStart}
           />
-          <span>
-            <span className="block text-sm font-semibold">
-              {profile.data?.full_name ?? "Nuru member"}
-            </span>
-            <span className="block text-[11px] text-muted-foreground">
-              @{profile.data?.username ?? "you"}
-            </span>
-          </span>
+          <p className="whitespace-pre-wrap text-sm">{body}</p>
+          {scripture && <p className="text-xs text-primary">{scripture}</p>}
+          <p className="text-xs text-muted-foreground">
+            Sharing with{" "}
+            {audience === "Public"
+              ? "the community"
+              : myGroups.find((g) => g.id === mentorGroupId)?.name || "your group"}
+          </p>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => setStep("edit")}
+            className="min-h-10 rounded-full border border-border px-4 text-sm"
+          >
+            Back to editing
+          </button>
         </div>
-
-        <textarea
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-          rows={6}
-          maxLength={2000}
-          aria-label="What's on your heart today?"
-          placeholder="What's on your heart today?"
-          className="mt-4 w-full resize-none bg-transparent text-[15px] leading-relaxed outline-none placeholder:text-muted-foreground"
-        />
-
-        <input
-          value={scripture}
-          onChange={(e) => setScripture(e.target.value)}
-          maxLength={60}
-          aria-label="Scripture reference (optional)"
-          placeholder="Add a Scripture reference (optional)"
-          className="input-nuru mt-2"
-        />
-
-        <input
-          ref={fileInput}
-          type="file"
-          className="sr-only"
-          accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            e.target.value = "";
-            if (!file) return;
-            if (file.size > 50 * 1024 * 1024) {
-              toast.error("Choose a file smaller than 50 MB.");
-              return;
-            }
-            setMedia({ file, url: URL.createObjectURL(file) });
-          }}
-        />
-        {media && (
-          <div className="relative mt-4 rounded-2xl border border-border p-2">
-            {media.file.type.startsWith("image/") ? (
-              <img
-                src={media.url}
-                alt="Post preview"
-                className="max-h-80 w-full rounded-xl object-contain"
-              />
-            ) : (
-              <video src={media.url} controls playsInline className="max-h-80 w-full rounded-xl" />
-            )}
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => setMedia(null)}
-              aria-label="Remove attachment"
-              className="absolute right-3 top-3 rounded-full bg-black/70 p-2 text-white"
-            >
-              <X className="h-4 w-4" />
-            </button>
+      ) : (
+        <div className="px-4 pt-2">
+          <div className="flex items-center gap-3">
+            <Avatar
+              url={profile.data?.avatar_url ?? null}
+              name={profile.data?.full_name ?? ""}
+              seed={userId}
+            />
+            <span>
+              <span className="block text-sm font-semibold">
+                {profile.data?.full_name ?? "Nuru member"}
+              </span>
+              <span className="block text-[11px] text-muted-foreground">
+                @{profile.data?.username ?? "you"}
+              </span>
+            </span>
           </div>
-        )}
-        <div className="grid grid-cols-3 gap-3 pt-5">
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => {
-              if (fileInput.current) {
-                fileInput.current.accept = "image/jpeg,image/png,image/webp,image/gif";
-                fileInput.current.click();
-              }
-            }}
-            className="flex min-h-20 flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-surface-2 text-sm"
-          >
-            <ImageIcon className="h-6 w-6 text-primary" />
-            Photo
-          </button>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => {
-              if (fileInput.current) {
-                fileInput.current.accept = "video/mp4,video/webm,video/quicktime";
-                fileInput.current.click();
-              }
-            }}
-            className="flex min-h-20 flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-surface-2 text-sm"
-          >
-            <Video className="h-6 w-6 text-primary" />
-            Video
-          </button>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => setMusicOpen((v) => !v)}
-            aria-expanded={musicOpen}
-            className="flex min-h-20 flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-surface-2 text-sm"
-          >
-            <Music2 className="h-6 w-6 text-primary" />
-            Music
-          </button>
-        </div>
-        {track && (
-          <div className="mt-4">
-            <PostSoundtrack key={musicId} id={track.id} start={musicStart} />
-            <label className="mt-3 block text-xs">
-              Start at {musicStart}s
-              <input
-                type="range"
-                min={0}
-                max={Math.min(600, Math.max(0, track.duration - 5))}
-                value={musicStart}
-                onChange={(e) => setMusicStart(Number(e.target.value))}
-                className="mt-2 w-full"
-              />
-            </label>
+
+          {!media && (
             <button
               type="button"
               onClick={() => {
-                setMusicId(null);
-                setMusicStart(0);
+                if (fileInput.current) {
+                  fileInput.current.accept =
+                    "image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime";
+                  fileInput.current.click();
+                }
               }}
-              className="mt-2 text-xs text-muted-foreground"
+              className="mt-5 flex min-h-40 w-full flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-primary/35 bg-primary/5"
             >
-              Remove music
+              <ImageIcon className="h-9 w-9 text-primary" />
+              <strong className="text-sm">Choose a photo or video</strong>
+              <span className="text-xs text-muted-foreground">
+                Add music and a caption before sharing
+              </span>
+            </button>
+          )}
+          {media && (
+            <div className="relative mt-4 rounded-2xl border border-border p-2">
+              {media.file.type.startsWith("image/") ? (
+                <img
+                  src={media.url}
+                  alt="Post preview"
+                  className="max-h-[55dvh] w-full rounded-xl object-contain"
+                />
+              ) : (
+                <video
+                  src={media.url}
+                  controls
+                  playsInline
+                  className="max-h-[55dvh] w-full rounded-xl"
+                />
+              )}
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => setMedia(null)}
+                aria-label="Remove attachment"
+                className="absolute right-3 top-3 rounded-full bg-black/70 p-2 text-white"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+          <textarea
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            rows={3}
+            maxLength={2000}
+            aria-label="Post caption"
+            placeholder="Write a caption…"
+            className="mt-4 w-full resize-none bg-transparent text-[15px] leading-relaxed outline-none placeholder:text-muted-foreground"
+          />
+
+          <input
+            value={scripture}
+            onChange={(e) => setScripture(e.target.value)}
+            maxLength={60}
+            aria-label="Scripture reference (optional)"
+            placeholder="Add a Scripture reference (optional)"
+            className="input-nuru mt-2"
+          />
+
+          <input
+            ref={fileInput}
+            type="file"
+            className="sr-only"
+            accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = "";
+              if (!file) return;
+              if (file.size > 50 * 1024 * 1024) {
+                toast.error("Choose a file smaller than 50 MB.");
+                return;
+              }
+              setMedia({ file, url: URL.createObjectURL(file) });
+            }}
+          />
+          <div className="grid grid-cols-3 gap-3 pt-5">
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                if (fileInput.current) {
+                  fileInput.current.accept = "image/jpeg,image/png,image/webp,image/gif";
+                  fileInput.current.click();
+                }
+              }}
+              className="flex min-h-20 flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-surface-2 text-sm"
+            >
+              <ImageIcon className="h-6 w-6 text-primary" />
+              Photo
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                if (fileInput.current) {
+                  fileInput.current.accept = "video/mp4,video/webm,video/quicktime";
+                  fileInput.current.click();
+                }
+              }}
+              className="flex min-h-20 flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-surface-2 text-sm"
+            >
+              <Video className="h-6 w-6 text-primary" />
+              Video
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => setMusicOpen((v) => !v)}
+              aria-expanded={musicOpen}
+              className="flex min-h-20 flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-surface-2 text-sm"
+            >
+              <Music2 className="h-6 w-6 text-primary" />
+              Music
             </button>
           </div>
-        )}
-        {musicOpen && (
-          <section className="mt-4 rounded-2xl border border-border bg-card p-3">
-            <label className="flex items-center gap-2 rounded-xl bg-surface-2 px-3">
-              <Search className="h-4 w-4" />
-              <input
-                value={musicQuery}
-                onChange={(e) => setMusicQuery(e.target.value)}
-                placeholder="Search songs, moods or artist"
-                aria-label="Search music"
-                className="min-h-11 min-w-0 flex-1 bg-transparent text-sm outline-none"
-              />
-            </label>
-            <p className="my-2 text-xs text-muted-foreground">
-              {POST_MUSIC.length} tracks · Kevin MacLeod · CC BY 4.0
-            </p>
-            <div className="max-h-72 space-y-1 overflow-auto">
-              {matchingMusic.map((t) => (
+          {track && (
+            <div className="mt-4">
+              <PostSoundtrack key={musicId} id={track.id} start={musicStart} />
+              <label className="mt-3 block text-xs">
+                Start at {musicStart}s
+                <input
+                  type="range"
+                  min={0}
+                  max={Math.min(600, Math.max(0, track.duration - 5))}
+                  value={musicStart}
+                  onChange={(e) => setMusicStart(Number(e.target.value))}
+                  className="mt-2 w-full"
+                />
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  setMusicId(null);
+                  setMusicStart(0);
+                }}
+                className="mt-2 text-xs text-muted-foreground"
+              >
+                Remove music
+              </button>
+            </div>
+          )}
+          {musicOpen && (
+            <section className="mt-4 rounded-2xl border border-border bg-card p-3">
+              <label className="flex items-center gap-2 rounded-xl bg-surface-2 px-3">
+                <Search className="h-4 w-4" />
+                <input
+                  value={musicQuery}
+                  onChange={(e) => setMusicQuery(e.target.value)}
+                  placeholder="Search songs, moods or artist"
+                  aria-label="Search music"
+                  className="min-h-11 min-w-0 flex-1 bg-transparent text-sm outline-none"
+                />
+              </label>
+              <p className="my-2 text-xs text-muted-foreground">
+                {POST_MUSIC.length} tracks · Kevin MacLeod · CC BY 4.0
+              </p>
+              <div className="max-h-72 space-y-1 overflow-auto">
+                {matchingMusic.map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => {
+                      setMusicId(t.id);
+                      setMusicStart(0);
+                      setMusicOpen(false);
+                    }}
+                    className={cn(
+                      "flex min-h-16 w-full items-center gap-3 rounded-xl px-3 py-2 text-left",
+                      musicId === t.id ? "bg-primary/15" : "hover:bg-surface-2",
+                    )}
+                  >
+                    <Music2 className="h-5 w-5 shrink-0 text-primary" />
+                    <span className="min-w-0 flex-1">
+                      <strong className="block truncate text-sm">{t.title}</strong>
+                      <span className="block truncate text-xs text-muted-foreground">
+                        {t.artist} · {t.mood}
+                      </span>
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {Math.floor(t.duration / 60)}:{String(t.duration % 60).padStart(2, "0")}
+                    </span>
+                  </button>
+                ))}
+                {!matchingMusic.length && (
+                  <p className="p-3 text-sm text-muted-foreground">
+                    No matching track. Try another song or mood.
+                  </p>
+                )}
+              </div>
+            </section>
+          )}
+
+          <div className="pt-6 pb-8">
+            {audience === "My Group" && (
+              <select
+                aria-label="Choose group"
+                value={mentorGroupId ?? ""}
+                onChange={(e) => setSelectedGroup(e.target.value)}
+                className="input-nuru mb-3"
+              >
+                {myGroups.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.name}
+                  </option>
+                ))}
+              </select>
+            )}
+            <h2 className="mb-2 font-display text-[15px] font-semibold">Add to</h2>
+            <div className="space-y-2">
+              {AUDIENCES.map((a) => (
                 <button
-                  key={t.id}
+                  key={a}
                   type="button"
-                  onClick={() => {
-                    setMusicId(t.id);
-                    setMusicStart(0);
-                    setMusicOpen(false);
-                  }}
+                  onClick={() => setAudience(a)}
                   className={cn(
-                    "flex min-h-16 w-full items-center gap-3 rounded-xl px-3 py-2 text-left",
-                    musicId === t.id ? "bg-primary/15" : "hover:bg-surface-2",
+                    "flex w-full items-center justify-between rounded-xl border px-4 py-3 text-sm font-medium transition-colors",
+                    audience === a
+                      ? "border-primary/60 bg-primary/12 text-foreground"
+                      : "border-border bg-surface-2/60 text-secondary-foreground",
                   )}
                 >
-                  <Music2 className="h-5 w-5 shrink-0 text-primary" />
-                  <span className="min-w-0 flex-1">
-                    <strong className="block truncate text-sm">{t.title}</strong>
-                    <span className="block truncate text-xs text-muted-foreground">
-                      {t.artist} · {t.mood}
-                    </span>
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {Math.floor(t.duration / 60)}:{String(t.duration % 60).padStart(2, "0")}
-                  </span>
+                  {a}
+                  <span
+                    className={cn(
+                      "h-4 w-4 rounded-full border",
+                      audience === a ? "border-leaf bg-leaf" : "border-border-strong",
+                    )}
+                  />
                 </button>
               ))}
-              {!matchingMusic.length && (
-                <p className="p-3 text-sm text-muted-foreground">
-                  No matching track. Try another song or mood.
-                </p>
-              )}
             </div>
-          </section>
-        )}
-
-        <div className="pt-6 pb-8">
-          {audience === "My Group" && (
-            <select
-              aria-label="Choose group"
-              value={mentorGroupId ?? ""}
-              onChange={(e) => setSelectedGroup(e.target.value)}
-              className="input-nuru mb-3"
-            >
-              {myGroups.map((g) => (
-                <option key={g.id} value={g.id}>
-                  {g.name}
-                </option>
-              ))}
-            </select>
-          )}
-          <h2 className="mb-2 font-display text-[15px] font-semibold">Add to</h2>
-          <div className="space-y-2">
-            {AUDIENCES.map((a) => (
-              <button
-                key={a}
-                type="button"
-                onClick={() => setAudience(a)}
-                className={cn(
-                  "flex w-full items-center justify-between rounded-xl border px-4 py-3 text-sm font-medium transition-colors",
-                  audience === a
-                    ? "border-primary/60 bg-primary/12 text-foreground"
-                    : "border-border bg-surface-2/60 text-secondary-foreground",
-                )}
-              >
-                {a}
-                <span
-                  className={cn(
-                    "h-4 w-4 rounded-full border",
-                    audience === a ? "border-leaf bg-leaf" : "border-border-strong",
-                  )}
-                />
-              </button>
-            ))}
           </div>
         </div>
-      </div>
+      )}
     </AppShell>
   );
 }

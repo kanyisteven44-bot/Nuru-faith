@@ -343,8 +343,14 @@ export function MediaPlayback({ item, onClose }: { item: MediaItem; onClose: () 
               type="button"
               disabled={!userId || canonicalItem.isLoading || saveMutation.isPending}
               onClick={() => {
-                if (!userId) return toast.error("Sign in to save media");
-                if (!canonicalId) return toast.error("This video is not in the Nuru catalogue yet.");
+                if (!userId) {
+                  toast.error("Sign in to save media");
+                  return;
+                }
+                if (!canonicalId) {
+                  toast.error("This video is not in the Nuru catalogue yet.");
+                  return;
+                }
                 saveMutation.mutate();
               }}
               aria-pressed={saved}

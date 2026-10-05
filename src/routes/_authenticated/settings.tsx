@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   Sun,
   UserCog,
+  LayoutDashboard,
   type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -58,9 +59,10 @@ function SettingsScreen() {
     queryFn: () => fetchMyRoles(userId!),
     enabled: !!userId,
   });
-  const staffMfaRequired = (roles.data ?? []).some((row) =>
+  const isStaff = (roles.data ?? []).some((row) =>
     ["super_admin", "moderator", "church_admin"].includes(String(row.role)),
   );
+  const staffMfaRequired = isStaff;
 
   async function logOut() {
     qc.clear();
@@ -77,6 +79,7 @@ function SettingsScreen() {
 
         {/* Account */}
         <Section title="Account">
+          {isStaff && <RowLink icon={LayoutDashboard} label="Admin Dashboard" to="/admin" />}
           <RowLink icon={UserCog} label="Account" to="/profile" />
           <RowButton
             icon={ShieldCheck}

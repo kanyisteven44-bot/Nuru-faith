@@ -35,6 +35,10 @@ const LIBRARY: Record<string, string> = {
 
 export const FALLBACK_IMAGE = "/photos/mountain-lake.jpg";
 
+export function pexelsImage(id: number, width = 1200): string {
+  return `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb&w=${width}`;
+}
+
 export function resolveMedia(value?: string | null): string {
   if (!value) return FALLBACK_IMAGE;
   if (value.startsWith("asset:")) return LIBRARY[value.slice(6)] ?? FALLBACK_IMAGE;

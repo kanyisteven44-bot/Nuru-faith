@@ -13,8 +13,10 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthCallbackRouteImport } from './routes/auth-callback'
+import { Route as OpeningRouteImport } from './routes/opening'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as WelcomeRouteImport } from './routes/welcome'
+import { Route as YoutubeAccountRouteImport } from './routes/youtube-account'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAiRouteImport } from './routes/_authenticated/ai'
 import { Route as AuthenticatedBibleRouteImport } from './routes/_authenticated/bible'
@@ -39,7 +41,9 @@ import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedReelsRouteImport } from './routes/_authenticated/reels'
 import { Route as AuthenticatedServeRouteImport } from './routes/_authenticated/serve'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
-import { Route as AuthenticatedFaithCoursesIndexRouteImport } from './routes/_authenticated/faith-courses.index'
+import { Route as BooksIndexRouteImport } from './routes/books.index'
+import { Route as BooksBookIdRouteImport } from './routes/books.$bookId'
+import { Route as FaithCoursesIndexRouteImport } from './routes/faith-courses.index'
 import { Route as AuthenticatedFaithCoursesSlugRouteImport } from './routes/_authenticated/faith-courses.$slug'
 import { Route as AuthenticatedMentorsIndexRouteImport } from './routes/_authenticated/mentors.index'
 import { Route as AuthenticatedMentorsIdRouteImport } from './routes/_authenticated/mentors.$id'
@@ -67,6 +71,11 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
   path: '/auth-callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OpeningRoute = OpeningRouteImport.update({
+  id: '/opening',
+  path: '/opening',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
@@ -75,6 +84,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
 const WelcomeRoute = WelcomeRouteImport.update({
   id: '/welcome',
   path: '/welcome',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const YoutubeAccountRoute = YoutubeAccountRouteImport.update({
+  id: '/youtube-account',
+  path: '/youtube-account',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
@@ -199,12 +213,21 @@ const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedFaithCoursesIndexRoute =
-  AuthenticatedFaithCoursesIndexRouteImport.update({
-    id: '/faith-courses/',
-    path: '/faith-courses/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
+const BooksIndexRoute = BooksIndexRouteImport.update({
+  id: '/books/',
+  path: '/books/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BooksBookIdRoute = BooksBookIdRouteImport.update({
+  id: '/books/$bookId',
+  path: '/books/$bookId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FaithCoursesIndexRoute = FaithCoursesIndexRouteImport.update({
+  id: '/faith-courses/',
+  path: '/faith-courses/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedFaithCoursesSlugRoute =
   AuthenticatedFaithCoursesSlugRouteImport.update({
     id: '/faith-courses/$slug',
@@ -251,8 +274,10 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/auth-callback': typeof AuthCallbackRoute
+  '/opening': typeof OpeningRoute
   '/reset-password': typeof ResetPasswordRoute
   '/welcome': typeof WelcomeRoute
+  '/youtube-account': typeof YoutubeAccountRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/ai': typeof AuthenticatedAiRoute
   '/bible': typeof AuthenticatedBibleRoute
@@ -277,9 +302,11 @@ export interface FileRoutesByFullPath {
   '/reels': typeof AuthenticatedReelsRoute
   '/serve': typeof AuthenticatedServeRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/books/$bookId': typeof BooksBookIdRoute
+  '/books/': typeof BooksIndexRoute
+  '/faith-courses/': typeof FaithCoursesIndexRoute
   '/faith-courses/$slug': typeof AuthenticatedFaithCoursesSlugRoute
   '/mentors/$id': typeof AuthenticatedMentorsIdRoute
-  '/faith-courses/': typeof AuthenticatedFaithCoursesIndexRoute
   '/mentors/': typeof AuthenticatedMentorsIndexRoute
   '/series/': typeof AuthenticatedSeriesIndexRoute
   '/discovery/$kind/$id': typeof AuthenticatedDiscoveryKindIdRoute
@@ -290,8 +317,10 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/auth-callback': typeof AuthCallbackRoute
+  '/opening': typeof OpeningRoute
   '/reset-password': typeof ResetPasswordRoute
   '/welcome': typeof WelcomeRoute
+  '/youtube-account': typeof YoutubeAccountRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/ai': typeof AuthenticatedAiRoute
   '/bible': typeof AuthenticatedBibleRoute
@@ -316,9 +345,11 @@ export interface FileRoutesByTo {
   '/reels': typeof AuthenticatedReelsRoute
   '/serve': typeof AuthenticatedServeRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/books/$bookId': typeof BooksBookIdRoute
+  '/books': typeof BooksIndexRoute
+  '/faith-courses': typeof FaithCoursesIndexRoute
   '/faith-courses/$slug': typeof AuthenticatedFaithCoursesSlugRoute
   '/mentors/$id': typeof AuthenticatedMentorsIdRoute
-  '/faith-courses': typeof AuthenticatedFaithCoursesIndexRoute
   '/mentors': typeof AuthenticatedMentorsIndexRoute
   '/series': typeof AuthenticatedSeriesIndexRoute
   '/discovery/$kind/$id': typeof AuthenticatedDiscoveryKindIdRoute
@@ -331,8 +362,10 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/auth-callback': typeof AuthCallbackRoute
+  '/opening': typeof OpeningRoute
   '/reset-password': typeof ResetPasswordRoute
   '/welcome': typeof WelcomeRoute
+  '/youtube-account': typeof YoutubeAccountRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/ai': typeof AuthenticatedAiRoute
   '/_authenticated/bible': typeof AuthenticatedBibleRoute
@@ -357,9 +390,11 @@ export interface FileRoutesById {
   '/_authenticated/reels': typeof AuthenticatedReelsRoute
   '/_authenticated/serve': typeof AuthenticatedServeRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/books/$bookId': typeof BooksBookIdRoute
+  '/books/': typeof BooksIndexRoute
+  '/faith-courses/': typeof FaithCoursesIndexRoute
   '/_authenticated/faith-courses/$slug': typeof AuthenticatedFaithCoursesSlugRoute
   '/_authenticated/mentors/$id': typeof AuthenticatedMentorsIdRoute
-  '/_authenticated/faith-courses/': typeof AuthenticatedFaithCoursesIndexRoute
   '/_authenticated/mentors/': typeof AuthenticatedMentorsIndexRoute
   '/_authenticated/series/': typeof AuthenticatedSeriesIndexRoute
   '/_authenticated/discovery/$kind/$id': typeof AuthenticatedDiscoveryKindIdRoute
@@ -372,8 +407,10 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/auth-callback'
+    | '/opening'
     | '/reset-password'
     | '/welcome'
+    | '/youtube-account'
     | '/admin'
     | '/ai'
     | '/bible'
@@ -398,9 +435,11 @@ export interface FileRouteTypes {
     | '/reels'
     | '/serve'
     | '/settings'
+    | '/books/$bookId'
+    | '/books/'
+    | '/faith-courses/'
     | '/faith-courses/$slug'
     | '/mentors/$id'
-    | '/faith-courses/'
     | '/mentors/'
     | '/series/'
     | '/discovery/$kind/$id'
@@ -411,8 +450,10 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/auth-callback'
+    | '/opening'
     | '/reset-password'
     | '/welcome'
+    | '/youtube-account'
     | '/admin'
     | '/ai'
     | '/bible'
@@ -437,9 +478,11 @@ export interface FileRouteTypes {
     | '/reels'
     | '/serve'
     | '/settings'
+    | '/books/$bookId'
+    | '/books'
+    | '/faith-courses'
     | '/faith-courses/$slug'
     | '/mentors/$id'
-    | '/faith-courses'
     | '/mentors'
     | '/series'
     | '/discovery/$kind/$id'
@@ -451,8 +494,10 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/auth-callback'
+    | '/opening'
     | '/reset-password'
     | '/welcome'
+    | '/youtube-account'
     | '/_authenticated/admin'
     | '/_authenticated/ai'
     | '/_authenticated/bible'
@@ -477,9 +522,11 @@ export interface FileRouteTypes {
     | '/_authenticated/reels'
     | '/_authenticated/serve'
     | '/_authenticated/settings'
+    | '/books/$bookId'
+    | '/books/'
+    | '/faith-courses/'
     | '/_authenticated/faith-courses/$slug'
     | '/_authenticated/mentors/$id'
-    | '/_authenticated/faith-courses/'
     | '/_authenticated/mentors/'
     | '/_authenticated/series/'
     | '/_authenticated/discovery/$kind/$id'
@@ -492,8 +539,13 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
+  OpeningRoute: typeof OpeningRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   WelcomeRoute: typeof WelcomeRoute
+  YoutubeAccountRoute: typeof YoutubeAccountRoute
+  BooksBookIdRoute: typeof BooksBookIdRoute
+  BooksIndexRoute: typeof BooksIndexRoute
+  FaithCoursesIndexRoute: typeof FaithCoursesIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -526,6 +578,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/opening': {
+      id: '/opening'
+      path: '/opening'
+      fullPath: '/opening'
+      preLoaderRoute: typeof OpeningRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reset-password': {
       id: '/reset-password'
       path: '/reset-password'
@@ -538,6 +597,13 @@ declare module '@tanstack/react-router' {
       path: '/welcome'
       fullPath: '/welcome'
       preLoaderRoute: typeof WelcomeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/youtube-account': {
+      id: '/youtube-account'
+      path: '/youtube-account'
+      fullPath: '/youtube-account'
+      preLoaderRoute: typeof YoutubeAccountRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/admin': {
@@ -708,12 +774,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/faith-courses/': {
-      id: '/_authenticated/faith-courses/'
+    '/books/': {
+      id: '/books/'
+      path: '/books'
+      fullPath: '/books/'
+      preLoaderRoute: typeof BooksIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/books/$bookId': {
+      id: '/books/$bookId'
+      path: '/books/$bookId'
+      fullPath: '/books/$bookId'
+      preLoaderRoute: typeof BooksBookIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/faith-courses/': {
+      id: '/faith-courses/'
       path: '/faith-courses'
       fullPath: '/faith-courses/'
-      preLoaderRoute: typeof AuthenticatedFaithCoursesIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      preLoaderRoute: typeof FaithCoursesIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/faith-courses/$slug': {
       id: '/_authenticated/faith-courses/$slug'
@@ -794,7 +874,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedFaithCoursesSlugRoute: typeof AuthenticatedFaithCoursesSlugRoute
   AuthenticatedMentorsIdRoute: typeof AuthenticatedMentorsIdRoute
-  AuthenticatedFaithCoursesIndexRoute: typeof AuthenticatedFaithCoursesIndexRoute
   AuthenticatedMentorsIndexRoute: typeof AuthenticatedMentorsIndexRoute
   AuthenticatedSeriesIndexRoute: typeof AuthenticatedSeriesIndexRoute
   AuthenticatedDiscoveryKindIdRoute: typeof AuthenticatedDiscoveryKindIdRoute
@@ -829,7 +908,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedFaithCoursesSlugRoute: AuthenticatedFaithCoursesSlugRoute,
   AuthenticatedMentorsIdRoute: AuthenticatedMentorsIdRoute,
-  AuthenticatedFaithCoursesIndexRoute: AuthenticatedFaithCoursesIndexRoute,
   AuthenticatedMentorsIndexRoute: AuthenticatedMentorsIndexRoute,
   AuthenticatedSeriesIndexRoute: AuthenticatedSeriesIndexRoute,
   AuthenticatedDiscoveryKindIdRoute: AuthenticatedDiscoveryKindIdRoute,
@@ -845,8 +923,13 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   AuthCallbackRoute: AuthCallbackRoute,
+  OpeningRoute: OpeningRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   WelcomeRoute: WelcomeRoute,
+  YoutubeAccountRoute: YoutubeAccountRoute,
+  BooksBookIdRoute: BooksBookIdRoute,
+  BooksIndexRoute: BooksIndexRoute,
+  FaithCoursesIndexRoute: FaithCoursesIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

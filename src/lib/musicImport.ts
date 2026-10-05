@@ -5,34 +5,46 @@ export function isoSeconds(value: string): number {
     : 0;
 }
 
-export function eligibleMusicVideo(
-  video: {
-    id?: string;
-    snippet?: { channelId?: string; categoryId?: string; title?: string };
-    status?: { embeddable?: boolean; privacyStatus?: string; uploadStatus?: string };
-    contentDetails?: {
-      duration?: string;
-      regionRestriction?:
-        { blocked?: string[] | undefined; allowed?: string[] | undefined } | undefined;
-    };
-  },
-  channelId: string,
-): boolean {
+export type CatalogVideo = {
+  id?: string;
+  snippet?: { channelId?: string; categoryId?: string; title?: string };
+  status?: { embeddable?: boolean; privacyStatus?: string; uploadStatus?: string };
+  contentDetails?: {
+    duration?: string;
+    regionRestriction?:
+      { blocked?: string[] | undefined; allowed?: string[] | undefined } | undefined;
+  };
+};
+
+function eligibleVideo(video: CatalogVideo, channelId: string): boolean {
   const region = video.contentDetails?.regionRestriction;
   return (
     !!video.id &&
     /^[\w-]{11}$/.test(video.id) &&
     video.snippet?.channelId === channelId &&
-    video.snippet.categoryId === "10" &&
     !!video.snippet.title &&
     video.status?.embeddable === true &&
     video.status.privacyStatus === "public" &&
     video.status.uploadStatus === "processed" &&
-    isoSeconds(video.contentDetails?.duration ?? "") >= 60 &&
+    isoSeconds(video.contentDetails?.duration ?? "") >= 120 &&
     !region?.blocked?.includes("KE") &&
     (!region?.allowed || region.allowed.includes("KE"))
   );
 }
+export function eligibleMusicVideo(video: CatalogVideo, channelId: string): boolean {
+  return (
+    eligibleVideo(video, channelId) &&
+    video.snippet?.categoryId === "10" &&
+    !/\b(podcast|sermon|interview|announcement|trailer|teaser|marriage|relationship|investments?|tour|vlog)\b/i.test(
+      video.snippet.title ?? "",
+    )
+  );
+}
+
+export function eligiblePodcastVideo(video: CatalogVideo, channelId: string): boolean {
+  return eligibleVideo(video, channelId);
+}
+
 export const MUSIC_SOURCE_NAMES = [
   "Hillsong Worship",
   "Hillsong UNITED",

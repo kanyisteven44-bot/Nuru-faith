@@ -93,6 +93,9 @@ export const askNuruAi = createServerFn({ method: "POST" })
     try {
       const result = await generateText({
         model: NURU_AI_MODEL,
+        abortSignal: AbortSignal.timeout(25000),
+        maxRetries: 1,
+        maxOutputTokens: 1200,
         system: buildSystemPrompt(data),
         messages: data.messages.map((m) => ({ role: m.role, content: m.content })),
       });
@@ -103,6 +106,10 @@ export const askNuruAi = createServerFn({ method: "POST" })
           "I couldn't put an answer together this time. Try asking in a slightly different way.",
       };
     } catch (err) {
+      if (err instanceof Error && (err.name === "AbortError" || err.name === "TimeoutError"))
+        throw new Error(
+          "Nuru AI took too long to respond. Your question is saved; please try again.",
+        );
       if (err instanceof Error && /credit card|card on file|billing/i.test(err.message))
         throw new Error(
           "Nuru AI is awaiting billing setup by the app owner. Your question is saved; please try again once the service is enabled.",
@@ -121,6 +128,9 @@ export const askNuruAi = createServerFn({ method: "POST" })
           `Nuru AI could not answer (${err.statusCode ?? "error"}). Please try again later.`,
         );
       }
-      throw err instanceof Error ? err : new Error("Nuru AI could not answer.");
+      console.error("[nuru-ai] unexpected provider failure");
+      throw new Error(
+        "Nuru AI could not answer right now. Your question is saved; please try again.",
+      );
     }
   });

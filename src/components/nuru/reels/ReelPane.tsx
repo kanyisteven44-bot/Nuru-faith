@@ -1,3 +1,4 @@
+import { reelPlaybackPolicy, isReelTap } from "@/lib/reelPlaybackPolicy";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Clapperboard, ExternalLink, Heart, Pause, Play, Volume2, VolumeX } from "lucide-react";
 import { CoverImage } from "@/components/nuru/CoverImage";
@@ -7,7 +8,7 @@ import { resolveMedia } from "@/lib/media";
 import { compactNumber } from "@/lib/format";
 import type { Reel } from "@/services/reels";
 import { SOURCE_LABEL, type ImportedSource } from "@/lib/reelImport";
-import { YouTubePlayer } from "@/components/youtube/YouTubePlayer";
+import { InAppMediaPlayer } from "@/components/youtube/InAppMediaPlayer";
 import { ReelInteractiveActions } from "./ReelInteractiveActions";
 import { ReelCaption } from "./ReelCaption";
 import { ReelFaithActions } from "./ReelFaithActions";
@@ -55,9 +56,12 @@ export function ReelPane(props: ReelPaneProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const tapTimer = useRef<number | null>(null);
   const viewLogged = useRef(false);
-  const wasPlaying = useRef(false);
+  const pointerStart = useRef<{ x: number; y: number } | null>(null);
+  const [playing, setPlaying] = useState(false);
+  const [pageVisible, setPageVisible] = useState(true);
+  const [playbackError, setPlaybackError] = useState("");
 
-  const [actuallyPlaying, setActuallyPlaying] = useState(false);
+  const [playerAttempt, setPlayerAttempt] = useState(0);
   const [paused, setPaused] = useState(false);
   const [showIcon, setShowIcon] = useState(false);
   const [burst, setBurst] = useState<{ x: number; y: number; key: number } | null>(null);
@@ -69,7 +73,22 @@ export function ReelPane(props: ReelPaneProps) {
   const isYouTubeEmbed = reel.source_type === "youtube" && !!reel.external_id;
   const isLinkOutOnly =
     (reel.source_type === "tiktok" || reel.source_type === "instagram") && !!reel.external_url;
-  const shouldLoad = near && (autoplayAllowed || manualStart || active);
+  const { load: shouldLoad, play: shouldPlay } = reelPlaybackPolicy({
+    near,
+    active,
+    paused,
+    commentsVisible,
+    pageVisible,
+    autoplayAllowed,
+    manualStart,
+  });
+
+  useEffect(() => {
+    const update = () => setPageVisible(!document.hidden);
+    update();
+    document.addEventListener("visibilitychange", update);
+    return () => document.removeEventListener("visibilitychange", update);
+  }, []);
 
   function openOriginal() {
     if (reel.external_url) window.open(reel.external_url, "_blank", "noopener,noreferrer");
@@ -95,8 +114,10 @@ export function ReelPane(props: ReelPaneProps) {
     const v = videoRef.current;
     if (!v) return;
     v.muted = muted;
-    if (active && !paused && !commentsVisible && (autoplayAllowed || manualStart)) {
-      void v.play().catch(() => undefined);
+    if (shouldPlay) {
+      void v
+        .play()
+        .catch(() => setPlaybackError("Playback could not start. Tap Retry to try again."));
     } else {
       v.pause();
       if (!active) {
@@ -104,36 +125,33 @@ export function ReelPane(props: ReelPaneProps) {
         setPaused(false);
       }
     }
-  }, [active, paused, muted, commentsVisible, autoplayAllowed, manualStart]);
-
-  /* --- pause while comments are open, resume after --- */
-  useEffect(() => {
-    if (commentsVisible) wasPlaying.current = !paused;
-    else if (wasPlaying.current) setPaused(false);
-  }, [commentsVisible, paused]);
+  }, [active, shouldPlay, muted, shouldLoad, playerAttempt]);
 
   /* --- a view only counts after ~2 seconds of being active --- */
   useEffect(() => {
-    if (!active || !actuallyPlaying || viewLogged.current) return;
+    if (!active || !playing || !shouldPlay || viewLogged.current) return;
     const t = window.setTimeout(() => {
       viewLogged.current = true;
       onView(reel);
     }, 2000);
     return () => window.clearTimeout(t);
-  }, [active, actuallyPlaying, reel, onView]);
+  }, [active, playing, shouldPlay, reel, onView]);
 
   useEffect(() => () => (tapTimer.current ? window.clearTimeout(tapTimer.current) : undefined), []);
 
   const togglePlay = useCallback(() => {
     if (!hasVideo && !isYouTubeEmbed) return;
     setManualStart(true);
-    setPaused((p) => !p);
+    setPaused((p) => (!manualStart && !autoplayAllowed ? false : !p));
     setShowIcon(true);
     window.setTimeout(() => setShowIcon(false), 700);
-  }, [hasVideo, isYouTubeEmbed]);
+  }, [hasVideo, isYouTubeEmbed, manualStart, autoplayAllowed]);
 
   function handlePointerUp(e: React.PointerEvent<HTMLDivElement>) {
-    if (e.target instanceof HTMLElement && e.target.closest("button, a, input, select")) return;
+    const start = pointerStart.current;
+    pointerStart.current = null;
+    if (!isReelTap(start, { x: e.clientX, y: e.clientY })) return;
+    if ((e.target as HTMLElement).closest("button, a, select, input")) return;
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -195,35 +213,49 @@ export function ReelPane(props: ReelPaneProps) {
       aria-label={`Reel by ${reel.creator_name}`}
     >
       <div
-        className={cn("absolute inset-0", isYouTubeEmbed && "bottom-[240px]")}
+        className="absolute inset-0"
+        onPointerDown={(e) => {
+          pointerStart.current = { x: e.clientX, y: e.clientY };
+        }}
+        onPointerCancel={() => {
+          pointerStart.current = null;
+        }}
         onPointerUp={handlePointerUp}
       >
         {hasVideo && shouldLoad ? (
           <video
+            key={`${reel.id}:${playerAttempt}`}
             ref={videoRef}
             src={reel.video_url ?? undefined}
             poster={resolveMedia(reel.poster_url)}
+            onPlaying={() => {
+              setPlaying(true);
+              setPlaybackError("");
+            }}
+            onPause={() => setPlaying(false)}
+            onWaiting={() => setPlaying(false)}
+            onError={() => {
+              setPlaying(false);
+              setPlaybackError("This video could not load. Check your connection and retry.");
+            }}
             playsInline
             loop
             muted={muted}
             preload={active ? "auto" : "metadata"}
             className="h-full w-full object-cover"
-            onPlaying={() => setActuallyPlaying(true)}
-            onPause={() => setActuallyPlaying(false)}
-            onWaiting={() => setActuallyPlaying(false)}
-            onError={() => setActuallyPlaying(false)}
           />
-        ) : isYouTubeEmbed && shouldLoad && active ? (
-          <YouTubePlayer
+        ) : isYouTubeEmbed && shouldLoad ? (
+          <InAppMediaPlayer
+            key={`${reel.id}:${playerAttempt}`}
             videoId={reel.external_id!}
             title={reel.caption || reel.creator_name}
-            autoplay
+            autoplay={autoplayAllowed}
             loop
-            controls
+            controls={false}
             muted={muted}
-            playing={active && !paused && !commentsVisible}
-            interactive
-            onPlaybackChange={setActuallyPlaying}
+            playing={shouldPlay}
+            onPlaybackChange={setPlaying}
+            interactive={false}
             className="h-full rounded-none"
           />
         ) : reel.poster_url ? (
@@ -250,6 +282,38 @@ export function ReelPane(props: ReelPaneProps) {
         )}
       </div>
 
+      {hasVideo && playbackError && (
+        <div
+          role="alert"
+          className="absolute inset-x-4 top-20 z-20 rounded-xl bg-black/85 p-4 text-sm text-white"
+        >
+          <p>{playbackError}</p>
+          <button
+            type="button"
+            className="mt-2 min-h-11 rounded-lg border border-white/40 px-4"
+            onClick={() => {
+              setPlaybackError("");
+              setPlaying(false);
+              setManualStart(true);
+              setPaused(false);
+              setPlayerAttempt((a) => a + 1);
+            }}
+          >
+            Retry video
+          </button>
+        </div>
+      )}
+      {(hasVideo || isYouTubeEmbed) && (autoplayAllowed || manualStart) && (
+        <button
+          type="button"
+          aria-label={paused ? "Resume Reel" : "Pause Reel"}
+          className="absolute right-3 top-16 z-10 rounded-full bg-black/50 p-3 text-white"
+          onClick={togglePlay}
+        >
+          {paused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
+        </button>
+      )}
+
       {isLinkOutOnly && (
         <button
           type="button"
@@ -265,7 +329,7 @@ export function ReelPane(props: ReelPaneProps) {
         </button>
       )}
 
-      {isLinkOutOnly && (
+      {(isYouTubeEmbed || isLinkOutOnly) && (
         <div className="absolute left-3 top-3 z-10 flex items-center gap-1.5 rounded-full bg-black/40 py-1.5 pl-1.5 pr-3 text-[11px] font-medium text-white backdrop-blur-md">
           <span className="rounded-full bg-white/15 px-2 py-0.5">
             {SOURCE_LABEL[reel.source_type as ImportedSource]}
@@ -277,28 +341,35 @@ export function ReelPane(props: ReelPaneProps) {
           >
             Open original <ExternalLink className="h-3 w-3" />
           </button>
+          {isYouTubeEmbed && (
+            <button
+              type="button"
+              onClick={() => setPlayerAttempt((value) => value + 1)}
+              className="min-h-9 rounded-full px-2 underline underline-offset-2"
+              aria-label="Reload Reel player"
+            >
+              Retry
+            </button>
+          )}
         </div>
       )}
 
       <div
         aria-hidden="true"
-        className={cn(
-          "pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/55 to-transparent",
-          isYouTubeEmbed && "hidden",
-        )}
+        className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/55 to-transparent"
       />
       <div
         aria-hidden="true"
-        className={cn(
-          "pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/80 via-black/40 to-transparent",
-          isYouTubeEmbed && "hidden",
-        )}
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/80 via-black/40 to-transparent"
       />
 
       {(hasVideo || isYouTubeEmbed) && !autoplayAllowed && !manualStart && (
         <button
           type="button"
-          onClick={() => setManualStart(true)}
+          onClick={() => {
+            setManualStart(true);
+            setPaused(false);
+          }}
           aria-label="Play Reel"
           className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-2"
         >
@@ -324,7 +395,7 @@ export function ReelPane(props: ReelPaneProps) {
         </span>
       )}
 
-      {hasVideo && muted && active && (
+      {(hasVideo || isYouTubeEmbed) && muted && active && (
         <button
           type="button"
           onClick={props.onToggleMuted}
@@ -343,7 +414,7 @@ export function ReelPane(props: ReelPaneProps) {
         />
       )}
 
-      {hasVideo && (
+      {(hasVideo || isYouTubeEmbed) && (
         <button
           type="button"
           onClick={props.onToggleMuted}
@@ -356,15 +427,9 @@ export function ReelPane(props: ReelPaneProps) {
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0">
         {/* Keep the action rail on the right and leave the video centre clear. */}
-        <div
-          className={cn(
-            "pointer-events-auto flex gap-3 px-3 pb-1",
-            isYouTubeEmbed ? "flex-col items-stretch bg-slate-950" : "items-end",
-          )}
-        >
+        <div className="pointer-events-auto flex items-end gap-3 px-3 pb-1">
           <div className="order-2 shrink-0 pb-1">
             <ReelInteractiveActions
-              horizontal={isYouTubeEmbed}
               reel={reel}
               near={near}
               liked={props.liked}
@@ -404,7 +469,11 @@ export function ReelPane(props: ReelPaneProps) {
             {compactNumber(reel.view_count)} views
           </span>
           {hasVideo ? (
-            <ReelProgress videoRef={videoRef} />
+            shouldLoad ? (
+              <ReelProgress key={playerAttempt} videoRef={videoRef} />
+            ) : (
+              <span className="h-5 flex-1" />
+            )
           ) : (
             <span className={cn("h-5 flex-1")} aria-hidden="true" />
           )}

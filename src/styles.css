@@ -332,6 +332,121 @@ a {
 }
 
 @layer components {
+  .nuru-app {
+    background:
+      radial-gradient(circle at 50% -10%, rgb(20 126 255 / 28%), transparent 38rem),
+      linear-gradient(180deg, #001c45 0%, var(--background) 32rem);
+  }
+  .nuru-app main > * {
+    animation: nuru-enter 240ms ease-out both;
+  }
+  .nuru-desktop-bar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    border-bottom: 1px solid rgb(53 217 255 / 22%);
+    background: rgb(0 19 47 / 88%);
+    backdrop-filter: blur(18px);
+  }
+  .nuru-top-link {
+    min-height: 2.5rem;
+    display: inline-flex;
+    align-items: center;
+    padding-inline: 1rem;
+    border-radius: 0.5rem;
+    color: var(--muted-foreground);
+    font-size: 0.8125rem;
+    font-weight: 600;
+  }
+  .nuru-top-link:hover,
+  .nuru-top-link-active {
+    color: var(--brand-cyan);
+    background: rgb(22 140 255 / 14%);
+  }
+  .nuru-icon-button,
+  .nuru-avatar-link {
+    width: 2.5rem;
+    height: 2.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 1px solid rgb(53 217 255 / 42%);
+    border-radius: 0.6rem;
+    color: var(--brand-cyan);
+    background: var(--surface-2);
+  }
+  .nuru-avatar-link {
+    border-radius: 999px;
+  }
+  .nuru-screen-header {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    display: flex;
+    min-height: 4rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: max(0.75rem, env(safe-area-inset-top)) 1rem 0.75rem;
+    border-bottom: 1px solid rgb(53 217 255 / 24%);
+    background: rgb(0 25 60 / 92%);
+    backdrop-filter: blur(18px);
+  }
+  .nuru-bottom-bar {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 50;
+    border-top: 1px solid rgb(53 217 255 / 30%);
+    background: rgb(0 19 47 / 96%);
+    backdrop-filter: blur(18px);
+  }
+  .nuru-bottom-link {
+    min-height: 3.75rem;
+    padding-bottom: max(0.35rem, env(safe-area-inset-bottom));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    color: var(--muted-foreground);
+    font-size: 0.625rem;
+    font-weight: 600;
+  }
+  .nuru-bottom-link.is-active {
+    color: var(--brand-cyan);
+    text-shadow: 0 0 16px rgb(53 217 255 / 70%);
+  }
+  .nuru-card,
+  .nuru-card-hero {
+    transition:
+      border-color 160ms ease,
+      background-color 160ms ease,
+      transform 160ms ease;
+  }
+  a.nuru-card:hover,
+  button.nuru-card:hover {
+    border-color: rgb(53 217 255 / 55%);
+    transform: translateY(-1px);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .nuru-app main > * {
+      animation: none;
+    }
+    .nuru-card,
+    .nuru-card-hero {
+      transition: none;
+    }
+  }
+  @media (min-width: 1024px) {
+    .nuru-screen-header {
+      top: 4rem;
+    }
+    .nuru-bottom-bar {
+      display: none;
+    }
+  }
+
   .input-nuru {
     min-height: 3rem;
     width: 100%;
@@ -345,6 +460,17 @@ a {
   .input-nuru:focus {
     border-color: var(--brand-cyan);
     box-shadow: 0 0 0 2px rgb(53 217 255 / 12%);
+  }
+}
+
+@keyframes nuru-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -504,17 +630,98 @@ a {
   }
 }
 
-/* ---------------------------------------------------------------------------
-   THE OPENING
-   Matches the supplied "Opening — desktop" board exactly: the arch draws
-   itself in light, a beam falls through it, a spark lands on the apex, then
-   the wordmark, the line and the scripture fade up in sequence. Two ray
-   fields turn slowly behind it and embers drift upward.
-
-   Every duration, delay, easing and colour below is taken from that board
-   unchanged. See SplashScreen.tsx.
-   --------------------------------------------------------------------------- */
-@keyframes nuru-open-draw {
+/* Nuru opening: layered vector arch in CSS perspective, independent of theme. */
+.nuru-opening {
+  background: radial-gradient(ellipse at 50% 38%, #123c58 0%, #071c30 43%, #04101e 100%);
+  isolation: isolate;
+}
+.nuru-opening-halo {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 36%, rgb(86 207 255 / 16%), transparent 46%);
+}
+.nuru-opening-floor {
+  position: absolute;
+  top: 52%;
+  left: 50%;
+  width: min(70vw, 540px);
+  height: 120px;
+  border: 1px solid rgb(115 216 255 / 16%);
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(ellipse, rgb(72 191 255 / 13%), transparent 65%);
+  transform: translateX(-50%) rotateX(65deg);
+  box-shadow: 0 0 50px rgb(72 191 255 / 8%);
+  animation: nuru-opening-floor-in 2s ease-out both;
+}
+.nuru-opening-scene {
+  position: relative;
+  flex-shrink: 0;
+  width: clamp(160px, 24vw, 220px);
+  height: clamp(190px, 34vh, 280px);
+  margin-top: clamp(72px, 13vh, 130px);
+  perspective: 850px;
+}
+.nuru-opening-mark {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transform: rotateX(-5deg) rotateY(-17deg);
+  animation: nuru-opening-reveal 2.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.nuru-opening-depth,
+.nuru-opening-face {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.nuru-opening-face {
+  transform: translateZ(2px);
+  filter: drop-shadow(0 0 8px rgb(72 191 255 / 60%));
+}
+.nuru-opening-stroke {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  animation: nuru-opening-trace 1.35s ease-out both;
+}
+.nuru-opening-beam {
+  position: absolute;
+  top: 8%;
+  left: 26%;
+  width: 48%;
+  height: 90%;
+  background: linear-gradient(to bottom, rgb(169 231 255 / 15%), transparent);
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  transform: translateZ(-28px);
+  animation: nuru-opening-floor-in 1.8s ease-out both;
+}
+.nuru-opening-title {
+  animation: nuru-opening-text-in 0.8s ease-out 0.7s both;
+}
+.nuru-opening-tagline {
+  animation: nuru-opening-text-in 0.8s ease-out 1.1s both;
+}
+.nuru-opening-verse {
+  animation: nuru-opening-text-in 0.8s ease-out 1.5s both;
+}
+@keyframes nuru-opening-reveal {
+  from {
+    opacity: 0;
+    transform: translateZ(-180px) rotateX(12deg) rotateY(65deg) scale(0.78);
+  }
+  48% {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+    transform: rotateX(-5deg) rotateY(-17deg);
+  }
+}
+@keyframes nuru-opening-trace {
   from {
     stroke-dashoffset: 1;
   }
@@ -522,85 +729,17 @@ a {
     stroke-dashoffset: 0;
   }
 }
-@keyframes nuru-open-fade {
+@keyframes nuru-opening-text-in {
   from {
     opacity: 0;
-    transform: translateY(16px);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;
-    transform: none;
+    transform: translateY(0);
   }
 }
-@keyframes nuru-open-beam {
-  from {
-    opacity: 0;
-    transform: scaleY(0.15);
-  }
-  to {
-    opacity: 1;
-    transform: scaleY(1);
-  }
-}
-@keyframes nuru-open-pulse {
-  0%,
-  100% {
-    opacity: 0.6;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-@keyframes nuru-open-spark {
-  0% {
-    opacity: 0;
-    transform: scale(0.2);
-  }
-  60% {
-    opacity: 1;
-    transform: scale(1.4);
-  }
-  100% {
-    opacity: 0.9;
-    transform: scale(1);
-  }
-}
-@keyframes nuru-open-rise {
-  from {
-    opacity: 0;
-    transform: translateY(40px);
-  }
-  to {
-    opacity: 0.5;
-    transform: none;
-  }
-}
-@keyframes nuru-open-float {
-  0% {
-    transform: translateY(0) scale(0.6);
-    opacity: 0;
-  }
-  15% {
-    opacity: 0.9;
-  }
-  70% {
-    opacity: 0.6;
-  }
-  100% {
-    transform: translateY(-460px) scale(1);
-    opacity: 0;
-  }
-}
-@keyframes nuru-open-sway {
-  0%,
-  100% {
-    margin-left: 0;
-  }
-  50% {
-    margin-left: 14px;
-  }
-}
-@keyframes nuru-open-rays-in {
+@keyframes nuru-opening-floor-in {
   from {
     opacity: 0;
   }
@@ -608,139 +747,167 @@ a {
     opacity: 1;
   }
 }
-@keyframes nuru-open-spin {
-  from {
-    transform: translate(-50%, -50%) rotate(0deg);
-  }
-  to {
-    transform: translate(-50%, -50%) rotate(360deg);
-  }
-}
-
-.nuru-open-draw {
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-  animation: nuru-open-draw 1.9s cubic-bezier(0.6, 0, 0.2, 1) 0.3s forwards;
-}
-.nuru-open-beam {
-  transform-origin: 50% 0;
-  transform-box: fill-box;
-  opacity: 0;
-  animation: nuru-open-beam 1.4s ease-out 1.8s forwards;
-}
-.nuru-open-spark {
-  transform-origin: center;
-  transform-box: fill-box;
-  opacity: 0;
-  animation: nuru-open-spark 0.8s ease-out 2s forwards;
-}
-.nuru-open-f1 {
-  opacity: 0;
-  animation: nuru-open-fade 0.9s ease-out 2.3s forwards;
-}
-.nuru-open-f2 {
-  opacity: 0;
-  animation: nuru-open-fade 0.9s ease-out 2.7s forwards;
-}
-.nuru-open-f3 {
-  opacity: 0;
-  animation: nuru-open-fade 0.9s ease-out 3.1s forwards;
-}
-.nuru-open-glow {
-  animation: nuru-open-pulse 3.6s ease-in-out 3.2s infinite;
-}
-.nuru-open-side {
-  opacity: 0;
-  animation: nuru-open-rise 1.6s ease-out 2.4s forwards;
-}
-
-.nuru-open-rays {
-  opacity: 0;
-  border-radius: 50%;
-  pointer-events: none;
-  background: repeating-conic-gradient(
-    from 0deg,
-    rgb(159 224 255 / 11%) 0deg 2.5deg,
-    rgb(72 191 255 / 0) 2.5deg 11deg
-  );
-  -webkit-mask: radial-gradient(closest-side, #000 18%, rgb(0 0 0 / 50%) 50%, transparent 100%);
-  mask: radial-gradient(closest-side, #000 18%, rgb(0 0 0 / 50%) 50%, transparent 100%);
-  animation:
-    nuru-open-rays-in 2.4s ease-out 1.8s forwards,
-    nuru-open-spin 120s linear infinite;
-}
-.nuru-open-rays-warm {
-  background: repeating-conic-gradient(
-    from 5deg,
-    rgb(230 181 102 / 6%) 0deg 1.5deg,
-    rgb(230 181 102 / 0) 1.5deg 17deg
-  );
-  animation:
-    nuru-open-rays-in 2.4s ease-out 2.2s forwards,
-    nuru-open-spin 180s linear infinite reverse;
-}
-
-/* One drifting ember. Position, size, colour and timing come from the
-   component so the field is deterministic rather than random per render. */
-.nuru-open-p {
-  position: absolute;
-  border-radius: 50%;
-  opacity: 0;
-  pointer-events: none;
-}
-
-/* The arch drawn as a standing outline, used either side of the mark. */
-.nuru-open-archline {
-  background: var(--halo) center / 100% 100% no-repeat;
-  filter: drop-shadow(0 0 6px rgb(72 191 255 / 35%));
-}
-
-/* Exit: the whole opening lifts away and lets the app through. */
 @keyframes nuru-open-exit {
   from {
     opacity: 1;
-    transform: scale(1);
   }
   to {
     opacity: 0;
-    transform: scale(1.06);
   }
 }
 .nuru-open-exit {
-  animation: nuru-open-exit 520ms cubic-bezier(0.3, 0, 0.15, 1) forwards;
+  animation: nuru-open-exit 320ms ease-out forwards;
+  pointer-events: none;
 }
-
+@media (max-height: 560px) {
+  .nuru-opening-scene {
+    margin-top: 55px;
+    height: 130px;
+    width: 110px;
+  }
+  .nuru-opening-title h1 {
+    font-size: 30px;
+  }
+  .nuru-opening-tagline {
+    margin-top: 10px;
+    font-size: 13px;
+  }
+  .nuru-opening-verse {
+    padding-top: 12px;
+    padding-bottom: 14px;
+  }
+  .nuru-opening-verse > p:first-child {
+    font-size: 12px;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
-  .nuru-open-rays {
-    animation: none;
-    opacity: 0.8;
-    transform: translate(-50%, -50%);
+  .nuru-opening *,
+  .nuru-open-exit {
+    animation: none !important;
   }
-  .nuru-open-p {
-    display: none;
-  }
-  .nuru-open-draw {
-    animation: none;
-    stroke-dashoffset: 0;
-  }
-  .nuru-open-beam,
-  .nuru-open-spark,
-  .nuru-open-f1,
-  .nuru-open-f2,
-  .nuru-open-f3 {
-    animation: none;
-    opacity: 1;
+  .nuru-opening-mark {
     transform: none;
   }
-  .nuru-open-side {
-    animation: none;
-    opacity: 0.5;
-  }
-  .nuru-open-glow {
-    animation: none;
+  .nuru-opening-stroke {
+    stroke-dashoffset: 0;
   }
   .nuru-open-exit {
-    animation-duration: 160ms;
+    opacity: 0;
+  }
+}
+
+/* Cinematic opening: finite motion, extruded arch and a reflected light stage. */
+.nuru-opening {
+  background: radial-gradient(ellipse at 50% 35%, #123e5a 0%, #06182a 42%, #020812 100%);
+}
+.nuru-opening-halo {
+  background: radial-gradient(ellipse at 50% 35%, rgb(65 194 255 / 22%), transparent 42%);
+  animation: nuru-halo-arrive 2.4s ease-out both;
+}
+.nuru-opening-scene {
+  perspective: 1000px;
+}
+.nuru-opening-mark {
+  transform: rotateX(-6deg) rotateY(-12deg);
+  animation: nuru-arch-arrive 2.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.nuru-opening-face {
+  filter: drop-shadow(0 0 5px #bdefff) drop-shadow(0 0 20px rgb(38 181 255 / 65%));
+}
+.nuru-opening-floor {
+  top: 48%;
+  width: min(82vw, 640px);
+  height: 180px;
+  background: radial-gradient(ellipse, rgb(81 206 255 / 22%), transparent 68%);
+  border-color: rgb(120 217 255 / 10%);
+}
+.nuru-opening-reflection {
+  position: absolute;
+  top: 96%;
+  width: 100%;
+  height: 45%;
+  opacity: 0.18;
+  transform: scaleY(-1) rotateX(45deg);
+  filter: blur(3px);
+  mask-image: linear-gradient(transparent, black);
+  pointer-events: none;
+}
+.nuru-opening-orbit {
+  position: absolute;
+  inset: 12% -35%;
+  border: 1px solid rgb(103 204 255 / 18%);
+  border-top-color: rgb(174 237 255 / 60%);
+  border-radius: 50%;
+  transform: rotateZ(-25deg) rotateX(65deg);
+  animation: nuru-orbit-arrive 2.4s ease-out both;
+  pointer-events: none;
+}
+.nuru-opening-stars {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.nuru-opening-stars i {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: #b2e8ff;
+  box-shadow: 0 0 8px rgb(125 222 255 / 60%);
+  opacity: 0.4;
+  animation: nuru-stars-arrive 1.8s ease-out both;
+}
+@keyframes nuru-arch-arrive {
+  from {
+    opacity: 0;
+    transform: translateZ(-260px) rotateX(16deg) rotateY(72deg) scale(0.65);
+  }
+  55% {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+    transform: rotateX(-6deg) rotateY(-12deg);
+  }
+}
+@keyframes nuru-orbit-arrive {
+  from {
+    opacity: 0;
+    transform: rotateZ(-70deg) rotateX(75deg) scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: rotateZ(-25deg) rotateX(65deg);
+  }
+}
+@keyframes nuru-halo-arrive {
+  from {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes nuru-stars-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 0.4;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nuru-opening-mark {
+    transform: none;
+  }
+  .nuru-opening-orbit,
+  .nuru-opening-reflection,
+  .nuru-opening-stars {
+    display: none;
   }
 }
 
@@ -766,16 +933,22 @@ a {
 /* Soft raised controls from the approved music-player reference. */
 .nuru-nav-dock {
   background: color-mix(in srgb, var(--surface) 95%, transparent);
-  box-shadow: 0 -2px 18px var(--control-highlight), 0 8px 24px var(--control-shadow);
+  box-shadow:
+    0 -2px 18px var(--control-highlight),
+    0 8px 24px var(--control-shadow);
 }
 .nuru-soft-control,
 .nuru-tactile {
   background-color: var(--control-surface);
   border: 1px solid var(--border-strong);
-  box-shadow: 4px 4px 9px var(--control-shadow),
+  box-shadow:
+    4px 4px 9px var(--control-shadow),
     -3px -3px 8px var(--control-highlight),
     inset 0 1px 0 var(--control-highlight);
-  transition: box-shadow 160ms ease, transform 160ms ease, background-color 160ms ease;
+  transition:
+    box-shadow 160ms ease,
+    transform 160ms ease,
+    background-color 160ms ease;
 }
 .nuru-soft-primary,
 .nuru-tactile-primary {
@@ -786,7 +959,8 @@ a {
 }
 .nuru-soft-control:is(:active, [aria-pressed="true"], [aria-selected="true"]):not(:disabled),
 .nuru-tactile:active:not(:disabled) {
-  box-shadow: inset 3px 3px 7px var(--control-shadow),
+  box-shadow:
+    inset 3px 3px 7px var(--control-shadow),
     inset -2px -2px 6px var(--control-highlight);
   transform: translateY(1px);
 }
@@ -803,22 +977,40 @@ a {
 }
 .nuru-soft-inset {
   background-color: var(--control-surface);
-  box-shadow: inset 2px 2px 5px var(--control-shadow),
+  box-shadow:
+    inset 2px 2px 5px var(--control-shadow),
     inset -2px -2px 5px var(--control-highlight);
 }
 @media (hover: hover) {
   .nuru-soft-control:hover:not(:disabled),
   .nuru-tactile:hover:not(:disabled) {
-    box-shadow: 5px 5px 11px var(--control-shadow),
+    box-shadow:
+      5px 5px 11px var(--control-shadow),
       -3px -3px 9px var(--control-highlight);
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .nuru-soft-control, .nuru-tactile { transition: none; }
-  .nuru-soft-control:active, .nuru-tactile:active { transform: none; }
+  .nuru-soft-control,
+  .nuru-tactile {
+    transition: none;
+  }
+  .nuru-soft-control:active,
+  .nuru-tactile:active {
+    transform: none;
+  }
+}
+.nuru-reader-copy {
+  line-height: 1.85;
+  overflow-wrap: anywhere;
+}
+.nuru-reader-copy p,
+.nuru-reader-copy li {
+  font-size: inherit;
+  line-height: inherit;
 }
 @media (forced-colors: active) {
-  .nuru-soft-control, .nuru-tactile {
+  .nuru-soft-control,
+  .nuru-tactile {
     border: 1px solid ButtonText;
     box-shadow: none;
   }

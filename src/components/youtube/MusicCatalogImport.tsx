@@ -1,16 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { importMusicCatalogPage } from "@/lib/musicCatalog.functions";
+import { importReviewedCatalogPage } from "@/lib/musicCatalog.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { PrimaryButton } from "@/components/nuru/Primitives";
 
-type Cursor = { channelId: string | null; pageToken: string | null };
-const STORAGE_KEY = "nuru-music-import-v1";
 export function MusicCatalogImport() {
   const client = useQueryClient();
+  const [kind, setKind] = useState<"music" | "podcast">("music");
   const [running, setRunning] = useState(false);
   const [message, setMessage] = useState(
-    "Import distinct songs from approved official music channels.",
+    "Import real videos from reviewed sources. Progress is saved on the server.",
   );
+  const [sourceTotal, setSourceTotal] = useState<number | null>(null);
   const [total, setTotal] = useState<number | null>(null);
   const pause = useRef(false);
   const active = useRef(false);
@@ -20,41 +21,68 @@ export function MusicCatalogImport() {
     },
     [],
   );
+  useEffect(() => {
+    let current = true;
+    void Promise.all([
+      supabase
+        .from("media_catalog_imports")
+        .select("status,last_error,imported_total")
+        .eq("kind", kind)
+        .maybeSingle(),
+      supabase
+        .from("media_sources")
+        .select("id", { head: true, count: "exact" })
+        .eq("is_approved", true)
+        .eq("is_verified", true)
+        .eq("source_type", "youtube")
+        .in("content_kind", [kind, "mixed"]),
+      supabase
+        .from("media_items")
+        .select("id", { head: true, count: "exact" })
+        .eq("is_approved", true)
+        .eq("source", "youtube")
+        .eq("media_type", kind),
+    ]).then(([progress, sources, items]) => {
+      if (!current || active.current) return;
+      if (sources.error || items.error || progress.error) {
+        setMessage("Catalogue progress could not be loaded. Try resuming the import.");
+        return;
+      }
+      setSourceTotal(sources.count ?? 0);
+      setTotal(items.count ?? 0);
+      if (progress.data?.last_error) setMessage(progress.data.last_error);
+      else if (progress.data?.status === "complete") setMessage("10,000-video target reached.");
+      else if (progress.data?.status === "exhausted")
+        setMessage(
+          "Reviewed sources exhausted below the target. Add more reviewed creators, then scan again.",
+        );
+    });
+    return () => {
+      current = false;
+    };
+  }, [kind]);
   async function run(fresh: boolean) {
     if (active.current) return;
     active.current = true;
     pause.current = false;
     setRunning(true);
-    let cursor: Cursor = { channelId: null, pageToken: null };
+    let restart = fresh;
     try {
-      if (!fresh) {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (
-            (typeof parsed.channelId === "string" || parsed.channelId === null) &&
-            (typeof parsed.pageToken === "string" || parsed.pageToken === null)
-          )
-            cursor = parsed;
-        }
-      } else localStorage.removeItem(STORAGE_KEY);
       while (!pause.current) {
-        const result = await importMusicCatalogPage({ data: cursor });
+        const result = await importReviewedCatalogPage({ data: { kind, restart } });
+        restart = false;
         setTotal(result.total);
         await client.invalidateQueries({ queryKey: ["media-catalog"] });
         if (!result.next) {
-          localStorage.removeItem(STORAGE_KEY);
           setMessage(
             result.targetReached
-              ? "10,000-song target reached."
-              : "Approved sources exhausted below 10,000. Review and add more official music channels; existing songs have not been duplicated.",
+              ? "10,000-video target reached."
+              : "Reviewed sources exhausted below the target. Add more reviewed creators to continue; entries have not been duplicated.",
           );
           break;
         }
-        cursor = result.next;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(cursor));
         setMessage(
-          "Importing verified music metadata. Keep this page open, or pause and resume later.",
+          "Importing reviewed videos. Progress is saved on the server; keep this page open to continue.",
         );
       }
       if (pause.current)
@@ -68,12 +96,37 @@ export function MusicCatalogImport() {
   }
   return (
     <section className="nuru-card space-y-3 p-4">
-      <h2 className="font-display text-lg font-semibold">Music catalogue import</h2>
+      <h2 className="font-display text-lg font-semibold">Media catalogue import</h2>
+      <label className="block text-sm">
+        Collection
+        <select
+          aria-label="Import collection"
+          disabled={running}
+          value={kind}
+          onChange={(event) => {
+            setKind(event.target.value as "music" | "podcast");
+            setTotal(null);
+            setMessage("Ready to scan reviewed sources.");
+          }}
+          className="input-nuru mt-2"
+        >
+          <option value="music">Songs</option>
+          <option value="podcast">Video podcasts</option>
+        </select>
+      </label>
       <p className="text-sm text-muted-foreground" role="status">
         {message}
       </p>
+      {sourceTotal !== null && (
+        <p className="text-sm">
+          {sourceTotal.toLocaleString()} reviewed{" "}
+          {kind === "music" ? "artist sources / 1,000 target" : "video creators"}
+        </p>
+      )}
       {total !== null && (
-        <p className="text-sm font-semibold">{total.toLocaleString()} / 10,000 distinct songs</p>
+        <p className="text-sm font-semibold">
+          {total.toLocaleString()} / 10,000 distinct {kind === "music" ? "songs" : "video episodes"}
+        </p>
       )}
       <div className="flex flex-wrap gap-2">
         <PrimaryButton disabled={running} onClick={() => void run(false)}>

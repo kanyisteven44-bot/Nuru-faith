@@ -146,20 +146,43 @@ const ICON_TONES = {
   warning: "border-warning/45 bg-warning/18 text-warning",
 } as const;
 
-/** Small rounded icon tile used across quick-access grids and list rows. */
+/**
+ * Small rounded icon tile used across quick-access grids and list rows.
+ *
+ * `filled` gives each tone its own coloured square, the way the quick-access grid
+ * reads in the product design; the default shares one blue wash for list rows, where
+ * per-row colour would be noise.
+ */
 export function IconTile({
   icon: Icon,
   tone = "brand",
   size = "md",
+  filled = false,
   className,
 }: {
   icon: ComponentType<{ className?: string }>;
   tone?: keyof typeof ICON_TONES;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
+  filled?: boolean;
   className?: string;
 }) {
-  const box = size === "sm" ? "h-8 w-8" : size === "lg" ? "h-12 w-12" : "h-10 w-10";
-  const glyph = size === "sm" ? "h-4 w-4" : size === "lg" ? "h-5.5 w-5.5" : "h-5 w-5";
+  const box =
+    size === "sm"
+      ? "h-8 w-8"
+      : size === "lg"
+        ? "h-12 w-12"
+        : size === "xl"
+          ? "h-14 w-14"
+          : "h-10 w-10";
+  const glyph =
+    size === "sm"
+      ? "h-4 w-4"
+      : size === "lg"
+        ? "h-5.5 w-5.5"
+        : size === "xl"
+          ? "h-6 w-6"
+          : "h-5 w-5";
+  const { glyph: glyphTone, fill } = ICON_TONES[tone];
   return (
     <span className={cn("nuru-icon-tile", ICON_TONES[tone], box, className)}>
       <Icon className={glyph} />

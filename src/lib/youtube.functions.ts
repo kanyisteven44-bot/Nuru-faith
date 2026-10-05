@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { eligibleMusicVideo, eligiblePodcastVideo } from "./musicImport";
 import { faithSearch, trustedChannel, trustRank } from "./content-policy";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { enforceNuruRateLimit } from "./rateLimit";
@@ -59,14 +60,20 @@ export type YouTubeSearchResult = {
   error: string | null;
 };
 
-const searchInput = z.object({
-  query: z.string().trim().max(120).optional(),
-  type: z.enum(["video", "playlist", "channel"]).default("video"),
-  maxResults: z.number().int().min(1).max(25).default(12),
-  pageToken: z.string().max(200).optional(),
-  channelId: z.string().max(64).optional(),
-  playlistId: z.string().max(64).optional(),
-});
+const searchInput = z
+  .object({
+    query: z.string().trim().max(120).optional(),
+    type: z.enum(["video", "playlist", "channel"]).default("video"),
+    maxResults: z.number().int().min(1).max(50).default(12),
+    pageToken: z.string().max(200).optional(),
+    channelId: z.string().max(64).optional(),
+    musicOnly: z.boolean().default(false),
+    podcastOnly: z.boolean().default(false),
+    playlistId: z.string().max(64).optional(),
+  })
+  .refine((data) => !(data.musicOnly && data.podcastOnly), {
+    message: "Choose music or podcast videos, not both.",
+  });
 
 const thumbnailSchema = z.object({ url: z.string() });
 const snippetSchema = z.object({
@@ -74,6 +81,7 @@ const snippetSchema = z.object({
   description: z.string().optional(),
   channelId: z.string().optional(),
   channelTitle: z.string().optional(),
+  categoryId: z.string().optional(),
   publishedAt: z.string().optional(),
   videoOwnerChannelId: z.string().optional(),
   videoOwnerChannelTitle: z.string().optional(),
@@ -107,6 +115,20 @@ const responseSchema = z.object({
               videoId: z.string().optional(),
               duration: z.string().optional(),
               itemCount: z.number().optional(),
+              relatedPlaylists: z.object({ uploads: z.string().optional() }).optional(),
+              regionRestriction: z
+                .object({
+                  blocked: z.array(z.string()).optional(),
+                  allowed: z.array(z.string()).optional(),
+                })
+                .optional(),
+            })
+            .optional(),
+          status: z
+            .object({
+              embeddable: z.boolean().optional(),
+              privacyStatus: z.string().optional(),
+              uploadStatus: z.string().optional(),
             })
             .optional(),
           statistics: z.object({ subscriberCount: z.string().optional() }).optional(),
@@ -139,44 +161,24 @@ function readableDuration(iso?: string | null): string | null {
     : `${mm}:${String(ss).padStart(2, "0")}`;
 }
 
-const metadataCache = new Map<string, { at: number; value: z.infer<typeof responseSchema> }>();
-const metadataRequests = new Map<string, Promise<z.infer<typeof responseSchema>>>();
-const METADATA_TTL = 60 * 60 * 1000;
-
 async function call(path: string, params: Record<string, string | undefined>, key: string) {
-  const cacheKey = JSON.stringify([
-    path,
-    Object.entries(params).sort(([a], [b]) => a.localeCompare(b)),
-  ]);
-  const cached = metadataCache.get(cacheKey);
-  if (cached && Date.now() - cached.at < METADATA_TTL) return cached.value;
   if (Date.now() < quotaCooldownUntil) throw new Error("quota");
-  const pending = metadataRequests.get(cacheKey);
-  if (pending) return pending;
-  const request = (async () => {
-    const url = new URL(`${API}/${path}`);
-    for (const [k, v] of Object.entries(params)) if (v) url.searchParams.set(k, v);
-    url.searchParams.set("key", key);
-    const res = await fetch(url.toString(), { signal: AbortSignal.timeout(15000) });
-    if (!res.ok) {
-      const body = await res.text().catch(() => "");
-      if (/quotaExceeded|dailyLimitExceeded/i.test(body) || res.status === 429) {
-        quotaCooldownUntil = Date.now() + QUOTA_COOLDOWN_MS;
-        throw new Error("quota");
-      }
-      throw new Error("unavailable");
+
+  const url = new URL(`${API}/${path}`);
+  for (const [k, v] of Object.entries(params)) if (v) url.searchParams.set(k, v);
+  url.searchParams.set("key", key);
+  const res = await fetch(url.toString());
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    if (res.status === 403 || res.status === 429) {
+      quotaCooldownUntil = Date.now() + QUOTA_COOLDOWN_MS;
+      console.warn(`[youtube] quota unavailable; pausing API calls for 6h (${res.status})`);
+      throw new Error("quota");
     }
-    const value = responseSchema.parse(await res.json());
-    if (metadataCache.size >= 128) metadataCache.delete(metadataCache.keys().next().value!);
-    metadataCache.set(cacheKey, { at: Date.now(), value });
-    return value;
-  })();
-  metadataRequests.set(cacheKey, request);
-  try {
-    return await request;
-  } finally {
-    metadataRequests.delete(cacheKey);
+    console.warn(`[youtube] ${path} unavailable (${res.status}) ${body.slice(0, 180)}`);
+    throw new Error("unavailable");
   }
+  return responseSchema.parse(await res.json());
 }
 
 function emptyResult(error: string | null = null): YouTubeSearchResult {
@@ -238,19 +240,36 @@ export const youtubeSearch = createServerFn({ method: "POST" })
     }
 
     try {
+      let playlistId = data.playlistId;
+      if (data.musicOnly || data.podcastOnly) {
+        if (!data.channelId) return emptyResult("not-found");
+        const source = await context.supabase
+          .from("media_sources")
+          .select("id")
+          .eq("is_approved", true)
+          .eq("source_type", "youtube")
+          .eq("youtube_channel_id", data.channelId)
+          .in("content_kind", [data.musicOnly ? "music" : "podcast", "mixed"])
+          .limit(1);
+        if (source.error) throw new Error("trust-unavailable");
+        if (!source.data?.length) return emptyResult("not-found");
+        const channel = await call("channels", { part: "contentDetails", id: data.channelId }, key);
+        playlistId = channel.items[0]?.contentDetails?.relatedPlaylists?.uploads;
+        if (!playlistId) return emptyResult("not-found");
+      }
       // Browsing a specific playlist's contents
-      if (data.playlistId) {
+      if (playlistId) {
         const json = await call(
           "playlistItems",
           {
             part: "snippet,contentDetails",
-            playlistId: data.playlistId,
+            playlistId,
             maxResults: String(data.maxResults),
             pageToken: data.pageToken,
           },
           key,
         );
-        const videos: YouTubeVideo[] = (json.items ?? [])
+        let videos: YouTubeVideo[] = (json.items ?? [])
           .filter((i) => i.contentDetails?.videoId)
           .map((i) => ({
             youtubeVideoId: i.contentDetails?.videoId ?? "",
@@ -263,6 +282,52 @@ export const youtubeSearch = createServerFn({ method: "POST" })
             duration: null,
             source: "youtube" as const,
           }));
+        if ((data.musicOnly || data.podcastOnly) && videos.length) {
+          const details = await call(
+            "videos",
+            {
+              part: "snippet,status,contentDetails",
+              id: videos.map((video) => video.youtubeVideoId).join(","),
+            },
+            key,
+          );
+          const allowed = new Map(
+            details.items
+              .filter((video) =>
+                (data.podcastOnly ? eligiblePodcastVideo : eligibleMusicVideo)(
+                  {
+                    id: video.id,
+                    snippet: {
+                      channelId: video.snippet?.channelId ?? "",
+                      categoryId: video.snippet?.categoryId ?? "",
+                      title: video.snippet?.title ?? "",
+                    },
+                    status: {
+                      embeddable: video.status?.embeddable ?? false,
+                      privacyStatus: video.status?.privacyStatus ?? "",
+                      uploadStatus: video.status?.uploadStatus ?? "",
+                    },
+                    contentDetails: {
+                      duration: video.contentDetails?.duration ?? "",
+                      ...(video.contentDetails?.regionRestriction
+                        ? { regionRestriction: video.contentDetails.regionRestriction }
+                        : {}),
+                    },
+                  },
+                  data.channelId!,
+                ),
+              )
+              .map((video) => [video.id, video]),
+          );
+          videos = videos
+            .filter((video) => allowed.has(video.youtubeVideoId))
+            .map((video) => ({
+              ...video,
+              duration: readableDuration(
+                allowed.get(video.youtubeVideoId)?.contentDetails?.duration,
+              ),
+            }));
+        }
         return await filterTrusted({
           ...emptyResult(),
           videos,

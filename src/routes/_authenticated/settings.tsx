@@ -108,7 +108,12 @@ function SettingsScreen() {
 
         <Section title="Account">
           {isStaff && <RowLink icon={LayoutDashboard} label="Admin Dashboard" to="/admin" />}
-          <RowLink icon={UserCog} label="Profile & Account" to="/profile" />
+          <RowLink
+            icon={UserCog}
+            label="Profile"
+            description="Photo, username, display name and bio"
+            to="/settings/profile"
+          />
           <RowButton
             icon={ShieldCheck}
             label="Privacy & Security"
@@ -349,11 +354,26 @@ function Panel({ children }: { children: ReactNode }) {
 const ROW_CLASS =
   "flex min-h-13 w-full items-center gap-3.5 rounded-xl px-3 text-left transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none";
 
-function RowLink({ icon: Icon, label, to }: { icon: LucideIcon; label: string; to: string }) {
+function RowLink({
+  icon: Icon,
+  label,
+  description,
+  to,
+}: {
+  icon: LucideIcon;
+  label: string;
+  description?: string;
+  to: string;
+}) {
   return (
     <Link to={to} className={ROW_CLASS}>
       <Icon className="h-[18px] w-[18px] shrink-0 text-ink-3" strokeWidth={1.9} />
-      <span className="min-w-0 flex-1 truncate text-[15px] font-semibold">{label}</span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[15px] font-semibold">{label}</span>
+        {description && (
+          <span className="mt-0.5 block truncate text-[11px] text-ink-3">{description}</span>
+        )}
+      </span>
       <ChevronRight className="h-4 w-4 shrink-0 text-ink-3" strokeWidth={2} />
     </Link>
   );

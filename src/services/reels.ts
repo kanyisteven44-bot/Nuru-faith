@@ -73,9 +73,40 @@ export type Reel = {
 export const REELS_PAGE_SIZE = 6;
 
 /**
+ * Each page ranks only a bounded database window instead of re-downloading
+ * hundreds of rows. 48 candidates gives enough room for personalization while
+ * keeping feed reads predictable under large user counts.
+ */
+const CANDIDATE_WINDOW_SIZE = 48;
+
+/**
+ * Reel ids the person has already watched (logged after ~2s of active view).
+ * Watched reels are excluded from normal feeds; an intentional direct link can
+ * still open one through fetchReelById.
+ */
+export async function fetchViewedReelIds(
+  userId: string,
+  candidateIds: string[],
+): Promise<Set<string>> {
+  if (candidateIds.length === 0) return new Set();
+
+  const { data, error } = await supabase
+    .from("reel_views")
+    .select("reel_id")
+    .eq("user_id", userId)
+    .in("reel_id", candidateIds);
+  if (error) throw new Error(error.message);
+  return new Set((data ?? []).map((row) => row.reel_id));
+}
+
+/**
  * Feed logic is deliberately simple and explainable:
  * newest published reels, gently boosted by the topics the person cares about,
  * their church and the creators they follow. Never ranked by raw views.
+ *
+ * Reels the person has already watched are removed from normal feeds. We do
+ * not recycle old content when the unseen pool runs out: an empty feed is more
+ * honest than pretending an old Reel is new.
  */
 export async function fetchReelPage(params: {
   feed: ReelFeed;
@@ -85,15 +116,16 @@ export async function fetchReelPage(params: {
   churchId: string | null;
   followingIds: string[];
 }): Promise<Reel[]> {
-  const { feed, page, interests, churchId, followingIds } = params;
-  const from = page * REELS_PAGE_SIZE;
+  const { feed, page, userId, interests, churchId, followingIds } = params;
+  const candidateFrom = page * CANDIDATE_WINDOW_SIZE;
+  const candidateTo = candidateFrom + CANDIDATE_WINDOW_SIZE - 1;
 
   let q = supabase
     .from("reels")
     .select(REEL_SELECT)
     .eq("status", "published")
     .order("created_at", { ascending: false })
-    .range(from, from + REELS_PAGE_SIZE - 1);
+    .range(candidateFrom, candidateTo);
 
   if (feed === "Following") {
     if (followingIds.length === 0) return [];
@@ -106,11 +138,18 @@ export async function fetchReelPage(params: {
 
   const { data, error } = await q;
   if (error) throw new Error(error.message);
-  const rows = (data ?? []) as unknown as Reel[];
 
-  if (feed !== "For You") return rows;
+  const candidates = (data ?? []) as unknown as Reel[];
+  const viewedIds = userId
+    ? await fetchViewedReelIds(
+        userId,
+        candidates.map((reel) => reel.id),
+      )
+    : new Set<string>();
+  const rows = candidates.filter((reel) => !viewedIds.has(reel.id));
 
   const score = (r: Reel) => {
+    if (feed !== "For You") return 0;
     let s = 0;
     if (
       r.topic &&
@@ -122,7 +161,24 @@ export async function fetchReelPage(params: {
     if (r.is_bible_teaching) s += 1;
     return s;
   };
-  return [...rows].sort((a, b) => score(b) - score(a));
+
+  const ranked = [...rows].sort((a, b) => {
+    return score(b) - score(a);
+  });
+
+  return ranked.slice(0, REELS_PAGE_SIZE);
+}
+
+/** Reels this person published, for the profile grid. */
+export async function fetchMyReels(userId: string) {
+  const { data, error } = await supabase
+    .from("reels")
+    .select("*")
+    .eq("author_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(60);
+  if (error) throw new Error(error.message);
+  return data ?? [];
 }
 
 export async function fetchFollowingIds(userId: string) {
@@ -175,7 +231,8 @@ export async function fetchReelComments(reelId: string) {
     .select("*, profiles(full_name, username, avatar_url, verified)")
     .eq("reel_id", reelId)
     .order("pinned", { ascending: false })
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: true })
+    .limit(100);
   if (error) throw new Error(error.message);
   return (data ?? []) as unknown as ReelComment[];
 }
@@ -238,9 +295,10 @@ export async function recordReelView(
   watchDuration: number,
   completed: boolean,
 ) {
-  await supabase
+  const { error } = await supabase
     .from("reel_views")
     .insert({ user_id: userId, reel_id: reelId, watch_duration: watchDuration, completed });
+  if (error) throw new Error(error.message);
 }
 
 export async function reportReel(input: {

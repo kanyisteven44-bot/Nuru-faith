@@ -2,14 +2,15 @@ import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { z } from "zod";
-import { Apple, Loader2, Mail, Phone } from "lucide-react";
+import { Loader2, Lock, Mail, Phone, User as UserIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
-import { NuruLogo } from "@/components/nuru/Logo";
-import { GradientButton } from "@/components/nuru/Primitives";
-import hero from "@/assets/cross-sunrise.jpg";
+import { NuruMark } from "@/components/nuru/Logo";
+import { newPasswordError } from "@/lib/accountSecurity";
+import { authAvailability } from "@/lib/authAvailability.functions";
 
 const searchSchema = z.object({
-  mode: z.enum(["login", "signup", "forgot"]).optional().default("login"),
+  mode: z.enum(["login", "signup", "forgot", "mfa", "mfa-setup"]).optional().default("login"),
 });
 
 export const Route = createFileRoute("/auth")({
@@ -31,26 +32,62 @@ export const Route = createFileRoute("/auth")({
 
 const credentials = z.object({
   email: z.string().trim().email("Enter a valid email address").max(255),
-  password: z.string().min(8, "Use at least 8 characters").max(72),
+  password: z.string().min(1, "Enter your password").max(72),
 });
+
+type Method = "email" | "phone";
 
 function AuthPage() {
   const { mode } = Route.useSearch();
   const navigate = useNavigate();
+  const signup = mode === "signup";
+
+  const [method, setMethod] = useState<Method>("email");
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [otp, setOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [providers, setProviders] = useState<{
+    google: boolean | null;
+    phone: boolean | null;
+  } | null>(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/home", replace: true });
-    });
-  }, [navigate]);
+    let active = true;
+    void authAvailability()
+      .then((flags) => {
+        if (active) setProviders(flags);
+      })
+      .catch(() => {
+        if (active) setProviders({ google: null, phone: null });
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
-  async function submit(e: React.FormEvent) {
+  useEffect(() => {
+    if (mode === "mfa" || mode === "mfa-setup") return;
+
+    void supabase.auth.getSession().then(({ data }) => {
+      if (data.session) void navigate({ to: "/home", replace: true });
+    });
+  }, [navigate, mode]);
+
+  async function continueAfterSignIn(fallback: "/home" | "/onboarding") {
+    // Temporary owner-requested bypass: keep normal Supabase authentication,
+    // but do not force MFA enrollment/challenge while the factor flow is repaired.
+    void navigate({ to: fallback, replace: true });
+  }
+
+  async function submitEmail(e: React.FormEvent) {
     e.preventDefault();
+    setAuthError(null);
     setBusy(true);
     try {
       if (mode === "forgot") {
@@ -68,7 +105,10 @@ function AuthPage() {
       const parsed = credentials.safeParse({ email, password });
       if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? "Check your details");
 
-      if (mode === "signup") {
+      if (signup) {
+        if (!fullName.trim()) throw new Error("Enter your full name");
+        const passwordIssue = newPasswordError(parsed.data.password);
+        if (passwordIssue) throw new Error(passwordIssue);
         const { data, error } = await supabase.auth.signUp({
           email: parsed.data.email,
           password: parsed.data.password,
@@ -83,219 +123,471 @@ function AuthPage() {
           toast.success("Check your email to confirm your account");
           return;
         }
-        navigate({ to: "/onboarding" });
+        await continueAfterSignIn("/onboarding");
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email: parsed.data.email,
           password: parsed.data.password,
         });
         if (error) throw error;
-        navigate({ to: "/home" });
+        await continueAfterSignIn("/home");
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Something went wrong");
+      const message = err instanceof Error ? err.message : "Something went wrong";
+      setAuthError(message);
+      toast.error(message);
     } finally {
       setBusy(false);
     }
   }
 
-  async function social(provider: "google" | "apple") {
+  async function sendCode(e: React.FormEvent) {
+    e.preventDefault();
+    const value = phone.trim();
+    if (!/^\+[1-9]\d{7,14}$/.test(value)) {
+      toast.error("Enter your number in international format, e.g. +254712345678");
+      return;
+    }
     setBusy(true);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: {
-          redirectTo: `${window.location.origin}/home`,
-        },
+      const { error } = await supabase.auth.signInWithOtp({
+        phone: value,
+        options: signup ? { data: { full_name: fullName.trim() } } : {},
       });
-      // On success the browser is redirected to the provider now; Supabase
-      // owns the session from here and will hand control back at redirectTo.
-      if (error) {
-        toast.error(error.message || "Sign-in isn't available right now");
-        setBusy(false);
-      }
-    } catch {
-      toast.error("Sign-in isn't available right now");
+      if (error) throw error;
+      setOtpSent(true);
+      toast.success("Code sent by SMS");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't send the code");
+    } finally {
       setBusy(false);
     }
   }
 
+  async function verifyCode(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        phone: phone.trim(),
+        token: otp.trim(),
+        type: "sms",
+      });
+      if (error) throw error;
+      await continueAfterSignIn(signup ? "/onboarding" : "/home");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "That code didn't work");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function google() {
+    setAuthError(null);
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          skipBrowserRedirect: true,
+          redirectTo: `${window.location.origin}/auth-callback`,
+          queryParams: {
+            access_type: "offline",
+            prompt: "select_account",
+          },
+        },
+      });
+      if (error) throw error;
+      if (!data.url) throw new Error("Google sign-in could not be started");
+      // signInWithOAuth normally performs this redirect itself. Keeping this
+      // explicit makes the flow reliable if the Supabase client is configured
+      // with skipBrowserRedirect in a future release.
+      window.location.assign(data.url);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Sign-in isn't available right now";
+      setAuthError(message);
+      toast.error(message);
+      setBusy(false);
+    }
+  }
+
+  if (mode === "mfa" || mode === "mfa-setup") {
+    void navigate({ to: "/home", replace: true });
+    return null;
+  }
+
   return (
     <div className="relative min-h-dvh bg-background">
-      <img
-        src={hero}
-        alt=""
-        width={1024}
-        height={640}
-        className="absolute inset-0 h-64 w-full object-cover opacity-40"
-      />
-      <div className="absolute inset-0 nuru-veil" />
-
-      <div className="relative mx-auto flex min-h-dvh w-full max-w-md flex-col px-6 py-10">
-        <div className="mb-10">
-          <NuruLogo />
+      <div className="relative mx-auto flex min-h-dvh w-full max-w-md flex-col px-7 pb-10 pt-[max(2rem,env(safe-area-inset-top))]">
+        <div className="flex flex-col items-center pt-4 text-center">
+          <NuruMark className="h-16 w-16" />
+          <h1 className="mt-4 font-display text-[26px] leading-none font-bold tracking-tight">
+            Nuru <span className="text-leaf">Faith</span>
+          </h1>
+          <p className="mt-2 text-[12px] tracking-wide text-secondary-foreground">
+            Connect • Grow • Live Your Faith
+          </p>
         </div>
 
-        <h1 className="font-display text-2xl font-semibold">
-          {mode === "signup"
-            ? "Start your journey"
-            : mode === "forgot"
+        {(mode === "login" || mode === "signup") && (
+          <div
+            role="tablist"
+            aria-label="Sign in or create an account"
+            className="mt-7 flex gap-1 rounded-2xl border border-border bg-surface-2/70 p-1"
+          >
+            {(
+              [
+                { value: "login", label: "Sign In" },
+                { value: "signup", label: "Sign Up" },
+              ] as const
+            ).map((tab) => (
+              <Link
+                key={tab.value}
+                to="/auth"
+                search={{ mode: tab.value }}
+                role="tab"
+                aria-selected={mode === tab.value}
+                replace
+                onClick={() => {
+                  setOtpSent(false);
+                  setSent(false);
+                }}
+                className={cn(
+                  "flex-1 rounded-xl py-2.5 text-center text-sm font-semibold transition-colors",
+                  mode === tab.value
+                    ? "bg-primary text-primary-foreground nuru-glow-sm"
+                    : "text-secondary-foreground hover:text-foreground",
+                )}
+              >
+                {tab.label}
+              </Link>
+            ))}
+          </div>
+        )}
+
+        <div className="pt-5 text-center">
+          <h2 className="font-display text-lg font-semibold">
+            {mode === "forgot"
               ? "Reset your password"
-              : "Welcome back"}
-        </h1>
-        <p className="mt-1 mb-6 text-sm text-muted-foreground">
-          {mode === "signup"
-            ? "Create an account to join your church and community."
-            : mode === "forgot"
+              : signup
+                ? "Create an account"
+                : "Welcome back"}
+          </h2>
+          <p className="mt-1 text-[13px] text-muted-foreground">
+            {mode === "forgot"
               ? "We'll email you a link to set a new password."
-              : "Sign in to continue your journey."}
-        </p>
+              : signup
+                ? "Start your faith journey"
+                : "Continue your faith journey"}
+          </p>
+        </div>
 
         {sent ? (
-          <div className="nuru-card space-y-3 p-5 text-sm text-secondary-foreground">
+          <div className="nuru-card mt-6 space-y-3 p-5 text-sm text-secondary-foreground">
             <p className="font-display text-base font-semibold text-foreground">Check your email</p>
             <p>
-              We sent a link to <span className="text-cyan">{email}</span>. Open it on this device
+              We sent a link to <span className="text-leaf">{email}</span>. Open it on this device
               to continue.
             </p>
-            <Link
-              to="/auth"
-              search={{ mode: "login" }}
-              className="inline-block text-cyan hover:underline"
-              onClick={() => setSent(false)}
+            <button
+              type="button"
+              className="text-leaf hover:underline"
+              onClick={() => {
+                setSent(false);
+                void navigate({ to: "/auth", search: { mode: "login" } });
+              }}
             >
               Back to sign in
-            </Link>
+            </button>
           </div>
-        ) : (
-          <form onSubmit={submit} className="space-y-3">
-            {mode === "signup" && (
-              <Field label="Full name" id="name">
-                <input
-                  id="name"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  autoComplete="name"
-                  maxLength={100}
-                  className="input-nuru"
-                  placeholder="Stephen Mwangi"
-                />
-              </Field>
-            )}
-            <Field label="Email" id="email">
+        ) : mode === "forgot" ? (
+          <form onSubmit={submitEmail} className="mt-6 space-y-3">
+            <Field icon={Mail} label="Email address">
               <input
-                id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 autoComplete="email"
                 required
-                className="input-nuru"
                 placeholder="you@email.com"
+                className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
               />
             </Field>
-            {mode !== "forgot" && (
-              <Field label="Password" id="password">
-                <input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoComplete={mode === "signup" ? "new-password" : "current-password"}
-                  required
-                  className="input-nuru"
-                  placeholder="••••••••"
-                />
-              </Field>
-            )}
-
-            {mode === "login" && (
-              <div className="flex justify-end">
-                <Link
-                  to="/auth"
-                  search={{ mode: "forgot" }}
-                  className="text-xs text-cyan hover:underline"
-                >
-                  Forgot password?
-                </Link>
-              </div>
-            )}
-
-            <GradientButton type="submit" className="w-full" disabled={busy}>
-              {busy && <Loader2 className="h-4 w-4 animate-spin" />}
-              {mode === "signup"
-                ? "Create account"
-                : mode === "forgot"
-                  ? "Send reset link"
-                  : "Log in"}
-            </GradientButton>
+            <SubmitButton busy={busy}>Send reset link</SubmitButton>
+            <Link
+              to="/auth"
+              search={{ mode: "login" }}
+              className="block pt-1 text-center text-[13px] text-leaf hover:underline"
+            >
+              Back to sign in
+            </Link>
           </form>
-        )}
-
-        {mode !== "forgot" && !sent && (
+        ) : (
           <>
-            <div className="my-6 flex items-center gap-3 text-[11px] text-muted-foreground">
-              <span className="h-px flex-1 bg-border" /> or continue with{" "}
+            <button
+              type="button"
+              disabled={busy || !providers || providers.google === false}
+              onClick={() => void google()}
+              className="mt-6 flex min-h-12 w-full items-center justify-center gap-3 rounded-xl bg-white text-sm font-semibold text-slate-900 transition-opacity hover:opacity-95 disabled:opacity-60"
+            >
+              <GoogleGlyph /> Continue with Google
+            </button>
+            {providers?.google === false && (
+              <p role="status" className="mt-2 text-center text-xs text-muted-foreground">
+                Google sign-in is not enabled yet. Use email and password to continue.
+              </p>
+            )}
+
+            <div className="flex items-center gap-3 py-4">
+              <span className="h-px flex-1 bg-border" />
+              <span className="text-[11px] text-muted-foreground">
+                or {signup ? "sign up" : "sign in"} with
+              </span>
               <span className="h-px flex-1 bg-border" />
             </div>
-            <div className="space-y-2">
-              <SocialButton onClick={() => social("google")} disabled={busy}>
-                <Mail className="h-4 w-4" /> Continue with Google
-              </SocialButton>
-              <SocialButton onClick={() => social("apple")} disabled={busy}>
-                <Apple className="h-4 w-4" /> Continue with Apple
-              </SocialButton>
-              <SocialButton disabled title="Phone sign-in is coming soon">
-                <Phone className="h-4 w-4" /> Continue with Phone
-              </SocialButton>
+
+            <div className="flex gap-1 rounded-xl border border-border bg-surface-2/70 p-1">
+              {(
+                [
+                  { value: "email", label: "Email", icon: Mail },
+                  { value: "phone", label: "Phone", icon: Phone },
+                ] as const
+              ).map((m) => (
+                <button
+                  key={m.value}
+                  type="button"
+                  disabled={
+                    busy || (m.value === "phone" && (!providers || providers.phone === false))
+                  }
+                  onClick={() => setMethod(m.value)}
+                  className={cn(
+                    "flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-[13px] font-semibold transition-colors",
+                    method === m.value
+                      ? "bg-surface text-foreground"
+                      : "text-muted-foreground hover:text-secondary-foreground",
+                  )}
+                >
+                  <m.icon className="h-4 w-4 text-leaf" /> {m.label}
+                </button>
+              ))}
             </div>
+            {providers?.phone === false && (
+              <p className="mt-2 text-center text-xs text-muted-foreground">
+                SMS sign-in is not enabled yet.
+              </p>
+            )}
+            {authError && (
+              <p
+                role="alert"
+                className="mt-3 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-foreground"
+              >
+                {authError}
+              </p>
+            )}
+
+            {method === "email" ? (
+              <form onSubmit={submitEmail} className="mt-4 space-y-3">
+                {signup && (
+                  <Field icon={UserIcon} label="Full name">
+                    <input
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      autoComplete="name"
+                      required
+                      maxLength={100}
+                      placeholder="Stephen Kanyi"
+                      className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                    />
+                  </Field>
+                )}
+                <Field icon={Mail} label="Email address">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    autoComplete="email"
+                    required
+                    placeholder="you@email.com"
+                    className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                  />
+                </Field>
+                <Field
+                  icon={Lock}
+                  label="Password"
+                  hint={signup ? "12+ characters with upper/lowercase, number & symbol" : undefined}
+                >
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    autoComplete={signup ? "new-password" : "current-password"}
+                    required
+                    minLength={signup ? 12 : 1}
+                    placeholder="••••••••"
+                    className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                  />
+                </Field>
+
+                <SubmitButton busy={busy}>{signup ? "Create account" : "Sign In"}</SubmitButton>
+
+                {!signup && (
+                  <Link
+                    to="/auth"
+                    search={{ mode: "forgot" }}
+                    className="block pt-1 text-center text-[13px] text-leaf hover:underline"
+                  >
+                    Forgot password?
+                  </Link>
+                )}
+              </form>
+            ) : (
+              <form onSubmit={otpSent ? verifyCode : sendCode} className="mt-4 space-y-3">
+                {signup && !otpSent && (
+                  <Field icon={UserIcon} label="Full name">
+                    <input
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      autoComplete="name"
+                      required
+                      maxLength={100}
+                      placeholder="Stephen Kanyi"
+                      className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                    />
+                  </Field>
+                )}
+                <Field icon={Phone} label="Phone number" hint="Include your country code">
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    autoComplete="tel"
+                    required
+                    disabled={otpSent}
+                    placeholder="+254712345678"
+                    className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground disabled:opacity-60"
+                  />
+                </Field>
+
+                {otpSent && (
+                  <Field icon={Lock} label="Verification code" hint="6-digit code sent by SMS">
+                    <input
+                      inputMode="numeric"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value)}
+                      autoComplete="one-time-code"
+                      required
+                      maxLength={8}
+                      placeholder="123456"
+                      className="w-full bg-transparent text-sm tracking-[0.3em] outline-none placeholder:tracking-normal placeholder:text-muted-foreground"
+                    />
+                  </Field>
+                )}
+
+                <SubmitButton busy={busy}>
+                  {otpSent ? "Verify & continue" : "Send code"}
+                </SubmitButton>
+
+                {otpSent && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOtpSent(false);
+                      setOtp("");
+                    }}
+                    className="block w-full pt-1 text-center text-[13px] text-leaf hover:underline"
+                  >
+                    Use a different number
+                  </button>
+                )}
+              </form>
+            )}
           </>
         )}
 
-        <p className="mt-8 text-center text-xs text-muted-foreground">
-          {mode === "signup" ? (
-            <>
-              Already have an account?{" "}
-              <Link to="/auth" search={{ mode: "login" }} className="font-semibold text-cyan">
-                Log in
-              </Link>
-            </>
-          ) : (
-            <>
-              Don't have an account?{" "}
-              <Link to="/auth" search={{ mode: "signup" }} className="font-semibold text-cyan">
-                Sign up
-              </Link>
-            </>
-          )}
-        </p>
-        <p className="script mt-6 text-center text-xl text-cyan/80">
-          A brighter generation in Christ.
+        <p className="mt-auto pt-8 text-center text-[11px] leading-relaxed text-muted-foreground">
+          By continuing, you agree to our Terms and
+          <br />
+          Privacy Policy.
         </p>
       </div>
     </div>
   );
 }
 
-function Field({ label, id, children }: { label: string; id: string; children: React.ReactNode }) {
+function Field({
+  icon: Icon,
+  label,
+  hint,
+  children,
+}: {
+  icon: typeof Mail;
+  label: string;
+  hint?: string | undefined;
+  children: React.ReactNode;
+}) {
   return (
-    <div>
-      <label htmlFor={id} className="mb-1.5 block text-xs font-medium text-muted-foreground">
+    <label className="block">
+      <span className="mb-1.5 block text-[12px] font-medium text-secondary-foreground">
         {label}
-      </label>
-      {children}
-    </div>
+      </span>
+      <span className="flex min-h-12 items-center gap-2.5 rounded-xl border border-input bg-surface-2 px-3.5 focus-within:border-primary">
+        <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+        {children}
+      </span>
+      {hint && <span className="mt-1 block text-[11px] text-muted-foreground">{hint}</span>}
+    </label>
   );
 }
 
-function SocialButton({ children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) {
+function SubmitButton({ busy, children }: { busy: boolean; children: React.ReactNode }) {
   return (
     <button
-      type="button"
-      {...props}
-      className="flex min-h-12 w-full items-center justify-center gap-2 rounded-lg border border-border-strong bg-surface-2 text-sm font-medium text-secondary-foreground transition-colors hover:bg-accent disabled:opacity-50"
+      type="submit"
+      disabled={busy}
+      className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-primary-foreground nuru-glow-sm transition-opacity disabled:opacity-60"
     >
+      {busy && <Loader2 className="h-4 w-4 animate-spin" />}
       {children}
     </button>
+  );
+}
+
+function GoogleGlyph() {
+  return (
+    <svg viewBox="0 0 18 18" className="h-4.5 w-4.5" aria-hidden="true">
+      <path
+        fill="#4285F4"
+        d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62Z"
+      />
+      <path
+        fill="#34A853"
+        d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18Z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M3.97 10.72a5.41 5.41 0 0 1 0-3.44V4.95H.96a9 9 0 0 0 0 8.1l3.01-2.33Z"
+      />
+      <path
+        fill="#EA4335"
+        d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58Z"
+      />
+    </svg>
+  );
+}
+
+function AuthSecurityShell({ children }: { children: React.ReactNode }) {
+  return (
+    <main className="flex min-h-dvh items-center justify-center bg-background px-6 py-10">
+      <div className="w-full max-w-sm">
+        <div className="mb-5 text-center">
+          <NuruMark className="mx-auto h-14 w-14" />
+          <h1 className="mt-3 font-display text-xl font-semibold">Secure your Nuru account</h1>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Administrative and MFA-enabled accounts require an additional verification step.
+          </p>
+        </div>
+        {children}
+      </div>
+    </main>
   );
 }

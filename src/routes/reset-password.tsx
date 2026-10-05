@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { GradientButton } from "@/components/nuru/Primitives";
 import { NuruLogo } from "@/components/nuru/Logo";
+import { newPasswordError } from "@/lib/accountSecurity";
 
 export const Route = createFileRoute("/reset-password")({
   head: () => ({
@@ -24,8 +25,9 @@ function ResetPassword() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (password.length < 8) {
-      toast.error("Use at least 8 characters");
+    const passwordIssue = newPasswordError(password);
+    if (passwordIssue) {
+      toast.error(passwordIssue);
       return;
     }
     setBusy(true);
@@ -56,7 +58,8 @@ function ResetPassword() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           className="input-nuru"
-          placeholder="••••••••"
+          minLength={12}
+          placeholder="12+ characters"
         />
         <GradientButton type="submit" className="w-full" disabled={busy}>
           Update password

@@ -1,3 +1,4 @@
+import { CoverImage } from "@/components/nuru/CoverImage";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, BookOpen, Check, MessageCircle, Sparkles } from "lucide-react";
@@ -5,7 +6,6 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { resolveMedia } from "@/lib/media";
 import {
-  completeSession,
   fetchMyCompletedSessions,
   fetchMyProgress,
   fetchSeriesBySlug,
@@ -113,7 +113,7 @@ function SeriesDetail() {
   return (
     <AppShell>
       <div className="relative">
-        <img src={resolveMedia(s.cover_image)} alt="" className="h-52 w-full object-cover" />
+        <CoverImage src={resolveMedia(s.cover_image)} alt="" className="h-52 w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-background/10" />
         <Link
           to="/series"
@@ -168,7 +168,7 @@ function SeriesDetail() {
             }}
             className="inline-flex min-h-11 items-center gap-2 rounded-full border border-border bg-surface-2 px-5 text-sm font-medium"
           >
-            <Sparkles className="h-4 w-4 text-cyan" /> Ask Nuru AI
+            <Sparkles className="h-4 w-4 text-leaf" /> Ask Nuru AI
           </Link>
         </div>
 
@@ -217,7 +217,7 @@ function SeriesDetail() {
         </section>
 
         <div className="nuru-card flex items-start gap-3 px-4 py-4">
-          <MessageCircle className="mt-0.5 h-4 w-4 shrink-0 text-cyan" />
+          <MessageCircle className="mt-0.5 h-4 w-4 shrink-0 text-leaf" />
           <p className="text-xs text-muted-foreground">
             Studying with others? Share a session in Community or with your group and use the
             discussion prompt at the end of each session.

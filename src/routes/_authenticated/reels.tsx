@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { useShareSheet } from "@/hooks/useShareSheet";
 import {
   fetchInterests,
   fetchMyChurchIds,
@@ -25,9 +26,13 @@ import {
   type ReelFeed,
 } from "@/services/reels";
 import { addPrayerJournalEntry } from "@/services/ai";
+import { youtubeReelsInfiniteQuery } from "@/services/youtubeService";
+import { readWatchedExternalReelIds, rememberWatchedExternalReel } from "@/lib/reelWatchHistory";
+import { ensureExternalReelLike } from "@/services/externalReelInteractions";
 import { AppShell } from "@/components/nuru/AppShell";
 import { CardSkeleton } from "@/components/nuru/Primitives";
 import { ReelFeedTabs } from "@/components/nuru/reels/ReelFeedTabs";
+import { ReelGrid } from "@/components/nuru/reels/ReelGrid";
 import { ReelPane } from "@/components/nuru/reels/ReelPane";
 import { ReelComments } from "@/components/nuru/reels/ReelComments";
 import { ReelMoreMenu, ReelWhySheet } from "@/components/nuru/reels/ReelMoreMenu";
@@ -59,21 +64,31 @@ export const Route = createFileRoute("/_authenticated/reels")({
 
 const MUTED_KEY = "nuru_reels_muted";
 const DATA_SAVER_KEY = "nuru_data_saver";
+const YOUTUBE_BATCH_SIZE = 12;
 
 function readMuted() {
   if (typeof window === "undefined") return true;
-  return window.localStorage.getItem(MUTED_KEY) !== "false";
+  try {
+    return window.localStorage.getItem(MUTED_KEY) !== "false";
+  } catch {
+    return true;
+  }
 }
 
 function dataSaverOn() {
   if (typeof window === "undefined") return false;
-  if (window.localStorage.getItem(DATA_SAVER_KEY) === "on") return true;
+  try {
+    if (window.localStorage.getItem(DATA_SAVER_KEY) === "on") return true;
+  } catch {
+    /* use device preference */
+  }
   const conn = (navigator as unknown as { connection?: { saveData?: boolean } }).connection;
   return conn?.saveData === true;
 }
 
 function ReelsScreen() {
-  const { userId } = useAuth();
+  const { userId, loading: authLoading } = useAuth();
+  const shareSheet = useShareSheet();
   const { reel: linkedId } = Route.useSearch();
   const linkedReel = useQuery({
     queryKey: ["linked-reel", userId, linkedId],
@@ -87,6 +102,11 @@ function ReelsScreen() {
   const [muted, setMuted] = useState(true);
   const [dataSaver, setDataSaver] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
+  // A shared reel link should open straight into the full-screen player;
+  // otherwise Reels opens on the browsable grid.
+  const [view, setView] = useState<"grid" | "feed">(linkedId ? "feed" : "grid");
+  const [youtubeVisibleCount, setYoutubeVisibleCount] = useState(YOUTUBE_BATCH_SIZE);
+  const [watchedExternalIds, setWatchedExternalIds] = useState<Set<string>>(new Set());
   const [hiddenIds, setHiddenIds] = useState<string[]>([]);
   const [commentsFor, setCommentsFor] = useState<Reel | null>(null);
   const [readFor, setReadFor] = useState<Reel | null>(null);
@@ -101,6 +121,10 @@ function ReelsScreen() {
     setMuted(readMuted());
     setDataSaver(dataSaverOn());
   }, []);
+
+  useEffect(() => {
+    setWatchedExternalIds(readWatchedExternalReelIds(userId));
+  }, [userId]);
 
   const interests = useQuery({
     queryKey: ["interests", userId],
@@ -143,6 +167,7 @@ function ReelsScreen() {
   const reels = useInfiniteQuery({
     queryKey: feedKey,
     initialPageParam: 0,
+    enabled: !!userId && !authLoading,
     queryFn: ({ pageParam }) =>
       fetchReelPage({
         feed,
@@ -155,6 +180,64 @@ function ReelsScreen() {
     getNextPageParam: (lastPage, allPages) =>
       lastPage.length === REELS_PAGE_SIZE ? allPages.length : undefined,
   });
+
+  /*
+   * YouTube discovery is intentionally paged. The trusted catalogue is much
+   * larger than a phone should download or render at once, so only the next
+   * server page is requested when the viewer approaches the end of what is
+   * already buffered.
+   */
+  const youtubeFallback = useInfiniteQuery(youtubeReelsInfiniteQuery(userId));
+
+  const loadedYoutubeVideos = useMemo(
+    () => (youtubeFallback.data?.pages ?? []).flatMap((page) => page.videos),
+    [youtubeFallback.data],
+  );
+
+  const unseenYoutubeVideos = useMemo(() => {
+    const seen = new Set<string>();
+    return loadedYoutubeVideos.filter((video) => {
+      if (watchedExternalIds.has(video.youtubeVideoId) || seen.has(video.youtubeVideoId))
+        return false;
+      seen.add(video.youtubeVideoId);
+      return true;
+    });
+  }, [loadedYoutubeVideos, watchedExternalIds]);
+
+  const youtubeReels = useMemo<Reel[]>(() => {
+    return unseenYoutubeVideos.slice(0, youtubeVisibleCount).map((v) => ({
+      id: `yt:${v.youtubeVideoId}`,
+      author_id: null,
+      creator_name: v.channelName,
+      creator_handle: v.channelName.replace(/\s+/g, "").toLowerCase(),
+      creator_avatar_url: null,
+      caption: v.title,
+      hashtags: null,
+      video_url: null,
+      poster_url: v.thumbnail || null,
+      audio_title: "Original audio",
+      scripture_ref: null,
+      topic: null,
+      is_bible_teaching: false,
+      church_id: null,
+      series_id: null,
+      like_count: 0,
+      comment_count: 0,
+      view_count: 0,
+      created_at: v.publishedAt || new Date().toISOString(),
+      source_type: "youtube",
+      rights_status: "external_embed",
+      external_id: v.youtubeVideoId,
+      external_url: `https://www.youtube.com/watch?v=${v.youtubeVideoId}`,
+      title: v.title,
+      churches: null,
+    }));
+  }, [unseenYoutubeVideos, youtubeVisibleCount]);
+
+  const youtubeTotal = unseenYoutubeVideos.length;
+  const hasBufferedYouTube = youtubeVisibleCount < youtubeTotal;
+  const hasMoreYouTube =
+    feed === "For You" && (hasBufferedYouTube || youtubeFallback.hasNextPage === true);
 
   /* de-duplicate across pages and drop anything the person muted */
   const items = useMemo(() => {
@@ -172,33 +255,98 @@ function ReelsScreen() {
         out.push(r);
       }
     }
+    // Discovery content belongs only in For You. Following and My Church must
+    // never be padded with unrelated videos just to avoid an empty state.
+    if (feed === "For You") {
+      for (const r of youtubeReels) {
+        if (seen.has(r.id) || hidden.has(r.id)) continue;
+        seen.add(r.id);
+        out.push(r);
+      }
+    }
     return out;
-  }, [reels.data, feedback.data, hiddenIds, feed, linkedReel.data]);
+  }, [reels.data, feedback.data, hiddenIds, feed, linkedReel.data, youtubeReels]);
 
-  /* auto-load the next page as the end approaches */
+  /* auto-load the next DB/YouTube page only as the viewer approaches the end */
   useEffect(() => {
     const node = sentinelRef.current;
-    if (!node || !reels.hasNextPage) return;
+    if (!node || (!reels.hasNextPage && !hasMoreYouTube)) return;
     const io = new IntersectionObserver(
       (entries) => {
-        if (entries.some((e) => e.isIntersecting) && !reels.isFetchingNextPage)
-          void reels.fetchNextPage();
+        if (!entries.some((e) => e.isIntersecting)) return;
+        if (reels.hasNextPage && !reels.isFetchingNextPage) void reels.fetchNextPage();
+
+        if (feed === "For You") {
+          if (hasBufferedYouTube) {
+            setYoutubeVisibleCount((count) => Math.min(count + YOUTUBE_BATCH_SIZE, youtubeTotal));
+          } else if (youtubeFallback.hasNextPage && !youtubeFallback.isFetchingNextPage) {
+            void youtubeFallback.fetchNextPage();
+          }
+        }
       },
       { root: scrollerRef.current, rootMargin: "600px 0px" },
     );
     io.observe(node);
     return () => io.disconnect();
-  }, [reels, items.length]);
+    // Re-observe when the grid/feed swap replaces the sentinel/scroller nodes.
+  }, [
+    reels,
+    items.length,
+    view,
+    feed,
+    hasMoreYouTube,
+    hasBufferedYouTube,
+    youtubeTotal,
+    youtubeFallback.hasNextPage,
+    youtubeFallback.isFetchingNextPage,
+    youtubeFallback.fetchNextPage,
+  ]);
+
+  /* Once a new YouTube page lands, make its first small batch available. */
+  useEffect(() => {
+    if (feed !== "For You" || youtubeFallback.isFetchingNextPage) return;
+    if (youtubeVisibleCount < youtubeTotal) {
+      setYoutubeVisibleCount((count) =>
+        Math.min(Math.max(count, YOUTUBE_BATCH_SIZE), youtubeTotal),
+      );
+    }
+  }, [feed, youtubeFallback.isFetchingNextPage, youtubeTotal, youtubeVisibleCount]);
 
   useEffect(() => {
     scrollerRef.current?.scrollTo({ top: 0 });
     setActiveIndex(0);
+    setView(linkedId ? "feed" : "grid");
+    setYoutubeVisibleCount(YOUTUBE_BATCH_SIZE);
+    // Only react to the person switching feeds, not to linkedId itself.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [feed]);
 
+  /* jump the scroller straight to the tapped tile the instant the grid hands off to the feed */
+  useLayoutEffect(() => {
+    const node = scrollerRef.current;
+    if (view !== "feed" || !node) return;
+    node.scrollTop = activeIndex * node.clientHeight;
+    // Only run this jump when switching into feed mode, not on every activeIndex change
+    // while already scrolling through it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view]);
+
   const onActive = useCallback((index: number) => setActiveIndex(index), []);
+  function openReel(index: number) {
+    setActiveIndex(index);
+    setView("feed");
+  }
   const onView = useCallback(
     (reel: Reel) => {
-      if (userId) void recordReelView(userId, reel.id, 2, false);
+      if (reel.external_id) {
+        // Persist for the next feed load without removing the Reel while it is
+        // actively playing. Removing it immediately would make the screen jump.
+        rememberWatchedExternalReel(userId, reel.external_id);
+        return;
+      }
+      if (userId && /^[0-9a-f-]{36}$/i.test(reel.id)) {
+        void recordReelView(userId, reel.id, 2, false).catch(() => undefined);
+      }
     },
     [userId],
   );
@@ -206,7 +354,11 @@ function ReelsScreen() {
   function toggleMuted() {
     setMuted((m) => {
       const next = !m;
-      window.localStorage.setItem(MUTED_KEY, String(next));
+      try {
+        window.localStorage.setItem(MUTED_KEY, String(next));
+      } catch {
+        /* playback still works without storage */
+      }
       return next;
     });
   }
@@ -275,22 +427,15 @@ function ReelsScreen() {
     fn();
   }
 
-  async function share(reel: Reel) {
-    const url = `${window.location.origin}/reels?reel=${reel.id}`;
+  function share(reel: Reel) {
+    const url = reel.external_url ?? `${window.location.origin}/reels?reel=${reel.id}`;
     const text = reel.caption ? reel.caption.slice(0, 120) : "A short teaching on Nuru Faith";
-    try {
-      if (navigator.share) await navigator.share({ title: "Nuru Faith", text, url });
-      else {
-        await navigator.clipboard.writeText(url);
-        toast.success("Link copied");
-      }
-    } catch {
-      /* dismissed */
-    }
+    void shareSheet.share({ title: "Nuru Faith", text, url });
   }
 
   async function copyLink(reel: Reel) {
-    await navigator.clipboard.writeText(`${window.location.origin}/reels?reel=${reel.id}`);
+    const url = reel.external_url ?? `${window.location.origin}/reels?reel=${reel.id}`;
+    await navigator.clipboard.writeText(url);
     toast.success("Link copied");
   }
 
@@ -298,6 +443,11 @@ function ReelsScreen() {
     setHiddenIds((h) => [...h, reel.id]);
     setMoreFor(null);
     toast.success("You'll see fewer Reels like this");
+
+    if (reel.external_id) {
+      rememberWatchedExternalReel(userId, reel.external_id);
+      return;
+    }
     if (userId) void addReelFeedback(userId, reel.id).catch(() => undefined);
   }
 
@@ -321,16 +471,33 @@ function ReelsScreen() {
 
   const likeSet = likes.data ?? [];
   const saveSet = saves.data ?? [];
-  const initialLoading = reels.isLoading || linkedReel.isLoading;
+  const initialLoading =
+    authLoading ||
+    reels.isLoading ||
+    linkedReel.isLoading ||
+    (feed === "For You" && items.length === 0 && youtubeFallback.isLoading);
+  const feedError =
+    reels.isError || (feed === "For You" && youtubeFallback.isError && items.length === 0);
 
   return (
     <AppShell flush>
-      <div className="relative h-[calc(100dvh-4.5rem-env(safe-area-inset-bottom))] w-full bg-black">
+      <div className="relative h-[calc(100dvh-4.5rem-env(safe-area-inset-bottom))] w-full overflow-hidden bg-slate-950 md:rounded-3xl">
         <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-center pt-[max(0.75rem,env(safe-area-inset-top))]">
           <div className="pointer-events-auto">
             <ReelFeedTabs value={feed} onChange={setFeed} />
           </div>
         </div>
+
+        {view === "feed" && (
+          <button
+            type="button"
+            onClick={() => setView("grid")}
+            aria-label="Back to Reels grid"
+            className="pointer-events-auto absolute left-3 top-[max(0.75rem,env(safe-area-inset-top))] z-20 rounded-full bg-black/40 p-2 text-white backdrop-blur-md"
+          >
+            <ArrowLeft className="h-4.5 w-4.5" />
+          </button>
+        )}
 
         {initialLoading && (
           <div className="flex h-full items-center justify-center p-6">
@@ -341,13 +508,32 @@ function ReelsScreen() {
         )}
 
         {!initialLoading && items.length === 0 && (
-          <EmptyFeed feed={feed} isError={reels.isError} onRetry={() => void reels.refetch()} />
+          <EmptyFeed
+            feed={feed}
+            isError={feedError}
+            onRetry={() => {
+              void reels.refetch();
+              if (feed === "For You") void youtubeFallback.refetch();
+            }}
+          />
         )}
 
-        {items.length > 0 && (
+        {items.length > 0 && view === "grid" && (
+          <div ref={scrollerRef} className="no-scrollbar h-full overflow-y-auto pt-16">
+            <ReelGrid items={items} onOpen={openReel} />
+            <div ref={sentinelRef} aria-hidden="true" className="h-1" />
+            {reels.isFetchingNextPage && (
+              <div className="flex items-center justify-center gap-2 py-4 text-xs text-white/70">
+                <Loader2 className="h-4 w-4 animate-spin" /> Loading more
+              </div>
+            )}
+          </div>
+        )}
+
+        {items.length > 0 && view === "feed" && (
           <div
             ref={scrollerRef}
-            className="no-scrollbar h-full snap-y snap-mandatory overflow-y-auto overscroll-contain"
+            className="no-scrollbar mx-auto mt-16 h-[calc(100%_-_4rem)] w-full max-w-[440px] snap-y snap-mandatory overflow-y-auto overscroll-contain md:rounded-t-2xl"
           >
             {items.map((reel, i) => (
               <ReelPane
@@ -371,6 +557,32 @@ function ReelsScreen() {
                     likeMutation.mutate({ reelId: reel.id, liked: likeSet.includes(reel.id) }),
                   )
                 }
+                onDoubleLike={() => {
+                  if (reel.external_id) {
+                    requireAuth(() => {
+                      const stateKey = ["external-reel-state", userId, reel.external_id] as const;
+                      qc.setQueryData(
+                        stateKey,
+                        (
+                          old:
+                            { liked?: boolean; saved?: boolean; commentCount?: number } | undefined,
+                        ) => ({
+                          liked: true,
+                          saved: old?.saved ?? false,
+                          commentCount: old?.commentCount ?? 0,
+                        }),
+                      );
+                      void ensureExternalReelLike(userId!, reel.external_id!)
+                        .then(() => qc.invalidateQueries({ queryKey: stateKey }))
+                        .catch(() => {
+                          void qc.invalidateQueries({ queryKey: stateKey });
+                          toast.error("Couldn't save that like");
+                        });
+                    });
+                  } else if (!likeSet.includes(reel.id)) {
+                    requireAuth(() => likeMutation.mutate({ reelId: reel.id, liked: false }));
+                  }
+                }}
                 onSave={() =>
                   requireAuth(() =>
                     saveMutation.mutate({ reelId: reel.id, saved: saveSet.includes(reel.id) }),
@@ -390,17 +602,23 @@ function ReelsScreen() {
                 onComments={() => setCommentsFor(reel)}
                 onShare={() => void share(reel)}
                 onMore={() => setMoreFor(reel)}
-                onProfile={() => navigate({ to: "/profile" })}
+                onProfile={() => {
+                  if (reel.external_url) {
+                    window.open(reel.external_url, "_blank", "noopener,noreferrer");
+                  } else {
+                    void navigate({ to: "/profile" });
+                  }
+                }}
                 onRead={() => setReadFor(reel)}
                 onPray={() =>
                   requireAuth(() => {
                     void addPrayerJournalEntry({
                       userId: userId!,
                       title: reel.caption?.slice(0, 60) ?? "Prayer from a Reel",
-                      content: `Lord, take what I just heard and make it real in my life.\n\n"${reel.caption ?? ""}"`,
+                      content: `Lord, take what I just heard and make it real in my life.\n\n"${reel.caption ?? ""}"${reel.external_url ? `\n\nSource: ${reel.external_url}` : ""}`,
                       scriptureRef: reel.scripture_ref,
-                      source: "reel",
-                      sourceId: reel.id,
+                      source: reel.external_id ? "external_reel" : "reel",
+                      sourceId: /^[0-9a-f-]{36}$/i.test(reel.id) ? reel.id : null,
                     })
                       .then(() => toast.success("Saved to your prayer journal"))
                       .catch(() => toast.error("Couldn't save that"));
@@ -427,17 +645,20 @@ function ReelsScreen() {
 
             <div ref={sentinelRef} aria-hidden="true" className="h-1" />
 
-            {reels.isFetchingNextPage && (
+            {(reels.isFetchingNextPage || youtubeFallback.isFetchingNextPage) && (
               <div className="flex snap-start items-center justify-center gap-2 py-4 text-xs text-white/70">
                 <Loader2 className="h-4 w-4 animate-spin" /> Loading more
               </div>
             )}
 
-            {reels.isError && !reels.isLoading && (
+            {(reels.isError || youtubeFallback.isFetchNextPageError) && !initialLoading && (
               <div className="flex snap-start flex-col items-center gap-2 py-6 text-center">
                 <p className="text-sm text-white/80">Couldn't load more.</p>
                 <button
-                  onClick={() => void reels.fetchNextPage()}
+                  onClick={() => {
+                    if (reels.isError) void reels.fetchNextPage();
+                    if (youtubeFallback.isFetchNextPageError) void youtubeFallback.fetchNextPage();
+                  }}
                   className="rounded-full bg-white/15 px-4 py-2 text-xs font-semibold text-white"
                 >
                   Retry
@@ -445,7 +666,10 @@ function ReelsScreen() {
               </div>
             )}
 
-            {!reels.hasNextPage && !reels.isFetchingNextPage && <EndOfFeed />}
+            {!reels.hasNextPage &&
+              !reels.isFetchingNextPage &&
+              !youtubeFallback.isFetchingNextPage &&
+              !hasMoreYouTube && <EndOfFeed />}
           </div>
         )}
       </div>
@@ -483,6 +707,7 @@ function ReelsScreen() {
         />
       )}
       {whyFor && <ReelWhySheet reasons={whyReasons(whyFor)} onClose={() => setWhyFor(null)} />}
+      {shareSheet.node}
     </AppShell>
   );
 }

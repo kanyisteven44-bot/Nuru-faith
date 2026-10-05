@@ -41,6 +41,12 @@ export function DiscoveryResults({
   return (
     <section className="space-y-2 px-4 pb-5" aria-label={DISCOVERY_LABELS[kind]}>
       <SectionHeader title={DISCOVERY_LABELS[kind]} />
+      {kind === "churches" && (
+        <p className="text-xs text-muted-foreground">
+          Browse by county, town, denomination and name. Search a county or church name above. Map
+          listings do not imply membership or verification by Nuru Faith.
+        </p>
+      )}
       {results.isLoading && <CardSkeleton count={2} height="h-20" />}
       {results.isError && <ErrorState onRetry={() => void results.refetch()} />}
       {results.isSuccess && items.length === 0 && (

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bookmark, ChevronDown, Pause, Play, Repeat2, Share2, Volume2, VolumeX } from "lucide-react";
+import { Bookmark, ChevronDown, ChevronRight, ListMusic, Pause, Play, Repeat2, Share2, SkipForward, Volume2, VolumeX } from "lucide-react";
 import { fetchMediaCatalog, fetchMediaItemBySourceExternalId, fetchMySavedMediaIds, toggleSavedMedia, type MediaItem } from "@/services/media";
 import { CoverImage } from "@/components/nuru/CoverImage";
 import { CardSkeleton, EmptyState, PrimaryButton } from "@/components/nuru/Primitives";
@@ -170,12 +170,20 @@ export function MediaCatalog({
           Could not load the next page. Tap Load more to retry.
         </p>
       )}
-      {selected && <MediaPlayback item={selected} onClose={() => setSelected(null)} />}
+      {selected && <MediaPlayback item={selected} onClose={() => setSelected(null)} onSelect={setSelected} />}
     </section>
   );
 }
 
-export function MediaPlayback({ item, onClose }: { item: MediaItem; onClose: () => void }) {
+export function MediaPlayback({
+  item,
+  onClose,
+  onSelect,
+}: {
+  item: MediaItem;
+  onClose: () => void;
+  onSelect?: (item: MediaItem) => void;
+}) {
   const { userId } = useAuth();
   const qc = useQueryClient();
   const shareSheet = useShareSheet();
@@ -187,6 +195,7 @@ export function MediaPlayback({ item, onClose }: { item: MediaItem; onClose: () 
   const [repeat, setRepeat] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [audioDuration, setAudioDuration] = useState(0);
+  const [queueOpen, setQueueOpen] = useState(false);
 
   useEffect(() => {
     setAudioFailed(false);
@@ -195,12 +204,51 @@ export function MediaPlayback({ item, onClose }: { item: MediaItem; onClose: () 
     setRepeat(false);
     setCurrentTime(0);
     setAudioDuration(0);
+    setQueueOpen(false);
   }, [item.id]);
 
   const video = item.source === "youtube" ? youtubeVideoId(item.external_id) : null;
   const audio = playableAudioUrl(item.audio_url);
   const artwork = videoArtwork(item.source, item.external_id, resolveMedia(item.thumbnail_url));
   const isVideo = !!video;
+  const queueMediaType: "music" | "podcast" = item.media_type === "podcast" ? "podcast" : "music";
+  const queuePlayback: "audio" | "video" = isVideo ? "video" : "audio";
+
+  const queue = useQuery({
+    queryKey: ["media-up-next", queueMediaType, queuePlayback, item.id, item.external_id],
+    queryFn: async () => {
+      const page = await fetchMediaCatalog({
+        mediaType: queueMediaType,
+        playback: queuePlayback,
+        page: 0,
+      });
+      const currentIndex = page.items.findIndex(
+        (candidate) =>
+          candidate.id === item.id ||
+          (!!item.external_id && candidate.external_id === item.external_id),
+      );
+      const ordered =
+        currentIndex >= 0
+          ? [...page.items.slice(currentIndex + 1), ...page.items.slice(0, currentIndex)]
+          : page.items;
+      return ordered
+        .filter(
+          (candidate) =>
+            candidate.id !== item.id &&
+            (!item.external_id || candidate.external_id !== item.external_id),
+        )
+        .slice(0, 8);
+    },
+    staleTime: 60_000,
+  });
+  const upNext = queue.data ?? [];
+  const nextItem = upNext[0] ?? null;
+
+  function playQueueItem(next: MediaItem) {
+    if (!onSelect) return;
+    setPlaying(false);
+    onSelect(next);
+  }
 
   const canonicalItem = useQuery({
     queryKey: ["canonical-media-item", item.source, item.external_id],
@@ -405,7 +453,16 @@ export function MediaPlayback({ item, onClose }: { item: MediaItem; onClose: () 
             </div>
           )}
 
-          <div className="mt-8 flex items-center justify-center">
+          <div className="mt-8 grid grid-cols-[3.25rem_5rem_3.25rem] items-center justify-center gap-7">
+            <button
+              type="button"
+              onClick={() => setQueueOpen((value) => !value)}
+              className={softButton}
+              aria-expanded={queueOpen}
+              aria-label="Show Up next"
+            >
+              <ListMusic className="h-5 w-5" />
+            </button>
             <button
               type="button"
               onClick={() => void togglePlayback()}
@@ -418,6 +475,15 @@ export function MediaPlayback({ item, onClose }: { item: MediaItem; onClose: () 
                 <Play className="ml-1 h-9 w-9 fill-current" />
               )}
             </button>
+            <button
+              type="button"
+              disabled={!nextItem || !onSelect}
+              onClick={() => nextItem && playQueueItem(nextItem)}
+              className={`${softButton} disabled:cursor-not-allowed disabled:opacity-35`}
+              aria-label={nextItem ? `Play next: ${nextItem.title}` : "No next song available"}
+            >
+              <SkipForward className="h-5 w-5 fill-current" />
+            </button>
           </div>
 
           <button
@@ -428,6 +494,90 @@ export function MediaPlayback({ item, onClose }: { item: MediaItem; onClose: () 
             {muted ? <VolumeX className="h-4.5 w-4.5" /> : <Volume2 className="h-4.5 w-4.5" />}
             {muted ? "Sound off" : "Sound on"}
           </button>
+
+          {nextItem && onSelect && (
+            <section className="mt-7 w-full" aria-label="Up next">
+              <button
+                type="button"
+                onClick={() => setQueueOpen((value) => !value)}
+                className="flex w-full items-center gap-3 rounded-[22px] border border-white/80 bg-[#F3F6FB] p-3 text-left shadow-[7px_7px_18px_rgba(166,177,195,0.26),-7px_-7px_18px_rgba(255,255,255,0.95)]"
+              >
+                <CoverImage
+                  src={videoArtwork(
+                    nextItem.source,
+                    nextItem.external_id,
+                    resolveMedia(nextItem.thumbnail_url),
+                  )}
+                  alt=""
+                  width={112}
+                  height={72}
+                  className="h-14 w-20 shrink-0 rounded-xl object-cover"
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[10px] font-bold uppercase tracking-[0.18em] text-[#3F83DC]">
+                    Up next
+                  </span>
+                  <span className="mt-0.5 block truncate text-sm font-semibold text-[#182033]">
+                    {nextItem.title}
+                  </span>
+                  <span className="block truncate text-xs text-[#7A8597]">
+                    {nextItem.creator_name || "Nuru Faith"}
+                  </span>
+                </span>
+                <ChevronRight
+                  className={`h-5 w-5 shrink-0 text-[#7A8597] transition-transform ${queueOpen ? "rotate-90" : ""}`}
+                />
+              </button>
+
+              {queueOpen && (
+                <div className="mt-3 overflow-hidden rounded-[22px] border border-white/80 bg-white/55 shadow-[0_14px_35px_rgba(79,91,112,0.12)] backdrop-blur-xl">
+                  <div className="flex items-center justify-between border-b border-[#DDE4EE] px-4 py-3">
+                    <div>
+                      <p className="text-sm font-semibold text-[#182033]">Up next</p>
+                      <p className="text-[11px] text-[#7A8597]">
+                        {upNext.length} {queueMediaType === "music" ? "songs" : "episodes"} ready
+                      </p>
+                    </div>
+                    <ListMusic className="h-4.5 w-4.5 text-[#3F83DC]" />
+                  </div>
+                  <div className="max-h-72 overflow-y-auto p-2">
+                    {upNext.map((candidate, index) => (
+                      <button
+                        key={candidate.id}
+                        type="button"
+                        onClick={() => playQueueItem(candidate)}
+                        className="flex w-full items-center gap-3 rounded-2xl p-2.5 text-left transition-colors hover:bg-white/80"
+                      >
+                        <span className="w-5 shrink-0 text-center text-[11px] font-semibold text-[#98A2B2]">
+                          {index + 1}
+                        </span>
+                        <CoverImage
+                          src={videoArtwork(
+                            candidate.source,
+                            candidate.external_id,
+                            resolveMedia(candidate.thumbnail_url),
+                          )}
+                          alt=""
+                          width={96}
+                          height={64}
+                          className="h-12 w-16 shrink-0 rounded-xl object-cover"
+                        />
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-semibold text-[#182033]">
+                            {candidate.title}
+                          </span>
+                          <span className="block truncate text-[11px] text-[#7A8597]">
+                            {candidate.creator_name || "Nuru Faith"}
+                          </span>
+                        </span>
+                        <Play className="h-4 w-4 shrink-0 text-[#3F83DC]" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </section>
+          )}
 
           {!isVideo && (
             <audio

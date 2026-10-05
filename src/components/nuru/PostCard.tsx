@@ -2,8 +2,8 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bookmark, Flag, Heart, MessageCircle, Share2 } from "lucide-react";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
 import { resolveMedia } from "@/lib/media";
+import { cn } from "@/lib/utils";
 import { generatedAvatar } from "@/lib/avatar";
 import { compactNumber, initials, timeAgo } from "@/lib/format";
 import { useShareSheet } from "@/hooks/useShareSheet";
@@ -14,6 +14,7 @@ import {
   togglePostLike,
   toggleSavedPost,
 } from "@/services/content";
+import { PostPresentation } from "./PostMedia";
 import { Chip } from "./Primitives";
 
 export type PostRow = {
@@ -22,6 +23,8 @@ export type PostRow = {
   kind: string;
   body: string | null;
   media_url: string | null;
+  music_track_id?: string | null;
+  music_start_seconds?: number;
   scripture_ref: string | null;
   hashtags: string[] | null;
   like_count: number;
@@ -101,16 +104,12 @@ export function PostCard({
         <p className="px-1 pb-3 text-xs font-semibold text-leaf">{post.scripture_ref}</p>
       )}
 
-      {post.media_url && (
-        <img
-          src={resolveMedia(post.media_url)}
-          alt=""
-          loading="lazy"
-          width={1024}
-          height={640}
-          className="aspect-[16/10] w-full rounded-2xl border border-border object-cover"
-        />
-      )}
+      <PostPresentation
+        url={post.media_url}
+        kind={post.kind}
+        musicId={post.music_track_id ?? null}
+        start={post.music_start_seconds ?? 0}
+      />
 
       {post.hashtags?.length ? (
         <p className="px-1 pt-3 text-xs text-leaf">{post.hashtags.join(" ")}</p>

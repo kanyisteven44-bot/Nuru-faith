@@ -192,6 +192,9 @@ export async function createPost(input: {
   kind: string;
   body: string;
   scripture_ref?: string | null;
+  media_url?: string | null;
+  music_track_id?: string | null;
+  music_start_seconds?: number;
   group_id?: string | null;
 }) {
   const { error } = await supabase.from("posts").insert(input as never);

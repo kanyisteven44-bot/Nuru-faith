@@ -1,15 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  ArrowLeft,
-  MessageCircle,
-  Phone,
-  Search,
-  SquarePen,
-  Users,
-  Video,
-} from "lucide-react";
+import { ArrowLeft, MessageCircle, Phone, Search, SquarePen, Users, Video } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchMentors } from "@/services/content";
@@ -21,13 +13,8 @@ import {
   type ChatProfile,
   type ChatTarget,
 } from "@/services/messaging";
-import {
-  endCallSession,
-  fetchIncomingCall,
-  type CallKind,
-} from "@/services/calls";
+import { useCallManager } from "@/components/nuru/CallManager";
 import { AppShell, Avatar, ScreenHeader } from "@/components/nuru/AppShell";
-import { CallPanel } from "@/components/nuru/CallPanel";
 import { CoverImage } from "@/components/nuru/CoverImage";
 import { RichChatThread } from "@/components/nuru/RichChatThread";
 import { CardSkeleton, EmptyState, ErrorState } from "@/components/nuru/Primitives";
@@ -51,23 +38,12 @@ export const Route = createFileRoute("/_authenticated/messages")({
 const INBOX_TABS = ["All", "People", "Groups"] as const;
 type InboxTab = (typeof INBOX_TABS)[number];
 
-type ActiveCall = {
-  kind: CallKind;
-  peer: ChatProfile;
-  incoming?: {
-    id: string;
-    kind: string;
-    offer: unknown;
-    caller_id: string;
-  };
-};
-
 function MessagesScreen() {
   const { userId } = useAuth();
   const qc = useQueryClient();
   const search = Route.useSearch();
   const [tab, setTab] = useState<InboxTab>("All");
-  const [activeCall, setActiveCall] = useState<ActiveCall | null>(null);
+  const { activeCall, startCall: beginCall } = useCallManager();
 
   const mentors = useQuery({ queryKey: ["mentors"], queryFn: fetchMentors });
   const groups = useQuery({
@@ -94,13 +70,6 @@ function MessagesScreen() {
     enabled: !!userId,
     refetchInterval: 5000,
   });
-  const incoming = useQuery({
-    queryKey: ["incoming-call", userId],
-    queryFn: () => fetchIncomingCall(userId!),
-    enabled: !!userId && !activeCall,
-    refetchInterval: activeCall ? false : 2000,
-  });
-
   useEffect(() => {
     if (!userId) return;
     void markDirectMessagesDelivered(userId).then(() => {
@@ -113,9 +82,8 @@ function MessagesScreen() {
     for (const thread of directThreads.data ?? []) ids.add(thread.peer_id);
     for (const thread of mentorThreads.data ?? []) ids.add(thread.requester_id);
     if (search.user) ids.add(search.user);
-    if (incoming.data?.caller_id) ids.add(incoming.data.caller_id);
     return [...ids];
-  }, [directThreads.data, incoming.data?.caller_id, mentorThreads.data, search.user]);
+  }, [directThreads.data, mentorThreads.data, search.user]);
 
   const profiles = useQuery({
     queryKey: ["message-profiles", participantIds],
@@ -138,63 +106,25 @@ function MessagesScreen() {
           : undefined;
 
   const directName =
-    directProfile?.full_name?.trim() ||
-    directProfile?.username?.trim() ||
-    "Nuru member";
-  const title =
-    search.user
-      ? directName
-      : group?.name ??
-        (mentor?.user_id === userId
-          ? profiles.data?.[requester ?? ""]?.full_name ||
-            profiles.data?.[requester ?? ""]?.username ||
-            "Mentor conversation"
-          : mentor?.display_name) ??
-        "Messages";
+    directProfile?.full_name?.trim() || directProfile?.username?.trim() || "Nuru member";
+  const title = search.user
+    ? directName
+    : (group?.name ??
+      (mentor?.user_id === userId
+        ? profiles.data?.[requester ?? ""]?.full_name ||
+          profiles.data?.[requester ?? ""]?.username ||
+          "Mentor conversation"
+        : mentor?.display_name) ??
+      "Messages");
 
   const inThread = !!(search.user || search.group || search.mentor);
   const loading =
-    mentors.isLoading ||
-    groups.isLoading ||
-    mentorThreads.isLoading ||
-    directThreads.isLoading;
+    mentors.isLoading || groups.isLoading || mentorThreads.isLoading || directThreads.isLoading;
   const failed =
-    mentors.isError ||
-    groups.isError ||
-    mentorThreads.isError ||
-    directThreads.isError;
+    mentors.isError || groups.isError || mentorThreads.isError || directThreads.isError;
 
-  const incomingProfile = incoming.data?.caller_id
-    ? profiles.data?.[incoming.data.caller_id]
-    : undefined;
-
-  function startCall(kind: CallKind) {
-    if (!directProfile) return;
-    setActiveCall({ kind, peer: directProfile });
-  }
-
-  async function declineIncoming() {
-    if (!incoming.data) return;
-    try {
-      await endCallSession(incoming.data.id, "declined");
-      await incoming.refetch();
-    } catch {
-      // The next poll will reconcile call state.
-    }
-  }
-
-  function acceptIncoming() {
-    if (!incoming.data || !incomingProfile) return;
-    setActiveCall({
-      kind: incoming.data.kind as CallKind,
-      peer: incomingProfile,
-      incoming: {
-        id: incoming.data.id,
-        kind: incoming.data.kind,
-        offer: incoming.data.offer,
-        caller_id: incoming.data.caller_id,
-      },
-    });
+  function startCall(kind: "audio" | "video") {
+    if (directProfile) beginCall(kind, directProfile);
   }
 
   return (
@@ -246,15 +176,6 @@ function MessagesScreen() {
       />
 
       <div className={cn("px-4", inThread ? "pb-4" : "pb-6")}>
-        {incoming.data && incomingProfile && !activeCall && (
-          <IncomingCallCard
-            profile={incomingProfile}
-            kind={incoming.data.kind as CallKind}
-            onAccept={acceptIncoming}
-            onDecline={() => void declineIncoming()}
-          />
-        )}
-
         {inThread ? (
           <ThreadView
             target={target}
@@ -312,65 +233,7 @@ function MessagesScreen() {
           </>
         )}
       </div>
-
-      {activeCall && userId && (
-        <CallPanel
-          userId={userId}
-          peer={activeCall.peer}
-          kind={activeCall.kind}
-          incoming={activeCall.incoming ?? null}
-          onClose={() => {
-            setActiveCall(null);
-            void incoming.refetch();
-          }}
-        />
-      )}
     </AppShell>
-  );
-}
-
-function IncomingCallCard({
-  profile,
-  kind,
-  onAccept,
-  onDecline,
-}: {
-  profile: ChatProfile;
-  kind: CallKind;
-  onAccept: () => void;
-  onDecline: () => void;
-}) {
-  const name = profile.full_name || profile.username || "Nuru member";
-  return (
-    <section className="mb-4 flex items-center gap-3 rounded-2xl border border-primary/25 bg-primary/8 p-3 shadow-sm">
-      <Avatar
-        url={profile.avatar_url}
-        name={name}
-        seed={profile.id}
-        size="md"
-        className="h-12 w-12"
-      />
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-bold">{name}</p>
-        <p className="text-xs text-muted-foreground">
-          Incoming {kind === "video" ? "video" : "audio"} call
-        </p>
-      </div>
-      <button
-        type="button"
-        onClick={onDecline}
-        className="min-h-10 rounded-full border border-destructive/30 px-3 text-xs font-bold text-destructive"
-      >
-        Decline
-      </button>
-      <button
-        type="button"
-        onClick={onAccept}
-        className="min-h-10 rounded-full bg-growth px-3 text-xs font-bold text-white"
-      >
-        Answer
-      </button>
-    </section>
   );
 }
 
@@ -533,7 +396,10 @@ function Inbox({
                       {preview}
                     </span>
                   </span>
-                  <time className="shrink-0 text-[10px] text-muted-foreground" dateTime={thread.created_at}>
+                  <time
+                    className="shrink-0 text-[10px] text-muted-foreground"
+                    dateTime={thread.created_at}
+                  >
                     {formatInboxTime(thread.created_at)}
                   </time>
                 </Link>
@@ -618,7 +484,11 @@ function Inbox({
             {!hasGroups && (
               <div className="rounded-2xl border border-border bg-card p-5 text-center">
                 <p className="text-sm text-muted-foreground">You have no group chats yet.</p>
-                <Link to="/groups" search={{}} className="mt-2 inline-flex min-h-10 items-center text-sm font-semibold text-primary">
+                <Link
+                  to="/groups"
+                  search={{}}
+                  className="mt-2 inline-flex min-h-10 items-center text-sm font-semibold text-primary"
+                >
                   Find a group →
                 </Link>
               </div>

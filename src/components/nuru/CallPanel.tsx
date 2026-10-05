@@ -21,6 +21,8 @@ import {
   type CallKind,
 } from "@/services/calls";
 import type { ChatProfile } from "@/services/messaging";
+import { supabase } from "@/integrations/supabase/client";
+import { getCallIceServers } from "@/lib/callIce.functions";
 import { cn } from "@/lib/utils";
 
 const effects = {
@@ -131,6 +133,15 @@ export function CallPanel({
 
     async function start() {
       try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (!session) throw new Error("Sign in again before calling.");
+        const iceServers = await getCallIceServers({
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+        if (disposed) return;
+        pc.setConfiguration({ iceServers });
         if (userId === peer.id)
           throw new Error("Choose another Nuru member to call. You cannot call your own account.");
         if (!navigator.mediaDevices?.getUserMedia)

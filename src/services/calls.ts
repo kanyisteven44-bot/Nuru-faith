@@ -58,8 +58,11 @@ export async function answerCallSession(callId: string, answer: RTCSessionDescri
       status: "active",
       answered_at: now,
     })
-    .eq("id", callId);
-  if (error) throw new Error("Couldn't answer the call.");
+    .eq("id", callId)
+    .eq("status", "ringing")
+    .select("id")
+    .single();
+  if (error) throw new Error("This call is no longer ringing. Ask the caller to try again.");
 }
 
 export async function endCallSession(callId: string, status: "ended" | "declined" = "ended") {

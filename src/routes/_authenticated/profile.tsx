@@ -1,3 +1,5 @@
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { PostMedia, PostPresentation } from "@/components/nuru/PostMedia";
 import { CoverImage } from "@/components/nuru/CoverImage";
 import { useRef, useState } from "react";
 import { profilePhotoExtension } from "@/lib/profilePhoto";
@@ -16,6 +18,7 @@ import {
   Loader2,
   MapPin,
   Pencil,
+  Plus,
   Settings,
   Sparkles,
   type LucideIcon,
@@ -73,6 +76,7 @@ function ProfileScreen() {
   const [uploading, setUploading] = useState(false);
   const photoInput = useRef<HTMLInputElement>(null);
   const [tab, setTab] = useState<GridTab>("Posts");
+  const [selectedPost, setSelectedPost] = useState<string | null>(null);
   const [people, setPeople] = useState<PeopleKind | null>(null);
 
   const profile = useQuery({
@@ -143,8 +147,13 @@ function ProfileScreen() {
       title: String(r["caption"] ?? r["body"] ?? ""),
       cover: (r["poster_url"] ?? r["media_url"] ?? null) as string | null,
       likes: Number(r["like_count"] ?? 0),
+      kind: String(r["kind"] ?? "image"),
+      musicId: r["music_track_id"] as string | undefined,
+      musicStart: Number(r["music_start_seconds"] ?? 0),
     };
   });
+
+  const selectedItem = items.find((item) => item.id === selectedPost);
 
   async function save() {
     if (!userId) return;
@@ -193,7 +202,6 @@ function ProfileScreen() {
       if (photoInput.current) photoInput.current.value = "";
     }
   }
-
 
   return (
     <AppShell>
@@ -293,6 +301,14 @@ function ProfileScreen() {
               )}
             </div>
           </section>
+
+          <Link
+            to="/create"
+            className="mt-5 flex min-h-12 items-center justify-center gap-2 rounded-full bg-primary px-5 font-semibold text-primary-foreground"
+          >
+            <Plus className="h-5 w-5" />
+            Create post
+          </Link>
 
           {/* Three-up counts, as the board has them. */}
           <dl className="mt-5 grid grid-cols-3">
@@ -456,14 +472,14 @@ function ProfileScreen() {
               <ul className="grid grid-cols-3 gap-2">
                 {items.map((item) => (
                   <li key={item.id}>
-                    <div className="relative aspect-[3/4] overflow-hidden rounded-xl border border-border">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedPost(item.id)}
+                      aria-label={item.title || "Open post"}
+                      className="relative block aspect-[3/4] w-full overflow-hidden rounded-xl border border-border text-left"
+                    >
                       {item.cover ? (
-                        <CoverImage
-                          src={resolveMedia(item.cover)}
-                          alt=""
-                          loading="lazy"
-                          className="absolute inset-0 h-full w-full object-cover"
-                        />
+                        <PostMedia url={item.cover} kind={item.kind} compact />
                       ) : (
                         <span className="absolute inset-0 bg-gradient-to-br from-surface-2 to-card" />
                       )}
@@ -479,16 +495,34 @@ function ProfileScreen() {
                           {compactCount(item.likes)}
                         </span>
                       </span>
-                    </div>
+                    </button>
                   </li>
                 ))}
               </ul>
             )}
           </section>
-
         </div>
       )}
 
+      <Dialog
+        open={!!selectedItem}
+        onOpenChange={(open) => {
+          if (!open) setSelectedPost(null);
+        }}
+      >
+        <DialogContent className="max-h-[90dvh] overflow-y-auto rounded-2xl">
+          <DialogTitle>Post</DialogTitle>
+          <DialogDescription>{selectedItem?.title || "Shared media"}</DialogDescription>
+          {selectedItem && (
+            <PostPresentation
+              url={selectedItem.cover}
+              kind={selectedItem.kind}
+              musicId={selectedItem.musicId ?? null}
+              start={selectedItem.musicStart}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
       {people && userId && (
         <PeopleSheet
           kind={people}

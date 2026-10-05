@@ -17,6 +17,7 @@ import {
 import { CardSkeleton, ErrorState } from "@/components/nuru/Primitives";
 import { ChatReactionPicker, ChatStickerArt } from "@/components/nuru/ChatReactionPicker";
 import { STICKER_BY_ID } from "@/lib/chatReactions";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
 export function RichChatThread({
@@ -161,6 +162,41 @@ export function RichChatThread({
       ),
     ).values(),
   ].sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id));
+
+  const realtimeKind = "group" in target ? "group" : "user" in target ? "direct" : "mentor";
+  const realtimeId =
+    "group" in target ? target.group : "user" in target ? target.user : target.mentor;
+  useEffect(() => {
+    if (realtimeKind === "mentor") return;
+    const table = realtimeKind === "group" ? "group_chat_messages" : "direct_messages";
+    const refresh = () => {
+      void qc.invalidateQueries({ queryKey: ["chat-messages", userId] });
+      void qc.invalidateQueries({ queryKey: ["direct-threads", userId] });
+    };
+    const channel = supabase.channel(`chat-${userId}-${realtimeKind}-${realtimeId}`);
+    if (realtimeKind === "group")
+      channel.on(
+        "postgres_changes",
+        { event: "*", schema: "public", table, filter: `group_id=eq.${realtimeId}` },
+        refresh,
+      );
+    else {
+      channel.on(
+        "postgres_changes",
+        { event: "*", schema: "public", table, filter: `recipient_id=eq.${userId}` },
+        refresh,
+      );
+      channel.on(
+        "postgres_changes",
+        { event: "*", schema: "public", table, filter: `sender_id=eq.${userId}` },
+        refresh,
+      );
+    }
+    channel.subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [realtimeKind, realtimeId, userId, qc]);
 
   const names = useQuery({
     queryKey: ["chat-names", rows.map((message) => message.sender_id)],

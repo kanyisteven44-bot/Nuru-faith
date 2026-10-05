@@ -16,7 +16,7 @@ test("Vercel deploys browser security headers", () => {
   assert.equal(byName.get("x-frame-options"), "DENY");
   assert.match(byName.get("content-security-policy") ?? "", /frame-ancestors 'none'/);
   assert.match(byName.get("content-security-policy") ?? "", /object-src 'none'/);
-  assert.match(byName.get("permissions-policy") ?? "", /geolocation=\(\)/);
+  assert.match(byName.get("permissions-policy") ?? "", /geolocation=\(self\)/);
 });
 
 test("protected Nuru routes require a session without an MFA redirect loop", () => {

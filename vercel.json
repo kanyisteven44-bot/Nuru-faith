@@ -17,7 +17,7 @@
         { "key": "Cross-Origin-Opener-Policy", "value": "same-origin-allow-popups" },
         {
           "key": "Permissions-Policy",
-          "value": "camera=(self), geolocation=(), microphone=(self), payment=(), usb=(), browsing-topics=()"
+          "value": "camera=(self), geolocation=(self), microphone=(self), payment=(), usb=(), browsing-topics=()"
         },
         {
           "key": "Content-Security-Policy",

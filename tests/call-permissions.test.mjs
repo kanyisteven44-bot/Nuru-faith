@@ -10,5 +10,5 @@ test("production lets Nuru request camera and microphone while restricting other
   assert.match(policy, /(?:^|,\s*)camera=\(self\)(?:,|$)/);
   assert.match(policy, /(?:^|,\s*)microphone=\(self\)(?:,|$)/);
   assert.doesNotMatch(policy, /(?:camera|microphone)=\*/);
-  assert.match(policy, /geolocation=\(\)/);
+  assert.match(policy, /geolocation=\(self\)/);
 });

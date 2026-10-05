@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Mic, Send, Smile, Sticker, Square } from "lucide-react";
+import { Mic, Send, Smile, Sticker, Square, Plus, ImagePlus, Video, MapPin, X } from "lucide-react";
 import {
   CHAT_LIMIT,
   createChatMediaSignedUrl,
@@ -10,6 +10,7 @@ import {
   removeChatMedia,
   sendChatMessage,
   uploadVoiceNote,
+  uploadChatFile,
   type ChatMessage,
   type ChatTarget,
 } from "@/services/messaging";
@@ -50,8 +51,18 @@ export function RichChatThread({
     url: string;
   } | null>(null);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
-  const [voiceEffect, setVoiceEffect] = useState("Normal");
-  const [enhanceVoice, setEnhanceVoice] = useState(true);
+  const voiceEffect = "Normal" as string;
+  const [showAttachments, setShowAttachments] = useState(false);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [attachment, setAttachment] = useState<{ file: File; url: string } | null>(null);
+  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  useEffect(
+    () => () => {
+      if (attachment) URL.revokeObjectURL(attachment.url);
+    },
+    [attachment],
+  );
+  const enhanceVoice = true;
   const voiceContext = useRef<AudioContext | null>(null);
   const mounted = useRef(true);
   const previewUrl = useRef<string | null>(null);
@@ -76,6 +87,65 @@ export function RichChatThread({
     if (previewUrl.current) URL.revokeObjectURL(previewUrl.current);
     previewUrl.current = null;
     setVoiceDraft(null);
+  }
+  async function shareAttachment() {
+    if (sending || (!attachment && !location)) return;
+    setSending(true);
+    setError("");
+    let path: string | undefined;
+    try {
+      const id = crypto.randomUUID();
+      if (attachment) {
+        path = await uploadChatFile(target, userId, attachment.file);
+        await sendChatMessage(
+          target,
+          userId,
+          attachment.file.type.startsWith("image/") ? "Photo" : "Video",
+          id,
+          {
+            messageType: attachment.file.type.startsWith("image/") ? "image" : "video",
+            attachmentPath: path,
+          },
+        );
+      } else if (location) {
+        await sendChatMessage(target, userId, JSON.stringify(location), id, {
+          messageType: "location",
+        });
+      }
+      setAttachment(null);
+      setLocation(null);
+      await qc.invalidateQueries({ queryKey: key });
+    } catch (e) {
+      if (path) await removeChatMedia(path);
+      setError(e instanceof Error ? e.message : "Couldn't send attachment.");
+    } finally {
+      setSending(false);
+    }
+  }
+  function chooseLocation() {
+    setShowAttachments(false);
+    setError("");
+    if (!navigator.geolocation) {
+      setError("Location is unavailable in this browser.");
+      return;
+    }
+    setSending(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        if (!mounted.current) return;
+        setLocation({ latitude: position.coords.latitude, longitude: position.coords.longitude });
+        setSending(false);
+      },
+      () => {
+        if (mounted.current) {
+          setSending(false);
+          setError(
+            "Couldn't get your location. Allow location in your browser settings and try again.",
+          );
+        }
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
+    );
   }
   const pending = useRef<{ body: string; id: string } | null>(null);
   const bottom = useRef<HTMLDivElement>(null);
@@ -378,6 +448,11 @@ export function RichChatThread({
                       fallback={message.body}
                     />
                   </div>
+                ) : (message.message_type === "image" || message.message_type === "video") &&
+                  message.attachment_path ? (
+                  <ChatFile path={message.attachment_path} kind={message.message_type} />
+                ) : message.message_type === "location" ? (
+                  <LocationCard body={message.body} />
                 ) : message.message_type === "voice" && message.attachment_path ? (
                   <VoiceNote
                     path={message.attachment_path}
@@ -453,43 +528,97 @@ export function RichChatThread({
           </div>
         )}
 
-        {richMediaAllowed && !recording && !voiceDraft && (
-          <fieldset className="mb-3 rounded-2xl border border-violet-400/20 bg-violet-500/5 p-3">
-            <legend className="px-1 text-xs font-semibold">Voice-note effect</legend>
-            <div className="flex flex-wrap gap-2">
-              {["Normal", "Warm", "Echo", "Deep tone", "Robot", "Bright"].map((name) => (
-                <button
-                  key={name}
-                  type="button"
-                  disabled={sending}
-                  aria-pressed={voiceEffect === name}
-                  onClick={() => setVoiceEffect(name)}
-                  className={cn(
-                    "min-h-9 rounded-full px-3 text-xs font-semibold",
-                    voiceEffect === name
-                      ? "bg-violet-500 text-white"
-                      : "bg-surface-2 text-muted-foreground",
-                  )}
-                >
-                  {name}
-                </button>
-              ))}
-            </div>
-            <p className="mt-2 text-[10px] text-muted-foreground">
-              Choose before recording. Preview the effect before sending.
-            </p>
-          </fieldset>
+        <input
+          ref={fileInput}
+          type="file"
+          className="sr-only"
+          accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime"
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            event.target.value = "";
+            if (!file) return;
+            if (file.size > 50 * 1024 * 1024) {
+              setError("Choose a file smaller than 50 MB.");
+              return;
+            }
+            setLocation(null);
+            setAttachment({ file, url: URL.createObjectURL(file) });
+            setShowAttachments(false);
+          }}
+        />
+        {showAttachments && (
+          <div className="mb-3 grid grid-cols-3 gap-2 rounded-2xl border border-border p-3">
+            <button
+              type="button"
+              onClick={() => {
+                if (fileInput.current) {
+                  fileInput.current.accept = "image/jpeg,image/png,image/webp,image/gif";
+                  fileInput.current.click();
+                }
+              }}
+              className="flex min-h-20 flex-col items-center justify-center gap-2 rounded-xl bg-violet-500/10 text-sm"
+            >
+              <ImagePlus className="h-6 w-6 text-violet-400" />
+              Photo
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (fileInput.current) {
+                  fileInput.current.accept = "video/mp4,video/webm,video/quicktime";
+                  fileInput.current.click();
+                }
+              }}
+              className="flex min-h-20 flex-col items-center justify-center gap-2 rounded-xl bg-blue-500/10 text-sm"
+            >
+              <Video className="h-6 w-6 text-blue-400" />
+              Video
+            </button>
+            <button
+              type="button"
+              onClick={chooseLocation}
+              className="flex min-h-20 flex-col items-center justify-center gap-2 rounded-xl bg-emerald-500/10 text-sm"
+            >
+              <MapPin className="h-6 w-6 text-emerald-400" />
+              Location
+            </button>
+          </div>
         )}
-        {richMediaAllowed && !recording && !voiceDraft && (
-          <label className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
-            <input
-              type="checkbox"
-              checked={enhanceVoice}
-              onChange={(e) => setEnhanceVoice(e.target.checked)}
-              disabled={sending}
-            />
-            Clear voice • reduce noise and balance volume
-          </label>
+        {(attachment || location) && (
+          <div className="mb-3 space-y-3 rounded-2xl border border-primary/30 p-3">
+            {attachment &&
+              (attachment.file.type.startsWith("image/") ? (
+                <img
+                  src={attachment.url}
+                  alt="Photo preview"
+                  className="max-h-52 rounded-xl object-contain"
+                />
+              ) : (
+                <video src={attachment.url} controls playsInline className="max-h-52 rounded-xl" />
+              ))}
+            {location && <LocationCard body={JSON.stringify(location)} />}
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                disabled={sending}
+                onClick={() => {
+                  setAttachment(null);
+                  setLocation(null);
+                }}
+                className="rounded-full px-4 py-2"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={sending}
+                onClick={() => void shareAttachment()}
+                className="rounded-full bg-primary px-4 py-2 text-primary-foreground"
+              >
+                {sending ? "Sending…" : "Send"}
+              </button>
+            </div>
+          </div>
         )}
         {voiceDraft && (
           <div className="mb-3 space-y-3 rounded-2xl border border-primary/25 bg-primary/5 p-3">
@@ -520,7 +649,19 @@ export function RichChatThread({
         <label htmlFor="chat-message" className="sr-only">
           Your message
         </label>
-        <div className="flex items-end gap-2">
+        <div className="flex items-end gap-1">
+          {richMediaAllowed && (
+            <button
+              type="button"
+              aria-label="Add attachment"
+              aria-expanded={showAttachments}
+              disabled={sending || recording || !!voiceDraft}
+              onClick={() => setShowAttachments((v) => !v)}
+              className="flex h-12 w-9 shrink-0 items-center justify-center rounded-full text-primary"
+            >
+              {showAttachments ? <X className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
+            </button>
+          )}
           <button
             type="button"
             aria-label="Add emoji"
@@ -658,5 +799,67 @@ function VoicePlayback({ src, mine = false }: { src: string; mine?: boolean }) {
         ))}
       </div>
     </div>
+  );
+}
+
+function LocationCard({ body }: { body: string }) {
+  try {
+    const point = JSON.parse(body);
+    if (
+      !Number.isFinite(point.latitude) ||
+      !Number.isFinite(point.longitude) ||
+      Math.abs(point.latitude) > 90 ||
+      Math.abs(point.longitude) > 180
+    )
+      throw new Error();
+    return (
+      <a
+        href={`https://www.google.com/maps?q=${point.latitude},${point.longitude}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-3 rounded-xl bg-background/20 p-3"
+      >
+        <MapPin className="h-8 w-8" />
+        <span>
+          <strong className="block text-sm">Shared location</strong>
+          <span className="text-xs opacity-75">Open in Maps ↗</span>
+        </span>
+      </a>
+    );
+  } catch {
+    return <p className="text-sm">Location unavailable</p>;
+  }
+}
+function ChatFile({ path, kind }: { path: string; kind: "image" | "video" }) {
+  const media = useQuery({
+    queryKey: ["chat-media-url", path],
+    queryFn: () => createChatMediaSignedUrl(path),
+    staleTime: 50 * 60 * 1000,
+  });
+  if (media.isPending)
+    return <p className="text-xs">Loading {kind === "image" ? "photo" : "video"}…</p>;
+  if (!media.data)
+    return (
+      <button type="button" onClick={() => void media.refetch()} className="text-xs underline">
+        Retry attachment
+      </button>
+    );
+  return kind === "image" ? (
+    <a href={media.data} target="_blank" rel="noopener noreferrer">
+      <img
+        src={media.data}
+        alt="Shared photo"
+        loading="lazy"
+        className="max-h-80 w-full rounded-xl object-contain"
+      />
+    </a>
+  ) : (
+    <video
+      src={media.data}
+      controls
+      playsInline
+      preload="metadata"
+      className="max-h-80 w-full rounded-xl"
+    />
   );
 }

@@ -5,7 +5,7 @@ type DirectRow = Database["public"]["Tables"]["direct_messages"]["Row"];
 type GroupRow = Database["public"]["Tables"]["group_chat_messages"]["Row"];
 type MentorRow = Database["public"]["Tables"]["mentor_chat_messages"]["Row"];
 
-export type MessageType = "text" | "voice" | "sticker";
+export type MessageType = "text" | "voice" | "sticker" | "image" | "video" | "location";
 
 export type ChatMessage = {
   id: string;
@@ -26,9 +26,7 @@ export type MentorMessage = ChatMessage & {
 };
 
 export type ChatTarget =
-  | { mentor: string; requester: string }
-  | { group: string }
-  | { user: string; self: string };
+  { mentor: string; requester: string } | { group: string } | { user: string; self: string };
 
 export const CHAT_LIMIT = 50;
 
@@ -66,8 +64,7 @@ function normalizeMessage(row: DirectRow | GroupRow | MentorRow): ChatMessage {
     created_at: row.created_at,
     message_type: ("message_type" in rich ? rich.message_type : "text") as MessageType,
     attachment_path: "attachment_path" in rich ? rich.attachment_path : null,
-    attachment_duration_ms:
-      "attachment_duration_ms" in rich ? rich.attachment_duration_ms : null,
+    attachment_duration_ms: "attachment_duration_ms" in rich ? rich.attachment_duration_ms : null,
     sticker_code: "sticker_code" in rich ? rich.sticker_code : null,
     delivered_at: "delivered_at" in rich ? rich.delivered_at : null,
     read_at: "read_at" in rich ? rich.read_at : null,
@@ -193,11 +190,7 @@ export async function sendChatMessage(
   }
 }
 
-export async function uploadVoiceNote(
-  target: ChatTarget,
-  senderId: string,
-  blob: Blob,
-) {
+export async function uploadVoiceNote(target: ChatTarget, senderId: string, blob: Blob) {
   if ("mentor" in target) throw new Error("Voice notes are not available in mentor chats yet.");
   const extension = blob.type.includes("ogg") ? "ogg" : blob.type.includes("mp4") ? "m4a" : "webm";
   const id = crypto.randomUUID();
@@ -318,4 +311,30 @@ export async function createChatGroup(name: string, description: string) {
   });
   if (error) throw new Error("Couldn't create this group. Please retry.");
   return data;
+}
+
+export async function uploadChatFile(target: ChatTarget, senderId: string, file: File) {
+  const extensions: Record<string, string> = {
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp",
+    "image/gif": "gif",
+    "video/mp4": "mp4",
+    "video/webm": "webm",
+    "video/quicktime": "mov",
+  };
+  const ext = extensions[file.type];
+  if (!ext) throw new Error("Choose a JPG, PNG, WebP, GIF, MP4, WebM or MOV file.");
+  if (file.size > 50 * 1024 * 1024) throw new Error("Choose a file smaller than 50 MB.");
+  if ("mentor" in target) throw new Error("Attachments are available in people and group chats.");
+  const id = crypto.randomUUID();
+  const path =
+    "group" in target
+      ? `group/${target.group}/${senderId}/${id}.${ext}`
+      : `direct/${senderId}/${target.user}/${id}.${ext}`;
+  const { error } = await supabase.storage
+    .from("chat-media")
+    .upload(path, file, { contentType: file.type, upsert: false });
+  if (error) throw new Error("Couldn't upload this file. Please retry.");
+  return path;
 }

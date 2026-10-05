@@ -56,3 +56,24 @@ test("new and reset passwords use the hardened validator", () => {
   assert.match(helper, /\[0-9\]/);
   assert.match(helper, /\[\^A-Za-z0-9\]/);
 });
+
+test("the metadata worker authorizes staff before loading the privileged client", () => {
+  const worker = read("src/lib/musicCatalog.functions.ts");
+  const roleCheck = worker.indexOf('if (roleError || !roles?.length)');
+  const privilegedClient = worker.indexOf('await import("@/integrations/supabase/client.server")');
+  assert.ok(roleCheck > 0 && privilegedClient > roleCheck);
+  assert.match(worker, /middleware\(\[requireSupabaseAuth\]\)/);
+  assert.match(worker, /if \(!trust\?\.is_verified \|\| !trustedChannel\(trust\.trust_level\)\)/);
+  assert.match(worker, /ignoreDuplicates: true/);
+  assert.doesNotMatch(worker, /\.from\("media_sources"\)[\s\S]{0,80}\.(insert|update|upsert)/);
+});
+
+test("import cursors cannot be supplied by clients and progress is not publicly writable", () => {
+  const worker = read("src/lib/musicCatalog.functions.ts");
+  const input = worker.slice(worker.indexOf('.inputValidator('), worker.indexOf('.handler('));
+  assert.doesNotMatch(input, /channelId|pageToken|is_approved|title|external_id/);
+  const migration = read("supabase/migrations/20261005055626_server_media_import_progress.sql");
+  assert.match(migration, /enable row level security/);
+  assert.match(migration, /revoke all on public.media_catalog_imports from anon, authenticated/);
+  assert.match(migration, /for select to authenticated using \(private.is_staff/);
+});

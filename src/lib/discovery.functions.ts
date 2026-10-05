@@ -16,6 +16,9 @@ export type DiscoveryItem = {
   externalId: string | null;
   audioUrl: string | null;
   sourceUrl?: string | null;
+  creatorName?: string | null;
+  durationSeconds?: number | null;
+  category?: string | null;
 };
 const input = z.object({
   kind: z.enum(DISCOVERY_KINDS),

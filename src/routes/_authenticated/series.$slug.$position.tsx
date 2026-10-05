@@ -1,9 +1,7 @@
-import { readingAudioSections } from "@/lib/readingAudio";
-import { BibleReadAloud } from "@/components/nuru/BibleReadAloud";
 import { CoverImage } from "@/components/nuru/CoverImage";
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
   BookOpen,
@@ -42,7 +40,8 @@ import { resolveMedia } from "@/lib/media";
 import { useShareSheet } from "@/hooks/useShareSheet";
 import { AppShell } from "@/components/nuru/AppShell";
 import { ScriptureText } from "@/components/nuru/Scripture";
-import { DEFAULT_TRANSLATION, TRANSLATIONS } from "@/lib/bible";
+import { DEFAULT_TRANSLATION, TRANSLATIONS, fetchPassage } from "@/lib/bible";
+import { ReadingTools } from "@/components/nuru/ReadingTools";
 import {
   CardSkeleton,
   Chip,
@@ -113,6 +112,18 @@ function SessionScreen() {
 
   const shareSheet = useShareSheet();
   const [stage, setStage] = useState<Stage>("Read");
+  const [fontSize, setFontSize] = useState(18);
+  const spokenPassages = useQueries({
+    queries: (passages.data ?? [])
+      .filter((passage) => passage.scripture_role !== "further_reading")
+      .map((passage) => ({
+        queryKey: ["passage", passage.reference, DEFAULT_TRANSLATION],
+        queryFn: () => fetchPassage(passage.reference, DEFAULT_TRANSLATION),
+        staleTime: Infinity,
+        retry: 1,
+      })),
+  });
+  useEffect(() => setStage("Read"), [session?.id]);
   const [note, setNote] = useState("");
   useEffect(() => {
     if (reflection.data !== undefined) setNote(reflection.data);
@@ -335,7 +346,10 @@ function SessionScreen() {
         </div>
       </header>
 
-      <article className="space-y-5 px-4 pt-4 pb-5">
+      <article
+        className="nuru-reader-copy mx-auto max-w-3xl space-y-6 px-4 pt-6 pb-8 sm:px-8"
+        style={{ fontSize }}
+      >
         {/* Read / Reflect / Pray */}
         <div className="grid grid-cols-3 gap-2">
           {STAGES.map(({ key, hint, icon: Icon }) => (
@@ -367,6 +381,29 @@ function SessionScreen() {
           ))}
         </div>
 
+        <ReadingTools
+          fontSize={fontSize}
+          onFontSize={setFontSize}
+          text={
+            stage === "Read"
+              ? spokenPassages.some((passage) => passage.isPending)
+                ? ""
+                : [
+                    session.title,
+                    session.introduction,
+                    ...spokenPassages.map((passage) => passage.data?.text),
+                    session.context_note,
+                    session.main_teaching,
+                    session.connections,
+                  ]
+                    .filter(Boolean)
+                    .join("\n\n")
+              : stage === "Reflect"
+                ? session.reflection_questions.join("\n\n")
+                : [session.prayer, session.practical_action].filter(Boolean).join("\n\n")
+          }
+        />
+
         {stage === "Read" && primary.length > 0 && (
           <>
             {primary.map((p, i) => (
@@ -392,23 +429,6 @@ function SessionScreen() {
           </TeachingCard>
         )}
 
-        {stage === "Read" && (
-          <div className="px-4">
-            <BibleReadAloud
-              key={session.id}
-              label="series session"
-              verses={readingAudioSections([
-                session.title,
-                session.introduction,
-                session.context_note,
-                session.main_teaching,
-                session.connections,
-                session.prayer,
-                session.practical_action,
-              ])}
-            />
-          </div>
-        )}
         {stage === "Read" && session.main_teaching && (
           <TeachingCard
             icon={Users}

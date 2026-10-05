@@ -1,21 +1,27 @@
-import { readingAudioSections } from "@/lib/readingAudio";
-import { BibleReadAloud } from "@/components/nuru/BibleReadAloud";
-import { ReadingQuickAccess } from "@/components/nuru/ReadingQuickAccess";
 import { CoverImage } from "@/components/nuru/CoverImage";
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { ArrowRight, Bookmark, Flame } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { resolveMedia } from "@/lib/media";
-import { fetchProfile, fetchDevotionalLibrary } from "@/services/content";
+import { fetchProfile } from "@/services/content";
+import { supabase } from "@/integrations/supabase/client";
+import { DevotionalReader } from "@/components/nuru/DevotionalReader";
+import { LearningLinks } from "@/components/nuru/LearningLinks";
 import { readSavedDevotionalIds, toggleSavedDevotional } from "@/lib/devotionalBookmarks";
 import { AppShell } from "@/components/nuru/AppShell";
 import { FeatureHeaderBar } from "@/components/nuru/FeatureHeader";
 import { CardSkeleton, EmptyState, ScreenHero } from "@/components/nuru/Primitives";
 
 export const Route = createFileRoute("/_authenticated/devotionals")({
+  validateSearch: (search: Record<string, unknown>): { reading?: string | undefined } => ({
+    reading:
+      typeof search["reading"] === "string" && /^[a-f\d-]{36}$/i.test(search["reading"])
+        ? search["reading"]
+        : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Devotionals — Nuru Faith" },
@@ -51,43 +57,60 @@ type DevotionalRow = {
   cover_url: string | null;
   publish_date: string | null;
   read_minutes: number | null;
-  body: string | null;
-  scripture_text: string | null;
 };
 
 function DevotionalsScreen() {
   const { userId } = useAuth();
+  const { reading } = Route.useSearch();
   const [search, setSearch] = useState("");
-  const [page, setPage] = useState(0);
-  const [opened, setOpened] = useState<string | null>(null);
   const [savedIds, setSavedIds] = useState<Set<string>>(() => readSavedDevotionalIds(null));
-
-  useEffect(() => {
-    setSavedIds(readSavedDevotionalIds(userId ?? null));
-  }, [userId]);
 
   const profile = useQuery({
     queryKey: ["profile", userId],
     queryFn: () => fetchProfile(userId!),
     enabled: !!userId,
   });
-  const devotionals = useQuery({
-    queryKey: ["devotional-library", search, page],
-    queryFn: () => fetchDevotionalLibrary(search, page),
+  useEffect(() => setSavedIds(readSavedDevotionalIds(userId ?? null)), [userId]);
+  const devotionals = useInfiniteQuery({
+    queryKey: ["devotional-library", search],
+    initialPageParam: 0,
+    queryFn: async ({ pageParam }) => {
+      let query = supabase
+        .from("devotionals")
+        .select("id,title,subtitle,scripture_ref,cover_url,publish_date,read_minutes", {
+          count: "exact",
+        })
+        .order("publish_date", { ascending: false })
+        .order("title")
+        .order("id");
+      const term = search
+        .trim()
+        .replace(/[^\p{L}\p{N}\s-]/gu, " ")
+        .trim();
+      if (term) query = query.or(`title.ilike.%${term}%,scripture_ref.ilike.%${term}%`);
+      const { data, error, count } = await query.range(pageParam * 24, pageParam * 24 + 23);
+      if (error) throw error;
+      return {
+        rows: data ?? [],
+        total: count ?? 0,
+        next: (pageParam + 1) * 24 < (count ?? 0) ? pageParam + 1 : undefined,
+      };
+    },
+    getNextPageParam: (page) => page.next,
   });
-  const rows = (devotionals.data ?? []) as DevotionalRow[];
+  const rows = (devotionals.data?.pages.flatMap((page) => page.rows) ?? []) as DevotionalRow[];
   const streak = profile.data?.faith_streak ?? 0;
 
   function toggleSave(id: string) {
     setSavedIds(toggleSavedDevotional(userId ?? null, id));
   }
 
+  if (reading) return <DevotionalReader key={reading} id={reading} />;
+
   return (
     <AppShell>
       <FeatureHeaderBar />
-      <div className="px-4">
-        <ReadingQuickAccess />
-      </div>
+      <LearningLinks active="Devotionals" />
       <ScreenHero image={resolveMedia("asset:topic-faith")} />
 
       <div className="px-4 pb-6">
@@ -120,29 +143,36 @@ function DevotionalsScreen() {
         </section>
 
         <h2 className="mt-6 mb-3 font-display text-[22px] leading-none">Daily devotionals</h2>
-        <input
-          aria-label="Search devotionals"
-          className="input-nuru mb-4"
-          placeholder="Search readings or Scripture…"
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(0);
-            setOpened(null);
-          }}
-        />
-        {devotionals.isError && (
-          <p role="alert">
-            Readings could not load.{" "}
-            <button className="underline" onClick={() => void devotionals.refetch()}>
-              Try again
-            </button>
+        <label className="mb-4 block">
+          <span className="sr-only">Search devotionals</span>
+          <input
+            className="input-nuru"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search a devotional or Scripture passage"
+          />
+        </label>
+        {devotionals.data && (
+          <p className="mb-3 text-xs text-muted-foreground" role="status">
+            {rows.length} of {devotionals.data.pages[0]?.total ?? 0} readings
           </p>
+        )}
+        {devotionals.isError && (
+          <div role="alert">
+            <p>Devotionals could not load.</p>
+            <button
+              type="button"
+              className="min-h-11 text-primary underline"
+              onClick={() => void devotionals.refetch()}
+            >
+              Retry devotionals
+            </button>
+          </div>
         )}
 
         {devotionals.isLoading && <CardSkeleton count={3} height="h-[120px]" />}
 
-        {devotionals.isSuccess && rows.length === 0 && (
+        {!devotionals.isLoading && rows.length === 0 && (
           <EmptyState
             title="No devotionals yet"
             description="Daily readings will appear here as they're published."
@@ -155,8 +185,12 @@ function DevotionalsScreen() {
               const saved = savedIds.has(d.id);
               const label = dayLabel(d.publish_date);
               return (
-                <li key={d.id}>
-                  <div className="relative block overflow-hidden rounded-2xl border border-border">
+                <li key={d.id} className="relative">
+                  <Link
+                    to="/devotionals"
+                    search={{ reading: d.id }}
+                    className="relative block overflow-hidden rounded-2xl border border-border"
+                  >
                     {d.cover_url ? (
                       <CoverImage
                         src={resolveMedia(d.cover_url)}
@@ -171,11 +205,11 @@ function DevotionalsScreen() {
                     <span className="absolute inset-0 flex items-end gap-3 p-4">
                       <span className="min-w-0 flex-1">
                         {label && <span className="nuru-eyebrow block">{label}</span>}
-                        <span className="mt-1 block truncate font-display text-[22px] leading-tight">
+                        <span className="mt-1 block truncate font-display text-[22px] leading-tight text-white">
                           {d.title}
                         </span>
                         {d.scripture_ref && (
-                          <span className="mt-0.5 block truncate text-[12px] text-ink-2">
+                          <span className="mt-0.5 block truncate text-[12px] text-white/80">
                             {d.scripture_ref}
                           </span>
                         )}
@@ -184,83 +218,34 @@ function DevotionalsScreen() {
                         <ArrowRight className="h-[18px] w-[18px]" strokeWidth={2.2} />
                       </span>
                     </span>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        toggleSave(d.id);
-                      }}
-                      aria-label={saved ? "Remove bookmark" : "Save devotional"}
-                      aria-pressed={saved}
-                      className="absolute top-3 right-3 rounded-full bg-background/60 p-2 text-ink-2 backdrop-blur-sm"
-                    >
-                      <Bookmark className="h-3.5 w-3.5" fill={saved ? "currentColor" : "none"} />
-                    </button>
-                  </div>
+                  </Link>
                   <button
                     type="button"
-                    aria-expanded={opened === d.id}
-                    className="nuru-card mt-2 min-h-11 w-full px-4 text-sm font-semibold"
-                    onClick={() => setOpened(opened === d.id ? null : d.id)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      toggleSave(d.id);
+                    }}
+                    aria-label={saved ? "Remove bookmark" : "Save devotional"}
+                    aria-pressed={saved}
+                    className="absolute top-3 right-3 rounded-full bg-background/60 p-2 text-ink-2 backdrop-blur-sm"
                   >
-                    {opened === d.id ? "Close reading" : "Read devotional"}
+                    <Bookmark className="h-3.5 w-3.5" fill={saved ? "currentColor" : "none"} />
                   </button>
-                  {opened === d.id && (
-                    <article className="nuru-card mt-2 space-y-4 p-5">
-                      <h3 className="font-display text-2xl">{d.title}</h3>
-                      <BibleReadAloud
-                        key={d.id}
-                        label="devotional"
-                        verses={readingAudioSections([
-                          d.title,
-                          d.scripture_ref,
-                          d.scripture_text,
-                          d.body,
-                        ])}
-                      />
-                      {d.scripture_text && (
-                        <blockquote className="border-l-2 border-primary pl-4 text-sm leading-7">
-                          {d.scripture_text}
-                        </blockquote>
-                      )}
-                      <p className="whitespace-pre-wrap text-base leading-8 text-secondary-foreground">
-                        {d.body || "This reading has no devotional text yet."}
-                      </p>
-                      <Link to="/bible" className="text-sm font-semibold text-primary">
-                        Open Bible reader
-                      </Link>
-                    </article>
-                  )}
                 </li>
               );
             })}
           </ul>
         )}
-        <div className="mt-5 flex items-center justify-between gap-3">
+        {devotionals.hasNextPage && (
           <button
-            className="nuru-card min-h-11 px-4 disabled:opacity-40"
-            disabled={page === 0 || devotionals.isFetching}
-            onClick={() => {
-              setPage((p) => p - 1);
-              setOpened(null);
-            }}
+            type="button"
+            disabled={devotionals.isFetchingNextPage}
+            className="mt-5 min-h-11 rounded-xl border border-border px-5 text-sm font-semibold"
+            onClick={() => void devotionals.fetchNextPage()}
           >
-            Previous
+            {devotionals.isFetchingNextPage ? "Loading…" : "Load more devotionals"}
           </button>
-          <span aria-live="polite" className="text-sm">
-            Page {page + 1}
-          </span>
-          <button
-            className="nuru-card min-h-11 px-4 disabled:opacity-40"
-            disabled={!devotionals.isSuccess || rows.length < 24 || devotionals.isFetching}
-            onClick={() => {
-              setPage((p) => p + 1);
-              setOpened(null);
-            }}
-          >
-            Next
-          </button>
-        </div>
+        )}
       </div>
     </AppShell>
   );

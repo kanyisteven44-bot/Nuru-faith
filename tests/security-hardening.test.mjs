@@ -59,7 +59,7 @@ test("new and reset passwords use the hardened validator", () => {
 
 test("the metadata worker authorizes staff before loading the privileged client", () => {
   const worker = read("src/lib/musicCatalog.functions.ts");
-  const roleCheck = worker.indexOf('if (roleError || !roles?.length)');
+  const roleCheck = worker.indexOf("if (roleError || !roles?.length)");
   const privilegedClient = worker.indexOf('await import("@/integrations/supabase/client.server")');
   assert.ok(roleCheck > 0 && privilegedClient > roleCheck);
   assert.match(worker, /middleware\(\[requireSupabaseAuth\]\)/);
@@ -70,10 +70,35 @@ test("the metadata worker authorizes staff before loading the privileged client"
 
 test("import cursors cannot be supplied by clients and progress is not publicly writable", () => {
   const worker = read("src/lib/musicCatalog.functions.ts");
-  const input = worker.slice(worker.indexOf('.inputValidator('), worker.indexOf('.handler('));
+  const input = worker.slice(worker.indexOf(".inputValidator("), worker.indexOf(".handler("));
   assert.doesNotMatch(input, /channelId|pageToken|is_approved|title|external_id/);
   const migration = read("supabase/migrations/20261005055626_server_media_import_progress.sql");
   assert.match(migration, /enable row level security/);
   assert.match(migration, /revoke all on public.media_catalog_imports from anon, authenticated/);
   assert.match(migration, /for select to authenticated using \(private.is_staff/);
+});
+
+test("admin AI reporting exposes only privacy-safe aggregates behind a super-admin role check", () => {
+  const endpoint = read("src/lib/adminOperations.functions.ts");
+  assert.match(endpoint, /middleware\(\[requireSupabaseAuth\]\)/);
+  assert.match(endpoint, /\.eq\("user_id", context.userId\)/);
+  assert.match(endpoint, /\.eq\("role", "super_admin"\)/);
+  assert.ok(
+    endpoint.indexOf('throw new Error("Super-admin access required.")') <
+      endpoint.indexOf('await import("@/integrations/supabase/client.server")'),
+  );
+  const migration = read("supabase/migrations/20261005063347_admin_learning_operations.sql");
+  assert.match(migration, /having count\(distinct user_id\) >= 5/);
+  assert.match(
+    migration,
+    /revoke all on function public.get_nuru_admin_overview\(\) from public,anon,authenticated/,
+  );
+  assert.match(
+    migration,
+    /grant execute on function public.get_nuru_admin_overview\(\) to service_role/,
+  );
+  assert.doesNotMatch(
+    migration,
+    /jsonb_build_object\([^;]*'(content|prompt|answer|conversation_id|user_id)'/,
+  );
 });

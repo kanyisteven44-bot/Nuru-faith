@@ -1,4 +1,3 @@
-import { ReadingQuickAccess } from "@/components/nuru/ReadingQuickAccess";
 import externalCourses from "@/data/externalCourses.json";
 import { CoverImage } from "@/components/nuru/CoverImage";
 import { useMemo, useState } from "react";
@@ -23,6 +22,7 @@ import {
   type FaithCourse,
 } from "@/data/faithCourses";
 import { NURU_PHOTO_POOLS, useRotatingMedia } from "@/lib/rotatingMedia";
+import { LearningLinks } from "@/components/nuru/LearningLinks";
 
 export const Route = createFileRoute("/faith-courses/")({
   head: () => ({
@@ -42,6 +42,7 @@ function FaithCoursesScreen() {
   const [query, setQuery] = useState("");
   const [provider, setProvider] = useState("all");
   const [category, setCategory] = useState<string | null>(null);
+  const [visibleCount, setVisibleCount] = useState(24);
   const hero = useRotatingMedia(NURU_PHOTO_POOLS.courses, "faith-courses-hero");
 
   const filtered = useMemo(() => {
@@ -68,9 +69,7 @@ function FaithCoursesScreen() {
   return (
     <AppShell>
       <ScreenHeader title="Faith Courses" subtitle="Learn deeply. Live faithfully." />
-      <div className="px-4">
-        <ReadingQuickAccess />
-      </div>
+      <LearningLinks active="Courses" />
 
       <div className="space-y-6 px-4 pb-6">
         <section className="nuru-card relative h-52 overflow-hidden lg:h-80">
@@ -90,8 +89,8 @@ function FaithCoursesScreen() {
               Build a faith you understand.
             </h1>
             <p className="mt-2 text-[12px] leading-relaxed text-white/75">
-              {FAITH_COURSES.length} Nuru study courses plus {externalCourses.length} free
-              BibleProject classes.
+              {FAITH_COURSES.length} Nuru courses and self-guided Scripture studies, plus{" "}
+              {externalCourses.length} free BibleProject classes.
             </p>
           </div>
         </section>
@@ -100,7 +99,10 @@ function FaithCoursesScreen() {
           <Search className="pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setVisibleCount(24);
+            }}
             placeholder="Search baptism, prayer, relationships…"
             aria-label="Search Faith Courses"
             className="input-nuru pl-11"
@@ -110,7 +112,10 @@ function FaithCoursesScreen() {
         <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
           <button
             type="button"
-            onClick={() => setCategory(null)}
+            onClick={() => {
+              setCategory(null);
+              setVisibleCount(24);
+            }}
             className={cn(
               "shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-semibold",
               category === null
@@ -124,7 +129,10 @@ function FaithCoursesScreen() {
             <button
               key={item}
               type="button"
-              onClick={() => setCategory(item)}
+              onClick={() => {
+                setCategory(item);
+                setVisibleCount(24);
+              }}
               className={cn(
                 "shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-semibold",
                 category === item
@@ -165,7 +173,10 @@ function FaithCoursesScreen() {
             aria-label="Course provider"
             className="input-nuru flex-1"
             value={provider}
-            onChange={(event) => setProvider(event.target.value)}
+            onChange={(event) => {
+              setProvider(event.target.value);
+              setVisibleCount(24);
+            }}
           >
             <option value="all">All providers</option>
             <option value="Nuru">Nuru study courses</option>
@@ -185,10 +196,19 @@ function FaithCoursesScreen() {
           </div>
 
           <div className="space-y-2.5 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
-            {(nativeVisible ? filtered : []).map((item) => (
+            {(nativeVisible ? filtered.slice(0, visibleCount) : []).map((item) => (
               <CourseRow key={item.slug} course={item} />
             ))}
           </div>
+          {nativeVisible && visibleCount < filtered.length && (
+            <button
+              type="button"
+              className="mt-4 min-h-11 rounded-xl border border-border px-5 text-sm font-semibold"
+              onClick={() => setVisibleCount((count) => count + 24)}
+            >
+              Load more studies · {Math.min(visibleCount, filtered.length)} of {filtered.length}
+            </button>
+          )}
         </section>
 
         {externalVisible && externalFiltered.length > 0 && (
@@ -314,7 +334,7 @@ function CourseRow({ course }: { course: FaithCourse }) {
       />
       <span className="min-w-0 flex-1">
         <span className="block text-[10px] font-bold tracking-wide text-leaf uppercase">
-          {course.category} · {course.level}
+          {course.category} · {course.guidedStudy ? "Guided Scripture study" : course.level}
         </span>
         <span className="mt-0.5 block truncate font-display text-sm font-semibold">
           {course.title}

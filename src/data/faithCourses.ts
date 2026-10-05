@@ -1,3 +1,5 @@
+import { CHAPTER_STUDIES } from "./chapterStudies";
+
 export type FaithCourseLesson = {
   title: string;
   references: string[];
@@ -13,6 +15,7 @@ export type FaithCourse = {
   level: "Foundations" | "Growing" | "Deep Dive";
   estimatedMinutes: number;
   featured?: boolean;
+  guidedStudy?: boolean;
   examples: string[];
   lessons: FaithCourseLesson[];
 };
@@ -1092,6 +1095,8 @@ export const FAITH_COURSES: FaithCourse[] = [
     );
   }),
 ];
+
+FAITH_COURSES.push(...CHAPTER_STUDIES);
 
 export const FEATURED_FAITH_COURSES = FAITH_COURSES.filter((item) => item.featured);
 export const FAITH_COURSE_CATEGORIES = Array.from(

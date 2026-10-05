@@ -2983,6 +2983,7 @@ export type Database = {
       };
     };
     Functions: {
+      get_nuru_admin_overview: { Args: never; Returns: Json };
       consume_nuru_rate_limit: { Args: { p_action: string }; Returns: Json };
       get_nuru_pilot_metrics: { Args: never; Returns: Json };
       get_web_push_server_config: { Args: never; Returns: Json };

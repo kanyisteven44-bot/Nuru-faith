@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { importMusicCatalogPage } from "@/lib/musicCatalog.functions";
+import { MfaChallenge } from "@/components/nuru/MfaSecurity";
+import { supabase } from "@/integrations/supabase/client";
 import { PrimaryButton } from "@/components/nuru/Primitives";
 
 type Cursor = { channelId: string | null; pageToken: string | null };
@@ -12,6 +14,7 @@ export function MusicCatalogImport() {
   const [message, setMessage] = useState(
     "Import distinct videos from reviewed sources. Admin MFA is required.",
   );
+  const [needsVerification, setNeedsVerification] = useState(false);
   const [total, setTotal] = useState<number | null>(null);
   const pause = useRef(false);
   const active = useRef(false);
@@ -28,6 +31,14 @@ export function MusicCatalogImport() {
     setRunning(true);
     let cursor: Cursor = { channelId: null, pageToken: null };
     try {
+      const assurance = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (assurance.error) throw new Error(assurance.error.message);
+      if (assurance.data.currentLevel !== "aal2") {
+        setNeedsVerification(true);
+        setMessage("Verify your administrator session to import songs and video episodes.");
+        return;
+      }
+      setNeedsVerification(false);
       if (!fresh) {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
@@ -92,6 +103,15 @@ export function MusicCatalogImport() {
         <p className="text-sm font-semibold">
           {total.toLocaleString()} / 10,000 distinct {kind === "music" ? "songs" : "video episodes"}
         </p>
+      )}
+      {needsVerification && (
+        <MfaChallenge
+          title="Verify catalogue import"
+          onSuccess={() => {
+            setNeedsVerification(false);
+            void run(false);
+          }}
+        />
       )}
       <div className="flex flex-wrap gap-2">
         <PrimaryButton disabled={running} onClick={() => void run(false)}>

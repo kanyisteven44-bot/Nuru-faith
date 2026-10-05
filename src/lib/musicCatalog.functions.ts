@@ -39,8 +39,8 @@ export const importMusicCatalogPage = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data, context }) => {
-    // Temporary: catalogue import is still restricted to super_admin/moderator below.
-    // MFA enforcement is disabled here while the existing-factor enrollment bug is repaired.
+    if (context.claims["aal"] !== "aal2")
+      throw new Error("Verify your admin account with MFA before importing.");
     const { data: roles, error: roleError } = await context.supabase
       .from("user_roles")
       .select("role")
@@ -71,7 +71,7 @@ export const importMusicCatalogPage = createServerFn({ method: "POST" })
         .eq("source", "youtube")
         .eq("media_type", data.kind)
         .eq("is_approved", true);
-      if (error) throw error;
+      if (error) throw new Error(`Catalogue database error (${error.code}): ${error.message}`);
       return count ?? 0;
     };
     const before = await songCount();
@@ -88,7 +88,7 @@ export const importMusicCatalogPage = createServerFn({ method: "POST" })
     let query = sourceQuery();
     if (data.channelId) query = query.eq("youtube_channel_id", data.channelId);
     const { data: sources, error } = await query.order("id").limit(1);
-    if (error) throw error;
+    if (error) throw new Error(`Catalogue database error (${error.code}): ${error.message}`);
     const source = sources?.[0];
     if (!source) {
       if (data.channelId) throw new Error("This source is no longer approved. Start a fresh scan.");
@@ -98,7 +98,8 @@ export const importMusicCatalogPage = createServerFn({ method: "POST" })
       .gt("id", source.id)
       .order("id")
       .limit(1);
-    if (nextError) throw nextError;
+    if (nextError)
+      throw new Error(`Catalogue source error (${nextError.code}): ${nextError.message}`);
     const nextChannel = following?.[0]?.youtube_channel_id;
     const channelId = source.youtube_channel_id!;
     const channel = z
@@ -165,7 +166,7 @@ export const importMusicCatalogPage = createServerFn({ method: "POST" })
       const { error } = await db
         .from("media_items")
         .upsert(rows, { onConflict: "source,external_id", ignoreDuplicates: true });
-      if (error) throw error;
+      if (error) throw new Error(`Catalogue database error (${error.code}): ${error.message}`);
     }
     const total = await songCount();
     const next = page.nextPageToken

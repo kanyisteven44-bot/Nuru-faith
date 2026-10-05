@@ -17,11 +17,13 @@ export function MusicDiscovery({
   onPlayItem,
   query = "",
   mediaType = "music",
+  catalogPlayback = "all",
 }: {
   onPlay: (video: YouTubeVideo) => void;
   onPlayItem: (item: MediaItem) => void;
   query?: string;
   mediaType?: "music" | "podcast";
+  catalogPlayback?: "all" | "audio" | "video";
 }) {
   const [selected, setSelected] = useState<Creator | null>(null);
   const [language, setLanguage] = useState("all");
@@ -295,7 +297,7 @@ export function MusicDiscovery({
           mediaType={mediaType}
           query={query}
           language={language}
-          videoOnly={!isMusic}
+          playback={catalogPlayback}
           onPlay={onPlayItem}
         />
       )}

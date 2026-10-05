@@ -12,6 +12,13 @@ import {
 import type { ChatProfile } from "@/services/messaging";
 import { cn } from "@/lib/utils";
 
+const effects = {
+  Natural: "none",
+  Warm: "sepia(.25) saturate(1.15)",
+  Glow: "brightness(1.12) contrast(.95)",
+  Mono: "grayscale(1)",
+};
+
 type IncomingCall = {
   id: string;
   kind: string;
@@ -32,6 +39,11 @@ export function CallPanel({
   incoming?: IncomingCall | null;
   onClose: () => void;
 }) {
+  const [effect, setEffect] = useState("Natural");
+  const effectRef = useRef("Natural");
+  effectRef.current = effect;
+  const [effectsAvailable, setEffectsAvailable] = useState(false);
+  const [seconds, setSeconds] = useState(0);
   const peerConnection = useRef<RTCPeerConnection | null>(null);
   const localStream = useRef<MediaStream | null>(null);
   const remoteStream = useRef<MediaStream>(new MediaStream());
@@ -46,7 +58,16 @@ export function CallPanel({
   const [cameraOff, setCameraOff] = useState(kind === "audio");
 
   useEffect(() => {
+    if (status !== "Connected") return;
+    const timer = window.setInterval(() => setSeconds((value) => value + 1), 1000);
+    return () => window.clearInterval(timer);
+  }, [status]);
+
+  useEffect(() => {
     let disposed = false;
+    let frame = 0;
+    let rawStream: MediaStream | null = null;
+    let sourceVideo: HTMLVideoElement | null = null;
     const pc = new RTCPeerConnection({
       iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
     });
@@ -71,13 +92,41 @@ export function CallPanel({
 
     async function start() {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          audio: true,
+        let stream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
           video: kind === "video",
         });
         if (disposed) {
           stream.getTracks().forEach((track) => track.stop());
           return;
+        }
+        rawStream = stream;
+        if (kind === "video") {
+          const canvas = document.createElement("canvas");
+          canvas.width = 640;
+          canvas.height = 480;
+          const context = canvas.getContext("2d");
+          if (context && typeof canvas.captureStream === "function" && "filter" in context) {
+            sourceVideo = document.createElement("video");
+            sourceVideo.muted = true;
+            sourceVideo.playsInline = true;
+            sourceVideo.srcObject = rawStream;
+            await sourceVideo.play();
+            if (disposed) {
+              rawStream.getTracks().forEach((track) => track.stop());
+              return;
+            }
+            const draw = () => {
+              if (disposed || !sourceVideo) return;
+              context.filter = effects[effectRef.current as keyof typeof effects] || "none";
+              context.drawImage(sourceVideo, 0, 0, canvas.width, canvas.height);
+              frame = requestAnimationFrame(draw);
+            };
+            draw();
+            const filtered = canvas.captureStream(24);
+            stream = new MediaStream([...filtered.getVideoTracks(), ...rawStream.getAudioTracks()]);
+            setEffectsAvailable(true);
+          }
         }
         localStream.current = stream;
         stream.getTracks().forEach((track) => pc.addTrack(track, stream));
@@ -119,6 +168,12 @@ export function CallPanel({
 
     return () => {
       disposed = true;
+      cancelAnimationFrame(frame);
+      rawStream?.getTracks().forEach((track) => track.stop());
+      if (sourceVideo) {
+        sourceVideo.pause();
+        sourceVideo.srcObject = null;
+      }
       pc.close();
       peerConnection.current = null;
       localStream.current?.getTracks().forEach((track) => track.stop());
@@ -131,30 +186,31 @@ export function CallPanel({
   useEffect(() => {
     if (!callId) return;
     const timer = window.setInterval(() => {
-      void fetchCallSession(callId).then(async (session) => {
-        if (!session) return;
-        if (
-          !incoming &&
-          session.answer &&
-          !appliedAnswer.current &&
-          peerConnection.current
-        ) {
-          appliedAnswer.current = true;
-          await peerConnection.current.setRemoteDescription(
-            session.answer as unknown as RTCSessionDescriptionInit,
-          );
-          setStatus("Connecting…");
-        }
-        if (session.status === "active") setStatus("Connected");
-        if (session.status === "declined") {
-          setStatus("Call declined");
-          window.setTimeout(onClose, 900);
-        }
-        if (session.status === "ended" || session.status === "missed") {
-          setStatus("Call ended");
-          window.setTimeout(onClose, 700);
-        }
-      });
+      void fetchCallSession(callId)
+        .then(async (session) => {
+          if (!session) return;
+          if (!incoming && session.answer && !appliedAnswer.current && peerConnection.current) {
+            appliedAnswer.current = true;
+            await peerConnection.current.setRemoteDescription(
+              session.answer as unknown as RTCSessionDescriptionInit,
+            );
+            setStatus("Connecting…");
+          }
+          if (
+            session.status === "active" &&
+            peerConnection.current?.connectionState === "connected"
+          )
+            setStatus("Connected");
+          if (session.status === "declined") {
+            setStatus("Call declined");
+            window.setTimeout(onClose, 900);
+          }
+          if (session.status === "ended" || session.status === "missed") {
+            setStatus("Call ended");
+            window.setTimeout(onClose, 700);
+          }
+        })
+        .catch(() => setError("Couldn’t update call status. Check your connection."));
     }, 1200);
     return () => window.clearInterval(timer);
   }, [callId, incoming, onClose]);
@@ -191,7 +247,7 @@ export function CallPanel({
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-[#07111f]/95 p-4 text-white">
-      <div className="relative flex h-full w-full max-w-lg flex-col overflow-hidden rounded-[32px] bg-[#0b1728] shadow-2xl">
+      <div className="relative flex h-full max-h-[860px] w-full max-w-3xl flex-col overflow-hidden rounded-[32px] border border-cyan-200/15 bg-[#0b1728] shadow-2xl">
         <button
           type="button"
           onClick={() => void end()}
@@ -203,12 +259,7 @@ export function CallPanel({
 
         {kind === "video" ? (
           <div className="relative min-h-0 flex-1 bg-black">
-            <video
-              ref={remoteVideo}
-              autoPlay
-              playsInline
-              className="h-full w-full object-cover"
-            />
+            <video ref={remoteVideo} autoPlay playsInline className="h-full w-full object-cover" />
             <video
               ref={localVideo}
               autoPlay
@@ -236,7 +287,35 @@ export function CallPanel({
           </div>
         )}
 
-        <audio ref={remoteAudio} autoPlay className="hidden" />
+        {kind === "audio" && <audio ref={remoteAudio} autoPlay className="hidden" />}
+        <div className="px-5 pt-3 text-center text-xs text-white/60" role="status">
+          {status === "Connected"
+            ? `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`
+            : status}
+        </div>
+        {kind === "video" && effectsAvailable && (
+          <div
+            className="flex flex-wrap justify-center gap-2 px-4 pt-4"
+            aria-label="Camera effects"
+          >
+            {Object.keys(effects).map((name) => (
+              <button
+                key={name}
+                type="button"
+                aria-pressed={effect === name}
+                onClick={() => setEffect(name)}
+                className={cn(
+                  "min-h-10 rounded-full border px-4 text-xs font-semibold transition-colors",
+                  effect === name
+                    ? "border-cyan-200 bg-cyan-200 text-slate-950"
+                    : "border-white/15 bg-white/5 text-white/75",
+                )}
+              >
+                {name}
+              </button>
+            ))}
+          </div>
+        )}
 
         {error && (
           <div className="mx-5 mb-3 rounded-2xl bg-red-500/15 px-4 py-3 text-sm text-red-100">

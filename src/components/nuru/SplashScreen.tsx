@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 
-const SESSION_KEY = "nuru-opening-3d-shown";
+const SESSION_KEY = "nuru-opening-logo-v3-shown";
 const HOLD_MS = 2800;
 const MAX_MS = 5000;
 const EXIT_MS = 320;
@@ -131,6 +131,13 @@ export function SplashScreen({
         ))}
       </div>
       <div aria-hidden="true" className="nuru-opening-floor" />
+      <div
+        aria-hidden="true"
+        className="absolute left-1/2 top-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-500/10 blur-3xl"
+      />
+      <p className="absolute left-6 top-7 text-[10px] font-semibold uppercase tracking-[0.25em] text-cyan-100/60">
+        Your faith. Your generation.
+      </p>
       <button
         ref={skipButton}
         type="button"
@@ -169,6 +176,14 @@ export function SplashScreen({
             />
           </svg>
           <div className="nuru-opening-beam" />
+          <div
+            className="absolute inset-0 flex items-center justify-center"
+            style={{ transform: "translateZ(24px)" }}
+          >
+            <span className="font-display text-7xl font-semibold tracking-tight text-white drop-shadow-[0_0_24px_#48bfff]">
+              n<span className="text-cyan-200">.</span>
+            </span>
+          </div>
           <svg viewBox="0 0 200 250" fill="none" className="nuru-opening-reflection">
             <path d={ARCH} stroke="#8DDFFF" strokeWidth="5" strokeLinecap="round" />
           </svg>
@@ -183,10 +198,10 @@ export function SplashScreen({
         </p>
       </div>
       <p className="nuru-opening-tagline relative z-10 mt-6 font-display text-[clamp(1.25rem,4vw,1.75rem)] text-[#E0F3FF]">
-        A brighter you.
+        Find your people.
       </p>
       <p className="nuru-opening-tagline relative z-10 mt-3 text-xs tracking-wide text-[#A9C8DE] sm:text-sm">
-        Faith. Community. Purpose.
+        Grow in faith. Live with purpose.
       </p>
       <div className="nuru-opening-verse relative z-10 mt-auto px-6 pb-[max(2rem,env(safe-area-inset-bottom))] pt-8 text-center">
         <p className="max-w-md font-display text-sm leading-relaxed text-[#C7DDEA] sm:text-base">

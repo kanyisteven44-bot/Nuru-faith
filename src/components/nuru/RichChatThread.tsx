@@ -45,6 +45,38 @@ export function RichChatThread({
   const [showEmoji, setShowEmoji] = useState(false);
   const [showStickers, setShowStickers] = useState(false);
   const [recording, setRecording] = useState(false);
+  const [voiceDraft, setVoiceDraft] = useState<{
+    blob: Blob;
+    duration: number;
+    url: string;
+  } | null>(null);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const [enhanceVoice, setEnhanceVoice] = useState(true);
+  const voiceContext = useRef<AudioContext | null>(null);
+  const mounted = useRef(true);
+  const previewUrl = useRef<string | null>(null);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      if (recorder.current) recorder.current.onstop = null;
+      void voiceContext.current?.close();
+      if (previewUrl.current) URL.revokeObjectURL(previewUrl.current);
+    };
+  }, []);
+  useEffect(() => {
+    if (!recording) return;
+    const timer = window.setInterval(() => {
+      setRecordingSeconds(Math.floor((Date.now() - recordingStartedAt.current) / 1000));
+      if (Date.now() - recordingStartedAt.current >= 120000) stopVoiceNote();
+    }, 250);
+    return () => window.clearInterval(timer);
+  }, [recording]);
+  function discardVoice() {
+    if (previewUrl.current) URL.revokeObjectURL(previewUrl.current);
+    previewUrl.current = null;
+    setVoiceDraft(null);
+  }
   const pending = useRef<{ body: string; id: string } | null>(null);
   const bottom = useRef<HTMLDivElement>(null);
   const recorder = useRef<MediaRecorder | null>(null);
@@ -69,7 +101,9 @@ export function RichChatThread({
   useEffect(() => {
     if (messages.data) {
       setOlder((previous) => [
-        ...new Map([...previous, ...messages.data!].map((message) => [message.id, message])).values(),
+        ...new Map(
+          [...previous, ...messages.data!].map((message) => [message.id, message]),
+        ).values(),
       ]);
     }
   }, [messages.data]);
@@ -89,7 +123,7 @@ export function RichChatThread({
 
   useEffect(
     () => () => {
-      recorder.current?.state === "recording" && recorder.current.stop();
+      if (recorder.current?.state === "recording") recorder.current.stop();
       recordingStream.current?.getTracks().forEach((track) => track.stop());
     },
     [],
@@ -156,18 +190,42 @@ export function RichChatThread({
   }
 
   async function startVoiceNote() {
-    if ("mentor" in target) return;
+    if ("mentor" in target || recording || sending || voiceDraft) return;
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
       setError("Voice recording is not supported on this browser.");
       return;
     }
     setError("");
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const preferred = ["audio/webm;codecs=opus", "audio/webm", "audio/ogg"].find((type) =>
-        MediaRecorder.isTypeSupported(type),
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: enhanceVoice,
+          autoGainControl: enhanceVoice,
+        },
+      });
+      recordingStream.current = stream;
+      let capture = stream;
+      if (enhanceVoice) {
+        const context = new AudioContext();
+        voiceContext.current = context;
+        await context.resume();
+        const source = context.createMediaStreamSource(stream);
+        const filter = context.createBiquadFilter();
+        filter.type = "highpass";
+        filter.frequency.value = 100;
+        const compressor = context.createDynamicsCompressor();
+        const destination = context.createMediaStreamDestination();
+        source.connect(filter).connect(compressor).connect(destination);
+        capture = destination.stream;
+      }
+      const preferred = ["audio/webm;codecs=opus", "audio/webm", "audio/ogg", "audio/mp4"].find(
+        (type) => MediaRecorder.isTypeSupported(type),
       );
-      const mediaRecorder = new MediaRecorder(stream, preferred ? { mimeType: preferred } : undefined);
+      const mediaRecorder = new MediaRecorder(
+        capture,
+        preferred ? { mimeType: preferred } : undefined,
+      );
       recorder.current = mediaRecorder;
       recordingStream.current = stream;
       recordingChunks.current = [];
@@ -185,11 +243,19 @@ export function RichChatThread({
         recordingStream.current = null;
         recorder.current = null;
         setRecording(false);
-        void finishVoiceNote(blob, duration);
+        void voiceContext.current?.close();
+        voiceContext.current = null;
+        if (!mounted.current || !blob.size) return;
+        const url = URL.createObjectURL(blob);
+        previewUrl.current = url;
+        setVoiceDraft({ blob, duration, url });
       };
       mediaRecorder.start();
+      setRecordingSeconds(0);
       setRecording(true);
     } catch {
+      recordingStream.current?.getTracks().forEach((track) => track.stop());
+      void voiceContext.current?.close();
       setError("Microphone access is needed to record a voice note.");
     }
   }
@@ -208,6 +274,7 @@ export function RichChatThread({
         attachmentPath: path,
         attachmentDurationMs: durationMs,
       });
+      discardVoice();
       await refresh();
     } catch (voiceError) {
       if (path) await removeChatMedia(path);
@@ -269,7 +336,7 @@ export function RichChatThread({
                 )}
               >
                 <p className="mb-1 text-[11px] font-semibold opacity-75">
-                  {mine ? "You" : names.data?.[message.sender_id] ?? "Nuru member"}
+                  {mine ? "You" : (names.data?.[message.sender_id] ?? "Nuru member")}
                 </p>
                 {message.message_type === "sticker" ? (
                   <div className="py-1 text-5xl leading-none" aria-label="Sticker">
@@ -347,7 +414,9 @@ export function RichChatThread({
 
         {recording && (
           <div className="mb-2 flex items-center justify-between rounded-2xl bg-destructive/10 px-3 py-2 text-sm">
-            <span className="font-semibold text-destructive">Recording voice note…</span>
+            <span className="font-semibold text-destructive">
+              Recording • {recordingSeconds}s / 120s
+            </span>
             <button
               type="button"
               onClick={stopVoiceNote}
@@ -358,6 +427,43 @@ export function RichChatThread({
           </div>
         )}
 
+        {richMediaAllowed && !recording && !voiceDraft && (
+          <label className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={enhanceVoice}
+              onChange={(e) => setEnhanceVoice(e.target.checked)}
+              disabled={sending}
+            />
+            Clear voice • reduce noise and balance volume
+          </label>
+        )}
+        {voiceDraft && (
+          <div className="mb-3 space-y-3 rounded-2xl border border-primary/25 bg-primary/5 p-3">
+            <p className="text-xs font-semibold">
+              Preview your voice note • {Math.ceil(voiceDraft.duration / 1000)}s
+            </p>
+            <audio controls src={voiceDraft.url} className="h-10 w-full" />
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                disabled={sending}
+                onClick={discardVoice}
+                className="min-h-10 rounded-full px-4 text-sm"
+              >
+                Discard
+              </button>
+              <button
+                type="button"
+                disabled={sending}
+                onClick={() => void finishVoiceNote(voiceDraft.blob, voiceDraft.duration)}
+                className="min-h-10 rounded-full bg-primary px-4 text-sm text-primary-foreground"
+              >
+                {sending ? "Sending…" : "Send voice note"}
+              </button>
+            </div>
+          </div>
+        )}
         <label htmlFor="chat-message" className="sr-only">
           Your message
         </label>
@@ -405,14 +511,18 @@ export function RichChatThread({
             <button
               type="button"
               onClick={recording ? stopVoiceNote : () => void startVoiceNote()}
-              disabled={sending}
+              disabled={sending || !!voiceDraft}
               aria-label={recording ? "Stop voice note" : "Record voice note"}
               className={cn(
                 "flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-white disabled:opacity-50",
                 recording ? "bg-destructive" : "bg-primary",
               )}
             >
-              {recording ? <Square className="h-5 w-5 fill-current" /> : <Mic className="h-5 w-5" />}
+              {recording ? (
+                <Square className="h-5 w-5 fill-current" />
+              ) : (
+                <Mic className="h-5 w-5" />
+              )}
             </button>
           ) : (
             <button

@@ -1,3 +1,4 @@
+import { AdminDirectory } from "@/components/nuru/AdminDirectory";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -157,6 +158,7 @@ function AdminScreen() {
       </header>
 
       <main className="mx-auto max-w-5xl space-y-8 px-6 py-8">
+        {isSuper && userId && <AdminDirectory userId={userId} churches={churches.data ?? []} />}
         {(isSuper || isModerator) && <MusicCatalogImport />}
         <div>
           <h1 className="font-display text-2xl font-semibold">Nuru operations dashboard</h1>

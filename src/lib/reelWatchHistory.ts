@@ -45,7 +45,11 @@ function storageKey(userId: string | null) {
 
 export function readWatchedExternalReelIds(userId: string | null): Set<string> {
   if (typeof window === "undefined") return new Set();
-  return parseWatchedExternalReelIds(window.localStorage.getItem(storageKey(userId)));
+  try {
+    return parseWatchedExternalReelIds(window.localStorage.getItem(storageKey(userId)));
+  } catch {
+    return new Set();
+  }
 }
 
 export function rememberWatchedExternalReel(userId: string | null, contentId: string) {
@@ -54,5 +58,9 @@ export function rememberWatchedExternalReel(userId: string | null, contentId: st
   ids.add(contentId);
   const boundedIds = [...ids].slice(-MAX_DAILY_WATCHED_IDS);
   const payload: DailyWatchHistory = { day: currentLocalDay(), ids: boundedIds };
-  window.localStorage.setItem(storageKey(userId), JSON.stringify(payload));
+  try {
+    window.localStorage.setItem(storageKey(userId), JSON.stringify(payload));
+  } catch {
+    /* restricted storage must not interrupt playback */
+  }
 }

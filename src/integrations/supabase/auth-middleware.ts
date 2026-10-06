@@ -62,13 +62,15 @@ export const requireSupabaseAuth = createMiddleware({ type: "function" }).server
       throw new Error("Unauthorized: Only Bearer tokens are supported");
     }
 
-    const token = authHeader.replace("Bearer ", "");
+    const token = authHeader.slice("Bearer ".length).trim();
     if (!token) {
       throw new Error("Unauthorized: No token provided");
     }
 
-    if (token.split(".").length !== 3) {
-      throw new Error("Unauthorized: Invalid token");
+    // API keys identify the app, not the signed-in user. Server functions that
+    // require auth must receive the user's Supabase access token.
+    if (isNewSupabaseApiKey(token)) {
+      throw new Error("Unauthorized: User access token required");
     }
 
     const supabase = createClient<Database>(SUPABASE_URL!, SUPABASE_PUBLISHABLE_KEY!, {

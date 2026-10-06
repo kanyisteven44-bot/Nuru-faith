@@ -1,3 +1,4 @@
+import { catalogueTarget, MUSIC_SOURCE_TARGET } from "@/lib/catalogTargets";
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { importReviewedCatalogPage } from "@/lib/musicCatalog.functions";
@@ -7,6 +8,7 @@ import { PrimaryButton } from "@/components/nuru/Primitives";
 export function MusicCatalogImport() {
   const client = useQueryClient();
   const [kind, setKind] = useState<"music" | "podcast">("music");
+  const target = catalogueTarget(kind);
   const [running, setRunning] = useState(false);
   const [message, setMessage] = useState(
     "Import real videos from reviewed sources. Progress is saved on the server.",
@@ -51,7 +53,9 @@ export function MusicCatalogImport() {
       setSourceTotal(sources.count ?? 0);
       setTotal(items.count ?? 0);
       if (progress.data?.last_error) setMessage(progress.data.last_error);
-      else if (progress.data?.status === "complete") setMessage("10,000-video target reached.");
+      else if ((items.count ?? 0) >= target) setMessage("Catalogue target reached.");
+      else if (progress.data?.status === "complete")
+        setMessage("Previous target completed. Resume the import to expand the catalogue.");
       else if (progress.data?.status === "exhausted")
         setMessage(
           "Reviewed sources exhausted below the target. Add more reviewed creators, then scan again.",
@@ -60,7 +64,7 @@ export function MusicCatalogImport() {
     return () => {
       current = false;
     };
-  }, [kind]);
+  }, [kind, target]);
   async function run(fresh: boolean) {
     if (active.current) return;
     active.current = true;
@@ -76,7 +80,7 @@ export function MusicCatalogImport() {
         if (!result.next) {
           setMessage(
             result.targetReached
-              ? "10,000-video target reached."
+              ? "Catalogue target reached."
               : "Reviewed sources exhausted below the target. Add more reviewed creators to continue; entries have not been duplicated.",
           );
           break;
@@ -120,12 +124,15 @@ export function MusicCatalogImport() {
       {sourceTotal !== null && (
         <p className="text-sm">
           {sourceTotal.toLocaleString()} reviewed{" "}
-          {kind === "music" ? "artist sources / 1,000 target" : "video creators"}
+          {kind === "music"
+            ? `artist sources / ${MUSIC_SOURCE_TARGET.toLocaleString()} target`
+            : "video creators"}
         </p>
       )}
       {total !== null && (
         <p className="text-sm font-semibold">
-          {total.toLocaleString()} / 10,000 distinct {kind === "music" ? "songs" : "video episodes"}
+          {total.toLocaleString()} / {target.toLocaleString()} distinct{" "}
+          {kind === "music" ? "songs" : "video episodes"}
         </p>
       )}
       <div className="flex flex-wrap gap-2">

@@ -1,3 +1,4 @@
+import { catalogueTarget } from "./catalogTargets";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -46,6 +47,7 @@ export const importReviewedCatalogPage = createServerFn({ method: "POST" })
       .in("role", ["super_admin", "moderator"]);
     if (roleError || !roles?.length)
       throw new Error("Only Nuru administrators can import the shared catalogue.");
+    const target = catalogueTarget(data.kind);
     const key = process.env["YOUTUBE_API_KEY"];
     if (!key)
       throw new Error(
@@ -90,7 +92,7 @@ export const importReviewedCatalogPage = createServerFn({ method: "POST" })
         return count ?? 0;
       };
       const before = await songCount();
-      if (before >= 10000) return { total: before, added: 0, next: null, targetReached: true };
+      if (before >= target) return { total: before, added: 0, next: null, targetReached: true };
       function sourceQuery() {
         return db
           .from("media_sources")
@@ -218,8 +220,8 @@ export const importReviewedCatalogPage = createServerFn({ method: "POST" })
       return {
         total,
         added: total - before,
-        next: total >= 10000 ? null : next,
-        targetReached: total >= 10000,
+        next: total >= target ? null : next,
+        targetReached: total >= target,
       };
     }
     try {

@@ -1,7 +1,8 @@
+import { z } from "zod";
 import { CoverImage } from "@/components/nuru/CoverImage";
 import { BibleReadAloud } from "@/components/nuru/BibleReadAloud";
 import { resolveMedia } from "@/lib/media";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -57,6 +58,7 @@ import { Sheet } from "@/components/nuru/Sheet";
 const ALL_BOOKS: BibleBook[] = [...OLD_TESTAMENT, ...NEW_TESTAMENT];
 
 export const Route = createFileRoute("/_authenticated/bible")({
+  validateSearch: z.object({ reference: z.string().max(100).optional() }),
   head: () => ({
     meta: [
       { title: "Bible — Nuru Faith" },
@@ -74,9 +76,11 @@ export const Route = createFileRoute("/_authenticated/bible")({
 
 const TABS = ["Books", "Topics", "Highlights", "Notes"] as const;
 type Tab = (typeof TABS)[number];
-type ReaderTarget = { book: BibleBook; chapter: number };
+type ReaderTarget = { book: BibleBook; chapter: number; verse?: number | undefined };
 
 function BibleScreen() {
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
   const [tab, setTab] = useState<Tab>("Books");
   const [reader, setReader] = useState<ReaderTarget | null>(null);
   const [book, setBook] = useState<BibleBook | null>(null);
@@ -86,12 +90,26 @@ function BibleScreen() {
   /** What the jump-back row offers — the last book opened this session. */
   const [lastBook, setLastBook] = useState<BibleBook>(OLD_TESTAMENT[0]!);
 
+  useEffect(() => {
+    if (!search.reference) return;
+    const match = search.reference.match(/^(.+?)\s+(\d+)(?::(\d+))?/);
+    if (!match) return;
+    const targetBook = findBook(match[1]!);
+    const chapter = Number(match[2]);
+    if (targetBook && chapter >= 1 && chapter <= targetBook.chapters)
+      setReader({ book: targetBook, chapter, verse: match[3] ? Number(match[3]) : undefined });
+  }, [search.reference]);
+
   if (reader)
     return (
       <Reader
         book={reader.book}
         chapter={reader.chapter}
-        onBack={() => setReader(null)}
+        verse={reader.verse}
+        onBack={() => {
+          setReader(null);
+          void navigate({ search: {} });
+        }}
         onNavigate={(b, chapter) => setReader({ book: b, chapter })}
       />
     );
@@ -506,11 +524,13 @@ function ChapterTile({
 function Reader({
   book,
   chapter,
+  verse,
   onBack,
   onNavigate,
 }: {
   book: BibleBook;
   chapter: number;
+  verse?: number | undefined;
   onBack: () => void;
   onNavigate: (book: BibleBook, chapter: number) => void;
 }) {
@@ -540,6 +560,12 @@ function Reader({
     queryFn: () => fetchChapterPassage(reference, translation),
     enabled: !unavailable,
   });
+
+  const targetVerse = useRef<HTMLLIElement | null>(null);
+  useEffect(() => {
+    if (passage.data && verse)
+      targetVerse.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [passage.data, verse]);
 
   const highlightsQuery = useQuery({
     queryKey: ["verse-highlights", userId, reference],
@@ -757,7 +783,14 @@ function Reader({
                 const activeColor = highlightByVerse.get(v.verse);
                 const swatch = HIGHLIGHT_COLORS.find((c) => c.key === activeColor);
                 return (
-                  <li key={`${v.chapter}:${v.verse}`} className="flex gap-2.5">
+                  <li
+                    key={`${v.chapter}:${v.verse}`}
+                    ref={v.verse === verse ? targetVerse : undefined}
+                    className={cn(
+                      "flex gap-2.5 scroll-mt-24",
+                      v.verse === verse && "rounded-lg bg-primary/10 ring-2 ring-primary/40",
+                    )}
+                  >
                     <span className="mt-0.5 shrink-0 text-[11px] font-bold text-terra-lt">
                       {v.verse}
                     </span>

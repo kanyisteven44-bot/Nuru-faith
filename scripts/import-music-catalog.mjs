@@ -1,4 +1,5 @@
 /** Import metadata only. Playback remains in the official YouTube player. */
+import { MUSIC_CATALOG_TARGET } from "../src/lib/catalogTargets.ts";
 import { createClient } from "@supabase/supabase-js";
 import { readFile, writeFile } from "node:fs/promises";
 import { eligibleMusicVideo, isoSeconds } from "../src/lib/musicImport.ts";
@@ -12,7 +13,7 @@ if (!key || !url || !secret) {
   );
   process.exit(1);
 }
-const target = Number(process.env.NURU_MUSIC_TARGET ?? 10000);
+const target = Number(process.env.NURU_MUSIC_TARGET ?? MUSIC_CATALOG_TARGET);
 if (!Number.isSafeInteger(target) || target < 1) throw new Error("Invalid target");
 const db = createClient(url, secret, { auth: { persistSession: false } });
 const statePath = process.env.NURU_IMPORT_STATE ?? ".media-import-state.json";
@@ -54,7 +55,9 @@ if (error) throw error;
 // Explicit musical sources. Never classify every sermon/channel upload as a song.
 let total = await count();
 try {
-  for (const source of (sources ?? []).filter((s) => ["music", "mixed"].includes(s.content_kind) && s.youtube_channel_id)) {
+  for (const source of (sources ?? []).filter(
+    (s) => ["music", "mixed"].includes(s.content_kind) && s.youtube_channel_id,
+  )) {
     if (total >= target) break;
     const channelId = source.youtube_channel_id;
     if (state.channels[channelId]?.done) continue;

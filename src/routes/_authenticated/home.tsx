@@ -194,6 +194,7 @@ function HomeScreen() {
                 <div className="mt-4 flex flex-wrap gap-2">
                   <Link
                     to="/bible"
+                    search={{ reference }}
                     className="nuru-soft-control nuru-soft-primary inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full bg-primary px-4 text-[14px] font-semibold whitespace-nowrap text-primary-foreground transition-colors hover:brightness-105 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
                   >
                     <BookOpen className="h-4 w-4 shrink-0" strokeWidth={2} />

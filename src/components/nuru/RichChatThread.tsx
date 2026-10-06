@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Phone, Mic, Send, Sticker, Square, Plus, ImagePlus, Video, MapPin, X } from "lucide-react";
+import { Check, CheckCheck, Phone, Mic, Send, Sticker, Square, Plus, ImagePlus, Video, MapPin, X } from "lucide-react";
 import {
   CHAT_LIMIT,
   createChatMediaSignedUrl,
@@ -499,23 +499,39 @@ export function RichChatThread({
         {timeline.map((entry) => {
           if (entry.call) {
             const call = entry.call;
+            const mine = call.caller_id === userId;
             const missed = isMissedCall(call) && call.callee_id === userId;
             return (
-              <div key={entry.id} className="flex justify-center">
+              <div key={entry.id} className={cn("flex", mine ? "justify-end" : "justify-start")}>
                 <div
                   className={cn(
-                    "flex items-center gap-3 rounded-2xl border border-border px-4 py-3 text-sm",
-                    missed ? "bg-rose-500/10 text-rose-400" : "bg-card text-muted-foreground",
+                    "flex w-fit max-w-[82%] items-center gap-3 rounded-2xl border px-3 py-2.5 shadow-sm",
+                    mine ? "rounded-br-md" : "rounded-bl-md",
+                    missed
+                      ? "border-rose-200 bg-rose-50 text-rose-500 dark:border-rose-500/25 dark:bg-rose-500/10"
+                      : "border-border bg-card text-secondary-foreground",
                   )}
                 >
-                  {call.kind === "video" ? (
-                    <Video className="h-5 w-5" />
-                  ) : (
-                    <Phone className="h-5 w-5" />
-                  )}
-                  <span>
-                    <strong className="block text-xs">{callHistoryLabel(call, userId)}</strong>
-                    <time className="text-[10px]" dateTime={call.created_at}>
+                  <span
+                    className={cn(
+                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
+                      missed ? "bg-rose-500/10" : "bg-primary/10 text-primary",
+                    )}
+                  >
+                    {call.kind === "video" ? (
+                      <Video className="h-4 w-4" />
+                    ) : (
+                      <Phone className="h-4 w-4" />
+                    )}
+                  </span>
+                  <span className="min-w-0">
+                    <strong className="block text-[12px] leading-tight">
+                      {callHistoryLabel(call, userId)}
+                    </strong>
+                    <time
+                      className="mt-1 block text-[10px] text-muted-foreground"
+                      dateTime={call.created_at}
+                    >
                       {new Date(call.created_at).toLocaleString(undefined, {
                         month: "short",
                         day: "numeric",
@@ -530,13 +546,13 @@ export function RichChatThread({
           }
           const message = entry.message!;
           const mine = message.sender_id === userId;
-          const status =
+          const receipt =
             mine && "user" in target
               ? message.read_at
-                ? "Read"
+                ? "seen"
                 : message.delivered_at
-                  ? "Delivered"
-                  : "Sent"
+                  ? "online"
+                  : "delivered"
               : null;
           return (
             <div key={message.id} className={cn("flex", mine ? "justify-end" : "justify-start")}>
@@ -583,7 +599,21 @@ export function RichChatThread({
                       minute: "2-digit",
                     })}
                   </time>
-                  {status && <span className="font-semibold">{status}</span>}
+                  {receipt === "delivered" && (
+                    <span className="inline-flex items-center text-slate-300" aria-label="Delivered · recipient not online">
+                      <Check className="h-3.5 w-3.5" strokeWidth={2.4} />
+                    </span>
+                  )}
+                  {receipt === "online" && (
+                    <span className="inline-flex items-center text-slate-200" aria-label="Recipient online · not read">
+                      <CheckCheck className="h-3.5 w-3.5" strokeWidth={2.4} />
+                    </span>
+                  )}
+                  {receipt === "seen" && (
+                    <span className="inline-flex items-center text-amber-300" aria-label="Seen and read">
+                      <CheckCheck className="h-3.5 w-3.5" strokeWidth={2.6} />
+                    </span>
+                  )}
                 </div>
               </div>
             </div>

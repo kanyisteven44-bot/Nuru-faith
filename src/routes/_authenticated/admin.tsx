@@ -1,25 +1,32 @@
 import { useState } from "react";
-import { AdminDirectory } from "@/components/nuru/AdminDirectory";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Activity,
+  AlertTriangle,
   BellRing,
   CalendarDays,
+  CheckCircle2,
+  ChevronLeft,
   ChevronRight,
   Church,
+  Clock3,
   ExternalLink,
   Flag,
   LayoutDashboard,
   Music2,
+  RefreshCw,
+  Search,
   Settings,
   ShieldCheck,
   Sparkles,
   UserCheck,
+  UserRoundCheck,
   UserRoundCog,
   Users,
 } from "lucide-react";
 import { toast } from "sonner";
+import { z } from "zod";
 import { useAuth } from "@/hooks/useAuth";
 import { eventDate, timeAgo } from "@/lib/format";
 import {
@@ -39,7 +46,15 @@ import { MusicCatalogImport } from "@/components/youtube/MusicCatalogImport";
 import { getPilotMetrics } from "@/lib/pilot.functions";
 import { AdminOperations } from "@/components/nuru/AdminOperations";
 
+const ADMIN_SECTION_IDS = ["overview", "people", "content", "moderation", "community"] as const;
+type AdminSection = (typeof ADMIN_SECTION_IDS)[number];
+
+const adminSearchSchema = z.object({
+  section: z.enum(ADMIN_SECTION_IDS).optional(),
+});
+
 export const Route = createFileRoute("/_authenticated/admin")({
+  validateSearch: adminSearchSchema,
   head: () => ({
     meta: [
       { title: "Nuru Admin — Nuru Faith" },
@@ -57,7 +72,6 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminScreen,
 });
 
-type AdminSection = "overview" | "people" | "content" | "moderation" | "community";
 
 const ADMIN_SECTIONS: {
   id: AdminSection;
@@ -100,7 +114,34 @@ const ADMIN_SECTIONS: {
 function AdminScreen() {
   const { userId } = useAuth();
   const qc = useQueryClient();
-  const [activeSection, setActiveSection] = useState<AdminSection>("overview");
+  const navigate = useNavigate();
+  const searchParams = Route.useSearch();
+  const activeSection: AdminSection = searchParams.section ?? "overview";
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastRefreshAt, setLastRefreshAt] = useState<Date | null>(null);
+  const [moderationFilter, setModerationFilter] = useState<
+    "active" | "reviewing" | "resolved" | "dismissed" | "all"
+  >("active");
+  const [moderationSearch, setModerationSearch] = useState("");
+  const [communitySearch, setCommunitySearch] = useState("");
+  const [communityPage, setCommunityPage] = useState(0);
+
+  function setActiveSection(section: AdminSection) {
+    void navigate({ to: "/admin", search: { section }, replace: true });
+  }
+
+  async function refreshAdminData() {
+    setIsRefreshing(true);
+    try {
+      await qc.refetchQueries({ type: "active" });
+      setLastRefreshAt(new Date());
+      toast.success("Admin data refreshed");
+    } catch {
+      toast.error("Some admin data could not be refreshed");
+    } finally {
+      setIsRefreshing(false);
+    }
+  }
 
   const roles = useQuery({
     queryKey: ["roles", userId],
@@ -183,8 +224,63 @@ function AdminScreen() {
     (item) => item.status === "open" || item.status === "pending" || item.status === "reviewing",
   );
   const reviewingReports = openReports.filter((item) => item.status === "reviewing");
-  const pendingChurches = scoped.filter((church) => !church.verified);
-  const attentionCount = openReports.length + pendingChurches.length;
+  const unverifiedMentors = (mentors.data ?? []).filter((mentor) => !mentor.verified);
+  const verifiedChurches = scoped.filter((church) => church.verified);
+  const directoryVerificationRate = scoped.length
+    ? Math.round((verifiedChurches.length / scoped.length) * 100)
+    : 0;
+  const attentionCount = openReports.length + unverifiedMentors.length;
+
+  const normalizedModerationSearch = moderationSearch.trim().toLowerCase();
+  const filteredModeration = (moderation.data ?? []).filter((item) => {
+    const statusMatch =
+      moderationFilter === "all"
+        ? true
+        : moderationFilter === "active"
+          ? ["open", "pending", "reviewing"].includes(item.status)
+          : item.status === moderationFilter;
+    if (!statusMatch) return false;
+    if (!normalizedModerationSearch) return true;
+    return `${item.reason} ${item.target} ${item.details ?? ""} ${item.source}`
+      .toLowerCase()
+      .includes(normalizedModerationSearch);
+  });
+
+  const normalizedChurchSearch = communitySearch.trim().toLowerCase();
+  const filteredChurches = scoped.filter((church) =>
+    !normalizedChurchSearch
+      ? true
+      : `${church.name} ${church.denomination ?? ""} ${church.city ?? ""} ${church.region ?? ""}`
+          .toLowerCase()
+          .includes(normalizedChurchSearch),
+  );
+  const churchesPerPage = 12;
+  const communityPageCount = Math.max(1, Math.ceil(filteredChurches.length / churchesPerPage));
+  const safeCommunityPage = Math.min(communityPage, communityPageCount - 1);
+  const visibleChurches = filteredChurches.slice(
+    safeCommunityPage * churchesPerPage,
+    safeCommunityPage * churchesPerPage + churchesPerPage,
+  );
+
+  const healthChecks = [
+    { label: "Directory", error: churches.isError, loading: churches.isLoading },
+    {
+      label: "Community",
+      error: groups.isError || events.isError || serve.isError,
+      loading: groups.isLoading || events.isLoading || serve.isLoading,
+    },
+    { label: "Moderation", error: moderation.isError, loading: moderation.isLoading },
+    ...(isSuper || isModerator
+      ? [{ label: "Pilot metrics", error: pilot.isError, loading: pilot.isLoading }]
+      : []),
+  ];
+  const healthIssues = healthChecks.filter((check) => check.error).length;
+  const healthLoading = healthChecks.some((check) => check.loading);
+  const sectionBadges: Partial<Record<AdminSection, number>> = {
+    overview: attentionCount,
+    people: unverifiedMentors.length,
+    moderation: openReports.length,
+  };
 
   const roleLabel = isSuper ? "Super admin" : isModerator ? "Moderator" : "Church admin";
   const pilotMetrics = pilot.data;
@@ -216,6 +312,16 @@ function AdminScreen() {
               <ShieldCheck className="h-3.5 w-3.5" />
               {roleLabel}
             </span>
+            <button
+              type="button"
+              onClick={() => void refreshAdminData()}
+              disabled={isRefreshing}
+              className="inline-flex min-h-9 items-center gap-2 rounded-xl border border-border bg-surface px-3 text-xs font-semibold text-muted-foreground transition hover:border-border-strong hover:text-foreground disabled:opacity-50"
+              aria-label="Refresh admin data"
+            >
+              <RefreshCw className={["h-3.5 w-3.5", isRefreshing ? "animate-spin" : ""].join(" ")} />
+              <span className="hidden sm:inline">{isRefreshing ? "Refreshing…" : "Refresh"}</span>
+            </button>
             <Link
               to="/settings"
               className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-surface text-muted-foreground transition hover:border-border-strong hover:text-foreground"
@@ -225,9 +331,10 @@ function AdminScreen() {
             </Link>
             <Link
               to="/home"
-              className="inline-flex min-h-9 items-center gap-1 rounded-xl border border-border bg-surface px-3 text-xs font-semibold text-foreground transition hover:border-border-strong"
+              className="inline-flex h-9 items-center gap-1 rounded-xl border border-border bg-surface px-2.5 text-xs font-semibold text-foreground transition hover:border-border-strong sm:px-3"
+              aria-label="Back to Nuru Faith"
             >
-              Back to app
+              <span className="hidden sm:inline">Back to app</span>
               <ChevronRight className="h-3.5 w-3.5" />
             </Link>
           </div>
@@ -264,10 +371,12 @@ function AdminScreen() {
             {ADMIN_SECTIONS.map((section) => {
               const Icon = section.icon;
               const active = activeSection === section.id;
+              const badge = sectionBadges[section.id] ?? 0;
               return (
                 <button
                   key={section.id}
                   type="button"
+                  aria-current={active ? "page" : undefined}
                   onClick={() => setActiveSection(section.id)}
                   className={[
                     "inline-flex min-h-11 items-center gap-2 rounded-2xl border px-4 text-sm font-semibold transition",
@@ -278,6 +387,11 @@ function AdminScreen() {
                 >
                   <Icon className="h-4 w-4" />
                   {section.label}
+                  {badge > 0 && (
+                    <span className="ml-1 rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold text-primary">
+                      {badge > 99 ? "99+" : badge}
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -294,10 +408,12 @@ function AdminScreen() {
                 {ADMIN_SECTIONS.map((section) => {
                   const Icon = section.icon;
                   const active = activeSection === section.id;
+                  const badge = sectionBadges[section.id] ?? 0;
                   return (
                     <button
                       key={section.id}
                       type="button"
+                      aria-current={active ? "page" : undefined}
                       onClick={() => setActiveSection(section.id)}
                       className={[
                         "group flex w-full items-start gap-3 rounded-2xl px-3 py-3 text-left transition",
@@ -317,7 +433,14 @@ function AdminScreen() {
                         <Icon className="h-4 w-4" />
                       </span>
                       <span className="min-w-0">
-                        <span className="block text-sm font-semibold">{section.label}</span>
+                        <span className="flex items-center gap-2 text-sm font-semibold">
+                          {section.label}
+                          {badge > 0 && (
+                            <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold text-primary">
+                              {badge > 99 ? "99+" : badge}
+                            </span>
+                          )}
+                        </span>
                         <span className="mt-0.5 block text-[11px] leading-snug text-muted-foreground">
                           {section.description}
                         </span>
@@ -351,6 +474,51 @@ function AdminScreen() {
                 />
 
                 <section className="rounded-3xl border border-border bg-surface p-4 sm:p-5">
+                  <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+                    <div className="flex items-start gap-3">
+                      <span
+                        className={[
+                          "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border",
+                          healthIssues
+                            ? "border-amber-400/20 bg-amber-400/10 text-amber-300"
+                            : "border-leaf/20 bg-leaf/10 text-leaf",
+                        ].join(" ")}
+                      >
+                        {healthIssues ? (
+                          <AlertTriangle className="h-5 w-5" />
+                        ) : (
+                          <CheckCircle2 className="h-5 w-5" />
+                        )}
+                      </span>
+                      <div>
+                        <p className="text-sm font-semibold">
+                          {healthIssues
+                            ? healthIssues + " admin data source" + (healthIssues === 1 ? "" : "s") + " need attention"
+                            : healthLoading
+                              ? "Admin data is syncing"
+                              : "Admin data is connected"}
+                        </p>
+                        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                          {lastRefreshAt
+                            ? "Last manually refreshed at " +
+                              lastRefreshAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                            : "Live data is loaded from Nuru's protected admin sources."}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {healthChecks.map((check) => (
+                        <StatusPill
+                          key={check.label}
+                          label={check.label}
+                          state={check.error ? "error" : check.loading ? "loading" : "ok"}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </section>
+
+                <section className="rounded-3xl border border-border bg-surface p-4 sm:p-5">
                   <div className="flex flex-wrap items-end justify-between gap-3">
                     <div>
                       <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-leaf">
@@ -376,24 +544,24 @@ function AdminScreen() {
                       onClick={() => setActiveSection("moderation")}
                     />
                     <PriorityCard
-                      title="Church verification"
-                      value={pendingChurches.length}
+                      title="Mentor review"
+                      value={unverifiedMentors.length}
                       detail={
-                        pendingChurches.length
-                          ? "Directory records waiting for verification"
-                          : "All visible churches are verified"
+                        unverifiedMentors.length
+                          ? "Mentor profiles waiting for verification"
+                          : "No mentor profiles are waiting for review"
                       }
-                      icon={Church}
-                      tone={pendingChurches.length ? "attention" : "calm"}
-                      onClick={() => setActiveSection("community")}
+                      icon={UserRoundCheck}
+                      tone={unverifiedMentors.length ? "attention" : "calm"}
+                      onClick={() => setActiveSection("people")}
                     />
                     <PriorityCard
-                      title="People & access"
-                      value={pilotMetrics?.profiles ?? "—"}
-                      detail="Members, mentors and administrative access"
-                      icon={UserRoundCog}
+                      title="Directory coverage"
+                      value={directoryVerificationRate + "%"}
+                      detail={verifiedChurches.length + " of " + scoped.length + " visible churches verified"}
+                      icon={Church}
                       tone="calm"
-                      onClick={() => setActiveSection("people")}
+                      onClick={() => setActiveSection("community")}
                     />
                   </div>
                 </section>
@@ -509,14 +677,9 @@ function AdminScreen() {
                   description="Manage the directory and role-scoped operations without mixing them into the rest of the dashboard."
                 />
                 {isSuper && userId ? (
-                  <>
-                    <div className="rounded-3xl border border-border bg-surface p-4 sm:p-6">
-                      <AdminDirectory userId={userId} churches={churches.data ?? []} />
-                    </div>
-                    <div className="rounded-3xl border border-border bg-surface p-4 sm:p-6">
-                      <AdminOperations churches={churches.data ?? []} />
-                    </div>
-                  </>
+                  <div className="rounded-3xl border border-border bg-surface p-4 sm:p-6">
+                    <AdminOperations churches={churches.data ?? []} />
+                  </div>
                 ) : (
                   <div className="rounded-3xl border border-border bg-surface p-5">
                     <p className="text-sm font-semibold">Role-scoped access</p>
@@ -602,23 +765,64 @@ function AdminScreen() {
                 </div>
 
                 <section className="rounded-3xl border border-border bg-surface p-4 sm:p-5">
-                  <SectionHeader title="Moderation queue" />
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <SectionHeader title="Moderation queue" />
+                    <span className="rounded-full border border-border bg-surface-2 px-3 py-1 text-[10px] font-semibold text-muted-foreground">
+                      {filteredModeration.length} matching
+                    </span>
+                  </div>
+
+                  <div className="mb-5 grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto]">
+                    <label className="relative block">
+                      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <input
+                        value={moderationSearch}
+                        onChange={(event) => setModerationSearch(event.target.value)}
+                        placeholder="Search reason, target or source"
+                        aria-label="Search moderation reports"
+                        className="input-nuru w-full pl-10"
+                      />
+                    </label>
+                    <div className="flex flex-wrap gap-2" aria-label="Moderation filters">
+                      {(["active", "reviewing", "resolved", "dismissed", "all"] as const).map(
+                        (filter) => (
+                          <button
+                            key={filter}
+                            type="button"
+                            aria-pressed={moderationFilter === filter}
+                            onClick={() => setModerationFilter(filter)}
+                            className={[
+                              "min-h-10 rounded-xl px-3 text-xs font-semibold capitalize transition",
+                              moderationFilter === filter
+                                ? "bg-primary text-primary-foreground"
+                                : "border border-border bg-background/30 text-muted-foreground hover:text-foreground",
+                            ].join(" ")}
+                          >
+                            {filter}
+                          </button>
+                        ),
+                      )}
+                    </div>
+                  </div>
+
                   {moderation.isLoading ? (
                     <CardSkeleton count={3} height="h-24" />
                   ) : moderation.isError ? (
                     <p className="text-sm text-destructive">
                       The moderation queue couldn't be loaded for this account.
                     </p>
-                  ) : openReports.length === 0 ? (
+                  ) : filteredModeration.length === 0 ? (
                     <div className="rounded-2xl border border-border bg-surface-2 p-5">
-                      <p className="text-sm font-semibold">No open reports</p>
+                      <p className="text-sm font-semibold">
+                        {moderationFilter === "active" ? "No active reports" : "Nothing matches this view"}
+                      </p>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        Reports you are authorized to review will appear here.
+                        Try another filter or search term. New authorized reports will appear here automatically.
                       </p>
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {openReports.slice(0, 20).map((item) => (
+                      {filteredModeration.slice(0, 30).map((item) => (
                         <article
                           key={`${item.source}:${item.id}`}
                           className="rounded-2xl border border-border bg-background/30 p-4 transition hover:border-border-strong"
@@ -630,9 +834,7 @@ function AdminScreen() {
                                 {item.target}
                               </p>
                             </div>
-                            <span className="rounded-full border border-leaf/20 bg-leaf/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-leaf">
-                              {item.status}
-                            </span>
+                            <ModerationStatusBadge status={item.status} />
                           </div>
 
                           {item.details && (
@@ -642,7 +844,10 @@ function AdminScreen() {
                           )}
 
                           <div className="mt-4 flex flex-wrap items-center gap-2">
-                            <span className="mr-auto text-[10px] text-muted-foreground">
+                            <span className="mr-auto inline-flex items-center gap-2 text-[10px] text-muted-foreground">
+                              <span className="rounded-full border border-border bg-surface-2 px-2 py-1 font-semibold uppercase tracking-wide">
+                                {item.source.replace("_", " ")}
+                              </span>
                               {timeAgo(item.created_at)}
                             </span>
                             {item.source_url && (
@@ -657,17 +862,17 @@ function AdminScreen() {
                             )}
                             <button
                               type="button"
-                              disabled={updateReport.isPending}
+                              disabled={updateReport.isPending || item.status === "reviewing"}
                               onClick={() =>
                                 updateReport.mutate({ item, status: "reviewing" })
                               }
                               className="min-h-9 rounded-xl border border-border-strong px-3 text-[11px] font-semibold text-secondary-foreground disabled:opacity-50"
                             >
-                              Review
+                              {item.status === "reviewing" ? "In review" : "Review"}
                             </button>
                             <button
                               type="button"
-                              disabled={updateReport.isPending}
+                              disabled={updateReport.isPending || item.status === "dismissed"}
                               onClick={() =>
                                 updateReport.mutate({ item, status: "dismissed" })
                               }
@@ -677,7 +882,7 @@ function AdminScreen() {
                             </button>
                             <button
                               type="button"
-                              disabled={updateReport.isPending}
+                              disabled={updateReport.isPending || item.status === "resolved"}
                               onClick={() =>
                                 updateReport.mutate({ item, status: "resolved" })
                               }
@@ -709,15 +914,43 @@ function AdminScreen() {
                   <Metric label="Serve roles" value={serve.data?.length ?? 0} icon={UserCheck} />
                 </div>
 
-                <section>
-                  <SectionHeader title="Your churches" />
-                  <div className="grid gap-3 md:grid-cols-2">
-                    {scoped.length === 0 && (
-                      <div className="rounded-2xl border border-border bg-surface p-5 text-sm text-muted-foreground">
-                        No church is linked to your current administrative scope.
+                <section className="rounded-3xl border border-border bg-surface p-4 sm:p-5">
+                  <div className="flex flex-wrap items-end justify-between gap-3">
+                    <div>
+                      <SectionHeader title="Church directory" />
+                      <p className="text-xs text-muted-foreground">
+                        {filteredChurches.length.toLocaleString()} visible result{filteredChurches.length === 1 ? "" : "s"}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-display text-2xl font-semibold">{directoryVerificationRate}%</p>
+                      <p className="text-[10px] uppercase tracking-wide text-muted-foreground">verified coverage</p>
+                    </div>
+                  </div>
+
+                  <label className="relative mt-4 block">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <input
+                      value={communitySearch}
+                      onChange={(event) => {
+                        setCommunitySearch(event.target.value);
+                        setCommunityPage(0);
+                      }}
+                      placeholder="Search church, denomination, city or region"
+                      aria-label="Search church directory"
+                      className="input-nuru w-full pl-10"
+                    />
+                  </label>
+
+                  <div className="mt-4 grid gap-3 md:grid-cols-2">
+                    {filteredChurches.length === 0 && (
+                      <div className="rounded-2xl border border-border bg-background/30 p-5 text-sm text-muted-foreground md:col-span-2">
+                        {scoped.length === 0
+                          ? "No church is linked to your current administrative scope."
+                          : "No churches match that search."}
                       </div>
                     )}
-                    {scoped.slice(0, 12).map((c) => (
+                    {visibleChurches.map((c) => (
                       <article
                         key={c.id}
                         className="rounded-2xl border border-border bg-surface p-4 transition hover:border-border-strong"
@@ -743,6 +976,36 @@ function AdminScreen() {
                       </article>
                     ))}
                   </div>
+
+                  {filteredChurches.length > churchesPerPage && (
+                    <div className="mt-4 flex items-center justify-between gap-3 border-t border-border pt-4">
+                      <p className="text-xs text-muted-foreground">
+                        Page {safeCommunityPage + 1} of {communityPageCount}
+                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          disabled={safeCommunityPage === 0}
+                          onClick={() => setCommunityPage((page) => Math.max(0, page - 1))}
+                          className="inline-flex min-h-9 items-center gap-1 rounded-xl border border-border px-3 text-xs font-semibold disabled:opacity-40"
+                        >
+                          <ChevronLeft className="h-3.5 w-3.5" />
+                          Previous
+                        </button>
+                        <button
+                          type="button"
+                          disabled={safeCommunityPage >= communityPageCount - 1}
+                          onClick={() =>
+                            setCommunityPage((page) => Math.min(communityPageCount - 1, page + 1))
+                          }
+                          className="inline-flex min-h-9 items-center gap-1 rounded-xl border border-border px-3 text-xs font-semibold disabled:opacity-40"
+                        >
+                          Next
+                          <ChevronRight className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </section>
 
                 <div className="grid gap-6 xl:grid-cols-2">
@@ -823,6 +1086,49 @@ function SectionIntro({
       </h2>
       <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">{description}</p>
     </div>
+  );
+}
+
+function ModerationStatusBadge({ status }: { status: string }) {
+  const tone =
+    status === "resolved"
+      ? "border-leaf/20 bg-leaf/10 text-leaf"
+      : status === "dismissed"
+        ? "border-border bg-surface-2 text-muted-foreground"
+        : status === "reviewing"
+          ? "border-sky-400/20 bg-sky-400/10 text-sky-300"
+          : "border-amber-400/20 bg-amber-400/10 text-amber-300";
+  return (
+    <span
+      className={["rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide", tone].join(" ")}
+    >
+      {status}
+    </span>
+  );
+}
+
+function StatusPill({
+  label,
+  state,
+}: {
+  label: string;
+  state: "ok" | "loading" | "error";
+}) {
+  const Icon = state === "error" ? AlertTriangle : state === "loading" ? Clock3 : CheckCircle2;
+  return (
+    <span
+      className={[
+        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-semibold",
+        state === "error"
+          ? "border-amber-400/20 bg-amber-400/10 text-amber-300"
+          : state === "loading"
+            ? "border-border bg-surface-2 text-muted-foreground"
+            : "border-leaf/20 bg-leaf/10 text-leaf",
+      ].join(" ")}
+    >
+      <Icon className={["h-3 w-3", state === "loading" ? "animate-pulse" : ""].join(" ")} />
+      {label}
+    </span>
   );
 }
 

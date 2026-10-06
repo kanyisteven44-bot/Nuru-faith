@@ -528,34 +528,66 @@ export function AdminOperations({ churches }: { churches: Church[] }) {
           ) : !people.data?.rows.length ? (
             <p className="text-sm text-muted-foreground">No people match this view.</p>
           ) : (
-            people.data.rows.map((person) => (
-              <article key={person.id} className="nuru-card p-4">
-                <p className="font-semibold">{person.full_name || "Unnamed member"}</p>
-                {person.username && (
-                  <p className="text-sm text-muted-foreground">@{person.username}</p>
-                )}
-                <p className="mt-2 text-xs text-muted-foreground">
-                  {churches.find((church) => church.id === person.church_id)?.name ??
-                    "No primary church selected"}
-                </p>
-              </article>
-            ))
+            people.data.rows.map((person) => {
+              const displayName = person.full_name || person.username || "Unnamed member";
+              const churchName =
+                churches.find((church) => church.id === person.church_id)?.name ??
+                "No primary church selected";
+              return (
+                <article
+                  key={person.id}
+                  className="flex items-center gap-3 rounded-2xl border border-border bg-background/30 p-4 transition hover:border-border-strong"
+                >
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-leaf/20 bg-leaf/10 text-sm font-bold text-leaf">
+                    {displayName.slice(0, 1).toUpperCase()}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-semibold">{displayName}</p>
+                    <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                      {person.username && <span>@{person.username}</span>}
+                      <span className="truncate">{churchName}</span>
+                    </div>
+                  </div>
+                  <span className="hidden text-[10px] text-muted-foreground sm:block">
+                    {new Date(person.created_at).toLocaleDateString()}
+                  </span>
+                </article>
+              );
+            })
           )}
         </div>
       )}
       {tab === "Churches" && (
         <div className="grid gap-3 md:grid-cols-2">
           {matchingChurches.slice(page * 24, page * 24 + 24).map((church) => (
-            <article className="nuru-card p-4" key={church.id}>
-              <h3 className="font-semibold">{church.name}</h3>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {[church.denomination, church.city, church.region].filter(Boolean).join(" · ")}
-              </p>
-              <p className="mt-2 text-sm">
-                {memberCounts.get(church.id) ?? 0} registered members ·{" "}
-                {church.verified ? "Verified listing" : "Unverified listing"}
-              </p>
-              <div className="mt-3 flex flex-wrap gap-2">
+            <article
+              className="rounded-2xl border border-border bg-background/30 p-4 transition hover:border-border-strong"
+              key={church.id}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h3 className="truncate font-semibold">{church.name}</h3>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {[church.denomination, church.city, church.region].filter(Boolean).join(" · ") ||
+                      "Location details not added"}
+                  </p>
+                </div>
+                <span
+                  className={[
+                    "shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-semibold",
+                    church.verified
+                      ? "border-leaf/20 bg-leaf/10 text-leaf"
+                      : "border-border bg-surface-2 text-muted-foreground",
+                  ].join(" ")}
+                >
+                  {church.verified ? "Verified" : "Unverified"}
+                </span>
+              </div>
+              <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+                <Users className="h-3.5 w-3.5" />
+                {(memberCounts.get(church.id) ?? 0).toLocaleString()} registered members
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
                 <button
                   className={button}
                   onClick={() => {
@@ -594,18 +626,34 @@ export function AdminOperations({ churches }: { churches: Church[] }) {
           ) : (
             mentors.data.rows.map((mentor) => (
               <article
-                className="nuru-card flex flex-wrap items-center justify-between gap-3 p-4"
+                className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-border bg-background/30 p-4 transition hover:border-border-strong"
                 key={mentor.id}
               >
-                <div>
-                  <h3 className="font-semibold">{mentor.display_name}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {mentor.role_title} · {mentor.church_name ?? "Independent"}
-                  </p>
-                  <p className="mt-1 text-xs">
-                    {mentor.verified ? "Verified mentor" : "Pending verification"}
-                    {mentor.user_id ? " · Account linked" : " · Account not linked"}
-                  </p>
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-leaf/20 bg-leaf/10 text-leaf">
+                    <BadgeCheck className="h-5 w-5" />
+                  </span>
+                  <div className="min-w-0">
+                    <h3 className="truncate font-semibold">{mentor.display_name}</h3>
+                    <p className="truncate text-sm text-muted-foreground">
+                      {mentor.role_title} · {mentor.church_name ?? "Independent"}
+                    </p>
+                    <div className="mt-1.5 flex flex-wrap gap-1.5">
+                      <span
+                        className={[
+                          "rounded-full border px-2 py-0.5 text-[10px] font-semibold",
+                          mentor.verified
+                            ? "border-leaf/20 bg-leaf/10 text-leaf"
+                            : "border-amber-400/20 bg-amber-400/10 text-amber-300",
+                        ].join(" ")}
+                      >
+                        {mentor.verified ? "Verified" : "Pending review"}
+                      </span>
+                      <span className="rounded-full border border-border bg-surface-2 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                        {mentor.user_id ? "Account linked" : "Account not linked"}
+                      </span>
+                    </div>
+                  </div>
                 </div>
                 <button
                   className={button}

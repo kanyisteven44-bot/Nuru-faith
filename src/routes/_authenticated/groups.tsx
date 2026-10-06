@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, ChevronRight, Plus, Search, Users } from "lucide-react";
+import { Check, ChevronRight, Phone, Plus, Search, Users, Video } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { createChatGroup } from "@/services/messaging";
@@ -17,6 +17,8 @@ import { AppShell, Avatar, ScreenHeader } from "@/components/nuru/AppShell";
 import { CardSkeleton, EmptyState, PillTabs } from "@/components/nuru/Primitives";
 import { CoverImage } from "@/components/nuru/CoverImage";
 import { RichChatThread } from "@/components/nuru/RichChatThread";
+import { GroupCallPanel } from "@/components/nuru/GroupCallPanel";
+import { fetchActiveGroupCall, startOrJoinGroupCall, type GroupCallKind, type GroupCallRoom } from "@/services/groupCalls";
 import { resolveMedia } from "@/lib/media";
 import { cn } from "@/lib/utils";
 
@@ -261,6 +263,8 @@ function GroupSpace({ groupId }: { groupId: string }) {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [tab, setTab] = useState<GroupTab>("Activity");
+  const [callRoom, setCallRoom] = useState<GroupCallRoom | null>(null);
+  const [startingCall, setStartingCall] = useState(false);
 
   const group = useQuery({
     queryKey: ["group", groupId],
@@ -272,6 +276,12 @@ function GroupSpace({ groupId }: { groupId: string }) {
     enabled: !!userId,
   });
   const isMember = !!userId && (mine.data ?? []).includes(groupId);
+  const activeGroupCall = useQuery({
+    queryKey: ["active-group-call", groupId],
+    queryFn: () => fetchActiveGroupCall(groupId),
+    enabled: isMember,
+    refetchInterval: isMember && !callRoom ? 4000 : false,
+  });
 
   const posts = useQuery({
     queryKey: ["group-posts", groupId],
@@ -301,6 +311,20 @@ function GroupSpace({ groupId }: { groupId: string }) {
       toast.success("You joined the group");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Couldn't join this group");
+    }
+  }
+
+  async function openGroupCall(kind: GroupCallKind) {
+    if (!userId || startingCall) return;
+    setStartingCall(true);
+    try {
+      const room = await startOrJoinGroupCall(groupId, userId, kind);
+      setCallRoom(room);
+      await activeGroupCall.refetch();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Couldn't open the group call");
+    } finally {
+      setStartingCall(false);
     }
   }
 
@@ -406,11 +430,54 @@ function GroupSpace({ groupId }: { groupId: string }) {
               )}
 
               {tab === "Messages" && userId && (
-                <RichChatThread
-                  target={{ group: groupId }}
-                  userId={userId}
-                  maxHeight="52dvh"
-                />
+                <div className="space-y-3">
+                  <div className="rounded-2xl border border-primary/20 bg-primary/5 p-3">
+                    {activeGroupCall.data ? (
+                      <button
+                        type="button"
+                        onClick={() => void openGroupCall(activeGroupCall.data!.kind)}
+                        disabled={startingCall}
+                        className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50"
+                      >
+                        {activeGroupCall.data.kind === "video" ? (
+                          <Video className="h-4 w-4" />
+                        ) : (
+                          <Phone className="h-4 w-4" />
+                        )}
+                        Join active {activeGroupCall.data.kind} group call
+                      </button>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => void openGroupCall("audio")}
+                          disabled={startingCall}
+                          className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-primary/25 bg-card text-sm font-bold text-primary disabled:opacity-50"
+                        >
+                          <Phone className="h-4 w-4" />
+                          Group audio
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void openGroupCall("video")}
+                          disabled={startingCall}
+                          className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-bold text-primary-foreground disabled:opacity-50"
+                        >
+                          <Video className="h-4 w-4" />
+                          Group video
+                        </button>
+                      </div>
+                    )}
+                    <p className="mt-2 text-center text-[10px] text-muted-foreground">
+                      Group members can join the same live room and talk together.
+                    </p>
+                  </div>
+                  <RichChatThread
+                    target={{ group: groupId }}
+                    userId={userId}
+                    maxHeight="52dvh"
+                  />
+                </div>
               )}
 
               {tab === "Members" && (
@@ -429,6 +496,17 @@ function GroupSpace({ groupId }: { groupId: string }) {
         )}
       </div>
     </AppShell>
+    {callRoom && userId && (
+      <GroupCallPanel
+        room={callRoom}
+        groupName={group.data.name}
+        userId={userId}
+        onClose={() => {
+          setCallRoom(null);
+          void activeGroupCall.refetch();
+        }}
+      />
+    )}
   );
 }
 

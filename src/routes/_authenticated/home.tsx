@@ -13,6 +13,7 @@ import {
   Music2,
   Sparkles,
   UserRoundCheck,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -51,6 +52,7 @@ const QUICK_ACCESS: { to: string; label: string; icon: LucideIcon }[] = [
   { to: "/music", label: "Music", icon: Music2 },
   { to: "/reels", label: "Reels", icon: Clapperboard },
   { to: "/library", label: "Library", icon: Library },
+  { to: "/community", label: "Community", icon: Users },
   { to: "/ai", label: "Nuru AI", icon: Sparkles },
   // Matches the sidebar's Mentorship glyph, and stays distinct from Pray.
   { to: "/mentors", label: "Mentors", icon: UserRoundCheck },

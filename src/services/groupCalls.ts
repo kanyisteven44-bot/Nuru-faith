@@ -97,17 +97,23 @@ export async function startOrJoinGroupCall(
 }
 
 export async function heartbeatGroupCall(roomId: string, userId: string) {
-  const { error } = await table("group_call_participants")
-    .update({ updated_at: new Date().toISOString() })
-    .eq("room_id", roomId)
-    .eq("user_id", userId);
+  const { error } = await table("group_call_participants").upsert(
+    {
+      room_id: roomId,
+      user_id: userId,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "room_id,user_id" },
+  );
   if (error) throw new Error("Couldn't refresh your group call connection.");
 }
 
 export async function fetchGroupCallParticipants(roomId: string) {
+  const recent = new Date(Date.now() - 70_000).toISOString();
   const { data, error } = await table("group_call_participants")
     .select("*")
     .eq("room_id", roomId)
+    .gte("updated_at", recent)
     .order("joined_at");
   if (error) throw new Error("Couldn't load call participants.");
   return (data ?? []) as GroupCallParticipant[];
@@ -153,9 +159,11 @@ export async function leaveGroupCall(roomId: string, userId: string) {
     .eq("user_id", userId);
   if (removed.error) return;
 
+  const recent = new Date(Date.now() - 70_000).toISOString();
   const count = await table("group_call_participants")
     .select("user_id", { count: "exact", head: true })
-    .eq("room_id", roomId);
+    .eq("room_id", roomId)
+    .gte("updated_at", recent);
   if (!count.error && (count.count ?? 0) === 0) {
     await table("group_call_rooms")
       .update({ status: "ended", ended_at: new Date().toISOString() })

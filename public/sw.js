@@ -83,22 +83,37 @@ self.addEventListener("push", (event) => {
   const title = typeof payload.title === "string" ? payload.title : "Nuru Faith";
   const body = typeof payload.body === "string" ? payload.body : "";
   const id = typeof payload.id === "string" ? payload.id : "";
+  const category = typeof payload.category === "string" ? payload.category : "system";
+  const priority = typeof payload.priority === "string" ? payload.priority : "normal";
   const rawUrl = typeof payload.url === "string" ? payload.url : "/notifications";
   const url = rawUrl.startsWith("/") ? rawUrl : "/notifications";
+  const isCall = category === "call";
 
-  event.waitUntil(
-    self.registration.showNotification(title, {
-      body,
-      icon: "/icons/icon-192.png?v=arch1",
-      badge: "/icons/icon-192.png?v=arch1",
-      tag: id ? `nuru-${id}` : undefined,
-      data: { url },
-    }),
-  );
+  const options = {
+    body,
+    icon: "/icons/icon-192.png?v=arch1",
+    badge: "/icons/icon-192.png?v=arch1",
+    tag: id ? `nuru-${id}` : undefined,
+    data: { url, category },
+    requireInteraction: isCall || priority === "critical",
+    renotify: isCall,
+    vibrate: isCall ? [350, 180, 350, 180, 600] : [180],
+  };
+
+  if (isCall) {
+    options.actions = [
+      { action: "answer", title: "Open call" },
+      { action: "dismiss", title: "Dismiss" },
+    ];
+  }
+
+  event.waitUntil(self.registration.showNotification(title, options));
 });
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
+  if (event.action === "dismiss") return;
+
   const target = event.notification?.data?.url || "/notifications";
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {

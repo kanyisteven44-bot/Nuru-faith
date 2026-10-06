@@ -7,11 +7,13 @@ import { type YouTubeVideo } from "@/services/youtubeService";
 import { CoverImage } from "@/components/nuru/CoverImage";
 import { CardSkeleton, PrimaryButton } from "@/components/nuru/Primitives";
 import { MediaCatalog } from "./MediaCatalog";
+import { MediaCategoryRail } from "./MediaCategoryRail";
 
 type Creator = Awaited<ReturnType<typeof fetchMediaDirectory>>["items"][number];
 const pill = "min-h-11 shrink-0 rounded-full border border-border px-4 text-sm font-medium";
 
 export function MusicDiscovery({
+  onPlay,
   onPlayItem,
   query = "",
   mediaType = "music",
@@ -181,14 +183,28 @@ export function MusicDiscovery({
         {selected && <h3 className="font-display text-xl font-semibold">{selected.name}</h3>}
       </div>
       {(!selected || channelId) && (
-        <MediaCatalog
-          mediaType={mediaType}
-          channelId={channelId}
-          query={query}
-          language={language}
-          playback={catalogPlayback}
-          onPlay={onPlayItem}
-        />
+        <>
+          <MediaCatalog
+            mediaType={mediaType}
+            channelId={channelId}
+            creatorName={selected?.name}
+            query={query}
+            language={language}
+            playback={catalogPlayback}
+            hideEmptyState={!!selected && !!channelId}
+            onPlay={onPlayItem}
+          />
+          {selected && channelId && (
+            <div className="px-4">
+              <MediaCategoryRail
+                title={isMusic ? `${selected.name} songs` : `${selected.name} episodes`}
+                channelId={channelId}
+                onSelect={onPlay}
+                showUnavailableNotice
+              />
+            </div>
+          )}
+        </>
       )}
     </section>
   );

@@ -45,6 +45,9 @@ test("direct message receipts use one tick, two ticks, and yellow seen ticks", (
   assert.match(thread, /text-amber-300/);
   assert.match(manager, /markDirectMessagesDelivered/);
   assert.match(manager, /message-delivery-/);
+  assert.match(thread, /direct-presence-/);
+  assert.match(thread, /presenceState\(\)/);
+  assert.match(thread, /peerOnline/);
 });
 
 test("group chats expose real multi-person audio and video call rooms", () => {
@@ -55,8 +58,11 @@ test("group chats expose real multi-person audio and video call rooms", () => {
   assert.match(groupPanel, /RTCPeerConnection/);
   assert.match(groupPanel, /group_call_participants/);
   assert.match(groupPanel, /group_call_signals/);
+  assert.match(groupPanel, /refreshSession\(\)/);
+  assert.match(groupPanel, /iceCandidatePoolSize: 4/);
   assert.match(groupCalls, /startOrJoinGroupCall/);
   assert.match(groupCalls, /sendGroupCallSignal/);
+  assert.match(groupCalls, /70_000/);
 });
 
 test("group call database access is limited to real group members", () => {

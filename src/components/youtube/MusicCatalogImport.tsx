@@ -54,12 +54,21 @@ export function MusicCatalogImport() {
       setSourceTotal(sources.count ?? 0);
       setTotal(items.count ?? 0);
       if (progress.data?.last_error) setMessage(progress.data.last_error);
-      else if ((items.count ?? 0) >= target) setMessage("Catalogue target reached.");
+      else if (kind === "music" && progress.data?.status === "exhausted")
+        setMessage(
+          "All currently reviewed artist sources have been scanned. Newly approved artists can be picked up with Scan again.",
+        );
+      else if (kind !== "music" && (items.count ?? 0) >= target)
+        setMessage("Catalogue target reached.");
       else if (progress.data?.status === "complete")
         setMessage("Previous target completed. Resume the import to expand the catalogue.");
       else if (progress.data?.status === "exhausted")
         setMessage(
           "Reviewed sources exhausted below the target. Add more reviewed creators, then scan again.",
+        );
+      else if (kind === "music" && (items.count ?? 0) >= target)
+        setMessage(
+          "Song benchmark reached. Importing still continues until every reviewed artist source is scanned.",
         );
     });
     return () => {
@@ -89,7 +98,9 @@ export function MusicCatalogImport() {
               ? "Catalogue target reached."
               : channelIds.length
                 ? "Selected reviewed sources finished. All eligible songs were imported without duplicates."
-                : "Reviewed sources exhausted below the target. Add more reviewed creators to continue; entries have not been duplicated.",
+                : kind === "music"
+                  ? "All currently reviewed artist sources have been scanned. Newly approved artists can be picked up with Scan again."
+                  : "Reviewed sources exhausted below the target. Add more reviewed creators to continue; entries have not been duplicated.",
           );
           break;
         }
@@ -155,8 +166,9 @@ export function MusicCatalogImport() {
       )}
       {total !== null && (
         <p className="text-sm font-semibold">
-          {total.toLocaleString()} / {target.toLocaleString()} distinct{" "}
-          {kind === "music" ? "songs" : "video episodes"}
+          {kind === "music"
+            ? `${total.toLocaleString()} distinct songs imported · ${target.toLocaleString()} benchmark (not a cap)`
+            : `${total.toLocaleString()} / ${target.toLocaleString()} distinct video episodes`}
         </p>
       )}
       <div className="flex flex-wrap gap-2">

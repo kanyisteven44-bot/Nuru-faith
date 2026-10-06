@@ -346,7 +346,15 @@ export async function fetchMediaDirectory(options: {
   const rows = data ?? [];
   const total = Number(rows[0]?.total_count ?? 0);
   return {
-    items: rows.map(({ total_count: _totalCount, ...row }) => row),
+    items: rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      description: row.description,
+      avatar_url: row.avatar_url,
+      youtube_channel_id: row.youtube_channel_id,
+      content_kind: row.content_kind,
+      language_codes: row.language_codes,
+    })),
     total,
     hasMore: (page + 1) * pageSize < total,
   };

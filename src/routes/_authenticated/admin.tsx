@@ -312,6 +312,16 @@ function AdminScreen() {
               <ShieldCheck className="h-3.5 w-3.5" />
               {roleLabel}
             </span>
+            <button
+              type="button"
+              onClick={() => void refreshAdminData()}
+              disabled={isRefreshing}
+              className="inline-flex min-h-9 items-center gap-2 rounded-xl border border-border bg-surface px-3 text-xs font-semibold text-muted-foreground transition hover:border-border-strong hover:text-foreground disabled:opacity-50"
+              aria-label="Refresh admin data"
+            >
+              <RefreshCw className={["h-3.5 w-3.5", isRefreshing ? "animate-spin" : ""].join(" ")} />
+              <span className="hidden sm:inline">{isRefreshing ? "Refreshing…" : "Refresh"}</span>
+            </button>
             <Link
               to="/settings"
               className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-surface text-muted-foreground transition hover:border-border-strong hover:text-foreground"

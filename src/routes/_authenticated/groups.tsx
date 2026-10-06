@@ -370,8 +370,9 @@ function GroupSpace({ groupId }: { groupId: string }) {
   const image = resolveMedia(group.data.cover_url || "asset:topic-prayer");
 
   return (
-    <AppShell>
-      <ScreenHeader title={group.data.name} back />
+    <>
+      <AppShell>
+        <ScreenHeader title={group.data.name} back />
 
       <div className="mx-auto w-full max-w-3xl pb-8">
         <section className="relative overflow-hidden">
@@ -495,8 +496,8 @@ function GroupSpace({ groupId }: { groupId: string }) {
           </>
         )}
       </div>
-    </AppShell>
-    {callRoom && userId && (
+      </AppShell>
+      {callRoom && userId && (
       <GroupCallPanel
         room={callRoom}
         groupName={group.data.name}
@@ -506,7 +507,8 @@ function GroupSpace({ groupId }: { groupId: string }) {
           void activeGroupCall.refetch();
         }}
       />
-    )}
+      )}
+    </>
   );
 }
 

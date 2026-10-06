@@ -1,1 +1,5 @@
 project_id = "qnqkcqywvqzfkickezxd"
+
+[auth.email.template.confirmation]
+subject = "Welcome to Nuru Faith — confirm your email"
+content_path = "./supabase/templates/confirmation.html"

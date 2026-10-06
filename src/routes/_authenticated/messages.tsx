@@ -23,6 +23,7 @@ import { CardSkeleton, EmptyState, ErrorState } from "@/components/nuru/Primitiv
 import { resolveMedia } from "@/lib/media";
 import { cn } from "@/lib/utils";
 import { z } from "zod";
+import { toast } from "sonner";
 
 const searchSchema = z.object({
   user: z.string().uuid().optional(),

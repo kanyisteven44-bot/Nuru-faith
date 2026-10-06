@@ -3,8 +3,8 @@
 // target here so external hosts receive the correct server output.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
-const isNetlify = !!process.env.NETLIFY;
-const isVercel = !!process.env.VERCEL;
+const isNetlify = !!process.env["NETLIFY"];
+const isVercel = !!process.env["VERCEL"];
 
 export default defineConfig({
   tanstackStart: {

@@ -607,6 +607,24 @@ export type Database = {
         }
         Relationships: []
       }
+      direct_presence: {
+        Row: {
+          last_seen_at: string
+          peer_id: string
+          user_id: string
+        }
+        Insert: {
+          last_seen_at?: string
+          peer_id: string
+          user_id: string
+        }
+        Update: {
+          last_seen_at?: string
+          peer_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       event_attendees: {
         Row: {
           created_at: string
@@ -811,6 +829,111 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      group_call_participants: {
+        Row: {
+          joined_at: string
+          room_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          joined_at?: string
+          room_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          joined_at?: string
+          room_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_call_participants_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "group_call_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_call_rooms: {
+        Row: {
+          created_at: string
+          created_by: string
+          ended_at: string | null
+          group_id: string
+          id: string
+          kind: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          ended_at?: string | null
+          group_id: string
+          id?: string
+          kind: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          ended_at?: string | null
+          group_id?: string
+          id?: string
+          kind?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_call_rooms_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_call_signals: {
+        Row: {
+          created_at: string
+          id: string
+          payload: Json
+          recipient_id: string
+          room_id: string
+          sender_id: string
+          signal_type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          payload: Json
+          recipient_id: string
+          room_id: string
+          sender_id: string
+          signal_type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          payload?: Json
+          recipient_id?: string
+          room_id?: string
+          sender_id?: string
+          signal_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_call_signals_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "group_call_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       group_chat_messages: {
         Row: {
@@ -1177,6 +1300,13 @@ export type Database = {
             columns: ["source_id"]
             isOneToOne: false
             referencedRelation: "media_sources"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "media_items_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "media_sources_with_content"
             referencedColumns: ["id"]
           },
         ]
@@ -1808,6 +1938,8 @@ export type Database = {
           kind: Database["public"]["Enums"]["post_kind"]
           like_count: number
           media_url: string | null
+          music_start_seconds: number
+          music_track_id: string | null
           scripture_ref: string | null
           updated_at: string
         }
@@ -1826,6 +1958,8 @@ export type Database = {
           kind?: Database["public"]["Enums"]["post_kind"]
           like_count?: number
           media_url?: string | null
+          music_start_seconds?: number
+          music_track_id?: string | null
           scripture_ref?: string | null
           updated_at?: string
         }
@@ -1844,6 +1978,8 @@ export type Database = {
           kind?: Database["public"]["Enums"]["post_kind"]
           like_count?: number
           media_url?: string | null
+          music_start_seconds?: number
+          music_track_id?: string | null
           scripture_ref?: string | null
           updated_at?: string
         }
@@ -3004,6 +3140,13 @@ export type Database = {
             referencedRelation: "media_sources"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "user_media_follows_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "media_sources_with_content"
+            referencedColumns: ["id"]
+          },
         ]
       }
       user_media_saves: {
@@ -3170,6 +3313,42 @@ export type Database = {
       }
     }
     Views: {
+      media_sources_with_content: {
+        Row: {
+          avatar_url: string | null
+          content_kind: string | null
+          description: string | null
+          has_music: boolean | null
+          has_podcast: boolean | null
+          id: string | null
+          language_codes: string[] | null
+          name: string | null
+          youtube_channel_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          content_kind?: string | null
+          description?: string | null
+          has_music?: never
+          has_podcast?: never
+          id?: string | null
+          language_codes?: string[] | null
+          name?: string | null
+          youtube_channel_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          content_kind?: string | null
+          description?: string | null
+          has_music?: never
+          has_podcast?: never
+          id?: string | null
+          language_codes?: string[] | null
+          name?: string | null
+          youtube_channel_id?: string | null
+        }
+        Relationships: []
+      }
       mentor_chat_threads: {
         Row: {
           body: string | null
@@ -3235,10 +3414,36 @@ export type Database = {
       }
     }
     Functions: {
+      account_deletion_storage_inventory: {
+        Args: { account_id: string }
+        Returns: {
+          bucket_id: string
+          name: string
+        }[]
+      }
       consume_nuru_rate_limit: { Args: { p_action: string }; Returns: Json }
       create_chat_group: {
         Args: { group_description?: string; group_name: string }
         Returns: string
+      }
+      get_media_directory_with_content: {
+        Args: {
+          p_kind: string
+          p_language?: string
+          p_limit?: number
+          p_offset?: number
+          p_query?: string
+        }
+        Returns: {
+          avatar_url: string
+          content_kind: string
+          description: string
+          id: string
+          language_codes: string[]
+          name: string
+          total_count: number
+          youtube_channel_id: string
+        }[]
       }
       get_nuru_admin_overview: { Args: never; Returns: Json }
       get_nuru_pilot_metrics: { Args: never; Returns: Json }

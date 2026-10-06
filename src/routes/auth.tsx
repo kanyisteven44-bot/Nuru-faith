@@ -37,6 +37,12 @@ const credentials = z.object({
 
 type Method = "email" | "phone";
 
+function publicAppOrigin() {
+  const configured = import.meta.env["VITE_PUBLIC_APP_URL"]?.trim().replace(/\/$/, "");
+  if (configured && /^https:\/\//.test(configured)) return configured;
+  return window.location.origin;
+}
+
 function AuthPage() {
   const { mode } = Route.useSearch();
   const navigate = useNavigate();
@@ -94,7 +100,7 @@ function AuthPage() {
         const parsed = z.string().email().safeParse(email.trim());
         if (!parsed.success) throw new Error("Enter a valid email address");
         const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-          redirectTo: `${window.location.origin}/reset-password`,
+          redirectTo: `${publicAppOrigin()}/reset-password`,
         });
         if (error) throw error;
         setSent(true);
@@ -113,7 +119,7 @@ function AuthPage() {
           email: parsed.data.email,
           password: parsed.data.password,
           options: {
-            emailRedirectTo: window.location.origin,
+            emailRedirectTo: publicAppOrigin(),
             data: { full_name: fullName.trim() },
           },
         });
@@ -190,7 +196,7 @@ function AuthPage() {
         provider: "google",
         options: {
           skipBrowserRedirect: true,
-          redirectTo: `${window.location.origin}/auth-callback`,
+          redirectTo: `${publicAppOrigin()}/auth-callback`,
           queryParams: {
             access_type: "offline",
             prompt: "select_account",

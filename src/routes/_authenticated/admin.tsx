@@ -231,6 +231,57 @@ function AdminScreen() {
     : 0;
   const attentionCount = openReports.length + unverifiedMentors.length;
 
+  const normalizedModerationSearch = moderationSearch.trim().toLowerCase();
+  const filteredModeration = (moderation.data ?? []).filter((item) => {
+    const statusMatch =
+      moderationFilter === "all"
+        ? true
+        : moderationFilter === "active"
+          ? ["open", "pending", "reviewing"].includes(item.status)
+          : item.status === moderationFilter;
+    if (!statusMatch) return false;
+    if (!normalizedModerationSearch) return true;
+    return `${item.reason} ${item.target} ${item.details ?? ""} ${item.source}`
+      .toLowerCase()
+      .includes(normalizedModerationSearch);
+  });
+
+  const normalizedChurchSearch = communitySearch.trim().toLowerCase();
+  const filteredChurches = scoped.filter((church) =>
+    !normalizedChurchSearch
+      ? true
+      : `${church.name} ${church.denomination ?? ""} ${church.city ?? ""} ${church.region ?? ""}`
+          .toLowerCase()
+          .includes(normalizedChurchSearch),
+  );
+  const churchesPerPage = 12;
+  const communityPageCount = Math.max(1, Math.ceil(filteredChurches.length / churchesPerPage));
+  const safeCommunityPage = Math.min(communityPage, communityPageCount - 1);
+  const visibleChurches = filteredChurches.slice(
+    safeCommunityPage * churchesPerPage,
+    safeCommunityPage * churchesPerPage + churchesPerPage,
+  );
+
+  const healthChecks = [
+    { label: "Directory", error: churches.isError, loading: churches.isLoading },
+    {
+      label: "Community",
+      error: groups.isError || events.isError || serve.isError,
+      loading: groups.isLoading || events.isLoading || serve.isLoading,
+    },
+    { label: "Moderation", error: moderation.isError, loading: moderation.isLoading },
+    ...(isSuper || isModerator
+      ? [{ label: "Pilot metrics", error: pilot.isError, loading: pilot.isLoading }]
+      : []),
+  ];
+  const healthIssues = healthChecks.filter((check) => check.error).length;
+  const healthLoading = healthChecks.some((check) => check.loading);
+  const sectionBadges: Partial<Record<AdminSection, number>> = {
+    overview: attentionCount,
+    people: unverifiedMentors.length,
+    moderation: openReports.length,
+  };
+
   const roleLabel = isSuper ? "Super admin" : isModerator ? "Moderator" : "Church admin";
   const pilotMetrics = pilot.data;
   const onboardingRate =

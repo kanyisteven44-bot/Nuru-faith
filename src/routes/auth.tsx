@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { z } from "zod";
-import { Loader2, Lock, Mail, Phone, User as UserIcon } from "lucide-react";
+import { Loader2, Lock, Mail, MailCheck, Phone, User as UserIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { NuruMark } from "@/components/nuru/Logo";
@@ -283,22 +283,40 @@ function AuthPage() {
         </div>
 
         {sent ? (
-          <div className="nuru-card mt-6 space-y-3 p-5 text-sm text-secondary-foreground">
-            <p className="font-display text-base font-semibold text-foreground">Check your email</p>
-            <p>
-              We sent a link to <span className="text-leaf">{email}</span>. Open it on this device
-              to continue.
-            </p>
-            <button
-              type="button"
-              className="text-leaf hover:underline"
-              onClick={() => {
-                setSent(false);
-                void navigate({ to: "/auth", search: { mode: "login" } });
-              }}
-            >
-              Back to sign in
-            </button>
+          <div className="nuru-card mt-6 overflow-hidden border border-primary/20 p-0 text-sm text-secondary-foreground">
+            <div className="border-b border-border bg-primary/5 px-5 py-6 text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-leaf">
+                <MailCheck className="h-6 w-6" aria-hidden="true" />
+              </div>
+              <p className="mt-3 font-display text-lg font-semibold text-foreground">
+                {mode === "forgot" ? "Reset link sent" : "Check your inbox"}
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                {mode === "forgot"
+                  ? "We sent a secure password-reset link."
+                  : "One quick step and your Nuru Faith account is ready."}
+              </p>
+            </div>
+            <div className="space-y-4 px-5 py-5">
+              <div className="rounded-xl border border-border bg-surface-2 px-3 py-2.5 text-center text-[13px] font-medium text-foreground">
+                {email}
+              </div>
+              <p className="text-center text-[12px] leading-relaxed text-muted-foreground">
+                {mode === "forgot"
+                  ? "Open the email and follow the link to choose a new password."
+                  : "Open the Nuru Faith email and tap the confirmation button. You can then return here and sign in."}
+              </p>
+              <button
+                type="button"
+                className="min-h-11 w-full rounded-xl border border-border bg-surface-2 px-4 text-sm font-semibold text-foreground transition-colors hover:bg-surface"
+                onClick={() => {
+                  setSent(false);
+                  void navigate({ to: "/auth", search: { mode: "login" } });
+                }}
+              >
+                Back to sign in
+              </button>
+            </div>
           </div>
         ) : mode === "forgot" ? (
           <form onSubmit={submitEmail} className="mt-6 space-y-3">

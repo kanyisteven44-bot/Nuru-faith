@@ -3,10 +3,16 @@ import { useAuth } from "@/hooks/useAuth";
 import { NuruGlyph } from "@/components/nuru/Logo";
 import { cn } from "@/lib/utils";
 
-const SESSION_KEY = "nuru-opening-v4-shown";
-const HOLD_MS = 2100;
-const MAX_MS = 3400;
-const EXIT_MS = 360;
+const SESSION_KEY = "nuru-opening-v5-shown";
+const HOLD_MS = 2300;
+const MAX_MS = 4200;
+const EXIT_MS = 320;
+
+const OPENING_PHOTOS = [
+  "/photos/friends-outdoors.jpg",
+  "/photos/worship-gathering.jpg",
+  "/photos/prayer-community.jpg",
+] as const;
 
 let shownOnLoad: boolean | null = null;
 
@@ -22,9 +28,9 @@ function alreadyShown() {
 }
 
 /**
- * Nuru's first impression: one real photograph, one brand mark and one message.
- * The opening deliberately avoids a long loading animation; it exists to make
- * the transition into Nuru feel intentional while auth restores in the background.
+ * First impression for Nuru Faith:
+ * real Gen Z photography, the real brand mark, and a quiet loading indicator.
+ * No extra copy competes with the image while the session/app finishes opening.
  */
 export function SplashScreen({
   preview = false,
@@ -40,6 +46,7 @@ export function SplashScreen({
   loadingRef.current = loading;
 
   const [stage, setStage] = useState<"pending" | "playing" | "exiting" | "gone">("pending");
+  const [photoIndex, setPhotoIndex] = useState(0);
   const exited = useRef(false);
   const minElapsed = useRef(false);
   const exitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -70,6 +77,24 @@ export function SplashScreen({
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     setStage("playing");
 
+    let photoTimer: number | null = null;
+    if (reducedMotion) {
+      setPhotoIndex(0);
+    } else {
+      photoTimer = window.setInterval(() => {
+        setPhotoIndex((current) => (current + 1) % OPENING_PHOTOS.length);
+      }, 900);
+    }
+
+    return () => {
+      if (photoTimer !== null) window.clearInterval(photoTimer);
+    };
+  }, [preview, initialOnly]);
+
+  useEffect(() => {
+    if (stage !== "playing") return;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
     if (preview) return;
 
     const min = setTimeout(
@@ -85,7 +110,7 @@ export function SplashScreen({
       clearTimeout(min);
       clearTimeout(max);
     };
-  }, [preview, initialOnly, exit]);
+  }, [preview, stage, exit]);
 
   useEffect(() => {
     if (!preview && stage === "playing" && minElapsed.current && !loading) exit();
@@ -110,57 +135,45 @@ export function SplashScreen({
         stage === "exiting" && "nuru-open-exit",
       )}
     >
-      <img
-        src="/photos/friends-outdoors.jpg"
-        alt=""
-        aria-hidden="true"
-        decoding="async"
-        fetchPriority="high"
-        className="nuru-opening-photo"
-      />
+      <div className="absolute inset-0" aria-hidden="true">
+        {OPENING_PHOTOS.map((src, index) => (
+          <img
+            key={src}
+            src={src}
+            alt=""
+            decoding="async"
+            fetchPriority={index === 0 ? "high" : "auto"}
+            className={cn(
+              "nuru-opening-photo",
+              index === photoIndex ? "nuru-opening-photo-active" : "nuru-opening-photo-idle",
+            )}
+          />
+        ))}
+      </div>
       <div aria-hidden="true" className="nuru-opening-photo-overlay" />
-      <div aria-hidden="true" className="nuru-opening-light" />
 
       <div className="relative z-10 flex min-h-dvh flex-col items-center justify-center px-6 text-center">
         <div className="nuru-opening-brandmark" aria-hidden="true">
           <NuruGlyph className="h-full w-full" />
         </div>
-
-        <div className="nuru-opening-wordmark mt-5">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-cyan-100/75">
-            Light for this generation
-          </p>
-          <h1 className="mt-3 font-sans text-[clamp(2.2rem,10vw,4.2rem)] font-bold leading-none tracking-[0.22em] text-white">
+        <div className="nuru-opening-wordmark mt-4">
+          <h1 className="font-sans text-[clamp(2.15rem,10vw,4rem)] font-bold leading-none tracking-[0.2em] text-white">
             NURU
           </h1>
-          <p className="mt-2 font-sans text-[11px] font-semibold uppercase tracking-[0.5em] text-cyan-100/85 sm:text-sm">
+          <p className="mt-2 font-sans text-[11px] font-semibold uppercase tracking-[0.48em] text-cyan-100/90 sm:text-sm">
             Faith
           </p>
         </div>
-
-        <p className="nuru-opening-message mt-7 max-w-sm font-display text-[clamp(1.08rem,4vw,1.35rem)] leading-relaxed text-white/90">
-          Find your people. Grow in faith. Live with purpose.
-        </p>
-
-        <div className="nuru-opening-rule mt-7 h-px w-20" aria-hidden="true" />
       </div>
 
-      <button
-        type="button"
-        onClick={exit}
-        className="nuru-opening-skip absolute right-4 top-[max(1rem,env(safe-area-inset-top))] z-20 min-h-11 rounded-full px-4 text-xs font-semibold tracking-wide text-white/70 transition hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-100"
-      >
-        {preview ? "Close" : "Skip"}
-      </button>
-
-      {!preview && (
-        <button
-          type="button"
-          aria-label="Continue into Nuru Faith"
-          onClick={exit}
-          className="absolute inset-x-0 bottom-0 z-10 h-[28vh] cursor-default focus-visible:outline-none"
-        />
-      )}
+      <div className="nuru-opening-loader absolute inset-x-0 bottom-[max(1.5rem,env(safe-area-inset-bottom))] z-20 mx-auto w-[min(78vw,18rem)] text-center">
+        <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/70">
+          Opening Nuru Faith
+        </p>
+        <div className="nuru-opening-loader-track" aria-hidden="true">
+          <span className="nuru-opening-loader-bar" />
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { CoverImage } from "@/components/nuru/CoverImage";
 import { resolveMedia } from "@/lib/media";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowRight, HandHeart, LogIn, Sprout, Users } from "lucide-react";
+import { ArrowRight, HandHeart, Sprout, Users } from "lucide-react";
 
 export const Route = createFileRoute("/welcome")({
   ssr: false,
@@ -75,26 +75,15 @@ function Welcome() {
           ))}
         </ul>
 
-        <div className="mt-auto space-y-3 pt-12">
+        <div className="mt-auto pt-12">
           <button
             type="button"
             onClick={() => void navigate({ to: "/auth", search: { mode: "signup" } })}
             className="flex min-h-13 w-full items-center justify-center gap-2 rounded-2xl bg-primary px-5 text-sm font-bold text-primary-foreground nuru-glow transition-transform active:scale-[0.99]"
           >
-            Create my account
+            Continue
             <ArrowRight className="h-4.5 w-4.5" />
           </button>
-          <Link
-            to="/auth"
-            search={{ mode: "login" }}
-            className="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-border bg-surface-2 px-5 text-sm font-semibold text-foreground transition-colors hover:bg-surface"
-          >
-            <LogIn className="h-4 w-4" />
-            I already have an account
-          </Link>
-          <p className="pt-1 text-center text-[11px] leading-relaxed text-muted-foreground">
-            Your profile takes about a minute to set up.
-          </p>
         </div>
       </div>
     </div>

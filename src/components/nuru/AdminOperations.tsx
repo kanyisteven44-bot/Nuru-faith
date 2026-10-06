@@ -17,9 +17,15 @@ const clean = (value: string) =>
     .replace(/[^\p{L}\p{N}\s-]/gu, " ")
     .trim();
 
-export function AdminOperations({ churches }: { churches: Church[] }) {
+export function AdminOperations({
+  churches,
+  initialTab = "People",
+}: {
+  churches: Church[];
+  initialTab?: Tab;
+}) {
   const qc = useQueryClient();
-  const [tab, setTab] = useState<Tab>("People");
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [memberChurch, setMemberChurch] = useState<Church | null>(null);

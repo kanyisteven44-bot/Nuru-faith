@@ -326,6 +326,17 @@ export async function upsertMediaSource(input: {
   return data;
 }
 
+type UntypedMediaDirectoryQuery = {
+  select: (...args: unknown[]) => UntypedMediaDirectoryQuery;
+  eq: (...args: unknown[]) => UntypedMediaDirectoryQuery;
+  in: (...args: unknown[]) => UntypedMediaDirectoryQuery;
+  ilike: (...args: unknown[]) => UntypedMediaDirectoryQuery;
+  not: (...args: unknown[]) => UntypedMediaDirectoryQuery;
+  contains: (...args: unknown[]) => UntypedMediaDirectoryQuery;
+  order: (...args: unknown[]) => UntypedMediaDirectoryQuery;
+  range: (...args: unknown[]) => Promise<{ data: unknown[] | null; error: Error | null; count: number | null }>;
+};
+
 export async function fetchMediaDirectory(options: {
   kind: "music" | "podcast";
   query?: string;
@@ -333,15 +344,16 @@ export async function fetchMediaDirectory(options: {
   page: number;
 }) {
   const pageSize = 36;
-  let query = supabase
-    .from("media_sources")
+  const client = supabase as unknown as {
+    from: (name: string) => UntypedMediaDirectoryQuery;
+  };
+  let query = client
+    .from("media_sources_with_content")
     .select("id,name,description,avatar_url,youtube_channel_id,content_kind,language_codes", {
       count: "exact",
     })
-    .eq("is_approved", true)
-    .eq("source_type", "youtube")
     .in("content_kind", [options.kind, "mixed"])
-    .not("youtube_channel_id", "is", null);
+    .eq(options.kind === "music" ? "has_music" : "has_podcast", true);
   const term = safeMediaTerm(options.query ?? "");
   if (term) query = query.ilike("name", `%${term}%`);
   if (options.language && options.language !== "all") {
@@ -356,5 +368,17 @@ export async function fetchMediaDirectory(options: {
     .order("id")
     .range(start, start + pageSize - 1);
   if (error) throw error;
-  return { items: data ?? [], total: count ?? 0, hasMore: start + pageSize < (count ?? 0) };
+  return {
+    items: (data ?? []) as Array<{
+      id: string;
+      name: string;
+      description: string | null;
+      avatar_url: string | null;
+      youtube_channel_id: string | null;
+      content_kind: string;
+      language_codes: string[];
+    }>,
+    total: count ?? 0,
+    hasMore: start + pageSize < (count ?? 0),
+  };
 }

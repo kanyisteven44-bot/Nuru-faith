@@ -61,10 +61,12 @@ test("direct message receipts use one tick, two ticks, and yellow seen ticks", (
 });
 
 test("group chats expose real multi-person audio and video call rooms", () => {
-  assert.match(groups, /Group audio/);
-  assert.match(groups, /Group video/);
-  assert.match(messages, /Group audio/);
-  assert.match(messages, /Group video/);
+  assert.match(groups, /Start group audio call/);
+  assert.match(groups, /Start group video call/);
+  assert.match(groups, /Join active group/);
+  assert.match(messages, /Start group audio call/);
+  assert.match(messages, /Start group video call/);
+  assert.match(messages, /Join active group/);
   assert.match(groupPanel, /RTCPeerConnection/);
   assert.match(groupPanel, /group_call_participants/);
   assert.match(groupPanel, /group_call_signals/);

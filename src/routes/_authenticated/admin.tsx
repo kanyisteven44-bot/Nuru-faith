@@ -182,6 +182,9 @@ function AdminScreen() {
   const openReports = (moderation.data ?? []).filter(
     (item) => item.status === "open" || item.status === "pending" || item.status === "reviewing",
   );
+  const reviewingReports = openReports.filter((item) => item.status === "reviewing");
+  const pendingChurches = scoped.filter((church) => !church.verified);
+  const attentionCount = openReports.length + pendingChurches.length;
 
   const roleLabel = isSuper ? "Super admin" : isModerator ? "Moderator" : "Church admin";
   const pilotMetrics = pilot.data;
@@ -241,16 +244,16 @@ function AdminScreen() {
                 Operations
               </div>
               <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">
-                Keep Nuru healthy, safe and growing.
+                Nuru operations, organized around what matters.
               </h1>
               <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-                Manage people, content, churches and reports from one organized workspace. Sensitive
-                actions still follow Nuru's role and MFA protections.
+                See platform health first, handle priority work next, then move into people,
+                content, moderation and community tools without losing context.
               </p>
             </div>
             <div className="grid grid-cols-3 gap-2 sm:min-w-[330px]">
               <MiniStat label="Members" value={pilotMetrics?.profiles ?? "—"} />
-              <MiniStat label="Reports" value={openReports.length} />
+              <MiniStat label="Attention" value={attentionCount} />
               <MiniStat label="Churches" value={scoped.length} />
             </div>
           </div>
@@ -344,15 +347,66 @@ function AdminScreen() {
                 <SectionIntro
                   eyebrow="Overview"
                   title="What needs your attention"
-                  description="A clean snapshot of platform health, activity and current operational workload."
+                  description="Start with the work that can block safety, trust or community growth, then move into the wider platform."
                 />
 
-                <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+                <section className="rounded-3xl border border-border bg-surface p-4 sm:p-5">
+                  <div className="flex flex-wrap items-end justify-between gap-3">
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-leaf">
+                        Priority centre
+                      </p>
+                      <h3 className="mt-1 font-display text-xl font-semibold">Handle important work first</h3>
+                    </div>
+                    <span className="rounded-full border border-border bg-surface-2 px-3 py-1 text-[11px] font-semibold text-muted-foreground">
+                      {attentionCount} item{attentionCount === 1 ? "" : "s"} need attention
+                    </span>
+                  </div>
+                  <div className="mt-4 grid gap-3 md:grid-cols-3">
+                    <PriorityCard
+                      title="Moderation queue"
+                      value={openReports.length}
+                      detail={
+                        reviewingReports.length
+                          ? reviewingReports.length + " already in review"
+                          : "No reports are currently being reviewed"
+                      }
+                      icon={Flag}
+                      tone={openReports.length ? "attention" : "calm"}
+                      onClick={() => setActiveSection("moderation")}
+                    />
+                    <PriorityCard
+                      title="Church verification"
+                      value={pendingChurches.length}
+                      detail={
+                        pendingChurches.length
+                          ? "Directory records waiting for verification"
+                          : "All visible churches are verified"
+                      }
+                      icon={Church}
+                      tone={pendingChurches.length ? "attention" : "calm"}
+                      onClick={() => setActiveSection("community")}
+                    />
+                    <PriorityCard
+                      title="People & access"
+                      value={pilotMetrics?.profiles ?? "—"}
+                      detail="Members, mentors and administrative access"
+                      icon={UserRoundCog}
+                      tone="calm"
+                      onClick={() => setActiveSection("people")}
+                    />
+                  </div>
+                </section>
+
+                <section>
+                  <SectionHeader title="At a glance" />
+                  <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
                   <Metric label="Churches" value={scoped.length} icon={Church} />
                   <Metric label="Groups" value={groups.data?.length ?? 0} icon={Users} />
                   <Metric label="Upcoming events" value={events.data?.length ?? 0} icon={CalendarDays} />
                   <Metric label="Open reports" value={openReports.length} icon={Flag} />
-                </div>
+                  </div>
+                </section>
 
                 {(isSuper || isModerator) && (
                   <section className="rounded-3xl border border-border bg-surface p-4 sm:p-5">
@@ -835,6 +889,55 @@ function ProgressCard({
         />
       </div>
     </div>
+  );
+}
+
+function PriorityCard({
+  title,
+  value,
+  detail,
+  icon: Icon,
+  tone,
+  onClick,
+}: {
+  title: string;
+  value: number | string;
+  detail: string;
+  icon: typeof Users;
+  tone: "attention" | "calm";
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={[
+        "group rounded-2xl border p-4 text-left transition hover:-translate-y-0.5",
+        tone === "attention"
+          ? "border-amber-400/20 bg-amber-400/[0.06] hover:border-amber-400/35"
+          : "border-border bg-background/30 hover:border-leaf/30",
+      ].join(" ")}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <span
+          className={[
+            "flex h-10 w-10 items-center justify-center rounded-xl border",
+            tone === "attention"
+              ? "border-amber-400/20 bg-amber-400/10 text-amber-300"
+              : "border-leaf/20 bg-leaf/10 text-leaf",
+          ].join(" ")}
+        >
+          <Icon className="h-4 w-4" />
+        </span>
+        <span className="font-display text-2xl font-semibold">{value}</span>
+      </div>
+      <p className="mt-4 text-sm font-semibold">{title}</p>
+      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{detail}</p>
+      <span className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold text-leaf">
+        Open workspace
+        <ChevronRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
+      </span>
+    </button>
   );
 }
 

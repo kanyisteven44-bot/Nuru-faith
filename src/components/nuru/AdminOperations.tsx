@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { BadgeCheck, Bot, Building2, ChevronLeft, ChevronRight, Pencil, Plus, RefreshCw, Search, UserPlus, Users } from "lucide-react";
 import { getAdminOverview } from "@/lib/adminOperations.functions";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -9,7 +10,7 @@ import { MfaChallenge } from "./MfaSecurity";
 type Church = Database["public"]["Tables"]["churches"]["Row"];
 type Tab = "People" | "Churches" | "Mentors" | "AI topics";
 const button =
-  "min-h-11 rounded-xl border border-border px-4 text-sm font-semibold disabled:opacity-50";
+  "inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-border bg-surface px-3.5 text-sm font-semibold transition hover:border-border-strong hover:bg-surface-2 disabled:opacity-50";
 const clean = (value: string) =>
   value
     .trim()
@@ -227,15 +228,20 @@ export function AdminOperations({ churches }: { churches: Church[] }) {
     }
   }
   return (
-    <section aria-label="Super-admin operations" className="space-y-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+    <section aria-label="Super-admin operations" className="space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="font-display text-2xl font-semibold">People & community</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Live records, church membership and mentor management.
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-leaf">
+            Platform operations
+          </p>
+          <h2 className="mt-1 font-display text-2xl font-semibold">People & community controls</h2>
+          <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+            Search live records, review church membership, manage mentors and see privacy-safe AI
+            topic trends from one workspace.
           </p>
         </div>
         <button className={button} onClick={() => void overview.refetch()}>
+          <RefreshCw className="h-4 w-4" />
           Refresh totals
         </button>
       </div>
@@ -254,22 +260,46 @@ export function AdminOperations({ churches }: { churches: Church[] }) {
               ["Mentors", overview.data.mentors],
               ["Verified mentors", overview.data.verified_mentors],
               ["AI questions · 30 days", overview.data.ai_questions_30d],
-            ].map(([label, value]) => (
-              <div className="nuru-card p-4" key={label}>
-                <p className="font-display text-2xl font-semibold">
-                  {Number(value).toLocaleString()}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">{label}</p>
-              </div>
-            ))}
+            ].map(([label, value]) => {
+              const Icon =
+                String(label).includes("people") || String(label).includes("memberships")
+                  ? Users
+                  : String(label).includes("Church")
+                    ? Building2
+                    : String(label).includes("Mentor")
+                      ? BadgeCheck
+                      : Bot;
+              return (
+                <div
+                  className="rounded-2xl border border-border bg-background/35 p-4 transition hover:border-border-strong"
+                  key={label}
+                >
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-leaf/20 bg-leaf/10 text-leaf">
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <p className="mt-3 font-display text-2xl font-semibold">
+                    {Number(value).toLocaleString()}
+                  </p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{label}</p>
+                </div>
+              );
+            })}
           </div>
         )
       )}
-      <div className="flex flex-wrap gap-2" aria-label="Operations sections">
+      <div
+        className="flex flex-wrap gap-2 rounded-2xl border border-border bg-background/30 p-2"
+        aria-label="Operations sections"
+      >
         {(["People", "Churches", "Mentors", "AI topics"] as Tab[]).map((name) => (
           <button
             type="button"
-            className={`${button} ${tab === name ? "bg-primary text-primary-foreground" : "bg-surface"}`}
+            className={[
+              "min-h-10 rounded-xl px-4 text-sm font-semibold transition",
+              tab === name
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:bg-surface hover:text-foreground",
+            ].join(" ")}
             aria-pressed={tab === name}
             key={name}
             onClick={() => {
@@ -295,22 +325,27 @@ export function AdminOperations({ churches }: { churches: Church[] }) {
         />
       )}
       {tab !== "AI topics" && (
-        <div className="flex flex-wrap gap-3">
-          <input
-            className="input-nuru min-w-48 flex-1"
-            aria-label={`Search ${tab.toLowerCase()}`}
-            placeholder={
-              memberChurch ? `Members of ${memberChurch.name}` : `Search ${tab.toLowerCase()}`
-            }
-            disabled={!!memberChurch}
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(0);
-            }}
-          />
+        <div className="rounded-2xl border border-border bg-background/30 p-3">
+          <div className="flex flex-wrap gap-3">
+            <label className="relative min-w-56 flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                className="input-nuru w-full pl-10"
+                aria-label={`Search ${tab.toLowerCase()}`}
+                placeholder={
+                  memberChurch ? `Members of ${memberChurch.name}` : `Search ${tab.toLowerCase()}`
+                }
+                disabled={!!memberChurch}
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(0);
+                }}
+              />
+            </label>
           {tab === "Churches" && (
             <button className={button} onClick={() => setChurchEditor("new")}>
+              <Plus className="h-4 w-4" />
               Add church
             </button>
           )}
@@ -324,6 +359,7 @@ export function AdminOperations({ churches }: { churches: Church[] }) {
                 setMemberChurch(null);
               }}
             >
+              <UserPlus className="h-4 w-4" />
               Add mentor
             </button>
           )}
@@ -338,6 +374,7 @@ export function AdminOperations({ churches }: { churches: Church[] }) {
               All people
             </button>
           )}
+          </div>
         </div>
       )}
       {churchEditor && (
@@ -531,6 +568,7 @@ export function AdminOperations({ churches }: { churches: Church[] }) {
                   View members
                 </button>
                 <button className={button} onClick={() => setChurchEditor(church)}>
+                  <Pencil className="h-4 w-4" />
                   Edit church
                 </button>
               </div>
@@ -582,9 +620,19 @@ export function AdminOperations({ churches }: { churches: Church[] }) {
         </div>
       )}
       {tab === "AI topics" && (
-        <div className="nuru-card space-y-4 p-5">
-          <h3 className="font-display text-xl">What the community is asking about</h3>
-          <p className="text-sm text-muted-foreground">
+        <div className="rounded-3xl border border-border bg-background/30 p-5 sm:p-6">
+          <div className="flex items-start gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-leaf/20 bg-leaf/10 text-leaf">
+              <Bot className="h-4 w-4" />
+            </span>
+            <div>
+              <h3 className="font-display text-xl font-semibold">What the community is asking about</h3>
+              <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-leaf">
+                Privacy-safe trends
+              </p>
+            </div>
+          </div>
+          <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
             Broad topic trends from the past 30 days. A topic appears only after at least five
             different people contribute. These are question themes, not diagnoses. Private prompts,
             answers and identities are not shown.
@@ -592,7 +640,7 @@ export function AdminOperations({ churches }: { churches: Church[] }) {
           {overview.data?.ai_topics.length ? (
             overview.data.ai_topics.map((topic) => (
               <div
-                className="flex items-center justify-between gap-3 rounded-xl bg-surface-2 p-3"
+className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-border bg-surface-2 p-3"
                 key={topic.topic}
               >
                 <span className="text-sm">{topic.topic}</span>
@@ -619,6 +667,7 @@ export function AdminOperations({ churches }: { churches: Church[] }) {
               disabled={page === 0}
               onClick={() => setPage((value) => value - 1)}
             >
+              <ChevronLeft className="h-4 w-4" />
               Previous
             </button>
             <button
@@ -627,6 +676,7 @@ export function AdminOperations({ churches }: { churches: Church[] }) {
               onClick={() => setPage((value) => value + 1)}
             >
               Next
+              <ChevronRight className="h-4 w-4" />
             </button>
           </div>
         </div>

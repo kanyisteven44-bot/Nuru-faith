@@ -51,7 +51,7 @@ export const importReviewedCatalogPage = createServerFn({ method: "POST" })
       .in("role", ["super_admin", "moderator"]);
     if (roleError || !roles?.length)
       throw new Error("Only Nuru administrators can import the shared catalogue.");
-    const target = catalogueTarget(data.kind);
+    const target = catalogueTarget(data.kind);\n    // Music is exhaustive: the numeric target is a benchmark, not a stopping cap.\n    const stopAtTarget = data.kind !== "music";
     const key = process.env["YOUTUBE_API_KEY"];
     if (!key)
       throw new Error(
@@ -100,7 +100,7 @@ export const importReviewedCatalogPage = createServerFn({ method: "POST" })
         return count ?? 0;
       };
       const before = await songCount();
-      if (before >= target) return { total: before, added: 0, next: null, targetReached: true };
+      if (stopAtTarget && before >= target)\n        return { total: before, added: 0, next: null, targetReached: true };
       function sourceQuery() {
         let query = db
           .from("media_sources")
@@ -243,7 +243,7 @@ export const importReviewedCatalogPage = createServerFn({ method: "POST" })
           page_token: result.next?.pageToken ?? null,
           imported_total: result.total,
           pages_processed: progress.pages_processed + 1,
-        status: result.targetReached ? "complete" : result.next ? "running" : data.channelIds.length ? "paused" : "exhausted",
+          status: result.targetReached\n            ? "complete"\n            : result.next\n              ? "running"\n              : data.channelIds.length\n                ? "paused"\n                : "exhausted",
           last_error: null,
           updated_at: new Date().toISOString(),
         })

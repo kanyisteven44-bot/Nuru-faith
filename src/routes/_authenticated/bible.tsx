@@ -1,7 +1,7 @@
 import { CoverImage } from "@/components/nuru/CoverImage";
 import { BibleReadAloud } from "@/components/nuru/BibleReadAloud";
 import { resolveMedia } from "@/lib/media";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -24,7 +24,14 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
-import { NEW_TESTAMENT, OLD_TESTAMENT, type BibleBook } from "@/lib/bible";
+import {
+  DEFAULT_TRANSLATION,
+  TRANSLATIONS,
+  NEW_TESTAMENT,
+  OLD_TESTAMENT,
+  type TranslationId,
+  type BibleBook,
+} from "@/lib/bible";
 import { fetchChapterPassage } from "@/lib/bibleChapter";
 import { BIBLE_TOPICS } from "@/lib/content-policy";
 import { fetchReadingPlans } from "@/services/content";
@@ -230,21 +237,6 @@ function openTopicReference(reference: string, setReader: (target: ReaderTarget)
   const chapter = Number(match[2]);
   const book = name ? findBook(name) : undefined;
   if (book && chapter >= 1 && chapter <= book.chapters) setReader({ book, chapter });
-}
-
-/**
- * Reads the chapter in the World English Bible — modern English, public
- * domain, and the same translation the rest of the app uses, so a verse reads
- * identically on Home, in a series session and here.
- *
- * NIV is copyrighted and cannot be served without a publisher licence. The
- * API.Bible integration for it is still in the repo at
- * `src/lib/apiBible.functions.ts`; set BIBLE_API_KEY and call `fetchNivPassage`
- * here to prefer it. It is deliberately not called while no key is configured,
- * since every request would fail and cost a round trip before falling back.
- */
-async function fetchScripturePassage(reference: string) {
-  return fetchChapterPassage(reference);
 }
 
 /** The verse card the design puts above the book list. */
@@ -527,12 +519,26 @@ function Reader({
   const qc = useQueryClient();
   const shareSheet = useShareSheet();
   const [bookSheetOpen, setBookSheetOpen] = useState(false);
+  const [translation, setTranslation] = useState<TranslationId>(DEFAULT_TRANSLATION);
+  const [fontSize, setFontSize] = useState(17);
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("nuru-bible-translation");
+      if (TRANSLATIONS.some((t) => t.id === saved)) setTranslation(saved as TranslationId);
+      const size = Number(localStorage.getItem("nuru-bible-font-size"));
+      if (size >= 15 && size <= 23) setFontSize(size);
+    } catch {
+      /* Reading remains available when browser storage is disabled. */
+    }
+  }, []);
+  const unavailable = translation === "ylt" && OLD_TESTAMENT.some((b) => b.name === book.name);
   const [chapterSheetOpen, setChapterSheetOpen] = useState(false);
   const [colorPicker, setColorPicker] = useState<{ verse: number; text: string } | null>(null);
 
   const passage = useQuery({
-    queryKey: ["scripture-passage", reference],
-    queryFn: () => fetchScripturePassage(reference),
+    queryKey: ["scripture-passage", reference, translation],
+    queryFn: () => fetchChapterPassage(reference, translation),
+    enabled: !unavailable,
   });
 
   const highlightsQuery = useQuery({
@@ -638,10 +644,65 @@ function Reader({
           {passage.data?.reference ?? reference}
         </h1>
         <span className="shrink-0 rounded-lg border border-border-strong bg-surface-2 px-2.5 py-1 text-[11px] font-semibold text-secondary-foreground">
-          {passage.data?.translationId ?? "…"}
+          {translation.toUpperCase()}
         </span>
       </header>
 
+      <div className="mx-4 mb-3 flex flex-wrap items-center gap-3 rounded-xl border border-border-strong bg-surface-2 p-3">
+        <label className="min-w-0 flex-1 text-xs text-secondary-foreground">
+          Bible translation
+          <select
+            aria-label="Bible translation"
+            value={translation}
+            onChange={(e) => {
+              const next = e.target.value as TranslationId;
+              setTranslation(next);
+              try {
+                localStorage.setItem("nuru-bible-translation", next);
+              } catch {
+                /* Optional preference. */
+              }
+            }}
+            className="mt-1 w-full rounded-lg border border-border bg-background px-2 py-2 text-sm text-foreground"
+          >
+            {TRANSLATIONS.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="text-xs text-secondary-foreground">
+          Text size
+          <select
+            aria-label="Bible text size"
+            value={fontSize}
+            onChange={(e) => {
+              const size = Number(e.target.value);
+              setFontSize(size);
+              try {
+                localStorage.setItem("nuru-bible-font-size", String(size));
+              } catch {
+                /* Optional preference. */
+              }
+            }}
+            className="mt-1 block rounded-lg border border-border bg-background px-2 py-2 text-sm text-foreground"
+          >
+            <option value={15}>Small</option>
+            <option value={17}>Standard</option>
+            <option value={20}>Large</option>
+            <option value={23}>Extra large</option>
+          </select>
+        </label>
+      </div>
+      {unavailable && (
+        <div className="px-4">
+          <EmptyState
+            title="New Testament only"
+            description="Young’s Literal Translation is available here for the New Testament. Choose another translation to read this book."
+          />
+        </div>
+      )}
       <div className="flex items-center justify-center gap-2 px-4 pb-1 pt-1">
         <button
           type="button"
@@ -688,9 +749,9 @@ function Reader({
             action={<PrimaryButton onClick={() => void passage.refetch()}>Try again</PrimaryButton>}
           />
         )}
-        {passage.data && (
+        {!unavailable && passage.data && (
           <div className="nuru-card p-5">
-            <BibleReadAloud key={reference} verses={passage.data.verses} />
+            <BibleReadAloud key={`${reference}:${translation}`} verses={passage.data.verses} />
             <ol className="space-y-3.5">
               {passage.data.verses.map((v) => {
                 const activeColor = highlightByVerse.get(v.verse);
@@ -709,8 +770,9 @@ function Reader({
                         }
                         setColorPicker({ verse: v.verse, text: v.text });
                       }}
+                      style={{ fontSize }}
                       className={cn(
-                        "flex-1 rounded px-1 text-left font-serif text-[15px] leading-relaxed transition-colors",
+                        "flex-1 rounded px-1 text-left font-serif leading-relaxed transition-colors",
                         swatch ? swatch.bgClass : "hover:bg-white/[0.05]",
                       )}
                     >

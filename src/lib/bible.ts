@@ -21,8 +21,12 @@ export const TRANSLATIONS = [
   { id: "kjv", label: "King James Version", short: "KJV" },
   { id: "asv", label: "American Standard Version", short: "ASV" },
   { id: "bbe", label: "Bible in Basic English", short: "BBE" },
-  { id: "ylt", label: "Young's Literal Translation", short: "YLT" },
+  { id: "ylt", label: "Young's Literal Translation (New Testament)", short: "YLT" },
   { id: "webbe", label: "World English Bible (British)", short: "WEBBE" },
+  { id: "darby", label: "Darby Bible", short: "DARBY" },
+  { id: "dra", label: "Douay-Rheims (1899)", short: "DRA" },
+  { id: "oeb-cw", label: "Open English Bible (Commonwealth)", short: "OEB-CW" },
+  { id: "oeb-us", label: "Open English Bible (US)", short: "OEB-US" },
 ] as const;
 
 export type TranslationId = (typeof TRANSLATIONS)[number]["id"];

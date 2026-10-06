@@ -135,11 +135,27 @@ export function CallPanel({
       try {
         const {
           data: { session },
+          error: sessionError,
         } = await supabase.auth.getSession();
-        if (!session) throw new Error("Sign in again before calling.");
-        const iceServers = await getCallIceServers({
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        });
+        if (sessionError || !session) throw new Error("Sign in again before calling.");
+
+        let iceServers: RTCIceServer[];
+        try {
+          // The global TanStack auth middleware attaches the current Supabase
+          // access token to server functions. Do not override it at the call site.
+          iceServers = await getCallIceServers();
+        } catch (iceError) {
+          const message = iceError instanceof Error ? iceError.message : "";
+          if (!message.includes("Unauthorized")) throw iceError;
+
+          // A tab can hold an expired/stale access token after sleeping. Refresh
+          // once, then let the global middleware attach the new access token.
+          const refreshed = await supabase.auth.refreshSession();
+          if (refreshed.error || !refreshed.data.session) {
+            throw new Error("Your sign-in session expired. Sign in again, then retry the call.");
+          }
+          iceServers = await getCallIceServers();
+        }
         if (disposed) return;
         pc.setConfiguration({ iceServers });
         if (userId === peer.id)

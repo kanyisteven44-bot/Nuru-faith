@@ -333,28 +333,21 @@ export async function fetchMediaDirectory(options: {
   page: number;
 }) {
   const pageSize = 36;
-  let query = supabase
-    .from("media_sources")
-    .select("id,name,description,avatar_url,youtube_channel_id,content_kind,language_codes", {
-      count: "exact",
-    })
-    .eq("is_approved", true)
-    .eq("source_type", "youtube")
-    .in("content_kind", [options.kind, "mixed"])
-    .not("youtube_channel_id", "is", null);
+  const page = Math.max(0, options.page);
   const term = safeMediaTerm(options.query ?? "");
-  if (term) query = query.ilike("name", `%${term}%`);
-  if (options.language && options.language !== "all") {
-    query =
-      options.language === "other"
-        ? query.not("language_codes", "cd", "{en,sw,ki,und}")
-        : query.contains("language_codes", [options.language]);
-  }
-  const start = Math.max(0, options.page) * pageSize;
-  const { data, error, count } = await query
-    .order("name")
-    .order("id")
-    .range(start, start + pageSize - 1);
+  const { data, error } = await supabase.rpc("get_media_directory_with_content", {
+    p_kind: options.kind,
+    p_query: term,
+    p_language: options.language ?? "all",
+    p_offset: page * pageSize,
+    p_limit: pageSize,
+  });
   if (error) throw error;
-  return { items: data ?? [], total: count ?? 0, hasMore: start + pageSize < (count ?? 0) };
+  const rows = data ?? [];
+  const total = Number(rows[0]?.total_count ?? 0);
+  return {
+    items: rows.map(({ total_count: _totalCount, ...row }) => row),
+    total,
+    hasMore: (page + 1) * pageSize < total,
+  };
 }

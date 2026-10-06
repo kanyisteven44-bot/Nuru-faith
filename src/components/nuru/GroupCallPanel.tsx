@@ -35,6 +35,7 @@ export function GroupCallPanel({
   const [muted, setMuted] = useState(false);
   const [cameraOff, setCameraOff] = useState(room.kind === "audio");
   const [speakerMuted, setSpeakerMuted] = useState(false);
+  const [localMedia, setLocalMedia] = useState<MediaStream | null>(null);
   const [participantIds, setParticipantIds] = useState<string[]>([userId]);
   const [profiles, setProfiles] = useState<Record<string, ChatProfile>>({});
   const [remoteMedia, setRemoteMedia] = useState<Record<string, RemoteMedia>>({});
@@ -70,7 +71,10 @@ export function GroupCallPanel({
   const ensurePeer = useCallback((peerId: string) => {
     const existing = peers.current.get(peerId);
     if (existing) return existing;
-    const pc = new RTCPeerConnection({ iceServers: iceServers.current });
+    const pc = new RTCPeerConnection({
+      iceServers: iceServers.current,
+      iceCandidatePoolSize: 4,
+    });
     const stream = localStream.current;
     stream?.getTracks().forEach((track) => pc.addTrack(track, stream));
 
@@ -161,7 +165,17 @@ export function GroupCallPanel({
     async function start() {
       try {
         setError("");
-        iceServers.current = await getCallIceServers();
+        try {
+          iceServers.current = await getCallIceServers();
+        } catch (iceError) {
+          const message = iceError instanceof Error ? iceError.message : "";
+          if (!message.includes("Unauthorized")) throw iceError;
+          const refreshed = await supabase.auth.refreshSession();
+          if (refreshed.error || !refreshed.data.session) {
+            throw new Error("Your sign-in session expired. Sign in again, then retry the group call.");
+          }
+          iceServers.current = await getCallIceServers();
+        }
         if (!navigator.mediaDevices?.getUserMedia) {
           throw new Error("Open Nuru in Chrome or Safari over HTTPS to use group calls.");
         }
@@ -175,6 +189,7 @@ export function GroupCallPanel({
           return;
         }
         localStream.current = raw;
+        setLocalMedia(raw);
 
         channel = channel
           .on(
@@ -228,6 +243,7 @@ export function GroupCallPanel({
       raw?.getTracks().forEach((track) => track.stop());
       localStream.current?.getTracks().forEach((track) => track.stop());
       localStream.current = null;
+      setLocalMedia(null);
       peers.current.forEach((pc) => pc.close());
       peers.current.clear();
       void supabase.removeChannel(channel);
@@ -284,7 +300,7 @@ export function GroupCallPanel({
           {room.kind === "video" ? (
             <div className="grid min-h-full grid-cols-1 content-center gap-3 sm:grid-cols-2">
               <VideoTile
-                stream={localStream.current}
+                stream={localMedia}
                 muted
                 label="You"
                 profile={profiles[userId]}

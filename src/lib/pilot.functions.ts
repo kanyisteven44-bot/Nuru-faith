@@ -17,8 +17,7 @@ export const getPilotMetrics = createServerFn({ method: "GET" })
       throw new Error("Staff access required");
     }
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin.rpc("get_nuru_pilot_metrics");
+    const { data, error } = await context.supabase.rpc("get_nuru_pilot_metrics");
 
     if (error) throw new Error(error.message);
     return data as unknown as PilotMetrics;

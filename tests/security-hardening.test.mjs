@@ -94,17 +94,29 @@ test("admin AI reporting exposes only privacy-safe aggregates behind a super-adm
   assert.match(endpoint, /\.eq\("role", "super_admin"\)/);
   assert.ok(
     endpoint.indexOf('throw new Error("Super-admin access required.")') <
-      endpoint.indexOf('await import("@/integrations/supabase/client.server")'),
+      endpoint.indexOf('context.supabase.rpc("get_nuru_admin_overview")'),
   );
-  const migration = read("supabase/migrations/20261005063347_admin_learning_operations.sql");
+  assert.doesNotMatch(endpoint, /client\.server/);
+
+  const migration = read(
+    "supabase/migrations/20261006105500_pilot_test_readiness_rpc_hardening.sql",
+  );
+  assert.match(migration, /create or replace function private\.get_nuru_admin_overview_internal/);
+  assert.match(migration, /security definer/);
+  assert.match(
+    migration,
+    /if uid is null or not private\.has_role\(uid, 'super_admin'::public\.app_role\)/,
+  );
+  assert.match(migration, /create or replace function public\.get_nuru_admin_overview\(\)/);
+  assert.match(migration, /security invoker/);
   assert.match(migration, /having count\(distinct user_id\) >= 5/);
   assert.match(
     migration,
-    /revoke all on function public.get_nuru_admin_overview\(\) from public,anon,authenticated/,
+    /revoke all on function public\.get_nuru_admin_overview\(\) from public, anon/,
   );
   assert.match(
     migration,
-    /grant execute on function public.get_nuru_admin_overview\(\) to service_role/,
+    /grant execute on function public\.get_nuru_admin_overview\(\) to authenticated, service_role/,
   );
   assert.doesNotMatch(
     migration,

@@ -114,7 +114,34 @@ const ADMIN_SECTIONS: {
 function AdminScreen() {
   const { userId } = useAuth();
   const qc = useQueryClient();
-  const [activeSection, setActiveSection] = useState<AdminSection>("overview");
+  const navigate = useNavigate();
+  const searchParams = Route.useSearch();
+  const activeSection: AdminSection = searchParams.section ?? "overview";
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastRefreshAt, setLastRefreshAt] = useState<Date | null>(null);
+  const [moderationFilter, setModerationFilter] = useState<
+    "active" | "reviewing" | "resolved" | "dismissed" | "all"
+  >("active");
+  const [moderationSearch, setModerationSearch] = useState("");
+  const [communitySearch, setCommunitySearch] = useState("");
+  const [communityPage, setCommunityPage] = useState(0);
+
+  function setActiveSection(section: AdminSection) {
+    void navigate({ to: "/admin", search: { section }, replace: true });
+  }
+
+  async function refreshAdminData() {
+    setIsRefreshing(true);
+    try {
+      await qc.refetchQueries({ type: "active" });
+      setLastRefreshAt(new Date());
+      toast.success("Admin data refreshed");
+    } catch {
+      toast.error("Some admin data could not be refreshed");
+    } finally {
+      setIsRefreshing(false);
+    }
+  }
 
   const roles = useQuery({
     queryKey: ["roles", userId],

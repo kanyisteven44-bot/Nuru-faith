@@ -101,27 +101,29 @@ export function MediaCatalog({
       className="space-y-3 px-4 py-4"
       aria-label={mediaType === "music" ? "Song catalogue" : "Podcast catalogue"}
     >
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="font-display text-lg font-semibold">
-          {mediaType === "music"
-            ? playback === "audio"
-              ? "Audio"
+      {(!hideEmptyState || catalog.isPending || catalog.isError || items.length > 0) && (
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="font-display text-lg font-semibold">
+            {mediaType === "music"
+              ? playback === "audio"
+                ? "Audio"
+                : playback === "video"
+                  ? "Music videos"
+                  : "All songs"
               : playback === "video"
-                ? "Music videos"
-                : "All songs"
-            : playback === "video"
-              ? "Video episodes"
-              : playback === "audio"
-                ? "Audio episodes"
-                : "All episodes"}
-        </h2>
-        {catalog.data && (
-          <span className="text-xs text-muted-foreground" role="status" aria-live="polite">
-            {items.length.toLocaleString()} of {total.toLocaleString()}{" "}
-            {query ? "matches" : "available"}
-          </span>
-        )}
-      </div>
+                ? "Video episodes"
+                : playback === "audio"
+                  ? "Audio episodes"
+                  : "All episodes"}
+          </h2>
+          {catalog.data && items.length > 0 && (
+            <span className="text-xs text-muted-foreground" role="status" aria-live="polite">
+              {items.length.toLocaleString()} of {total.toLocaleString()}{" "}
+              {query ? "matches" : "available"}
+            </span>
+          )}
+        </div>
+      )}
       {catalog.isPending && <CardSkeleton count={3} height="h-20" />}
       {catalog.isError && (
         <div role="alert" className="nuru-card p-4">

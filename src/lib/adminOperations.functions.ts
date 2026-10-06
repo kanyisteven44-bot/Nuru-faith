@@ -23,8 +23,7 @@ export const getAdminOverview = createServerFn({ method: "GET" })
       .eq("user_id", context.userId)
       .eq("role", "super_admin");
     if (error || !data?.length) throw new Error("Super-admin access required.");
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const result = await supabaseAdmin.rpc("get_nuru_admin_overview");
+    const result = await context.supabase.rpc("get_nuru_admin_overview");
     if (result.error) throw new Error("The operations report could not load.");
     return overviewSchema.parse(result.data);
   });

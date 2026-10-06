@@ -37,7 +37,7 @@ export function AdminDashboardOverview({
   onNavigate,
 }: {
   userName: string;
-  pilot?: PilotMetrics;
+  pilot: PilotMetrics | undefined;
   churchCount: number;
   groupCount: number;
   eventCount: number;

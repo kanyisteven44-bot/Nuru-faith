@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -526,7 +526,7 @@ function AdminPanel({
 }: {
   title: string;
   subtitle: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <section className="rounded-2xl border border-[#153b5c] bg-[#051421] p-4 sm:p-5">
@@ -617,7 +617,7 @@ function CommunityDirectory({
   setSearch: (value: string) => void;
   page: number;
   pageCount: number;
-  setPage: React.Dispatch<React.SetStateAction<number>>;
+  setPage: Dispatch<SetStateAction<number>>;
 }) {
   return (
     <section className="rounded-2xl border border-[#153b5c] bg-[#071727] p-4">

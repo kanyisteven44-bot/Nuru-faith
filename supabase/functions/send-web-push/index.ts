@@ -115,6 +115,7 @@ Deno.serve(async (req) => {
 
   const message = JSON.stringify({
     id: notification.id,
+    category: notification.category || "system",
     title: notification.title || "Nuru Faith",
     body: notification.body || "",
     url: notification.deep_link || "/notifications",
@@ -133,7 +134,10 @@ Deno.serve(async (req) => {
 
     try {
       const init = await buildPushPayload(
-        { data: message, options: { ttl: 60 * 60 } },
+        {
+          data: message,
+          options: { ttl: notification.category === "call" ? 120 : 60 * 60 },
+        },
         subscription,
         vapid,
       );

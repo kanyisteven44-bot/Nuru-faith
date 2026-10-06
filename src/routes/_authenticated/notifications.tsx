@@ -9,6 +9,7 @@ import {
   HeartHandshake,
   LoaderCircle,
   MessageCircle,
+  Phone,
   Users,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -45,6 +46,7 @@ const ICONS: Record<string, typeof Bell> = {
   message: MessageCircle,
   mentorship: HeartHandshake,
   event: CalendarDays,
+  call: Phone,
 };
 
 function NotificationsScreen() {

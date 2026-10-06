@@ -224,8 +224,12 @@ function AdminScreen() {
     (item) => item.status === "open" || item.status === "pending" || item.status === "reviewing",
   );
   const reviewingReports = openReports.filter((item) => item.status === "reviewing");
-  const pendingChurches = scoped.filter((church) => !church.verified);
-  const attentionCount = openReports.length + pendingChurches.length;
+  const unverifiedMentors = (mentors.data ?? []).filter((mentor) => !mentor.verified);
+  const verifiedChurches = scoped.filter((church) => church.verified);
+  const directoryVerificationRate = scoped.length
+    ? Math.round((verifiedChurches.length / scoped.length) * 100)
+    : 0;
+  const attentionCount = openReports.length + unverifiedMentors.length;
 
   const roleLabel = isSuper ? "Super admin" : isModerator ? "Moderator" : "Church admin";
   const pilotMetrics = pilot.data;

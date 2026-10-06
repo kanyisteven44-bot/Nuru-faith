@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "tanstack-start",
-  "buildCommand": "node scripts/sanitize-verified-artists.mjs && npm run typecheck && npm test && npm run build",
+  "buildCommand": "node scripts/bulk-verify-artists-second-pass.mjs && npm run typecheck && npm test && npm run build",
   "headers": [
     {
       "source": "/(.*)",

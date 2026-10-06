@@ -6,7 +6,7 @@ import { BadgeCheck, Music2, Play, Search, X } from "lucide-react";
 import { duration } from "@/lib/format";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchProfile, fetchTracks } from "@/services/content";
-import { fetchMediaItems, fetchMediaSources } from "@/services/media";
+import { fetchMediaDirectory, fetchMediaItems } from "@/services/media";
 import type { YouTubePlaylist, YouTubeVideo } from "@/services/youtubeService";
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
 import {
@@ -83,8 +83,8 @@ function MusicScreen() {
 
   const tracks = useQuery({ queryKey: ["tracks"], queryFn: fetchTracks });
   const artists = useQuery({
-    queryKey: ["media-sources", "artist"],
-    queryFn: () => fetchMediaSources({ sourceType: "youtube" }),
+    queryKey: ["media-sources", "artist", "with-songs"],
+    queryFn: () => fetchMediaDirectory({ kind: "music", language: "all", page: 0 }),
   });
   const churchMedia = useQuery({
     queryKey: ["media-items", "church", churchId],
@@ -250,14 +250,14 @@ function MusicScreen() {
             <section className="px-4 pt-3">
               <SectionHeader title="Artists & channels" />
               {artists.isLoading && <CardSkeleton count={3} height="h-16" />}
-              {!artists.isLoading && (artists.data ?? []).length === 0 && (
+              {!artists.isLoading && (artists.data?.items ?? []).length === 0 && (
                 <EmptyState
                   title="No approved artists yet"
                   description="Verified Christian artists and channels will appear here once approved."
                 />
               )}
               <div className="space-y-2">
-                {(artists.data ?? []).map((a) => (
+                {(artists.data?.items ?? []).map((a) => (
                   <div key={a.id} className="nuru-card flex items-center gap-3 p-3">
                     <IconTile icon={Music2} tone="cyan" />
                     <span className="min-w-0 flex-1">
@@ -277,9 +277,9 @@ function MusicScreen() {
                   </div>
                 ))}
               </div>
-              {(artists.data ?? []).length > 0 && (
+              {(artists.data?.items ?? []).length > 0 && (
                 <div className="pt-3">
-                  {(artists.data ?? [])
+                  {(artists.data?.items ?? [])
                     .filter((a) => a.youtube_channel_id)
                     .slice(0, 3)
                     .map((a, i) => (

@@ -2,7 +2,7 @@ import { CoverImage } from "@/components/nuru/CoverImage";
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, Clock, MapPin } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Clock, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { resolveMedia } from "@/lib/media";
@@ -66,6 +66,8 @@ function EventsScreen() {
     }
     return [...all].sort((a, b) => +new Date(a.starts_at) - +new Date(b.starts_at));
   }, [events.data, tab, months, monthIndex]);
+
+  const [featured, ...rest] = rows;
 
   async function rsvp(eventId: string, isGoing: boolean) {
     if (!userId) {
@@ -195,8 +197,8 @@ function EventsScreen() {
           </article>
         )}
 
-        <div className="space-y-2">
-          {rest.map((e) => {
+        <ul className="space-y-2">
+          {rest.map((e, i) => {
             const isGoing = going.has(e.id);
             const when = new Date(e.starts_at);
             return (

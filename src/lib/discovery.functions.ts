@@ -16,6 +16,9 @@ export type DiscoveryItem = {
   externalId: string | null;
   audioUrl: string | null;
   sourceUrl?: string | null;
+  creatorName: string | null;
+  durationSeconds: number | null;
+  category: string | null;
 };
 const input = z.object({
   kind: z.enum(DISCOVERY_KINDS),
@@ -188,7 +191,9 @@ export const searchDiscovery = createServerFn({ method: "POST" })
       default: {
         let q = supabase
           .from("media_items")
-          .select("id,title,description,thumbnail_url,scripture_ref,source,external_id,audio_url,creator_name,duration_seconds,category")
+          .select(
+            "id,title,description,thumbnail_url,scripture_ref,source,external_id,audio_url,creator_name,duration_seconds,category",
+          )
           .eq("is_approved", true);
         q =
           kind === "music"

@@ -1,10 +1,9 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { ArrowLeft, Play } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { fetchMediaDirectory, type MediaItem } from "@/services/media";
-import { youtubeSearch } from "@/lib/youtube.functions";
-import { MEDIA_LANGUAGES, safeMediaTerm } from "@/lib/mediaDirectory";
-import { youtubeErrorMessage, type YouTubeVideo } from "@/services/youtubeService";
+import { MEDIA_LANGUAGES } from "@/lib/mediaDirectory";
+import { type YouTubeVideo } from "@/services/youtubeService";
 import { CoverImage } from "@/components/nuru/CoverImage";
 import { CardSkeleton, PrimaryButton } from "@/components/nuru/Primitives";
 import { MediaCatalog } from "./MediaCatalog";
@@ -13,7 +12,6 @@ type Creator = Awaited<ReturnType<typeof fetchMediaDirectory>>["items"][number];
 const pill = "min-h-11 shrink-0 rounded-full border border-border px-4 text-sm font-medium";
 
 export function MusicDiscovery({
-  onPlay,
   onPlayItem,
   query = "",
   mediaType = "music",
@@ -41,47 +39,6 @@ export function MusicDiscovery({
   });
   const creators = directory.data?.pages.flatMap((page) => page.items) ?? [];
   const channelId = selected?.youtube_channel_id ?? undefined;
-  const songs = useInfiniteQuery({
-    queryKey: ["creator-videos", mediaType, channelId],
-    initialPageParam: undefined as string | undefined,
-    queryFn: async ({ pageParam }) => {
-      const result = await youtubeSearch({
-        data: {
-          channelId,
-          musicOnly: isMusic,
-          podcastOnly: !isMusic,
-          type: "video",
-          maxResults: 50,
-          pageToken: pageParam,
-        },
-      });
-      if (result.error)
-        throw new Error(youtubeErrorMessage(result.error) ?? "Videos could not load.");
-      return result;
-    },
-    getNextPageParam: (page) => page.nextPageToken ?? undefined,
-    enabled: !!channelId,
-    staleTime: 30 * 60 * 1000,
-    retry: false,
-  });
-  const videos = [
-    ...new Map(
-      (songs.data?.pages.flatMap((page) => page.videos) ?? []).map((video) => [
-        video.youtubeVideoId,
-        video,
-      ]),
-    ).values(),
-  ];
-  const { hasNextPage, isFetching, isError, fetchNextPage } = songs;
-  const pageCount = songs.data?.pages.length ?? 0;
-  useEffect(() => {
-    if (hasNextPage && !isFetching && !isError && videos.length < 12 && pageCount < 4)
-      void fetchNextPage();
-  }, [hasNextPage, isFetching, isError, pageCount, fetchNextPage, videos.length]);
-  const term = safeMediaTerm(query).toLocaleLowerCase();
-  const visibleVideos = videos.filter(
-    (video) => !term || video.title.toLocaleLowerCase().includes(term),
-  );
   return (
     <section
       className="space-y-4 py-5"
@@ -110,7 +67,11 @@ export function MusicDiscovery({
                 setView(label);
               }}
             >
-              {label}
+              {label === creatorLabel
+                ? `All ${creatorLabel.toLowerCase()}`
+                : label === contentLabel
+                  ? `All ${contentLabel.toLowerCase()}`
+                  : label}
             </button>
           ))}
         </div>
@@ -217,84 +178,12 @@ export function MusicDiscovery({
             </>
           )
         )}
-        {selected && (
-          <>
-            <h3 className="font-display text-xl font-semibold">{selected.name}</h3>
-            {songs.isPending && <CardSkeleton count={4} height="h-44" />}
-            {songs.isError && (
-              <div role="alert">
-                <p>{songs.error?.message}</p>
-                <PrimaryButton onClick={() => void songs.refetch()}>Try again</PrimaryButton>
-              </div>
-            )}
-            <p role="status" className="text-xs text-muted-foreground">
-              {visibleVideos.length} {contentLabel.toLowerCase()} loaded
-            </p>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
-              {visibleVideos.map((video) => (
-                <button
-                  key={video.youtubeVideoId}
-                  data-video-id={video.youtubeVideoId}
-                  type="button"
-                  onClick={() => onPlay(video)}
-                  aria-label={`Play ${video.title}`}
-                  className="group overflow-hidden rounded-2xl border border-border bg-surface-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <span className="relative block">
-                    <CoverImage
-                      src={video.thumbnail}
-                      alt=""
-                      width={480}
-                      height={270}
-                      className="aspect-video w-full"
-                    />
-                    <span className="absolute bottom-2 right-2 flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                      <Play className="h-4 w-4 fill-current" />
-                    </span>
-                    {video.duration && (
-                      <span className="absolute bottom-2 left-2 rounded bg-black/70 px-2 py-1 text-[10px] text-white">
-                        {video.duration}
-                      </span>
-                    )}
-                  </span>
-                  <span className="block p-3">
-                    <span className="line-clamp-2 block min-h-10 text-sm font-semibold">
-                      {video.title}
-                    </span>
-                    <span className="mt-1 block truncate text-xs text-muted-foreground">
-                      {video.channelName}
-                    </span>
-                  </span>
-                </button>
-              ))}
-            </div>
-            {songs.data && !visibleVideos.length && (
-              <p className="text-sm text-muted-foreground">
-                No matching videos in these batches. Load more or try another creator.
-              </p>
-            )}
-            {songs.hasNextPage && (
-              <PrimaryButton
-                disabled={songs.isFetchingNextPage}
-                onClick={() => void songs.fetchNextPage()}
-              >
-                {songs.isFetchingNextPage ? "Loading…" : `Load more ${contentLabel.toLowerCase()}`}
-              </PrimaryButton>
-            )}
-            {songs.isFetchNextPageError && (
-              <p role="alert">The next batch could not load. Try Load more again.</p>
-            )}
-            {songs.data && !songs.hasNextPage && (
-              <p className="text-xs text-muted-foreground">
-                You’ve reached the end of this collection.
-              </p>
-            )}
-          </>
-        )}
+        {selected && <h3 className="font-display text-xl font-semibold">{selected.name}</h3>}
       </div>
-      {!selected && (
+      {(!selected || channelId) && (
         <MediaCatalog
           mediaType={mediaType}
+          channelId={channelId}
           query={query}
           language={language}
           playback={catalogPlayback}

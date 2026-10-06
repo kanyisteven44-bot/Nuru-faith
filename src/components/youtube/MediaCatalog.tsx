@@ -1,7 +1,25 @@
 import { useEffect, useRef, useState } from "react";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bookmark, ChevronDown, ChevronRight, ListMusic, Pause, Play, Repeat2, Share2, SkipForward, Volume2, VolumeX } from "lucide-react";
-import { fetchMediaCatalog, fetchMediaItemBySourceExternalId, fetchMySavedMediaIds, toggleSavedMedia, type MediaItem } from "@/services/media";
+import {
+  Bookmark,
+  ChevronDown,
+  ChevronRight,
+  ListMusic,
+  Pause,
+  Play,
+  Repeat2,
+  Share2,
+  SkipForward,
+  Volume2,
+  VolumeX,
+} from "lucide-react";
+import {
+  fetchMediaCatalog,
+  fetchMediaItemBySourceExternalId,
+  fetchMySavedMediaIds,
+  toggleSavedMedia,
+  type MediaItem,
+} from "@/services/media";
 import { CoverImage } from "@/components/nuru/CoverImage";
 import { CardSkeleton, EmptyState, PrimaryButton } from "@/components/nuru/Primitives";
 import { resolveMedia } from "@/lib/media";
@@ -18,20 +36,29 @@ export function MediaCatalog({
   onPlay,
   language = "all",
   playback = "all",
+  channelId,
 }: {
   mediaType: "music" | "podcast";
   query?: string;
   language?: string;
   playback?: "all" | "audio" | "video";
+  channelId?: string | undefined;
   onPlay?: (item: MediaItem) => void;
 }) {
   const [selected, setSelected] = useState<MediaItem | null>(null);
   const nextPageMarker = useRef<HTMLDivElement>(null);
   const catalog = useInfiniteQuery({
-    queryKey: ["media-catalog", mediaType, query, language, playback],
+    queryKey: ["media-catalog", mediaType, query, language, playback, channelId],
     initialPageParam: 0,
     queryFn: ({ pageParam }) =>
-      fetchMediaCatalog({ mediaType, query, language, playback, page: pageParam }),
+      fetchMediaCatalog({
+        mediaType,
+        query,
+        language,
+        playback,
+        ...(channelId ? { channelId } : {}),
+        page: pageParam,
+      }),
     getNextPageParam: (page, pages) => (page.hasMore ? pages.length : undefined),
   });
   // Imports can shift offset pages between requests; render each saved item once.
@@ -170,7 +197,9 @@ export function MediaCatalog({
           Could not load the next page. Tap Load more to retry.
         </p>
       )}
-      {selected && <MediaPlayback item={selected} onClose={() => setSelected(null)} onSelect={setSelected} />}
+      {selected && (
+        <MediaPlayback item={selected} onClose={() => setSelected(null)} onSelect={setSelected} />
+      )}
     </section>
   );
 }
@@ -256,7 +285,7 @@ export function MediaPlayback({
     enabled: !!item.external_id && !/^[0-9a-f-]{36}$/i.test(item.id),
     staleTime: 5 * 60 * 1000,
   });
-  const canonicalId = /^[0-9a-f-]{36}$/i.test(item.id) ? item.id : canonicalItem.data?.id ?? null;
+  const canonicalId = /^[0-9a-f-]{36}$/i.test(item.id) ? item.id : (canonicalItem.data?.id ?? null);
 
   const savedIds = useQuery({
     queryKey: ["saved-media-ids", userId],
@@ -341,7 +370,11 @@ export function MediaPlayback({
               Now playing
             </p>
             <p className="mt-1 truncate text-xs font-semibold text-[#667185]">
-              {isVideo ? "Video music" : item.media_type === "podcast" ? "Audio podcast" : "Audio music"}
+              {isVideo
+                ? "Video music"
+                : item.media_type === "podcast"
+                  ? "Audio podcast"
+                  : "Audio music"}
             </p>
           </div>
           <button type="button" onClick={share} className={softButton} aria-label="Share">
@@ -381,9 +414,7 @@ export function MediaPlayback({
             <h2 className="font-display text-[30px] font-semibold leading-tight tracking-tight text-[#151D2D] sm:text-4xl">
               {item.title}
             </h2>
-            <p className="mt-2 text-[17px] text-[#647084]">
-              {item.creator_name || "Nuru Faith"}
-            </p>
+            <p className="mt-2 text-[17px] text-[#647084]">{item.creator_name || "Nuru Faith"}</p>
           </div>
 
           <div className="mt-6 flex items-center justify-center gap-7">
@@ -599,7 +630,10 @@ export function MediaPlayback({
           )}
 
           {audioFailed && (
-            <div role="alert" className="mt-5 w-full rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+            <div
+              role="alert"
+              className="mt-5 w-full rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700"
+            >
               <p>The publisher's audio could not load.</p>
               <button
                 type="button"

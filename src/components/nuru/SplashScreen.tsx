@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { NuruGlyph } from "@/components/nuru/Logo";
 import { cn } from "@/lib/utils";
 
-const SESSION_KEY = "nuru-opening-logo-v3-shown";
-const HOLD_MS = 2800;
-const MAX_MS = 5000;
-const EXIT_MS = 320;
+const SESSION_KEY = "nuru-opening-v4-shown";
+const HOLD_MS = 2100;
+const MAX_MS = 3400;
+const EXIT_MS = 360;
+
 let shownOnLoad: boolean | null = null;
+
 function alreadyShown() {
   if (shownOnLoad !== null) return shownOnLoad;
   try {
@@ -17,9 +20,12 @@ function alreadyShown() {
   }
   return shownOnLoad;
 }
-const ARCH = "M40 244V124C40 74 68 38 100 12C132 38 160 74 160 124V244";
 
-/** Lightweight CSS 3D: no video, generated photo, WebGL or external asset. */
+/**
+ * Nuru's first impression: one real photograph, one brand mark and one message.
+ * The opening deliberately avoids a long loading animation; it exists to make
+ * the transition into Nuru feel intentional while auth restores in the background.
+ */
 export function SplashScreen({
   preview = false,
   initialOnly = false,
@@ -32,15 +38,14 @@ export function SplashScreen({
   const { loading } = useAuth();
   const loadingRef = useRef(loading);
   loadingRef.current = loading;
+
   const [stage, setStage] = useState<"pending" | "playing" | "exiting" | "gone">("pending");
-  const [reducedMotion, setReducedMotion] = useState(false);
-  const minElapsed = useRef(false);
   const exited = useRef(false);
+  const minElapsed = useRef(false);
   const exitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const overlay = useRef<HTMLDivElement>(null);
-  const skipButton = useRef<HTMLButtonElement>(null);
   const completionRef = useRef(onComplete);
   completionRef.current = onComplete;
+
   const exit = useCallback(() => {
     if (exited.current) return;
     exited.current = true;
@@ -52,7 +57,6 @@ export function SplashScreen({
   }, []);
 
   useEffect(() => {
-    // The public preview owns its own scene; avoid two overlapping openings.
     if (
       !preview &&
       (window.location.pathname === "/opening" ||
@@ -62,18 +66,21 @@ export function SplashScreen({
       setStage("gone");
       return;
     }
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    setReducedMotion(reduce);
+
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     setStage("playing");
+
     if (preview) return;
+
     const min = setTimeout(
       () => {
         minElapsed.current = true;
-        if (!loadingRef.current || reduce) exit();
+        if (!loadingRef.current || reducedMotion) exit();
       },
-      reduce ? 260 : HOLD_MS,
+      reducedMotion ? 220 : HOLD_MS,
     );
-    const max = setTimeout(exit, reduce ? 260 : MAX_MS);
+    const max = setTimeout(exit, reducedMotion ? 320 : MAX_MS);
+
     return () => {
       clearTimeout(min);
       clearTimeout(max);
@@ -83,141 +90,77 @@ export function SplashScreen({
   useEffect(() => {
     if (!preview && stage === "playing" && minElapsed.current && !loading) exit();
   }, [loading, preview, stage, exit]);
+
   useEffect(
     () => () => {
       if (exitTimer.current) clearTimeout(exitTimer.current);
     },
     [],
   );
-  useEffect(() => {
-    if (stage !== "playing") return;
-    const previous = document.activeElement;
-    skipButton.current?.focus({ preventScroll: true });
-    return () => {
-      if (previous instanceof HTMLElement && previous.isConnected)
-        previous.focus({ preventScroll: true });
-    };
-  }, [stage]);
 
   if (stage === "gone") return null;
+
   return (
     <div
-      ref={overlay}
-      role="dialog"
-      aria-modal="true"
-      aria-label="Nuru Faith opening"
+      aria-label="Opening Nuru Faith"
       data-testid="nuru-splash"
-      data-reduced-motion={reducedMotion}
-      onKeyDown={(event) => {
-        if (event.key === "Escape") {
-          event.preventDefault();
-          exit();
-        }
-        if (event.key === "Tab") {
-          event.preventDefault();
-          skipButton.current?.focus();
-        }
-      }}
       className={cn(
-        "nuru-opening fixed inset-0 z-[999] flex flex-col items-center overflow-hidden text-white",
+        "nuru-opening fixed inset-0 z-[999] overflow-hidden text-white",
         stage === "pending" && "invisible",
         stage === "exiting" && "nuru-open-exit",
       )}
     >
-      <div aria-hidden="true" className="nuru-opening-halo" />
-      <div aria-hidden="true" className="nuru-opening-stars">
-        {Array.from({ length: 18 }, (_, index) => (
-          <i
-            key={index}
-            style={{
-              left: `${(index * 37 + 11) % 100}%`,
-              top: `${(index * 23 + 7) % 78}%`,
-              animationDelay: `${index * 70}ms`,
-            }}
-          />
-        ))}
-      </div>
-      <div aria-hidden="true" className="nuru-opening-floor" />
-      <div
+      <img
+        src="/photos/friends-outdoors.jpg"
+        alt=""
         aria-hidden="true"
-        className="absolute left-1/2 top-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-500/10 blur-3xl"
+        decoding="async"
+        fetchPriority="high"
+        className="nuru-opening-photo"
       />
-      <p className="absolute left-6 top-7 text-[10px] font-semibold uppercase tracking-[0.25em] text-cyan-100/60">
-        Your faith. Your generation.
-      </p>
+      <div aria-hidden="true" className="nuru-opening-photo-overlay" />
+      <div aria-hidden="true" className="nuru-opening-light" />
+
+      <div className="relative z-10 flex min-h-dvh flex-col items-center justify-center px-6 text-center">
+        <div className="nuru-opening-brandmark" aria-hidden="true">
+          <NuruGlyph className="h-full w-full" />
+        </div>
+
+        <div className="nuru-opening-wordmark mt-5">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-cyan-100/75">
+            Light for this generation
+          </p>
+          <h1 className="mt-3 font-sans text-[clamp(2.2rem,10vw,4.2rem)] font-bold leading-none tracking-[0.22em] text-white">
+            NURU
+          </h1>
+          <p className="mt-2 font-sans text-[11px] font-semibold uppercase tracking-[0.5em] text-cyan-100/85 sm:text-sm">
+            Faith
+          </p>
+        </div>
+
+        <p className="nuru-opening-message mt-7 max-w-sm font-display text-[clamp(1.08rem,4vw,1.35rem)] leading-relaxed text-white/90">
+          Find your people. Grow in faith. Live with purpose.
+        </p>
+
+        <div className="nuru-opening-rule mt-7 h-px w-20" aria-hidden="true" />
+      </div>
+
       <button
-        ref={skipButton}
         type="button"
         onClick={exit}
-        className="absolute right-5 top-[max(1.25rem,env(safe-area-inset-top))] z-20 min-h-11 rounded-full border border-white/25 bg-white/5 px-5 text-sm font-medium text-white transition-colors hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-200"
+        className="nuru-opening-skip absolute right-4 top-[max(1rem,env(safe-area-inset-top))] z-20 min-h-11 rounded-full px-4 text-xs font-semibold tracking-wide text-white/70 transition hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-100"
       >
-        {preview ? "Close preview" : "Skip intro"}
+        {preview ? "Close" : "Skip"}
       </button>
-      <div aria-hidden="true" className="nuru-opening-scene">
-        <div className="nuru-opening-orbit" />
-        <div className="nuru-opening-mark">
-          {Array.from({ length: 9 }, (_, index) => (
-            <svg
-              key={index}
-              viewBox="0 0 200 250"
-              fill="none"
-              className="nuru-opening-depth"
-              style={{ transform: `translateZ(${-index * 2.5}px)`, opacity: 1 - index * 0.065 }}
-            >
-              <path
-                d={ARCH}
-                stroke={index === 0 ? "#C9F3FF" : "#167CA9"}
-                strokeWidth={index === 0 ? 6 : 8}
-                strokeLinecap="round"
-              />
-            </svg>
-          ))}
-          <svg viewBox="0 0 200 250" fill="none" className="nuru-opening-face">
-            <path
-              className="nuru-opening-stroke"
-              d={ARCH}
-              pathLength={1}
-              stroke="#EDFCFF"
-              strokeWidth="4"
-              strokeLinecap="round"
-            />
-          </svg>
-          <div className="nuru-opening-beam" />
-          <div
-            className="absolute inset-0 flex items-center justify-center"
-            style={{ transform: "translateZ(24px)" }}
-          >
-            <span className="font-display text-7xl font-semibold tracking-tight text-white drop-shadow-[0_0_24px_#48bfff]">
-              n<span className="text-cyan-200">.</span>
-            </span>
-          </div>
-          <svg viewBox="0 0 200 250" fill="none" className="nuru-opening-reflection">
-            <path d={ARCH} stroke="#8DDFFF" strokeWidth="5" strokeLinecap="round" />
-          </svg>
-        </div>
-      </div>
-      <div className="nuru-opening-title relative z-10 mt-4 text-center">
-        <h1 className="pl-[0.28em] text-[clamp(2.25rem,7vw,4rem)] font-semibold leading-none tracking-[0.28em] text-white">
-          NURU
-        </h1>
-        <p className="mt-3 pl-[0.5em] text-xs font-semibold tracking-[0.5em] text-[#BDEBFF] sm:text-base">
-          FAITH
-        </p>
-      </div>
-      <p className="nuru-opening-tagline relative z-10 mt-6 font-display text-[clamp(1.25rem,4vw,1.75rem)] text-[#E0F3FF]">
-        Find your people.
-      </p>
-      <p className="nuru-opening-tagline relative z-10 mt-3 text-xs tracking-wide text-[#A9C8DE] sm:text-sm">
-        Grow in faith. Live with purpose.
-      </p>
-      <div className="nuru-opening-verse relative z-10 mt-auto px-6 pb-[max(2rem,env(safe-area-inset-bottom))] pt-8 text-center">
-        <p className="max-w-md font-display text-sm leading-relaxed text-[#C7DDEA] sm:text-base">
-          “Your word is a lamp to my feet, and a light for my path.”
-        </p>
-        <p className="mt-2 text-[10px] font-semibold tracking-[0.18em] text-[#8DADC4]">
-          PSALM 119:105
-        </p>
-      </div>
+
+      {!preview && (
+        <button
+          type="button"
+          aria-label="Continue into Nuru Faith"
+          onClick={exit}
+          className="absolute inset-x-0 bottom-0 z-10 h-[28vh] cursor-default focus-visible:outline-none"
+        />
+      )}
     </div>
   );
 }

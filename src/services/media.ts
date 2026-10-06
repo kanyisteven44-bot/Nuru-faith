@@ -71,6 +71,7 @@ export async function fetchMediaCatalog(options: {
   query?: string;
   language?: string;
   channelId?: string;
+  creatorName?: string;
   playback?: "all" | "audio" | "video";
   page: number;
 }) {
@@ -87,7 +88,17 @@ export async function fetchMediaCatalog(options: {
   } else {
     query = query.or("source.eq.youtube,audio_url.not.is.null");
   }
-  if (options.channelId) query = query.eq("youtube_channel_id", options.channelId);
+  if (options.channelId && options.creatorName) {
+    const creator = safeMediaTerm(options.creatorName);
+    query = creator
+      ? query.or(`youtube_channel_id.eq.${options.channelId},creator_name.ilike.%${creator}%`)
+      : query.eq("youtube_channel_id", options.channelId);
+  } else if (options.channelId) {
+    query = query.eq("youtube_channel_id", options.channelId);
+  } else if (options.creatorName) {
+    const creator = safeMediaTerm(options.creatorName);
+    if (creator) query = query.ilike("creator_name", `%${creator}%`);
+  }
   if (options.language && options.language !== "all") {
     query =
       options.language === "other"

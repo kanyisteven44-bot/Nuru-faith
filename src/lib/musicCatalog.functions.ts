@@ -243,7 +243,7 @@ export const importReviewedCatalogPage = createServerFn({ method: "POST" })
           page_token: result.next?.pageToken ?? null,
           imported_total: result.total,
           pages_processed: progress.pages_processed + 1,
-          status: result.targetReached ? "complete" : result.next ? "running" : "exhausted",
+        status: result.targetReached ? "complete" : result.next ? "running" : data.channelIds.length ? "paused" : "exhausted",
           last_error: null,
           updated_at: new Date().toISOString(),
         })

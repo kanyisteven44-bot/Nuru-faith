@@ -33,8 +33,9 @@ test("real durations and safe playback URLs", () => {
 });
 
 test("spoken uploads and short promotions stay out of music", () => {
-  for (const title of ["The Bold Podcast: Handling Conflicts", "New music teaser", "Tour announcement", "Marriage works"])
+  for (const title of ["The Bold Podcast: Handling Conflicts", "New music teaser", "Tour announcement", "Marriage works", "Spirit Of Praise 12 | Behind The Scenes", "ANGOLA FOR JESUS II MINISTERS TRAINING", "The Gathering | Episode 10 I 04 October 2026", "Wednesday Bible Study"])
     assert.equal(eligibleMusicVideo({ ...video, snippet: { ...video.snippet, title } }, "official"), false);
+  assert.equal(eligibleMusicVideo({ ...video, snippet: { ...video.snippet, title: "The Message (Official Music Video)" } }, "official"), true);
   assert.equal(eligibleMusicVideo({ ...video, contentDetails: { duration: "PT1M59S" } }, "official"), false);
   assert.equal(eligibleMusicVideo({ ...video, contentDetails: { duration: "PT2M" } }, "official"), true);
 });

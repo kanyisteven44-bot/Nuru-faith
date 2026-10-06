@@ -35,7 +35,7 @@ export function eligibleMusicVideo(video: CatalogVideo, channelId: string): bool
   return (
     eligibleVideo(video, channelId) &&
     video.snippet?.categoryId === "10" &&
-    !/\b(podcast|sermon|interview|announcement|trailer|teaser|marriage|relationship|investments?|tour|vlog)\b/i.test(
+    !/\b(podcast|sermon|interview|announcement|trailer|teaser|marriage|relationship|investments?|tour|vlog|behind the scenes|ministers training|bible study|episode\s*\d+)\b/i.test(
       video.snippet.title ?? "",
     )
   );

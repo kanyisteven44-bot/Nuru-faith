@@ -26,11 +26,12 @@ test("all protected routes keep incomplete profiles inside onboarding", () => {
 
 test("onboarding only completes after profile interests and membership writes succeed", () => {
   const onboarding = read("src/routes/_authenticated/onboarding.tsx");
+  const finish = onboarding.slice(onboarding.indexOf("async function finish()"));
 
-  const initialProfile = onboarding.indexOf("onboarded: false");
-  const savePreferences = onboarding.indexOf("saveOnboardingInterests");
-  const churchMembership = onboarding.indexOf("await joinChurch");
-  const completedProfile = onboarding.indexOf("updateProfile(userId, { onboarded: true })");
+  const initialProfile = finish.indexOf("onboarded: false");
+  const savePreferences = finish.indexOf("await saveOnboardingInterests");
+  const churchMembership = finish.indexOf("await joinChurch");
+  const completedProfile = finish.indexOf("updateProfile(userId, { onboarded: true })");
 
   assert.ok(initialProfile > 0);
   assert.ok(savePreferences > initialProfile);

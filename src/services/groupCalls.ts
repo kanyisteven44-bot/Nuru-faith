@@ -53,8 +53,20 @@ export async function fetchActiveGroupCall(groupId: string) {
   if (!data) return null;
 
   const room = data as GroupCallRoom;
-  // Never keep a crashed room blocking a group forever.
-  if (Date.now() - new Date(room.created_at).getTime() > 4 * 60 * 60 * 1000) {
+  const ageMs = Date.now() - new Date(room.created_at).getTime();
+  const recent = new Date(Date.now() - 70_000).toISOString();
+  const live = await table("group_call_participants")
+    .select("user_id", { count: "exact", head: true })
+    .eq("room_id", room.id)
+    .gte("updated_at", recent);
+
+  // Give a brand-new room time for its creator to join, but never leave an
+  // abandoned/crashed room blocking the group for hours.
+  if (
+    ageMs > 90_000 &&
+    !live.error &&
+    (live.count ?? 0) === 0
+  ) {
     await table("group_call_rooms")
       .update({ status: "ended", ended_at: new Date().toISOString() })
       .eq("id", room.id);

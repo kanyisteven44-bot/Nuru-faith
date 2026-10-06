@@ -38,10 +38,12 @@ export function RichChatThread({
   target,
   userId,
   maxHeight = "58dvh",
+  fillHeight = false,
 }: {
   target: ChatTarget;
   userId: string;
   maxHeight?: string;
+  fillHeight?: boolean;
 }) {
   const qc = useQueryClient();
   const key = ["chat-messages", userId, target];
@@ -463,13 +465,21 @@ export function RichChatThread({
   const richMediaAllowed = !("mentor" in target);
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-border bg-card">
-      <p className="border-b border-border px-4 py-3 text-xs text-muted-foreground">
+    <section
+      className={cn(
+        "overflow-hidden bg-card",
+        fillHeight ? "flex min-h-0 flex-1 flex-col" : "rounded-2xl border border-border",
+      )}
+    >
+      <p className="shrink-0 border-b border-border px-4 py-2 text-center text-[10px] text-muted-foreground">
         Only conversation participants can read these messages.
       </p>
       <div
-        className="min-h-64 space-y-3 overflow-y-auto bg-surface/40 p-4"
-        style={{ maxHeight }}
+        className={cn(
+          "space-y-3 overflow-y-auto overscroll-contain bg-surface/40 p-4",
+          fillHeight ? "min-h-0 flex-1" : "min-h-64",
+        )}
+        style={fillHeight ? undefined : { maxHeight }}
         role="log"
         aria-label="Conversation messages"
         aria-live="polite"
@@ -551,9 +561,11 @@ export function RichChatThread({
                     : "rounded-bl-md bg-card text-secondary-foreground shadow-sm",
                 )}
               >
-                <p className="mb-1 text-[11px] font-semibold opacity-75">
-                  {mine ? "You" : (names.data?.[message.sender_id] ?? "Nuru member")}
-                </p>
+                {"group" in target && (
+                  <p className="mb-1 text-[11px] font-semibold opacity-75">
+                    {mine ? "You" : (names.data?.[message.sender_id] ?? "Nuru member")}
+                  </p>
+                )}
                 {message.message_type === "sticker" ? (
                   <div className="py-2">
                     <ChatStickerArt
@@ -594,7 +606,7 @@ export function RichChatThread({
       </div>
 
       <form
-        className="border-t border-border bg-card p-3"
+        className="shrink-0 border-t border-border bg-card px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
         onSubmit={(event) => {
           event.preventDefault();
           void sendText();

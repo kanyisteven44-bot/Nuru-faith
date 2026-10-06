@@ -127,8 +127,74 @@ function MessagesScreen() {
     if (directProfile) beginCall(kind, directProfile);
   }
 
+  if (inThread)
+    return (
+      <AppShell flush hideNav>
+        <div className="mx-auto flex h-full w-full max-w-3xl flex-col overflow-hidden bg-background lg:rounded-3xl lg:border lg:border-border">
+          <header className="flex shrink-0 items-center gap-3 border-b border-border bg-card px-3 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
+            <Link
+              to="/messages"
+              search={{}}
+              aria-label="Back to all messages"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full hover:bg-surface-2"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+            {search.user && directProfile ? (
+              <Link
+                to="/discovery/$kind/$id"
+                params={{ kind: "profile", id: search.user }}
+                className="flex min-w-0 flex-1 items-center gap-3"
+                aria-label={`View ${title}'s profile`}
+              >
+                <Avatar url={directProfile.avatar_url} name={title} seed={search.user} size="md" />
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-bold">{title}</span>
+                  <span className="block truncate text-xs text-muted-foreground">
+                    {directProfile.username ? `@${directProfile.username}` : "View profile"}
+                  </span>
+                </span>
+              </Link>
+            ) : (
+              <h1 className="min-w-0 flex-1 truncate text-base font-bold">{title}</h1>
+            )}
+            {search.user && directProfile && (
+              <div className="flex shrink-0 gap-1">
+                <button
+                  type="button"
+                  onClick={() => startCall("audio")}
+                  aria-label="Start audio call"
+                  className="flex h-10 w-10 items-center justify-center rounded-full text-primary hover:bg-surface-2"
+                >
+                  <Phone className="h-5 w-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => startCall("video")}
+                  aria-label="Start video call"
+                  className="flex h-10 w-10 items-center justify-center rounded-full text-primary hover:bg-surface-2"
+                >
+                  <Video className="h-5 w-5" />
+                </button>
+              </div>
+            )}
+          </header>
+          <div className="flex min-h-0 flex-1 flex-col">
+            <ThreadView
+              target={target}
+              userId={userId}
+              groupCover={group?.cover_url ?? null}
+              groupName={group?.name}
+              loading={loading || profiles.isLoading}
+              failed={failed || profiles.isError}
+            />
+          </div>
+        </div>
+      </AppShell>
+    );
+
   return (
-    <AppShell hideNav={inThread || !!activeCall}>
+    <AppShell hideNav={!!activeCall}>
       <ScreenHeader
         title={title}
         back={inThread}
@@ -180,8 +246,6 @@ function MessagesScreen() {
           <ThreadView
             target={target}
             userId={userId}
-            searchUser={search.user}
-            directProfile={directProfile}
             groupCover={group?.cover_url ?? null}
             groupName={group?.name}
             loading={loading || profiles.isLoading}
@@ -240,8 +304,6 @@ function MessagesScreen() {
 function ThreadView({
   target,
   userId,
-  searchUser,
-  directProfile,
   groupCover,
   groupName,
   loading,
@@ -249,8 +311,6 @@ function ThreadView({
 }: {
   target: ChatTarget | undefined;
   userId: string | null;
-  searchUser: string | undefined;
-  directProfile: ChatProfile | undefined;
   groupCover: string | null;
   groupName: string | undefined;
   loading: boolean;
@@ -268,55 +328,12 @@ function ThreadView({
   }
 
   return (
-    <div className="space-y-3">
-      <Link
-        to="/messages"
-        search={{}}
-        className="inline-flex min-h-10 items-center gap-2 text-sm font-semibold text-primary"
-      >
-        <ArrowLeft className="h-4 w-4" /> All messages
-      </Link>
-
-      {searchUser && directProfile && (
-        <Link
-          to="/discovery/$kind/$id"
-          params={{ kind: "profile", id: searchUser }}
-          className="relative flex min-h-24 items-center gap-4 overflow-hidden rounded-2xl border border-border bg-card p-4"
-        >
-          <CoverImage
-            src={resolveMedia("asset:friends-dusk")}
-            alt=""
-            className="absolute inset-0 h-full w-full opacity-16"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-card via-card/92 to-card/60" />
-          <Avatar
-            url={directProfile.avatar_url}
-            name={directProfile.full_name || directProfile.username || ""}
-            seed={searchUser}
-            size="md"
-            className="relative h-14 w-14"
-          />
-          <span className="relative min-w-0">
-            <span className="block truncate text-base font-bold">
-              {directProfile.full_name || directProfile.username || "Nuru member"}
-            </span>
-            {directProfile.username && (
-              <span className="block truncate text-xs text-muted-foreground">
-                @{directProfile.username}
-              </span>
-            )}
-            <span className="mt-1 block text-[11px] text-muted-foreground">
-              Tap to view profile
-            </span>
-          </span>
-        </Link>
-      )}
-
+    <div className="flex min-h-0 flex-1 flex-col">
       {"group" in target && (
         <Link
           to="/groups"
           search={{ group: target.group }}
-          className="relative flex min-h-24 items-end overflow-hidden rounded-2xl border border-border bg-card p-4"
+          className="relative flex min-h-14 shrink-0 items-end overflow-hidden border-b border-border bg-card px-4 py-2"
         >
           <CoverImage
             src={resolveMedia(groupCover || "asset:topic-prayer")}
@@ -331,7 +348,7 @@ function ThreadView({
         </Link>
       )}
 
-      <RichChatThread target={target} userId={userId} maxHeight="62dvh" />
+      <RichChatThread target={target} userId={userId} fillHeight />
     </div>
   );
 }

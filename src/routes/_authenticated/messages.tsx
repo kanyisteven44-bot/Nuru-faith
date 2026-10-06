@@ -18,6 +18,13 @@ import { AppShell, Avatar, ScreenHeader } from "@/components/nuru/AppShell";
 import { CoverImage } from "@/components/nuru/CoverImage";
 import { RichChatThread } from "@/components/nuru/RichChatThread";
 import { GroupCallPanel } from "@/components/nuru/GroupCallPanel";
+import {
+  fetchActiveGroupCall,
+  startOrJoinGroupCall,
+  type GroupCallKind,
+  type GroupCallRoom,
+} from "@/services/groupCalls";
+import { GroupCallPanel } from "@/components/nuru/GroupCallPanel";
 import { fetchActiveGroupCall, startOrJoinGroupCall, type GroupCallKind, type GroupCallRoom } from "@/services/groupCalls";
 import { CardSkeleton, EmptyState, ErrorState } from "@/components/nuru/Primitives";
 import { resolveMedia } from "@/lib/media";
@@ -46,6 +53,8 @@ function MessagesScreen() {
   const qc = useQueryClient();
   const search = Route.useSearch();
   const [tab, setTab] = useState<InboxTab>("All");
+  const [groupCallRoom, setGroupCallRoom] = useState<GroupCallRoom | null>(null);
+  const [startingGroupCall, setStartingGroupCall] = useState(false);
   const { activeCall, startCall: beginCall } = useCallManager();
 
   const mentors = useQuery({ queryKey: ["mentors"], queryFn: fetchMentors });
@@ -98,6 +107,12 @@ function MessagesScreen() {
   const group = groups.data?.find((item) => item.id === search.group);
   const directProfile = search.user ? profiles.data?.[search.user] : undefined;
   const requester = mentor?.user_id === userId ? search.requester : userId;
+  const activeGroupCall = useQuery({
+    queryKey: ["active-group-call", group?.id],
+    queryFn: () => fetchActiveGroupCall(group!.id),
+    enabled: !!userId && !!group,
+    refetchInterval: group && !groupCallRoom ? 4000 : false,
+  });
 
   const target: ChatTarget | undefined =
     search.user && userId && search.user !== userId
@@ -130,8 +145,23 @@ function MessagesScreen() {
     if (directProfile) beginCall(kind, directProfile);
   }
 
+  async function openGroupCall(kind: GroupCallKind) {
+    if (!userId || !group || startingGroupCall) return;
+    setStartingGroupCall(true);
+    try {
+      const room = await startOrJoinGroupCall(group.id, userId, kind);
+      setGroupCallRoom(room);
+      await activeGroupCall.refetch();
+    } catch {
+      // Group call panel/service shows the detailed permission or connection state.
+    } finally {
+      setStartingGroupCall(false);
+    }
+  }
+
   if (inThread)
     return (
+      <>
       <AppShell flush hideNav>
         <div className="mx-auto flex h-full w-full max-w-3xl flex-col overflow-hidden bg-background lg:rounded-3xl lg:border lg:border-border">
           <header className="flex shrink-0 items-center gap-3 border-b border-border bg-card px-3 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
@@ -167,7 +197,7 @@ function MessagesScreen() {
                   type="button"
                   onClick={() => startCall("audio")}
                   aria-label="Start audio call"
-                  className="flex h-10 w-10 items-center justify-center rounded-full text-primary hover:bg-surface-2"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary transition hover:bg-primary/15"
                 >
                   <Phone className="h-5 w-5" />
                 </button>
@@ -175,7 +205,29 @@ function MessagesScreen() {
                   type="button"
                   onClick={() => startCall("video")}
                   aria-label="Start video call"
-                  className="flex h-10 w-10 items-center justify-center rounded-full text-primary hover:bg-surface-2"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary transition hover:bg-primary/15"
+                >
+                  <Video className="h-5 w-5" />
+                </button>
+              </div>
+            )}
+            {group && (
+              <div className="flex shrink-0 gap-1">
+                <button
+                  type="button"
+                  onClick={() => void openGroupCall(activeGroupCall.data?.kind === "audio" ? "audio" : "audio")}
+                  disabled={startingGroupCall}
+                  aria-label={activeGroupCall.data ? "Join group audio call" : "Start group audio call"}
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary transition hover:bg-primary/15 disabled:opacity-50"
+                >
+                  <Phone className="h-5 w-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void openGroupCall(activeGroupCall.data?.kind === "video" ? "video" : "video")}
+                  disabled={startingGroupCall}
+                  aria-label={activeGroupCall.data ? "Join group video call" : "Start group video call"}
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground transition hover:brightness-105 disabled:opacity-50"
                 >
                   <Video className="h-5 w-5" />
                 </button>
@@ -194,6 +246,18 @@ function MessagesScreen() {
           </div>
         </div>
       </AppShell>
+      {groupCallRoom && userId && group && (
+        <GroupCallPanel
+          room={groupCallRoom}
+          groupName={group.name}
+          userId={userId}
+          onClose={() => {
+            setGroupCallRoom(null);
+            void activeGroupCall.refetch();
+          }}
+        />
+      )}
+      </>
     );
 
   return (

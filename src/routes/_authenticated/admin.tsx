@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { AdminDirectory } from "@/components/nuru/AdminDirectory";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Activity,
@@ -20,6 +19,7 @@ import {
   Users,
 } from "lucide-react";
 import { toast } from "sonner";
+import { z } from "zod";
 import { useAuth } from "@/hooks/useAuth";
 import { eventDate, timeAgo } from "@/lib/format";
 import {
@@ -39,7 +39,15 @@ import { MusicCatalogImport } from "@/components/youtube/MusicCatalogImport";
 import { getPilotMetrics } from "@/lib/pilot.functions";
 import { AdminOperations } from "@/components/nuru/AdminOperations";
 
+const ADMIN_SECTION_IDS = ["overview", "people", "content", "moderation", "community"] as const;
+type AdminSection = (typeof ADMIN_SECTION_IDS)[number];
+
+const adminSearchSchema = z.object({
+  section: z.enum(ADMIN_SECTION_IDS).optional(),
+});
+
 export const Route = createFileRoute("/_authenticated/admin")({
+  validateSearch: adminSearchSchema,
   head: () => ({
     meta: [
       { title: "Nuru Admin — Nuru Faith" },
@@ -57,7 +65,6 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminScreen,
 });
 
-type AdminSection = "overview" | "people" | "content" | "moderation" | "community";
 
 const ADMIN_SECTIONS: {
   id: AdminSection;

@@ -1,6 +1,5 @@
 import { CoverImage } from "@/components/nuru/CoverImage";
-import { useEffect } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
   Bell,
@@ -61,7 +60,6 @@ const QUICK_ACCESS: { to: string; label: string; icon: LucideIcon }[] = [
 ];
 
 function HomeScreen() {
-  const navigate = useNavigate();
   const { userId } = useAuth();
 
   const profile = useQuery({
@@ -84,11 +82,6 @@ function HomeScreen() {
     staleTime: 30_000,
   });
 
-  useEffect(() => {
-    if (profile.data && profile.data.onboarded === false) {
-      void navigate({ to: "/onboarding", replace: true });
-    }
-  }, [profile.data, navigate]);
 
   const reference = verse.data?.reference ?? verseOfTheDayRef();
   const verseText = verse.data?.text ?? "";

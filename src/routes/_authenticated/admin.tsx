@@ -331,9 +331,10 @@ function AdminScreen() {
             </Link>
             <Link
               to="/home"
-              className="inline-flex min-h-9 items-center gap-1 rounded-xl border border-border bg-surface px-3 text-xs font-semibold text-foreground transition hover:border-border-strong"
+              className="inline-flex h-9 items-center gap-1 rounded-xl border border-border bg-surface px-2.5 text-xs font-semibold text-foreground transition hover:border-border-strong sm:px-3"
+              aria-label="Back to Nuru Faith"
             >
-              Back to app
+              <span className="hidden sm:inline">Back to app</span>
               <ChevronRight className="h-3.5 w-3.5" />
             </Link>
           </div>

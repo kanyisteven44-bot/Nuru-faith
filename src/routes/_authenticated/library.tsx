@@ -5,11 +5,13 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
   BookMarked,
+  BookOpen,
   Bookmark,
   ChevronRight,
   GraduationCap,
   Highlighter,
   History,
+  Sparkles,
   type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -31,7 +33,7 @@ export const Route = createFileRoute("/_authenticated/library")({
       { title: "Library — Nuru Faith" },
       {
         name: "description",
-        content: "Everything you have saved: verses, highlights, posts and the series you started.",
+        content: "Read Scripture, explore Christian books and courses, and return to everything you have saved.",
       },
     ],
   }),
@@ -47,6 +49,38 @@ export const Route = createFileRoute("/_authenticated/library")({
 const TABS = ["books", "saved", "history"] as const;
 type Tab = (typeof TABS)[number];
 
+const LIBRARY_SHORTCUTS: {
+  to: "/bible" | "/faith-courses" | "/devotionals" | "/series";
+  label: string;
+  detail: string;
+  icon: LucideIcon;
+}[] = [
+  {
+    to: "/bible",
+    label: "Bible",
+    detail: "Read Scripture and return to saved passages",
+    icon: BookOpen,
+  },
+  {
+    to: "/faith-courses",
+    label: "Courses",
+    detail: "Go deeper with guided faith learning",
+    icon: GraduationCap,
+  },
+  {
+    to: "/devotionals",
+    label: "Devotions",
+    detail: "Short reflections for everyday faith",
+    icon: Sparkles,
+  },
+  {
+    to: "/series",
+    label: "Series",
+    detail: "Follow multi-part Scripture journeys",
+    icon: BookMarked,
+  },
+];
+
 function LibraryScreen() {
   const [tab, setTab] = useState<Tab>("books");
 
@@ -54,29 +88,104 @@ function LibraryScreen() {
     <AppShell>
       <BoardHeader />
 
-      <div className="px-5 pb-8">
-        <h1 className="font-display text-[30px] leading-tight font-semibold">Library</h1>
-        <p className="mt-1 text-[14px] leading-snug text-ink-2">
-          Books to explore and everything you have saved, in one place.
-        </p>
-
-        <div className="mt-4">
-          <PillTabs
-            tabs={TABS}
-            value={tab}
-            onChange={setTab}
-            labels={{ books: "Books", saved: "Saved", history: "History" }}
-          />
-        </div>
-
-        <Link
-          to="/faith-courses"
-          className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-full border border-primary/30 px-4 text-sm font-semibold text-primary"
+      <div className="px-5 pb-8 lg:px-0">
+        <section
+          className="relative isolate overflow-hidden rounded-[28px] border border-border bg-card"
+          aria-label="Library introduction"
         >
-          <GraduationCap className="h-4 w-4" /> Explore faith courses{" "}
-          <ChevronRight className="h-4 w-4" />
-        </Link>
-        {tab === "books" ? <BooksCatalogue /> : tab === "saved" ? <SavedTab /> : <HistoryTab />}
+          <CoverImage
+            src={resolveMedia("asset:reading-scripture")}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/65 to-black/20" />
+          <div className="relative flex min-h-[280px] flex-col justify-end p-5 sm:p-7 lg:min-h-[330px] lg:p-8">
+            <p className="text-[11px] font-semibold tracking-[0.16em] text-white/80 uppercase">
+              Your faith library
+            </p>
+            <h1 className="mt-2 max-w-xl font-display text-[34px] leading-[1.05] font-semibold text-white sm:text-[40px]">
+              Read. Learn. Return.
+            </h1>
+            <p className="mt-3 max-w-xl text-[14px] leading-relaxed text-white/78">
+              Scripture, guided learning, devotionals and the things you save — organized so you
+              can find your way back quickly.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <Link
+                to="/bible"
+                className="inline-flex min-h-11 items-center gap-2 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground transition hover:brightness-105 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+              >
+                <BookOpen className="h-4 w-4" />
+                Open Bible
+              </Link>
+              <Link
+                to="/grow"
+                className="inline-flex min-h-11 items-center gap-2 rounded-full border border-white/30 bg-black/20 px-5 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+              >
+                Continue learning
+                <ChevronRight className="h-4 w-4" />
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-6" aria-labelledby="library-explore-heading">
+          <div className="flex items-end justify-between gap-3 px-1 pb-3">
+            <div>
+              <p className="text-[11px] font-semibold tracking-[0.14em] text-primary uppercase">
+                Explore
+              </p>
+              <h2 id="library-explore-heading" className="mt-1 font-display text-[22px] font-semibold">
+                Start anywhere
+              </h2>
+            </div>
+            <span className="text-[11px] text-ink-3">4 ways to grow</span>
+          </div>
+          <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+            {LIBRARY_SHORTCUTS.map(({ to, label, detail, icon: Icon }) => (
+              <Link
+                key={label}
+                to={to}
+                className="group flex min-h-[142px] flex-col rounded-2xl border border-border bg-card p-4 transition hover:-translate-y-0.5 hover:border-border-strong hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              >
+                <span className="nuru-soft-inset flex h-10 w-10 items-center justify-center rounded-xl bg-accent text-primary">
+                  <Icon className="h-5 w-5" strokeWidth={1.9} />
+                </span>
+                <span className="mt-4 flex items-center justify-between gap-2">
+                  <span className="text-[14px] font-semibold">{label}</span>
+                  <ChevronRight className="h-4 w-4 text-ink-3 transition group-hover:translate-x-0.5 group-hover:text-primary" />
+                </span>
+                <span className="mt-1 text-[12px] leading-snug text-ink-3">{detail}</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section className="mt-7" aria-labelledby="personal-library-heading">
+          <div className="px-1">
+            <p className="text-[11px] font-semibold tracking-[0.14em] text-primary uppercase">
+              Personal library
+            </p>
+            <h2 id="personal-library-heading" className="mt-1 font-display text-[22px] font-semibold">
+              Yours to come back to
+            </h2>
+            <p className="mt-1 text-[13px] leading-relaxed text-ink-3">
+              Browse books, revisit saved Scripture and posts, or pick up something you watched
+              earlier.
+            </p>
+          </div>
+
+          <div className="mt-4">
+            <PillTabs
+              tabs={TABS}
+              value={tab}
+              onChange={setTab}
+              labels={{ books: "Books", saved: "Saved", history: "History" }}
+            />
+          </div>
+
+          {tab === "books" ? <BooksCatalogue /> : tab === "saved" ? <SavedTab /> : <HistoryTab />}
+        </section>
       </div>
     </AppShell>
   );

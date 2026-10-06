@@ -764,23 +764,64 @@ function AdminScreen() {
                 </div>
 
                 <section className="rounded-3xl border border-border bg-surface p-4 sm:p-5">
-                  <SectionHeader title="Moderation queue" />
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <SectionHeader title="Moderation queue" />
+                    <span className="rounded-full border border-border bg-surface-2 px-3 py-1 text-[10px] font-semibold text-muted-foreground">
+                      {filteredModeration.length} matching
+                    </span>
+                  </div>
+
+                  <div className="mb-5 grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto]">
+                    <label className="relative block">
+                      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <input
+                        value={moderationSearch}
+                        onChange={(event) => setModerationSearch(event.target.value)}
+                        placeholder="Search reason, target or source"
+                        aria-label="Search moderation reports"
+                        className="input-nuru w-full pl-10"
+                      />
+                    </label>
+                    <div className="flex flex-wrap gap-2" aria-label="Moderation filters">
+                      {(["active", "reviewing", "resolved", "dismissed", "all"] as const).map(
+                        (filter) => (
+                          <button
+                            key={filter}
+                            type="button"
+                            aria-pressed={moderationFilter === filter}
+                            onClick={() => setModerationFilter(filter)}
+                            className={[
+                              "min-h-10 rounded-xl px-3 text-xs font-semibold capitalize transition",
+                              moderationFilter === filter
+                                ? "bg-primary text-primary-foreground"
+                                : "border border-border bg-background/30 text-muted-foreground hover:text-foreground",
+                            ].join(" ")}
+                          >
+                            {filter}
+                          </button>
+                        ),
+                      )}
+                    </div>
+                  </div>
+
                   {moderation.isLoading ? (
                     <CardSkeleton count={3} height="h-24" />
                   ) : moderation.isError ? (
                     <p className="text-sm text-destructive">
                       The moderation queue couldn't be loaded for this account.
                     </p>
-                  ) : openReports.length === 0 ? (
+                  ) : filteredModeration.length === 0 ? (
                     <div className="rounded-2xl border border-border bg-surface-2 p-5">
-                      <p className="text-sm font-semibold">No open reports</p>
+                      <p className="text-sm font-semibold">
+                        {moderationFilter === "active" ? "No active reports" : "Nothing matches this view"}
+                      </p>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        Reports you are authorized to review will appear here.
+                        Try another filter or search term. New authorized reports will appear here automatically.
                       </p>
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {openReports.slice(0, 20).map((item) => (
+                      {filteredModeration.slice(0, 30).map((item) => (
                         <article
                           key={`${item.source}:${item.id}`}
                           className="rounded-2xl border border-border bg-background/30 p-4 transition hover:border-border-strong"
@@ -792,9 +833,7 @@ function AdminScreen() {
                                 {item.target}
                               </p>
                             </div>
-                            <span className="rounded-full border border-leaf/20 bg-leaf/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-leaf">
-                              {item.status}
-                            </span>
+                            <ModerationStatusBadge status={item.status} />
                           </div>
 
                           {item.details && (
@@ -804,7 +843,10 @@ function AdminScreen() {
                           )}
 
                           <div className="mt-4 flex flex-wrap items-center gap-2">
-                            <span className="mr-auto text-[10px] text-muted-foreground">
+                            <span className="mr-auto inline-flex items-center gap-2 text-[10px] text-muted-foreground">
+                              <span className="rounded-full border border-border bg-surface-2 px-2 py-1 font-semibold uppercase tracking-wide">
+                                {item.source.replace("_", " ")}
+                              </span>
                               {timeAgo(item.created_at)}
                             </span>
                             {item.source_url && (
@@ -819,17 +861,17 @@ function AdminScreen() {
                             )}
                             <button
                               type="button"
-                              disabled={updateReport.isPending}
+                              disabled={updateReport.isPending || item.status === "reviewing"}
                               onClick={() =>
                                 updateReport.mutate({ item, status: "reviewing" })
                               }
                               className="min-h-9 rounded-xl border border-border-strong px-3 text-[11px] font-semibold text-secondary-foreground disabled:opacity-50"
                             >
-                              Review
+                              {item.status === "reviewing" ? "In review" : "Review"}
                             </button>
                             <button
                               type="button"
-                              disabled={updateReport.isPending}
+                              disabled={updateReport.isPending || item.status === "dismissed"}
                               onClick={() =>
                                 updateReport.mutate({ item, status: "dismissed" })
                               }
@@ -839,7 +881,7 @@ function AdminScreen() {
                             </button>
                             <button
                               type="button"
-                              disabled={updateReport.isPending}
+                              disabled={updateReport.isPending || item.status === "resolved"}
                               onClick={() =>
                                 updateReport.mutate({ item, status: "resolved" })
                               }

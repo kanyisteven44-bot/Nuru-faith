@@ -473,6 +473,51 @@ function AdminScreen() {
                 />
 
                 <section className="rounded-3xl border border-border bg-surface p-4 sm:p-5">
+                  <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+                    <div className="flex items-start gap-3">
+                      <span
+                        className={[
+                          "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border",
+                          healthIssues
+                            ? "border-amber-400/20 bg-amber-400/10 text-amber-300"
+                            : "border-leaf/20 bg-leaf/10 text-leaf",
+                        ].join(" ")}
+                      >
+                        {healthIssues ? (
+                          <AlertTriangle className="h-5 w-5" />
+                        ) : (
+                          <CheckCircle2 className="h-5 w-5" />
+                        )}
+                      </span>
+                      <div>
+                        <p className="text-sm font-semibold">
+                          {healthIssues
+                            ? healthIssues + " admin data source" + (healthIssues === 1 ? "" : "s") + " need attention"
+                            : healthLoading
+                              ? "Admin data is syncing"
+                              : "Admin data is connected"}
+                        </p>
+                        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                          {lastRefreshAt
+                            ? "Last manually refreshed at " +
+                              lastRefreshAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                            : "Live data is loaded from Nuru's protected admin sources."}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {healthChecks.map((check) => (
+                        <StatusPill
+                          key={check.label}
+                          label={check.label}
+                          state={check.error ? "error" : check.loading ? "loading" : "ok"}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </section>
+
+                <section className="rounded-3xl border border-border bg-surface p-4 sm:p-5">
                   <div className="flex flex-wrap items-end justify-between gap-3">
                     <div>
                       <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-leaf">
@@ -498,24 +543,24 @@ function AdminScreen() {
                       onClick={() => setActiveSection("moderation")}
                     />
                     <PriorityCard
-                      title="Church verification"
-                      value={pendingChurches.length}
+                      title="Mentor review"
+                      value={unverifiedMentors.length}
                       detail={
-                        pendingChurches.length
-                          ? "Directory records waiting for verification"
-                          : "All visible churches are verified"
+                        unverifiedMentors.length
+                          ? "Mentor profiles waiting for verification"
+                          : "No mentor profiles are waiting for review"
                       }
-                      icon={Church}
-                      tone={pendingChurches.length ? "attention" : "calm"}
-                      onClick={() => setActiveSection("community")}
+                      icon={UserRoundCheck}
+                      tone={unverifiedMentors.length ? "attention" : "calm"}
+                      onClick={() => setActiveSection("people")}
                     />
                     <PriorityCard
-                      title="People & access"
-                      value={pilotMetrics?.profiles ?? "—"}
-                      detail="Members, mentors and administrative access"
-                      icon={UserRoundCog}
+                      title="Directory coverage"
+                      value={directoryVerificationRate + "%"}
+                      detail={verifiedChurches.length + " of " + scoped.length + " visible churches verified"}
+                      icon={Church}
                       tone="calm"
-                      onClick={() => setActiveSection("people")}
+                      onClick={() => setActiveSection("community")}
                     />
                   </div>
                 </section>

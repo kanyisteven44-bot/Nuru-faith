@@ -30,13 +30,17 @@ const videoSchema = z.object({
   }),
 });
 
-/** One bounded batch; the admin screen drives resumable progress to 10,000. */
+/** One bounded batch; the admin screen drives resumable reviewed imports. */
 export const importReviewedCatalogPage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
     z.object({
       kind: z.enum(["music", "podcast"]).default("music"),
       restart: z.boolean().default(false),
+      channelIds: z
+        .array(z.string().regex(/^UC[A-Za-z0-9_-]{22}$/))
+        .max(200)
+        .default([]),
     }),
   )
   .handler(async ({ data, context }) => {
@@ -77,9 +81,13 @@ export const importReviewedCatalogPage = createServerFn({ method: "POST" })
       .maybeSingle();
     if (leaseError) throw new Error(`Import progress unavailable (${leaseError.code}).`);
     if (!progress) throw new Error("Another import batch is running. Wait before resuming.");
-    const cursor = data.restart
-      ? { channelId: null, pageToken: null }
-      : { channelId: progress.channel_id, pageToken: progress.page_token };
+    const cursor =
+      data.restart ||
+      (data.channelIds.length > 0 &&
+        progress.channel_id &&
+        !data.channelIds.includes(progress.channel_id))
+        ? { channelId: null, pageToken: null }
+        : { channelId: progress.channel_id, pageToken: progress.page_token };
     async function batch() {
       const songCount = async () => {
         const { count, error } = await db
@@ -94,7 +102,7 @@ export const importReviewedCatalogPage = createServerFn({ method: "POST" })
       const before = await songCount();
       if (before >= target) return { total: before, added: 0, next: null, targetReached: true };
       function sourceQuery() {
-        return db
+        let query = db
           .from("media_sources")
           .select("id,name,youtube_channel_id,language_codes")
           .eq("is_approved", true)
@@ -102,6 +110,8 @@ export const importReviewedCatalogPage = createServerFn({ method: "POST" })
           .eq("source_type", "youtube")
           .in("content_kind", [data.kind, "mixed"])
           .not("youtube_channel_id", "is", null);
+        if (data.channelIds.length) query = query.in("youtube_channel_id", data.channelIds);
+        return query;
       }
       let query = sourceQuery();
       if (cursor.channelId) query = query.eq("youtube_channel_id", cursor.channelId);

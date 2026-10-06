@@ -71,7 +71,16 @@ test("the metadata worker authorizes staff before loading the privileged client"
 test("import cursors cannot be supplied by clients and progress is not publicly writable", () => {
   const worker = read("src/lib/musicCatalog.functions.ts");
   const input = worker.slice(worker.indexOf(".inputValidator("), worker.indexOf(".handler("));
-  assert.doesNotMatch(input, /channelId|pageToken|is_approved|title|external_id/);
+  assert.doesNotMatch(input, /\b(?:channelId|pageToken|is_approved|title|external_id)\s*:/);
+  // An administrator may select reviewed sources, but cannot supply a cursor or bypass review.
+  assert.match(input, /channelIds:[\s\S]*\.max\(200\)/);
+  const sourceQuery = worker.slice(
+    worker.indexOf("function sourceQuery()"),
+    worker.indexOf("let query = sourceQuery()"),
+  );
+  assert.match(sourceQuery, /\.eq\("is_approved", true\)/);
+  assert.match(sourceQuery, /\.eq\("is_verified", true\)/);
+  assert.match(sourceQuery, /\.in\("youtube_channel_id", data.channelIds\)/);
   const migration = read("supabase/migrations/20261005055626_server_media_import_progress.sql");
   assert.match(migration, /enable row level security/);
   assert.match(migration, /revoke all on public.media_catalog_imports from anon, authenticated/);

@@ -10,6 +10,7 @@ export function MusicCatalogImport() {
   const [kind, setKind] = useState<"music" | "podcast">("music");
   const target = catalogueTarget(kind);
   const [running, setRunning] = useState(false);
+  const [channelFilter, setChannelFilter] = useState("");
   const [message, setMessage] = useState(
     "Import real videos from reviewed sources. Progress is saved on the server.",
   );
@@ -67,13 +68,18 @@ export function MusicCatalogImport() {
   }, [kind, target]);
   async function run(fresh: boolean) {
     if (active.current) return;
+    const channelIds = [...new Set(channelFilter.split(/[\s,]+/).filter(Boolean))];
+    if (channelIds.length > 200 || channelIds.some((id) => !/^UC[A-Za-z0-9_-]{22}$/.test(id))) {
+      setMessage("Enter up to 200 valid YouTube channel IDs, separated by lines or commas.");
+      return;
+    }
     active.current = true;
     pause.current = false;
     setRunning(true);
     let restart = fresh;
     try {
       while (!pause.current) {
-        const result = await importReviewedCatalogPage({ data: { kind, restart } });
+        const result = await importReviewedCatalogPage({ data: { kind, restart, channelIds } });
         restart = false;
         setTotal(result.total);
         await client.invalidateQueries({ queryKey: ["media-catalog"] });
@@ -81,7 +87,9 @@ export function MusicCatalogImport() {
           setMessage(
             result.targetReached
               ? "Catalogue target reached."
-              : "Reviewed sources exhausted below the target. Add more reviewed creators to continue; entries have not been duplicated.",
+              : channelIds.length
+                ? "Selected reviewed sources finished. All eligible songs were imported without duplicates."
+                : "Reviewed sources exhausted below the target. Add more reviewed creators to continue; entries have not been duplicated.",
           );
           break;
         }
@@ -118,6 +126,22 @@ export function MusicCatalogImport() {
           <option value="podcast">Video podcasts</option>
         </select>
       </label>
+      <label className="block text-sm">
+        Channel IDs (optional)
+        <textarea
+          aria-label="Channel IDs (optional)"
+          className="input-nuru mt-2 min-h-20"
+          rows={3}
+          disabled={running}
+          value={channelFilter}
+          onChange={(event) => setChannelFilter(event.target.value)}
+          placeholder="Leave empty to scan all reviewed sources"
+        />
+      </label>
+      <p className="text-xs text-muted-foreground">
+        Import selected channels after verifying and approving them. This field does not approve
+        sources.
+      </p>
       <p className="text-sm text-muted-foreground" role="status">
         {message}
       </p>

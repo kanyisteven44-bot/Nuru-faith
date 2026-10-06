@@ -372,7 +372,44 @@ function GroupSpace({ groupId }: { groupId: string }) {
   return (
     <>
       <AppShell>
-        <ScreenHeader title={group.data.name} back />
+        <ScreenHeader
+          title={group.data.name}
+          back
+          right={
+            isMember ? (
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => void openGroupCall("audio")}
+                  disabled={startingCall}
+                  aria-label="Start or join group audio call"
+                  className={cn(
+                    "flex h-10 w-10 items-center justify-center rounded-full transition-colors disabled:opacity-50",
+                    activeGroupCall.data?.kind === "audio"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-primary hover:bg-surface-2",
+                  )}
+                >
+                  <Phone className="h-5 w-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void openGroupCall("video")}
+                  disabled={startingCall}
+                  aria-label="Start or join group video call"
+                  className={cn(
+                    "flex h-10 w-10 items-center justify-center rounded-full transition-colors disabled:opacity-50",
+                    activeGroupCall.data?.kind === "video"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-primary hover:bg-surface-2",
+                  )}
+                >
+                  <Video className="h-5 w-5" />
+                </button>
+              </div>
+            ) : undefined
+          }
+        />
 
       <div className="mx-auto w-full max-w-3xl pb-8">
         <section className="relative overflow-hidden">

@@ -17,6 +17,8 @@ import { useCallManager } from "@/components/nuru/CallManager";
 import { AppShell, Avatar, ScreenHeader } from "@/components/nuru/AppShell";
 import { CoverImage } from "@/components/nuru/CoverImage";
 import { RichChatThread } from "@/components/nuru/RichChatThread";
+import { GroupCallPanel } from "@/components/nuru/GroupCallPanel";
+import { fetchActiveGroupCall, startOrJoinGroupCall, type GroupCallKind, type GroupCallRoom } from "@/services/groupCalls";
 import { CardSkeleton, EmptyState, ErrorState } from "@/components/nuru/Primitives";
 import { resolveMedia } from "@/lib/media";
 import { cn } from "@/lib/utils";
@@ -316,6 +318,30 @@ function ThreadView({
   loading: boolean;
   failed: boolean;
 }) {
+  const groupId = target && "group" in target ? target.group : null;
+  const [groupCallRoom, setGroupCallRoom] = useState<GroupCallRoom | null>(null);
+  const [startingGroupCall, setStartingGroupCall] = useState(false);
+  const activeGroupCall = useQuery({
+    queryKey: ["active-group-call", groupId],
+    queryFn: () => fetchActiveGroupCall(groupId!),
+    enabled: !!groupId && !!userId,
+    refetchInterval: groupId && userId && !groupCallRoom ? 4000 : false,
+  });
+
+  async function openGroupCall(kind: GroupCallKind) {
+    if (!groupId || !userId || startingGroupCall) return;
+    setStartingGroupCall(true);
+    try {
+      const room = await startOrJoinGroupCall(groupId, userId, kind);
+      setGroupCallRoom(room);
+      await activeGroupCall.refetch();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Couldn't open the group call");
+    } finally {
+      setStartingGroupCall(false);
+    }
+  }
+
   if (loading) return <CardSkeleton count={3} height="h-16" />;
   if (failed) return <ErrorState />;
   if (!target || !userId) {
@@ -328,28 +354,75 @@ function ThreadView({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      {"group" in target && (
-        <Link
-          to="/groups"
-          search={{ group: target.group }}
-          className="relative flex min-h-14 shrink-0 items-end overflow-hidden border-b border-border bg-card px-4 py-2"
-        >
-          <CoverImage
-            src={resolveMedia(groupCover || "asset:topic-prayer")}
-            alt=""
-            className="absolute inset-0 h-full w-full"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-          <span className="relative text-white">
-            <span className="block text-base font-bold">{groupName || "Group chat"}</span>
-            <span className="block text-xs text-white/75">Open group activity</span>
-          </span>
-        </Link>
-      )}
+    <>
+      <div className="flex min-h-0 flex-1 flex-col">
+        {"group" in target && (
+          <>
+            <Link
+              to="/groups"
+              search={{ group: target.group }}
+              className="relative flex min-h-14 shrink-0 items-end overflow-hidden border-b border-border bg-card px-4 py-2"
+            >
+              <CoverImage
+                src={resolveMedia(groupCover || "asset:topic-prayer")}
+                alt=""
+                className="absolute inset-0 h-full w-full"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+              <span className="relative text-white">
+                <span className="block text-base font-bold">{groupName || "Group chat"}</span>
+                <span className="block text-xs text-white/75">Open group activity</span>
+              </span>
+            </Link>
+            <div className="grid shrink-0 grid-cols-2 gap-2 border-b border-border bg-card px-3 py-2">
+              {activeGroupCall.data ? (
+                <button
+                  type="button"
+                  onClick={() => void openGroupCall(activeGroupCall.data!.kind)}
+                  disabled={startingGroupCall}
+                  className="col-span-2 flex min-h-10 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50"
+                >
+                  {activeGroupCall.data.kind === "video" ? <Video className="h-4 w-4" /> : <Phone className="h-4 w-4" />}
+                  Join active {activeGroupCall.data.kind} call
+                </button>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => void openGroupCall("audio")}
+                    disabled={startingGroupCall}
+                    className="flex min-h-10 items-center justify-center gap-2 rounded-xl border border-primary/25 text-xs font-bold text-primary disabled:opacity-50"
+                  >
+                    <Phone className="h-4 w-4" /> Group audio
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void openGroupCall("video")}
+                    disabled={startingGroupCall}
+                    className="flex min-h-10 items-center justify-center gap-2 rounded-xl bg-primary text-xs font-bold text-primary-foreground disabled:opacity-50"
+                  >
+                    <Video className="h-4 w-4" /> Group video
+                  </button>
+                </>
+              )}
+            </div>
+          </>
+        )}
 
-      <RichChatThread target={target} userId={userId} fillHeight />
-    </div>
+        <RichChatThread target={target} userId={userId} fillHeight />
+      </div>
+      {groupCallRoom && groupId && (
+        <GroupCallPanel
+          room={groupCallRoom}
+          groupName={groupName || "Nuru Faith group"}
+          userId={userId}
+          onClose={() => {
+            setGroupCallRoom(null);
+            void activeGroupCall.refetch();
+          }}
+        />
+      )}
+    </>
   );
 }
 

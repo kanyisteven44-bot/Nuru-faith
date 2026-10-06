@@ -1,6 +1,6 @@
 import { CoverImage } from "@/components/nuru/CoverImage";
 import { resolveMedia } from "@/lib/media";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -8,7 +8,16 @@ import { Check, ChevronLeft, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { COUNTRIES, DENOMINATIONS, INTERESTS } from "@/constants/nuru";
-import { fetchChurches, joinChurch, saveInterests, updateProfile } from "@/services/content";
+import {
+  checkUsernameAvailability,
+  fetchChurches,
+  fetchInterests,
+  fetchJourneyStage,
+  fetchProfile,
+  joinChurch,
+  saveOnboardingInterests,
+  updateProfile,
+} from "@/services/content";
 import { GradientButton } from "@/components/nuru/Primitives";
 import { NuruLogo } from "@/components/nuru/Logo";
 
@@ -48,11 +57,51 @@ function Onboarding() {
   const [churchSearch, setChurchSearch] = useState("");
   const [churchLimit, setChurchLimit] = useState(30);
   const [saving, setSaving] = useState(false);
+  const [checkingUsername, setCheckingUsername] = useState(false);
+  const prefilled = useRef(false);
 
-  const { data: churches = [] } = useQuery({
-    queryKey: ["churches", denomination],
-    queryFn: () => fetchChurches(),
+  const profile = useQuery({
+    queryKey: ["profile", userId],
+    queryFn: () => fetchProfile(userId!),
+    enabled: !!userId,
   });
+  const existingInterests = useQuery({
+    queryKey: ["interests", userId],
+    queryFn: () => fetchInterests(userId!),
+    enabled: !!userId,
+  });
+  const existingStage = useQuery({
+    queryKey: ["journey-stage", userId],
+    queryFn: () => fetchJourneyStage(userId!),
+    enabled: !!userId,
+  });
+  const { data: churches = [], ...churchQuery } = useQuery({
+    queryKey: ["churches", "onboarding"],
+    queryFn: () => fetchChurches(),
+    enabled: step === 3,
+  });
+
+  useEffect(() => {
+    if (prefilled.current || !profile.data) return;
+    prefilled.current = true;
+    setFullName(profile.data.full_name ?? "");
+    setUsername(profile.data.username ?? "");
+    setCountry(profile.data.country || "Kenya");
+    setDenomination(profile.data.denomination ?? "");
+    setChurchId(profile.data.church_id ?? null);
+  }, [profile.data]);
+
+  useEffect(() => {
+    if ((existingInterests.data?.length ?? 0) > 0 && interests.length === 0) {
+      setInterests(existingInterests.data ?? []);
+    }
+  }, [existingInterests.data, interests.length]);
+
+  useEffect(() => {
+    if (existingStage.data && STAGES.some((item) => item.key === existingStage.data)) {
+      setStage(existingStage.data);
+    }
+  }, [existingStage.data]);
 
   const denominationChurches = denomination
     ? churches.filter(
@@ -76,6 +125,29 @@ function Onboarding() {
     .replace(/[^a-z0-9._]/g, "");
   const aboutReady = fullName.trim().length >= 2 && cleanUsername.length >= 3;
 
+  async function advance() {
+    if (!userId) return;
+    if (step !== 0) {
+      setStep((current) => current + 1);
+      return;
+    }
+    if (!aboutReady) return;
+
+    setCheckingUsername(true);
+    try {
+      const available = await checkUsernameAvailability(cleanUsername, userId);
+      if (!available) {
+        toast.error("That username is already taken. Try another one.");
+        return;
+      }
+      setStep(1);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Couldn't check that username");
+    } finally {
+      setCheckingUsername(false);
+    }
+  }
+
   async function finish() {
     if (!userId) return;
     if (!aboutReady) {
@@ -85,17 +157,20 @@ function Onboarding() {
     }
     setSaving(true);
     try {
+      // Keep onboarding false until every user-owned setup write succeeds. This
+      // makes retries safe if a network interruption happens during the last step.
       await updateProfile(userId, {
         full_name: fullName.trim() || null,
         username: cleanUsername || null,
         country,
         denomination: denomination || null,
         church_id: churchId,
-        onboarded: true,
+        onboarded: false,
       });
-      await saveInterests(userId, interests);
-      if (churchId) await joinChurch(userId, churchId).catch(() => {});
-      toast.success("Welcome to Nuru Faith");
+      await saveOnboardingInterests(userId, interests, stage);
+      if (churchId) await joinChurch(userId, churchId);
+      await updateProfile(userId, { onboarded: true });
+      toast.success("You're all set. Welcome to Nuru Faith!");
       navigate({ to: "/home", replace: true });
     } catch (e) {
       const message = e instanceof Error ? e.message : "Could not save your profile";
@@ -153,7 +228,10 @@ function Onboarding() {
           ))}
         </div>
 
-        <h1 className="font-display text-2xl font-semibold">{steps[step]}</h1>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+          Step {step + 1} of {steps.length}
+        </p>
+        <h1 className="mt-1 font-display text-2xl font-semibold">{steps[step]}</h1>
 
         <div className="mt-6 flex-1 space-y-4">
           {step === 0 && (
@@ -211,7 +289,9 @@ function Onboarding() {
 
           {step === 1 && (
             <>
-              <p className="text-sm text-muted-foreground">Where are you on your journey?</p>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                Choose what best describes you right now. This helps Nuru shape a gentler starting point, and you can change it later.
+              </p>
               <div className="space-y-2">
                 {STAGES.map((s) => (
                   <SelectCard
@@ -288,11 +368,26 @@ function Onboarding() {
                   setChurchLimit(30);
                 }}
               />
-              <p className="text-xs text-muted-foreground">
-                {filteredChurches.length} churches found
-              </p>
-              <div className="space-y-2">
-                {filteredChurches.slice(0, churchLimit).map((c) => (
+              {churchQuery.isLoading ? (
+                <div className="flex min-h-24 items-center justify-center rounded-2xl border border-border bg-surface-2 text-sm text-muted-foreground">
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Loading churches…
+                </div>
+              ) : churchQuery.isError ? (
+                <button
+                  type="button"
+                  onClick={() => void churchQuery.refetch()}
+                  className="btn-nuru-ghost min-h-11 w-full"
+                >
+                  Church list didn't load — try again
+                </button>
+              ) : (
+                <>
+                  <p className="text-xs text-muted-foreground">
+                    {filteredChurches.length} churches found
+                  </p>
+                  <div className="space-y-2">
+                    {filteredChurches.slice(0, churchLimit).map((c) => (
                   <SelectCard
                     key={c.id}
                     selected={churchId === c.id}
@@ -300,17 +395,22 @@ function Onboarding() {
                     title={c.name}
                     hint={[c.region, c.city, c.denomination].filter(Boolean).join(" · ")}
                   />
-                ))}
-              </div>
-              {churchLimit < filteredChurches.length && (
-                <button
-                  type="button"
-                  className="btn-nuru-ghost min-h-11"
-                  onClick={() => setChurchLimit((limit) => limit + 30)}
-                >
-                  Show more churches
-                </button>
+                    ))}
+                  </div>
+                  {churchLimit < filteredChurches.length && (
+                    <button
+                      type="button"
+                      className="btn-nuru-ghost min-h-11"
+                      onClick={() => setChurchLimit((limit) => limit + 30)}
+                    >
+                      Show more churches
+                    </button>
+                  )}
+                </>
               )}
+              <p className="text-center text-[11px] leading-relaxed text-muted-foreground">
+                Can't find your church? That's okay — this step is optional and you can add it later.
+              </p>
             </>
           )}
         </div>
@@ -319,9 +419,14 @@ function Onboarding() {
           {step < 3 ? (
             <GradientButton
               className="w-full"
-              onClick={() => setStep((s) => s + 1)}
-              disabled={(step === 0 && !aboutReady) || (step === 2 && interests.length < 3)}
+              onClick={() => void advance()}
+              disabled={
+                checkingUsername ||
+                (step === 0 && !aboutReady) ||
+                (step === 2 && interests.length < 3)
+              }
             >
+              {checkingUsername && <Loader2 className="h-4 w-4 animate-spin" />}
               Continue
             </GradientButton>
           ) : (

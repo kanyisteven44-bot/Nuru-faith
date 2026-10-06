@@ -11,6 +11,8 @@ import {
   GraduationCap,
   Highlighter,
   History,
+  Music2,
+  Play,
   Sparkles,
   type LucideIcon,
 } from "lucide-react";
@@ -23,7 +25,8 @@ import {
   fetchSavedScriptures,
   fetchSeries,
 } from "@/services/series";
-import { fetchMediaHistory } from "@/services/media";
+import { fetchMediaHistory, fetchMySavedMedia, type MediaItem } from "@/services/media";
+import { MediaPlayback } from "@/components/youtube/MediaCatalog";
 import { AppShell, BoardHeader } from "@/components/nuru/AppShell";
 import { CardSkeleton, EmptyState, PillTabs, ProgressBar } from "@/components/nuru/Primitives";
 
@@ -195,6 +198,7 @@ function LibraryScreen() {
 
 function SavedTab() {
   const { userId } = useAuth();
+  const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null);
 
   const verses = useQuery({
     queryKey: ["saved-scriptures", userId],
@@ -211,6 +215,11 @@ function SavedTab() {
     queryFn: () => fetchMySavedPostRows(userId!),
     enabled: !!userId,
   });
+  const savedMedia = useQuery({
+    queryKey: ["saved-media", userId],
+    queryFn: () => fetchMySavedMedia(userId!),
+    enabled: !!userId,
+  });
   const progress = useQuery({
     queryKey: ["series-progress", userId],
     queryFn: () => fetchMyProgress(userId!),
@@ -219,7 +228,11 @@ function SavedTab() {
   const series = useQuery({ queryKey: ["series"], queryFn: () => fetchSeries() });
 
   const loading =
-    verses.isLoading || highlights.isLoading || savedPosts.isLoading || progress.isLoading;
+    verses.isLoading ||
+    highlights.isLoading ||
+    savedPosts.isLoading ||
+    savedMedia.isLoading ||
+    progress.isLoading;
 
   const started = (progress.data ?? []).filter((p) => p.progress_percent > 0);
   const inProgress = started.filter((p) => p.progress_percent < 100);
@@ -243,7 +256,7 @@ function SavedTab() {
     label: string;
     hint: string;
     count: number | undefined;
-    to: "/bible" | "/community" | "/series";
+    to: "/bible" | "/community" | "/series" | "/music";
   }[] = [
     {
       icon: BookMarked,
@@ -267,6 +280,13 @@ function SavedTab() {
       to: "/community",
     },
     {
+      icon: Music2,
+      label: "Saved media",
+      hint: "Music and podcasts you kept",
+      count: savedMedia.data?.filter((row) => row.item).length,
+      to: "/music",
+    },
+    {
       icon: GraduationCap,
       label: "Series in progress",
       hint: "Pick up where you left off",
@@ -280,6 +300,7 @@ function SavedTab() {
     (verses.data?.length ?? 0) === 0 &&
     (highlights.data?.length ?? 0) === 0 &&
     (savedPosts.data?.length ?? 0) === 0 &&
+    (savedMedia.data?.filter((row) => row.item).length ?? 0) === 0 &&
     started.length === 0;
 
   if (loading) {
@@ -295,7 +316,7 @@ function SavedTab() {
       <div className="mt-6">
         <EmptyState
           title="Nothing saved yet"
-          description="Save a verse, highlight a passage or bookmark a post and it will collect here."
+          description="Save a verse, highlight a passage, bookmark a post, song or podcast and it will collect here."
           action={
             <Link
               to="/bible"
@@ -362,6 +383,55 @@ function SavedTab() {
         </section>
       )}
 
+      {(savedMedia.data?.filter((row) => row.item).length ?? 0) > 0 && (
+        <section className="mt-5">
+          <div className="flex items-end justify-between gap-3 px-1 pb-2.5">
+            <div>
+              <h2 className="text-[11px] font-semibold tracking-[0.14em] text-ink-3 uppercase">
+                Saved music & podcasts
+              </h2>
+              <p className="mt-1 text-[12px] text-ink-3">Tap anything to play it here.</p>
+            </div>
+            <span className="text-[12px] font-semibold text-primary">
+              {savedMedia.data?.filter((row) => row.item).length ?? 0} saved
+            </span>
+          </div>
+          <div className="no-scrollbar flex gap-3 overflow-x-auto pb-1">
+            {savedMedia.data
+              ?.filter((row): row is typeof row & { item: MediaItem } => !!row.item)
+              .slice(0, 8)
+              .map(({ item }) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setSelectedMedia(item)}
+                  className="group w-40 shrink-0 overflow-hidden rounded-2xl border border-border bg-card text-left transition hover:border-border-strong focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                >
+                  <span className="relative block aspect-video overflow-hidden bg-surface-2">
+                    <CoverImage
+                      src={resolveMedia(item.thumbnail_url)}
+                      alt=""
+                      loading="lazy"
+                      className="h-full w-full object-cover"
+                    />
+                    <span className="absolute inset-0 bg-gradient-to-t from-black/45 to-transparent" />
+                    <span className="absolute right-2 bottom-2 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                      <Play className="h-3.5 w-3.5 fill-current" />
+                    </span>
+                  </span>
+                  <span className="block p-3">
+                    <span className="block line-clamp-2 text-[13px] font-semibold">{item.title}</span>
+                    <span className="mt-1 block truncate text-[11px] capitalize text-ink-3">
+                      {item.media_type}
+                      {item.creator_name ? ` · ${item.creator_name}` : ""}
+                    </span>
+                  </span>
+                </button>
+              ))}
+          </div>
+        </section>
+      )}
+
       {/* Saved items */}
       <section className="mt-5">
         <h2 className="px-1 pb-2.5 text-[11px] font-semibold tracking-[0.14em] text-ink-3 uppercase">
@@ -375,6 +445,13 @@ function SavedTab() {
           ))}
         </ul>
       </section>
+      {selectedMedia && (
+        <MediaPlayback
+          item={selectedMedia}
+          onClose={() => setSelectedMedia(null)}
+          onSelect={setSelectedMedia}
+        />
+      )}
     </>
   );
 }
@@ -450,7 +527,7 @@ function LibraryRow({
   label: string;
   hint: string;
   count: number | undefined;
-  to: "/bible" | "/community" | "/series";
+  to: "/bible" | "/community" | "/series" | "/music";
 }) {
   return (
     <Link

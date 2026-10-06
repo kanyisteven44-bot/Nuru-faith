@@ -7,6 +7,7 @@ import {
   BookOpen,
   ChevronRight,
   Clapperboard,
+  Compass,
   GraduationCap,
   HandHeart,
   Library,
@@ -242,6 +243,21 @@ function HomeScreen() {
                   </li>
                 ))}
               </ul>
+              <Link
+                to="/hub"
+                className="mt-3 flex min-h-12 items-center gap-3 rounded-2xl border border-border bg-card px-4 text-left transition-colors hover:border-border-strong hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              >
+                <span className="nuru-soft-inset flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent text-primary">
+                  <Compass className="h-4.5 w-4.5" strokeWidth={1.9} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[13px] font-semibold">Explore all Nuru</span>
+                  <span className="block truncate text-[11px] text-ink-3">
+                    Church · Podcasts · Events · Serve and more
+                  </span>
+                </span>
+                <ChevronRight className="h-4 w-4 shrink-0 text-ink-3" />
+              </Link>
             </section>
 
             {/* Continue Reading */}

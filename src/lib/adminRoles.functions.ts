@@ -78,16 +78,15 @@ export const addAdminRole = createServerFn({ method: "POST" })
       throw new Error("Choose the church this administrator manages.");
     }
 
-    let duplicate = context.supabase
+    const duplicateBase = context.supabase
       .from("user_roles")
       .select("id")
       .eq("user_id", data.userId)
       .eq("role", data.role);
-    duplicate =
+    const existing =
       data.role === "church_admin"
-        ? duplicate.eq("church_id", data.churchId!)
-        : duplicate.is("church_id", null);
-    const existing = await duplicate.limit(1);
+        ? await duplicateBase.eq("church_id", data.churchId!).limit(1)
+        : await duplicateBase.is("church_id", null).limit(1);
     if (existing.error) throw new Error(existing.error.message);
     if (existing.data?.length) throw new Error("That role is already assigned.");
 

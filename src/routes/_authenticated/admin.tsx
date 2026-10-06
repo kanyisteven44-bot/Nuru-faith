@@ -370,10 +370,12 @@ function AdminScreen() {
             {ADMIN_SECTIONS.map((section) => {
               const Icon = section.icon;
               const active = activeSection === section.id;
+              const badge = sectionBadges[section.id] ?? 0;
               return (
                 <button
                   key={section.id}
                   type="button"
+                  aria-current={active ? "page" : undefined}
                   onClick={() => setActiveSection(section.id)}
                   className={[
                     "inline-flex min-h-11 items-center gap-2 rounded-2xl border px-4 text-sm font-semibold transition",
@@ -384,6 +386,11 @@ function AdminScreen() {
                 >
                   <Icon className="h-4 w-4" />
                   {section.label}
+                  {badge > 0 && (
+                    <span className="ml-1 rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold text-primary">
+                      {badge > 99 ? "99+" : badge}
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -400,10 +407,12 @@ function AdminScreen() {
                 {ADMIN_SECTIONS.map((section) => {
                   const Icon = section.icon;
                   const active = activeSection === section.id;
+                  const badge = sectionBadges[section.id] ?? 0;
                   return (
                     <button
                       key={section.id}
                       type="button"
+                      aria-current={active ? "page" : undefined}
                       onClick={() => setActiveSection(section.id)}
                       className={[
                         "group flex w-full items-start gap-3 rounded-2xl px-3 py-3 text-left transition",
@@ -423,7 +432,14 @@ function AdminScreen() {
                         <Icon className="h-4 w-4" />
                       </span>
                       <span className="min-w-0">
-                        <span className="block text-sm font-semibold">{section.label}</span>
+                        <span className="flex items-center gap-2 text-sm font-semibold">
+                          {section.label}
+                          {badge > 0 && (
+                            <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold text-primary">
+                              {badge > 99 ? "99+" : badge}
+                            </span>
+                          )}
+                        </span>
                         <span className="mt-0.5 block text-[11px] leading-snug text-muted-foreground">
                           {section.description}
                         </span>

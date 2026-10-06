@@ -988,6 +988,31 @@ function SectionIntro({
   );
 }
 
+function StatusPill({
+  label,
+  state,
+}: {
+  label: string;
+  state: "ok" | "loading" | "error";
+}) {
+  const Icon = state === "error" ? AlertTriangle : state === "loading" ? Clock3 : CheckCircle2;
+  return (
+    <span
+      className={[
+        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-semibold",
+        state === "error"
+          ? "border-amber-400/20 bg-amber-400/10 text-amber-300"
+          : state === "loading"
+            ? "border-border bg-surface-2 text-muted-foreground"
+            : "border-leaf/20 bg-leaf/10 text-leaf",
+      ].join(" ")}
+    >
+      <Icon className={["h-3 w-3", state === "loading" ? "animate-pulse" : ""].join(" ")} />
+      {label}
+    </span>
+  );
+}
+
 function Metric({
   label,
   value,

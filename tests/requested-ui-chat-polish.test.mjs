@@ -38,6 +38,8 @@ test("music removes featured worship collection and artist profiles have catalog
   assert.match(media, /creatorName\?: string/);
   assert.match(media, /youtube_channel_id\.eq/);
   assert.match(media, /creator_name\.ilike/);
+  assert.match(media, /get_media_directory_with_content/);
+  assert.match(music, /fetchMediaDirectory\(\{ kind: "music"/);
 });
 
 test("direct message receipts use one tick, two ticks, and yellow seen ticks", () => {

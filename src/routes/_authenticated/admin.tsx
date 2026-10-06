@@ -1030,6 +1030,24 @@ function SectionIntro({
   );
 }
 
+function ModerationStatusBadge({ status }: { status: string }) {
+  const tone =
+    status === "resolved"
+      ? "border-leaf/20 bg-leaf/10 text-leaf"
+      : status === "dismissed"
+        ? "border-border bg-surface-2 text-muted-foreground"
+        : status === "reviewing"
+          ? "border-sky-400/20 bg-sky-400/10 text-sky-300"
+          : "border-amber-400/20 bg-amber-400/10 text-amber-300";
+  return (
+    <span
+      className={["rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide", tone].join(" ")}
+    >
+      {status}
+    </span>
+  );
+}
+
 function StatusPill({
   label,
   state,

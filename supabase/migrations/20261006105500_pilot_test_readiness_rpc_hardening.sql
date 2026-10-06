@@ -18,7 +18,7 @@ with check (
   and exists (select 1 from public.profiles p where p.id = mentors.user_id)
 );
 
-create or replace function public.get_nuru_pilot_metrics()
+create or replace function private.get_nuru_pilot_metrics_internal()
 returns jsonb
 language plpgsql
 security definer
@@ -65,10 +65,23 @@ begin
 end
 $$;
 
-revoke all on function public.get_nuru_pilot_metrics() from public, anon, authenticated;
+revoke all on function private.get_nuru_pilot_metrics_internal() from public, anon;
+grant execute on function private.get_nuru_pilot_metrics_internal() to authenticated, service_role;
+
+create or replace function public.get_nuru_pilot_metrics()
+returns jsonb
+language sql
+stable
+security invoker
+set search_path = ''
+as $$
+  select private.get_nuru_pilot_metrics_internal();
+$$;
+
+revoke all on function public.get_nuru_pilot_metrics() from public, anon;
 grant execute on function public.get_nuru_pilot_metrics() to authenticated, service_role;
 
-create or replace function public.get_nuru_admin_overview()
+create or replace function private.get_nuru_admin_overview_internal()
 returns jsonb
 language plpgsql
 stable
@@ -116,5 +129,18 @@ begin
 end
 $$;
 
-revoke all on function public.get_nuru_admin_overview() from public, anon, authenticated;
+revoke all on function private.get_nuru_admin_overview_internal() from public, anon;
+grant execute on function private.get_nuru_admin_overview_internal() to authenticated, service_role;
+
+create or replace function public.get_nuru_admin_overview()
+returns jsonb
+language sql
+stable
+security invoker
+set search_path = ''
+as $$
+  select private.get_nuru_admin_overview_internal();
+$$;
+
+revoke all on function public.get_nuru_admin_overview() from public, anon;
 grant execute on function public.get_nuru_admin_overview() to authenticated, service_role;

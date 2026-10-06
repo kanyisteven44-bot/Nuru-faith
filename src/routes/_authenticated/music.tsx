@@ -2,7 +2,7 @@ import { CoverImage } from "@/components/nuru/CoverImage";
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { BadgeCheck, Music2, Play, Search, X } from "lucide-react";
+import { Music2, Play, Search, X } from "lucide-react";
 import { duration } from "@/lib/format";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchProfile, fetchTracks } from "@/services/content";
@@ -263,12 +263,6 @@ function MusicScreen() {
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center gap-1.5">
                         <span className="truncate text-sm font-semibold">{a.name}</span>
-                        {a.is_verified && (
-                          <BadgeCheck
-                            className="h-3.5 w-3.5 shrink-0 text-leaf"
-                            aria-label="Verified"
-                          />
-                        )}
                       </span>
                       <span className="block truncate text-[11px] text-muted-foreground">
                         {a.description}

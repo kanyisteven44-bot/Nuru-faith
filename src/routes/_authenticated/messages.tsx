@@ -24,13 +24,10 @@ import {
   type GroupCallKind,
   type GroupCallRoom,
 } from "@/services/groupCalls";
-import { GroupCallPanel } from "@/components/nuru/GroupCallPanel";
-import { fetchActiveGroupCall, startOrJoinGroupCall, type GroupCallKind, type GroupCallRoom } from "@/services/groupCalls";
 import { CardSkeleton, EmptyState, ErrorState } from "@/components/nuru/Primitives";
 import { resolveMedia } from "@/lib/media";
 import { cn } from "@/lib/utils";
 import { z } from "zod";
-import { toast } from "sonner";
 
 const searchSchema = z.object({
   user: z.string().uuid().optional(),
@@ -162,7 +159,7 @@ function MessagesScreen() {
   if (inThread)
     return (
       <>
-      <AppShell flush hideNav>
+        <AppShell flush hideNav>
         <div className="mx-auto flex h-full w-full max-w-3xl flex-col overflow-hidden bg-background lg:rounded-3xl lg:border lg:border-border">
           <header className="flex shrink-0 items-center gap-3 border-b border-border bg-card px-3 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
             <Link
@@ -215,7 +212,7 @@ function MessagesScreen() {
               <div className="flex shrink-0 gap-1">
                 <button
                   type="button"
-                  onClick={() => void openGroupCall(activeGroupCall.data?.kind === "audio" ? "audio" : "audio")}
+                  onClick={() => void openGroupCall("audio")}
                   disabled={startingGroupCall}
                   aria-label={activeGroupCall.data ? "Join group audio call" : "Start group audio call"}
                   className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary transition hover:bg-primary/15 disabled:opacity-50"
@@ -224,7 +221,7 @@ function MessagesScreen() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => void openGroupCall(activeGroupCall.data?.kind === "video" ? "video" : "video")}
+                  onClick={() => void openGroupCall("video")}
                   disabled={startingGroupCall}
                   aria-label={activeGroupCall.data ? "Join group video call" : "Start group video call"}
                   className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground transition hover:brightness-105 disabled:opacity-50"
@@ -245,8 +242,8 @@ function MessagesScreen() {
             />
           </div>
         </div>
-      </AppShell>
-      {groupCallRoom && userId && group && (
+        </AppShell>
+        {groupCallRoom && userId && group && (
         <GroupCallPanel
           room={groupCallRoom}
           groupName={group.name}
@@ -256,7 +253,7 @@ function MessagesScreen() {
             void activeGroupCall.refetch();
           }}
         />
-      )}
+        )}
       </>
     );
 

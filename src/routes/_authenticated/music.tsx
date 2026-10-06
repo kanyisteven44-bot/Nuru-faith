@@ -2,7 +2,7 @@ import { CoverImage } from "@/components/nuru/CoverImage";
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { BadgeCheck, Music2, Search, X } from "lucide-react";
+import { BadgeCheck, Music2, Play, Search, X } from "lucide-react";
 import { duration } from "@/lib/format";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchProfile, fetchTracks } from "@/services/content";

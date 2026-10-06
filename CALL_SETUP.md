@@ -1,6 +1,10 @@
 # Call connectivity
 
-Incoming calls are checked across all signed-in pages using Realtime, with a two-second polling fallback. A ringtone can play after the person interacts with the app. Closed apps and suspended phone browsers do not receive a native incoming-call screen; background push/native call integration is still required for that behavior.
+Incoming calls are checked across all signed-in pages using Realtime, with a two-second polling fallback. A ringtone can play after the person interacts with the app.
+
+When a user has enabled Nuru browser notifications, creating a call also creates a critical Web Push alert. That alert can arrive while Nuru is minimized or closed on browsers/PWAs that support background Web Push, and tapping **Open call** deep-links back to the caller's message thread where the normal Answer/Decline UI takes over. Call alerts use a short push TTL so an old missed call is not delivered much later.
+
+This is still a web/PWA implementation, not a native telephony integration. A fully suspended browser cannot present the same OS-level full-screen incoming-call surface as WhatsApp/FaceTime. Native Android/iOS incoming-call UI requires a native wrapper plus platform push/call APIs (FCM/APNs with Android Telecom/ConnectionService or iOS CallKit).
 
 For calls across restrictive NAT/mobile/workplace networks, configure a managed TURN relay in Vercel production:
 

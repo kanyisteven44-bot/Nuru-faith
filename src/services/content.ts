@@ -60,6 +60,8 @@ export async function fetchMyRoles(userId: string) {
   return data ?? [];
 }
 
+const JOURNEY_PREFIX = "__journey:";
+
 export async function saveInterests(userId: string, interests: string[]) {
   const { error: deleteError } = await supabase
     .from("user_interests")
@@ -79,7 +81,29 @@ export async function fetchInterests(userId: string) {
     .select("interest")
     .eq("user_id", userId);
   if (error) throw new Error(error.message);
-  return (data ?? []).map((r) => r.interest);
+  return (data ?? [])
+    .map((r) => r.interest)
+    .filter((interest) => !interest.startsWith(JOURNEY_PREFIX));
+}
+
+export async function fetchJourneyStage(userId: string) {
+  const { data, error } = await supabase
+    .from("user_interests")
+    .select("interest")
+    .eq("user_id", userId)
+    .like("interest", `${JOURNEY_PREFIX}%`)
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data?.interest?.slice(JOURNEY_PREFIX.length) ?? null;
+}
+
+export async function saveOnboardingInterests(
+  userId: string,
+  interests: string[],
+  journeyStage: string,
+) {
+  await saveInterests(userId, [...interests, `${JOURNEY_PREFIX}${journeyStage}`]);
 }
 
 /* ---------- churches & groups ---------- */

@@ -10,8 +10,9 @@ test("new visitors see the welcome experience before authentication", () => {
 
   assert.match(index, /data\.session \? "\/home" : "\/welcome"/);
   assert.match(index, /setTimeout\(\(\) => go\("\/welcome"\)/);
-  assert.match(welcome, /Create my account/);
-  assert.match(welcome, /I already have an account/);
+  assert.match(welcome, />\s*Continue\s*</);
+  assert.doesNotMatch(welcome, /Create my account/);
+  assert.doesNotMatch(welcome, /I already have an account/);
   assert.doesNotMatch(welcome, /\[0, 1, 2\]/);
 });
 

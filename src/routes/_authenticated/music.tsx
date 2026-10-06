@@ -2,11 +2,11 @@ import { CoverImage } from "@/components/nuru/CoverImage";
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { BadgeCheck, ListMusic, Music2, Play, Search, X } from "lucide-react";
+import { BadgeCheck, Music2, Play, Search, X } from "lucide-react";
 import { duration } from "@/lib/format";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchProfile, fetchTracks } from "@/services/content";
-import { fetchMediaItems, fetchMediaPlaylists, fetchMediaSources } from "@/services/media";
+import { fetchMediaItems, fetchMediaSources } from "@/services/media";
 import type { YouTubePlaylist, YouTubeVideo } from "@/services/youtubeService";
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
 import {
@@ -82,10 +82,6 @@ function MusicScreen() {
   const churchId = profile.data?.church_id ?? null;
 
   const tracks = useQuery({ queryKey: ["tracks"], queryFn: fetchTracks });
-  const playlists = useQuery({
-    queryKey: ["media-playlists", "youtube"],
-    queryFn: () => fetchMediaPlaylists({ kind: "youtube", limit: 10 }),
-  });
   const artists = useQuery({
     queryKey: ["media-sources", "artist"],
     queryFn: () => fetchMediaSources({ sourceType: "youtube" }),
@@ -167,62 +163,6 @@ function MusicScreen() {
         </div>
       </section>
 
-      {!debounced.trim() && tab === "Music" && (
-        <section className="px-4 pt-4" aria-labelledby="featured-worship-heading">
-          <div className="flex items-end justify-between gap-3 pb-3">
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
-                Already in Nuru
-              </p>
-              <h2 id="featured-worship-heading" className="mt-1 font-display text-xl font-semibold">
-                Featured worship collections
-              </h2>
-            </div>
-            {!playlists.isLoading && (playlists.data?.length ?? 0) > 0 && (
-              <span className="text-[11px] text-muted-foreground">
-                {playlists.data?.length} approved
-              </span>
-            )}
-          </div>
-
-          {playlists.isLoading ? (
-            <CardSkeleton count={3} height="h-24" />
-          ) : (playlists.data?.length ?? 0) > 0 ? (
-            <div className="no-scrollbar flex gap-3 overflow-x-auto pb-1">
-              {playlists.data
-                ?.filter((playlist) => playlist.youtube_playlist_id)
-                .map((playlist) => (
-                  <button
-                    key={playlist.id}
-                    type="button"
-                    onClick={() => {
-                      setSelectedMedia(null);
-                      setNowPlaying({
-                        kind: "youtube-playlist",
-                        id: playlist.youtube_playlist_id!,
-                        title: playlist.title,
-                      });
-                    }}
-                    className="group flex w-56 shrink-0 items-center gap-3 rounded-2xl border border-border bg-card p-4 text-left transition hover:border-primary/40 hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                  >
-                    <span className="nuru-soft-inset flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent text-primary">
-                      <ListMusic className="h-5 w-5" />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block line-clamp-2 text-sm font-semibold">
-                        {playlist.title}
-                      </span>
-                      <span className="mt-1 block text-[11px] capitalize text-muted-foreground">
-                        {playlist.category || "Worship"} · Official playlist
-                      </span>
-                    </span>
-                    <Play className="h-4 w-4 shrink-0 text-primary" />
-                  </button>
-                ))}
-            </div>
-          ) : null}
-        </section>
-      )}
 
       <div className="space-y-3 px-4 py-3">
         {(searchOpen || search) && (

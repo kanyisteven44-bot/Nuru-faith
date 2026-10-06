@@ -4,7 +4,7 @@ import { Phone, Video, Volume2, VolumeX } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { endCallSession, fetchIncomingCall, type CallKind } from "@/services/calls";
-import { fetchChatProfiles, type ChatProfile } from "@/services/messaging";
+import { fetchChatProfiles, markDirectMessagesDelivered, type ChatProfile } from "@/services/messaging";
 import { CallPanel } from "./CallPanel";
 import { Avatar } from "./AppShell";
 
@@ -51,6 +51,45 @@ export function CallManager({ children }: { children: ReactNode }) {
         verified: false,
       })
     : null;
+  useEffect(() => {
+    if (!userId) return;
+    let active = true;
+    const markDelivered = async () => {
+      try {
+        await markDirectMessagesDelivered(userId);
+        if (active) {
+          void qc.invalidateQueries({ queryKey: ["direct-threads", userId] });
+          void qc.invalidateQueries({ queryKey: ["chat-messages", userId] });
+        }
+      } catch {
+        // Delivery receipts are best-effort and retry on the next online event.
+      }
+    };
+    void markDelivered();
+    const deliveryChannel = supabase
+      .channel(`message-delivery-${userId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "direct_messages",
+          filter: `recipient_id=eq.${userId}`,
+        },
+        () => void markDelivered(),
+      )
+      .subscribe();
+    const onFocus = () => void markDelivered();
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+    return () => {
+      active = false;
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+      void supabase.removeChannel(deliveryChannel);
+    };
+  }, [userId, qc]);
+
   useEffect(() => {
     if (!userId) return;
     const channel = supabase

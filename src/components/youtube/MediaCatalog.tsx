@@ -37,18 +37,22 @@ export function MediaCatalog({
   language = "all",
   playback = "all",
   channelId,
+  creatorName,
+  hideEmptyState = false,
 }: {
   mediaType: "music" | "podcast";
   query?: string;
   language?: string;
   playback?: "all" | "audio" | "video";
   channelId?: string | undefined;
+  creatorName?: string | undefined;
+  hideEmptyState?: boolean;
   onPlay?: (item: MediaItem) => void;
 }) {
   const [selected, setSelected] = useState<MediaItem | null>(null);
   const nextPageMarker = useRef<HTMLDivElement>(null);
   const catalog = useInfiniteQuery({
-    queryKey: ["media-catalog", mediaType, query, language, playback, channelId],
+    queryKey: ["media-catalog", mediaType, query, language, playback, channelId, creatorName],
     initialPageParam: 0,
     queryFn: ({ pageParam }) =>
       fetchMediaCatalog({
@@ -57,6 +61,7 @@ export function MediaCatalog({
         language,
         playback,
         ...(channelId ? { channelId } : {}),
+        ...(creatorName ? { creatorName } : {}),
         page: pageParam,
       }),
     getNextPageParam: (page, pages) => (page.hasMore ? pages.length : undefined),
@@ -96,27 +101,29 @@ export function MediaCatalog({
       className="space-y-3 px-4 py-4"
       aria-label={mediaType === "music" ? "Song catalogue" : "Podcast catalogue"}
     >
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="font-display text-lg font-semibold">
-          {mediaType === "music"
-            ? playback === "audio"
-              ? "Audio"
+      {(!hideEmptyState || catalog.isPending || catalog.isError || items.length > 0) && (
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="font-display text-lg font-semibold">
+            {mediaType === "music"
+              ? playback === "audio"
+                ? "Audio"
+                : playback === "video"
+                  ? "Music videos"
+                  : "All songs"
               : playback === "video"
-                ? "Music videos"
-                : "All songs"
-            : playback === "video"
-              ? "Video episodes"
-              : playback === "audio"
-                ? "Audio episodes"
-                : "All episodes"}
-        </h2>
-        {catalog.data && (
-          <span className="text-xs text-muted-foreground" role="status" aria-live="polite">
-            {items.length.toLocaleString()} of {total.toLocaleString()}{" "}
-            {query ? "matches" : "available"}
-          </span>
-        )}
-      </div>
+                ? "Video episodes"
+                : playback === "audio"
+                  ? "Audio episodes"
+                  : "All episodes"}
+          </h2>
+          {catalog.data && items.length > 0 && (
+            <span className="text-xs text-muted-foreground" role="status" aria-live="polite">
+              {items.length.toLocaleString()} of {total.toLocaleString()}{" "}
+              {query ? "matches" : "available"}
+            </span>
+          )}
+        </div>
+      )}
       {catalog.isPending && <CardSkeleton count={3} height="h-20" />}
       {catalog.isError && (
         <div role="alert" className="nuru-card p-4">
@@ -124,7 +131,7 @@ export function MediaCatalog({
           <PrimaryButton onClick={() => void catalog.refetch()}>Retry catalogue</PrimaryButton>
         </div>
       )}
-      {!catalog.isPending && !catalog.isError && !items.length && (
+      {!hideEmptyState && !catalog.isPending && !catalog.isError && !items.length && (
         <EmptyState
           title={query ? "No matching episodes or songs" : "No published media yet"}
           description={

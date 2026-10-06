@@ -77,14 +77,18 @@ export function SplashScreen({
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     setStage("playing");
 
+    let photoTimer: number | null = null;
     if (reducedMotion) {
       setPhotoIndex(0);
     } else {
-      const photoTimer = window.setInterval(() => {
+      photoTimer = window.setInterval(() => {
         setPhotoIndex((current) => (current + 1) % OPENING_PHOTOS.length);
       }, 900);
-      return () => window.clearInterval(photoTimer);
     }
+
+    return () => {
+      if (photoTimer !== null) window.clearInterval(photoTimer);
+    };
   }, [preview, initialOnly]);
 
   useEffect(() => {

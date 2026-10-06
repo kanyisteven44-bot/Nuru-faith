@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, ChevronRight, Search, Users } from "lucide-react";
+import { Check, ChevronRight, Plus, Search, Users } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { createChatGroup } from "@/services/messaging";
@@ -388,6 +388,16 @@ function GroupSpace({ groupId }: { groupId: string }) {
 
             <div className="px-4 pt-4">
               {tab === "Activity" && (
+                <Link
+                  to="/create"
+                  search={{ group: groupId }}
+                  className="mb-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary px-4 text-sm font-bold text-primary-foreground shadow-sm transition hover:brightness-105"
+                >
+                  <Plus className="h-4 w-4" />
+                  Share with this group
+                </Link>
+              )}
+              {tab === "Activity" && (
                 <GroupActivity posts={posts.data ?? []} loading={posts.isLoading} />
               )}
 
@@ -434,7 +444,7 @@ function GroupActivity({
     return (
       <EmptyState
         title="No group activity yet"
-        description="Posts shared with this group will appear here."
+        description="Start the conversation with a reflection, prayer request, photo or encouragement."
       />
     );
   }

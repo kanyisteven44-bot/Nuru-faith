@@ -676,14 +676,9 @@ function AdminScreen() {
                   description="Manage the directory and role-scoped operations without mixing them into the rest of the dashboard."
                 />
                 {isSuper && userId ? (
-                  <>
-                    <div className="rounded-3xl border border-border bg-surface p-4 sm:p-6">
-                      <AdminDirectory userId={userId} churches={churches.data ?? []} />
-                    </div>
-                    <div className="rounded-3xl border border-border bg-surface p-4 sm:p-6">
-                      <AdminOperations churches={churches.data ?? []} />
-                    </div>
-                  </>
+                  <div className="rounded-3xl border border-border bg-surface p-4 sm:p-6">
+                    <AdminOperations churches={churches.data ?? []} />
+                  </div>
                 ) : (
                   <div className="rounded-3xl border border-border bg-surface p-5">
                     <p className="text-sm font-semibold">Role-scoped access</p>

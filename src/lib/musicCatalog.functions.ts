@@ -230,8 +230,8 @@ export const importReviewedCatalogPage = createServerFn({ method: "POST" })
       return {
         total,
         added: total - before,
-        next: total >= target ? null : next,
-        targetReached: total >= target,
+        next: stopAtTarget && total >= target ? null : next,
+        targetReached: stopAtTarget && total >= target,
       };
     }
     try {

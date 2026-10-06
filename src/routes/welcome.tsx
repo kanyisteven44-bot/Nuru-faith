@@ -1,8 +1,7 @@
 import { CoverImage } from "@/components/nuru/CoverImage";
 import { resolveMedia } from "@/lib/media";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowRight, HandHeart, Sprout, Users } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { ArrowRight, HandHeart, LogIn, Sprout, Users } from "lucide-react";
 
 export const Route = createFileRoute("/welcome")({
   ssr: false,
@@ -46,13 +45,9 @@ function Welcome() {
           >
             Replay opening
           </Link>
-          <Link
-            to="/auth"
-            search={{ mode: "login" }}
-            className="rounded-full px-2 py-1 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Skip
-          </Link>
+          <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            Nuru Faith
+          </span>
         </div>
 
         <div className="pt-10">
@@ -80,26 +75,26 @@ function Welcome() {
           ))}
         </ul>
 
-        <div className="mt-auto flex items-center justify-between pt-12">
-          <span className="flex items-center gap-1.5" aria-hidden="true">
-            {[0, 1, 2].map((i) => (
-              <span
-                key={i}
-                className={cn(
-                  "h-1.5 rounded-full transition-all",
-                  i === 0 ? "w-5 bg-leaf" : "w-1.5 bg-surface-2",
-                )}
-              />
-            ))}
-          </span>
+        <div className="mt-auto space-y-3 pt-12">
           <button
             type="button"
             onClick={() => void navigate({ to: "/auth", search: { mode: "signup" } })}
-            aria-label="Continue to sign in"
-            className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground nuru-glow transition-transform active:scale-95"
+            className="flex min-h-13 w-full items-center justify-center gap-2 rounded-2xl bg-primary px-5 text-sm font-bold text-primary-foreground nuru-glow transition-transform active:scale-[0.99]"
           >
-            <ArrowRight className="h-5.5 w-5.5" />
+            Create my account
+            <ArrowRight className="h-4.5 w-4.5" />
           </button>
+          <Link
+            to="/auth"
+            search={{ mode: "login" }}
+            className="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-border bg-surface-2 px-5 text-sm font-semibold text-foreground transition-colors hover:bg-surface"
+          >
+            <LogIn className="h-4 w-4" />
+            I already have an account
+          </Link>
+          <p className="pt-1 text-center text-[11px] leading-relaxed text-muted-foreground">
+            Your profile takes about a minute to set up.
+          </p>
         </div>
       </div>
     </div>

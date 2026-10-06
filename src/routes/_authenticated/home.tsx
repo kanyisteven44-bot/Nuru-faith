@@ -111,6 +111,7 @@ function HomeScreen() {
   return (
     <AppShell>
       <BoardHeader
+        crossLogo
         right={
           <>
             <Link

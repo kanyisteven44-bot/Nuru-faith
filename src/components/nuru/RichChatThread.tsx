@@ -774,85 +774,88 @@ export function RichChatThread({
         <label htmlFor="chat-message" className="sr-only">
           Your message
         </label>
-        <div className="flex items-end gap-1">
-          {richMediaAllowed && (
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-1">
+            {richMediaAllowed && (
+              <button
+                type="button"
+                aria-label="Add attachment"
+                aria-expanded={showAttachments}
+                disabled={sending || recording || !!voiceDraft}
+                onClick={() => setShowAttachments((v) => !v)}
+                className="flex h-12 w-9 shrink-0 items-center justify-center rounded-full text-primary"
+              >
+                {showAttachments ? <X className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
+              </button>
+            )}
             <button
               type="button"
-              aria-label="Add attachment"
-              aria-expanded={showAttachments}
-              disabled={sending || recording || !!voiceDraft}
-              onClick={() => setShowAttachments((v) => !v)}
-              className="flex h-12 w-9 shrink-0 items-center justify-center rounded-full text-primary"
-            >
-              {showAttachments ? <X className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
-            </button>
-          )}
-          <button
-            type="button"
-            aria-label="Add emoji"
-            aria-expanded={showEmoji}
-            onClick={() => {
-              setShowEmoji((value) => !value);
-              setShowStickers(false);
-            }}
-            className="flex h-12 w-10 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-surface-2"
-          >
-            <Smile className="h-5 w-5" />
-          </button>
-
-          {richMediaAllowed && (
-            <button
-              type="button"
-              aria-label="Send sticker"
-              aria-expanded={showStickers}
+              aria-label="Add emoji"
+              aria-expanded={showEmoji}
               onClick={() => {
-                setShowStickers((value) => !value);
-                setShowEmoji(false);
+                setShowEmoji((value) => !value);
+                setShowStickers(false);
               }}
               className="flex h-12 w-10 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-surface-2"
             >
-              <Sticker className="h-5 w-5" />
+              <Smile className="h-5 w-5" />
             </button>
-          )}
 
-          <textarea
-            id="chat-message"
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            maxLength={2000}
-            disabled={sending || recording}
-            rows={1}
-            placeholder="Message…"
-            className="min-h-12 min-w-0 flex-1 resize-none rounded-2xl border border-border-strong bg-surface-2 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary"
-          />
+            {richMediaAllowed && (
+              <button
+                type="button"
+                aria-label="Send sticker"
+                aria-expanded={showStickers}
+                onClick={() => {
+                  setShowStickers((value) => !value);
+                  setShowEmoji(false);
+                }}
+                className="flex h-12 w-10 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-surface-2"
+              >
+                <Sticker className="h-5 w-5" />
+              </button>
+            )}
+          </div>
+          <div className="flex items-end gap-2">
+            <textarea
+              id="chat-message"
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              maxLength={2000}
+              disabled={sending || recording}
+              rows={2}
+              placeholder="Message…"
+              className="min-h-20 max-h-40 min-w-0 flex-1 resize-y rounded-2xl border border-border-strong bg-surface-2 px-4 py-3 text-base outline-none focus:ring-2 focus:ring-primary"
+            />
 
-          {richMediaAllowed && !draft.trim() ? (
-            <button
-              type="button"
-              onClick={recording ? stopVoiceNote : () => void startVoiceNote()}
-              disabled={sending || !!voiceDraft}
-              aria-label={recording ? "Stop voice note" : "Record voice note"}
-              className={cn(
-                "flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-white disabled:opacity-50",
-                recording ? "bg-destructive" : "bg-primary",
-              )}
-            >
-              {recording ? (
-                <Square className="h-5 w-5 fill-current" />
-              ) : (
-                <Mic className="h-5 w-5" />
-              )}
-            </button>
-          ) : (
-            <button
-              type="submit"
-              disabled={sending || !draft.trim() || messages.isError}
-              aria-label={sending ? "Sending message" : "Send message"}
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground disabled:opacity-50"
-            >
-              <Send className="h-5 w-5" />
-            </button>
-          )}
+            {richMediaAllowed && !draft.trim() ? (
+              <button
+                type="button"
+                onClick={recording ? stopVoiceNote : () => void startVoiceNote()}
+                disabled={sending || !!voiceDraft}
+                aria-label={recording ? "Stop voice note" : "Record voice note"}
+                className={cn(
+                  "flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-white disabled:opacity-50",
+                  recording ? "bg-destructive" : "bg-primary",
+                )}
+              >
+                {recording ? (
+                  <Square className="h-5 w-5 fill-current" />
+                ) : (
+                  <Mic className="h-5 w-5" />
+                )}
+              </button>
+            ) : (
+              <button
+                type="submit"
+                disabled={sending || !draft.trim() || messages.isError}
+                aria-label={sending ? "Sending message" : "Send message"}
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground disabled:opacity-50"
+              >
+                <Send className="h-5 w-5" />
+              </button>
+            )}
+          </div>
         </div>
       </form>
     </section>

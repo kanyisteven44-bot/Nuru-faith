@@ -186,7 +186,15 @@ function NavItem({
  * The header the designs put on nearly every screen: an optional back
  * chevron, and the arch over the wordmark, centred.
  */
-export function BoardHeader({ back = false, right }: { back?: boolean; right?: ReactNode }) {
+export function BoardHeader({
+  back = false,
+  right,
+  crossLogo = false,
+}: {
+  back?: boolean;
+  right?: ReactNode;
+  crossLogo?: boolean;
+}) {
   const navigate = useNavigate();
   return (
     <header className="relative flex min-h-12 items-center justify-center px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 lg:justify-end lg:px-0 lg:pt-0">
@@ -207,9 +215,13 @@ export function BoardHeader({ back = false, right }: { back?: boolean; right?: R
         aria-label="Nuru Faith"
         className="flex flex-col items-center gap-1 lg:hidden"
       >
-        <span className="block h-4 w-7">
-          <NuruArch />
-        </span>
+        {crossLogo ? (
+          <NuruMark className="h-11 w-11" />
+        ) : (
+          <span className="block h-4 w-7">
+            <NuruArch />
+          </span>
+        )}
         <span className="font-display text-[11.5px] leading-none tracking-[0.2em] text-foreground">
           NURU FAITH
         </span>

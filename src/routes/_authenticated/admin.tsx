@@ -913,15 +913,43 @@ function AdminScreen() {
                   <Metric label="Serve roles" value={serve.data?.length ?? 0} icon={UserCheck} />
                 </div>
 
-                <section>
-                  <SectionHeader title="Your churches" />
-                  <div className="grid gap-3 md:grid-cols-2">
-                    {scoped.length === 0 && (
-                      <div className="rounded-2xl border border-border bg-surface p-5 text-sm text-muted-foreground">
-                        No church is linked to your current administrative scope.
+                <section className="rounded-3xl border border-border bg-surface p-4 sm:p-5">
+                  <div className="flex flex-wrap items-end justify-between gap-3">
+                    <div>
+                      <SectionHeader title="Church directory" />
+                      <p className="text-xs text-muted-foreground">
+                        {filteredChurches.length.toLocaleString()} visible result{filteredChurches.length === 1 ? "" : "s"}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-display text-2xl font-semibold">{directoryVerificationRate}%</p>
+                      <p className="text-[10px] uppercase tracking-wide text-muted-foreground">verified coverage</p>
+                    </div>
+                  </div>
+
+                  <label className="relative mt-4 block">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <input
+                      value={communitySearch}
+                      onChange={(event) => {
+                        setCommunitySearch(event.target.value);
+                        setCommunityPage(0);
+                      }}
+                      placeholder="Search church, denomination, city or region"
+                      aria-label="Search church directory"
+                      className="input-nuru w-full pl-10"
+                    />
+                  </label>
+
+                  <div className="mt-4 grid gap-3 md:grid-cols-2">
+                    {filteredChurches.length === 0 && (
+                      <div className="rounded-2xl border border-border bg-background/30 p-5 text-sm text-muted-foreground md:col-span-2">
+                        {scoped.length === 0
+                          ? "No church is linked to your current administrative scope."
+                          : "No churches match that search."}
                       </div>
                     )}
-                    {scoped.slice(0, 12).map((c) => (
+                    {visibleChurches.map((c) => (
                       <article
                         key={c.id}
                         className="rounded-2xl border border-border bg-surface p-4 transition hover:border-border-strong"
@@ -947,6 +975,36 @@ function AdminScreen() {
                       </article>
                     ))}
                   </div>
+
+                  {filteredChurches.length > churchesPerPage && (
+                    <div className="mt-4 flex items-center justify-between gap-3 border-t border-border pt-4">
+                      <p className="text-xs text-muted-foreground">
+                        Page {safeCommunityPage + 1} of {communityPageCount}
+                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          disabled={safeCommunityPage === 0}
+                          onClick={() => setCommunityPage((page) => Math.max(0, page - 1))}
+                          className="inline-flex min-h-9 items-center gap-1 rounded-xl border border-border px-3 text-xs font-semibold disabled:opacity-40"
+                        >
+                          <ChevronLeft className="h-3.5 w-3.5" />
+                          Previous
+                        </button>
+                        <button
+                          type="button"
+                          disabled={safeCommunityPage >= communityPageCount - 1}
+                          onClick={() =>
+                            setCommunityPage((page) => Math.min(communityPageCount - 1, page + 1))
+                          }
+                          className="inline-flex min-h-9 items-center gap-1 rounded-xl border border-border px-3 text-xs font-semibold disabled:opacity-40"
+                        >
+                          Next
+                          <ChevronRight className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </section>
 
                 <div className="grid gap-6 xl:grid-cols-2">

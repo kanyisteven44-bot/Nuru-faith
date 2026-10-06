@@ -70,17 +70,24 @@ function Onboarding() {
       .includes(churchSearch.trim().toLocaleLowerCase()),
   );
 
+  const cleanUsername = username
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9._]/g, "");
+  const aboutReady = fullName.trim().length >= 2 && cleanUsername.length >= 3;
+
   async function finish() {
     if (!userId) return;
+    if (!aboutReady) {
+      toast.error("Add your name and a username with at least 3 characters.");
+      setStep(0);
+      return;
+    }
     setSaving(true);
     try {
       await updateProfile(userId, {
         full_name: fullName.trim() || null,
-        username:
-          username
-            .trim()
-            .toLowerCase()
-            .replace(/[^a-z0-9_]/g, "") || null,
+        username: cleanUsername || null,
         country,
         denomination: denomination || null,
         church_id: churchId,
@@ -91,7 +98,13 @@ function Onboarding() {
       toast.success("Welcome to Nuru Faith");
       navigate({ to: "/home", replace: true });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not save your profile");
+      const message = e instanceof Error ? e.message : "Could not save your profile";
+      if (/duplicate|unique|username/i.test(message)) {
+        toast.error("That username is already taken. Choose another one.");
+        setStep(0);
+      } else {
+        toast.error(message);
+      }
     } finally {
       setSaving(false);
     }
@@ -159,11 +172,25 @@ function Onboarding() {
                 <input
                   id="ob-user"
                   value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  onChange={(e) =>
+                    setUsername(
+                      e.target.value
+                        .toLowerCase()
+                        .replace(/[^a-z0-9._]/g, "")
+                        .slice(0, 30),
+                    )
+                  }
+                  minLength={3}
                   maxLength={30}
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
                   className="input-nuru"
                   placeholder="stephen"
                 />
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  3–30 characters. Use lowercase letters, numbers, dots or underscores.
+                </p>
               </Labeled>
               <Labeled label="Country" id="ob-country">
                 <select
@@ -293,7 +320,7 @@ function Onboarding() {
             <GradientButton
               className="w-full"
               onClick={() => setStep((s) => s + 1)}
-              disabled={step === 2 && interests.length < 3}
+              disabled={(step === 0 && !aboutReady) || (step === 2 && interests.length < 3)}
             >
               Continue
             </GradientButton>

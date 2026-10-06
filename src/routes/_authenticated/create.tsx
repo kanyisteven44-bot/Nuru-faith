@@ -3,6 +3,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Image as ImageIcon, Music2, Search, Video, X } from "lucide-react";
 import { toast } from "sonner";
+import { z } from "zod";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { createPost, fetchMyGroupIds, fetchGroups, fetchProfile } from "@/services/content";
@@ -11,7 +12,12 @@ import { POST_MUSIC, POST_MUSIC_BY_ID } from "@/lib/postMusic";
 import { PostSoundtrack, PostPresentation } from "@/components/nuru/PostMedia";
 import { AppShell, Avatar } from "@/components/nuru/AppShell";
 
+const createSearchSchema = z.object({
+  group: z.string().uuid().optional(),
+});
+
 export const Route = createFileRoute("/_authenticated/create")({
+  validateSearch: createSearchSchema,
   head: () => ({
     meta: [
       { title: "Create post — Nuru Faith" },
@@ -32,10 +38,11 @@ function CreateScreen() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { userId } = useAuth();
+  const search = Route.useSearch();
   const [step, setStep] = useState<"edit" | "review">("edit");
   const [body, setBody] = useState("");
   const [scripture, setScripture] = useState("");
-  const [audience, setAudience] = useState<Audience>("Public");
+  const [audience, setAudience] = useState<Audience>(search.group ? "My Group" : "Public");
   const [busy, setBusy] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const [media, setMedia] = useState<{ file: File; url: string } | null>(null);
@@ -43,7 +50,7 @@ function CreateScreen() {
   const [musicQuery, setMusicQuery] = useState("");
   const [musicId, setMusicId] = useState<string | null>(null);
   const [musicStart, setMusicStart] = useState(0);
-  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+  const [selectedGroup, setSelectedGroup] = useState<string | null>(search.group ?? null);
   useEffect(
     () => () => {
       if (media) URL.revokeObjectURL(media.url);
@@ -125,8 +132,12 @@ function CreateScreen() {
         qc.invalidateQueries({ queryKey: ["my-posts", userId] }),
         qc.invalidateQueries({ queryKey: ["profile-counts", userId] }),
       ]);
-      toast.success("Posted");
-      void navigate({ to: "/community" });
+      toast.success(audience === "My Group" ? "Shared with your group" : "Posted");
+      if (audience === "My Group" && mentorGroupId) {
+        void navigate({ to: "/groups", search: { group: mentorGroupId } });
+      } else {
+        void navigate({ to: "/community" });
+      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Couldn't publish that");
     } finally {
@@ -140,7 +151,13 @@ function CreateScreen() {
       <header className="sticky top-0 z-30 flex items-center justify-between gap-3 bg-background/90 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-xl">
         <button
           type="button"
-          onClick={() => void navigate({ to: "/community" })}
+          onClick={() =>
+            void navigate(
+              search.group
+                ? { to: "/groups", search: { group: search.group } }
+                : { to: "/community" },
+            )
+          }
           aria-label="Cancel"
           disabled={busy}
           className="-ml-1 rounded-full p-1.5 text-secondary-foreground"
@@ -406,7 +423,13 @@ function CreateScreen() {
 
           <div className="pt-6 pb-8">
             {audience === "My Group" && (
-              <select
+              <>
+                {search.group && (
+                  <p className="mb-2 rounded-xl border border-primary/20 bg-primary/5 px-3 py-2 text-xs text-muted-foreground">
+                    You opened the composer from a group. This post will stay scoped to that group unless you choose Public.
+                  </p>
+                )}
+                <select
                 aria-label="Choose group"
                 value={mentorGroupId ?? ""}
                 onChange={(e) => setSelectedGroup(e.target.value)}
@@ -418,6 +441,7 @@ function CreateScreen() {
                   </option>
                 ))}
               </select>
+              </>
             )}
             <h2 className="mb-2 font-display text-[15px] font-semibold">Add to</h2>
             <div className="space-y-2">

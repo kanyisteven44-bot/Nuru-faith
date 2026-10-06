@@ -405,7 +405,7 @@ function VideoTile({
   stream: MediaStream | null;
   muted: boolean;
   label: string;
-  profile?: ChatProfile;
+  profile: ChatProfile | undefined;
   seed: string;
 }) {
   const ref = useRef<HTMLVideoElement | null>(null);
@@ -434,7 +434,7 @@ function VideoTile({
   );
 }
 
-function WaitingTile({ peerId, profile }: { peerId: string; profile?: ChatProfile }) {
+function WaitingTile({ peerId, profile }: { peerId: string; profile: ChatProfile | undefined }) {
   const name = profile?.full_name || profile?.username || "Nuru member";
   return (
     <div className="relative flex aspect-video min-h-44 items-center justify-center rounded-3xl bg-[#102139]">

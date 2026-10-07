@@ -59,6 +59,7 @@ function MusicScreen() {
   const [tab, setTab] = useState<Tab>("Music");
   const [musicMode, setMusicMode] = useState<MusicMode>("Video");
   const [search, setSearch] = useState("");
+  const [browseView, setBrowseView] = useState<"artists" | "songs">("songs");
   const [searchOpen, setSearchOpen] = useState(false);
   const [debounced, setDebounced] = useState("");
   const [nowPlaying, setNowPlaying] = useState<NowPlaying | null>(null);
@@ -163,7 +164,6 @@ function MusicScreen() {
         </div>
       </section>
 
-
       <div className="space-y-3 px-4 py-3">
         {(searchOpen || search) && (
           <div className="relative rounded-2xl border border-border bg-card p-1 shadow-sm">
@@ -172,8 +172,21 @@ function MusicScreen() {
               autoFocus={searchOpen}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search songs, artists, sermons…"
-              aria-label="Search music and media"
+              placeholder={
+                tab === "Music"
+                  ? musicMode === "Video" && browseView === "artists"
+                    ? "Search artists…"
+                    : "Search songs…"
+                  : tab === "Podcasts"
+                    ? "Search podcasts…"
+                    : "Search sermons and videos…"
+              }
+              aria-label={
+                tab === "Music" && musicMode === "Video" && browseView === "artists"
+                  ? "Search artists"
+                  : "Search songs and media"
+              }
+              maxLength={120}
               className="h-12 w-full rounded-xl bg-transparent pl-11 pr-11 text-sm outline-none placeholder:text-muted-foreground"
             />
             {search && (
@@ -194,9 +207,7 @@ function MusicScreen() {
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-sm font-semibold">Choose playback</p>
-                <p className="text-xs text-muted-foreground">
-                  Audio uses approved publisher-hosted files. Video uses the official YouTube player.
-                </p>
+                <p className="text-xs text-muted-foreground">Choose how you want to listen.</p>
               </div>
             </div>
             <PillTabs tabs={MUSIC_MODES} value={musicMode} onChange={setMusicMode} />
@@ -210,20 +221,20 @@ function MusicScreen() {
           query={debounced}
           onPlay={openVideo}
           onPlayItem={playCatalog}
+          onBrowseChange={setBrowseView}
           catalogPlayback="video"
         />
       )}
 
       {tab === "Music" && musicMode === "Audio" && (
         <>
-          <MediaCatalog
-            mediaType="music"
-            query={debounced}
-            playback="audio"
-            onPlay={playCatalog}
-          />
+          <MediaCatalog mediaType="music" query={debounced} playback="audio" onPlay={playCatalog} />
           {!debounced.trim() && !!tracks.data?.length && (
-            <NuruAudioSection tracks={tracks.data} loading={tracks.isLoading} onPlay={playCatalog} />
+            <NuruAudioSection
+              tracks={tracks.data}
+              loading={tracks.isLoading}
+              onPlay={playCatalog}
+            />
           )}
         </>
       )}

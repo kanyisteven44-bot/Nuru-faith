@@ -104,7 +104,9 @@ function ChurchScreen() {
     );
   }
 
-  const place = [church.city, church.country].filter(Boolean).join(", ");
+  const place = [church.city, church.region ? `${church.region} County` : null, church.country]
+    .filter(Boolean)
+    .join(", ");
 
   return (
     <AppShell>

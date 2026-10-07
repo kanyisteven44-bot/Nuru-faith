@@ -16,6 +16,7 @@ export type DiscoveryItem = {
   externalId: string | null;
   audioUrl: string | null;
   sourceUrl?: string | null;
+  location?: string | null;
   creatorName?: string | null;
   durationSeconds?: number | null;
   category?: string | null;
@@ -25,6 +26,7 @@ const input = z.object({
   query: z.string().trim().max(120).default(""),
   page: z.number().int().min(0).max(10000).default(0),
   id: z.string().max(80).optional(),
+  county: z.string().trim().max(80).default("all"),
 });
 const PAGE_SIZE = 8;
 export const searchDiscovery = createServerFn({ method: "POST" })
@@ -32,7 +34,7 @@ export const searchDiscovery = createServerFn({ method: "POST" })
   .inputValidator((value: unknown) => input.parse(value))
   .handler(async ({ data, context }): Promise<{ items: DiscoveryItem[]; hasMore: boolean }> => {
     const { supabase } = context;
-    const { kind, query, page, id } = data;
+    const { kind, query, page, id, county } = data;
 
     if (!id) {
       await enforceNuruRateLimit(
@@ -77,9 +79,7 @@ export const searchDiscovery = createServerFn({ method: "POST" })
     if (id && !z.string().uuid().safeParse(id).success) return { items: [], hasMore: false };
     switch (kind) {
       case "profile": {
-        let q = supabase
-          .from("profiles")
-          .select("id,full_name,username,bio,avatar_url");
+        let q = supabase.from("profiles").select("id,full_name,username,bio,avatar_url");
         if (id) q = q.eq("id", id);
         else if (query) q = q.or(searchFilter(["full_name", "username", "bio"], query));
         const { data: rows, error } = await q
@@ -138,7 +138,8 @@ export const searchDiscovery = createServerFn({ method: "POST" })
       case "churches": {
         let q = supabase
           .from("churches")
-          .select("id,name,description,cover_url,region,city,denomination");
+          .select("id,name,description,cover_url,region,city,denomination,country");
+        if (!id && county !== "all") q = q.eq("country", "Kenya").eq("region", county);
         if (id) q = q.eq("id", id);
         else if (query) q = q.or(searchFilter(["name", "region", "city", "denomination"], query));
         const { data: rows, error } = await q
@@ -156,6 +157,10 @@ export const searchDiscovery = createServerFn({ method: "POST" })
             [r.region, r.city, r.denomination, r.description].filter(Boolean).join(" · "),
             r.cover_url,
           ),
+          location:
+            [r.city, r.region ? `${r.region} County` : null, r.country]
+              .filter(Boolean)
+              .join(" · ") || "Area not recorded",
           sourceUrl:
             r.description?.match(
               /https:\/\/www\.openstreetmap\.org\/(?:node|way|relation)\/\d+\b/,
@@ -211,7 +216,9 @@ export const searchDiscovery = createServerFn({ method: "POST" })
       default: {
         let q = supabase
           .from("media_items")
-          .select("id,title,description,thumbnail_url,scripture_ref,source,external_id,audio_url,creator_name,duration_seconds,category")
+          .select(
+            "id,title,description,thumbnail_url,scripture_ref,source,external_id,audio_url,creator_name,duration_seconds,category",
+          )
           .eq("is_approved", true);
         q =
           kind === "music"

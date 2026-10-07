@@ -275,8 +275,7 @@ export function ReelPane(props: ReelPaneProps) {
             </span>
             <p className="text-sm font-semibold text-foreground">No video on this Reel yet</p>
             <p className="max-w-[16rem] text-[12px] leading-relaxed text-muted-foreground">
-              This post has no uploaded video or YouTube source attached, so there is nothing to
-              play.
+              This post has no playable video attached, so there is nothing to play.
             </p>
           </div>
         )}
@@ -329,7 +328,7 @@ export function ReelPane(props: ReelPaneProps) {
         </button>
       )}
 
-      {(isYouTubeEmbed || isLinkOutOnly) && (
+      {isLinkOutOnly && (
         <div className="absolute left-3 top-3 z-10 flex items-center gap-1.5 rounded-full bg-black/40 py-1.5 pl-1.5 pr-3 text-[11px] font-medium text-white backdrop-blur-md">
           <span className="rounded-full bg-white/15 px-2 py-0.5">
             {SOURCE_LABEL[reel.source_type as ImportedSource]}
@@ -341,16 +340,6 @@ export function ReelPane(props: ReelPaneProps) {
           >
             Open original <ExternalLink className="h-3 w-3" />
           </button>
-          {isYouTubeEmbed && (
-            <button
-              type="button"
-              onClick={() => setPlayerAttempt((value) => value + 1)}
-              className="min-h-9 rounded-full px-2 underline underline-offset-2"
-              aria-label="Reload Reel player"
-            >
-              Retry
-            </button>
-          )}
         </div>
       )}
 

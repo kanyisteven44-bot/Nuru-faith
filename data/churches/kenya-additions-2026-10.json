@@ -1,0 +1,1655 @@
+{
+  "source": "Geofabrik Kenya / OpenStreetMap contributors",
+  "license": "ODbL 1.0",
+  "extract_url": "https://download.geofabrik.de/africa/kenya-latest.osm.pbf",
+  "county_source": "https://www.geoboundaries.org/api/current/gbOpen/KEN/ADM1/",
+  "imported_at": "2026-10-07T04:11:35.371737+00:00",
+  "coverage": "Named Christian worship sites and named church/chapel/cathedral buildings including relations. Incomplete national coverage; map listings are not verified Nuru church partners.",
+  "county_boundaries": 47,
+  "national_boundary_confirmed": true,
+  "skipped": 4,
+  "duplicates": [
+    {
+      "source_id": "node/10780953125",
+      "kept": "node/10780953109"
+    },
+    {
+      "source_id": "node/10789765199",
+      "kept": "node/10780953109"
+    },
+    {
+      "source_id": "node/1437347826",
+      "kept": "node/1432507930"
+    },
+    {
+      "source_id": "node/2154422600",
+      "kept": "node/2154422584"
+    },
+    {
+      "source_id": "node/2405885964",
+      "kept": "node/2405823262"
+    },
+    {
+      "source_id": "node/3723143892",
+      "kept": "node/12250460487"
+    },
+    {
+      "source_id": "node/3723146926",
+      "kept": "node/1732933816"
+    },
+    {
+      "source_id": "node/3856130359",
+      "kept": "node/1483304296"
+    },
+    {
+      "source_id": "node/5592138035",
+      "kept": "node/5587817779"
+    },
+    {
+      "source_id": "node/5596027510",
+      "kept": "node/5592124030"
+    },
+    {
+      "source_id": "node/5736067223",
+      "kept": "node/5592178590"
+    },
+    {
+      "source_id": "node/5736067224",
+      "kept": "node/5592178591"
+    },
+    {
+      "source_id": "node/5736067231",
+      "kept": "node/5592178598"
+    },
+    {
+      "source_id": "node/5736067236",
+      "kept": "node/5592178603"
+    },
+    {
+      "source_id": "node/5736067241",
+      "kept": "node/5592178608"
+    },
+    {
+      "source_id": "node/5736067246",
+      "kept": "node/5592178613"
+    },
+    {
+      "source_id": "node/5736081197",
+      "kept": "node/5592140039"
+    },
+    {
+      "source_id": "node/5736081199",
+      "kept": "node/5592140041"
+    },
+    {
+      "source_id": "node/5736081209",
+      "kept": "node/5592140050"
+    },
+    {
+      "source_id": "node/5736081210",
+      "kept": "node/5592140051"
+    },
+    {
+      "source_id": "node/5736159628",
+      "kept": "node/5588006378"
+    },
+    {
+      "source_id": "node/5736159629",
+      "kept": "node/5588006379"
+    },
+    {
+      "source_id": "node/5736384029",
+      "kept": "node/5592138046"
+    },
+    {
+      "source_id": "node/5736384031",
+      "kept": "node/5592138048"
+    },
+    {
+      "source_id": "node/5736384042",
+      "kept": "node/5592138059"
+    },
+    {
+      "source_id": "node/5820197014",
+      "kept": "node/5798730241"
+    },
+    {
+      "source_id": "node/5820197018",
+      "kept": "node/5798730245"
+    },
+    {
+      "source_id": "node/612007111",
+      "kept": "node/10780953119"
+    },
+    {
+      "source_id": "node/612007388",
+      "kept": "node/10780953116"
+    },
+    {
+      "source_id": "node/6241778059",
+      "kept": "node/12169719127"
+    },
+    {
+      "source_id": "node/662799891",
+      "kept": "node/1809764835"
+    },
+    {
+      "source_id": "node/7881206029",
+      "kept": "node/10780953123"
+    },
+    {
+      "source_id": "node/8109391890",
+      "kept": "node/8109391887"
+    },
+    {
+      "source_id": "node/8109441285",
+      "kept": "node/8109441284"
+    },
+    {
+      "source_id": "node/8396397115",
+      "kept": "node/8371428436"
+    },
+    {
+      "source_id": "node/914492959",
+      "kept": "node/1437347765"
+    },
+    {
+      "source_id": "node/949597718",
+      "kept": "node/1432507896"
+    },
+    {
+      "source_id": "node/949598000",
+      "kept": "node/878847023"
+    },
+    {
+      "source_id": "node/9516078700",
+      "kept": "node/2115330630"
+    },
+    {
+      "source_id": "way/1113330796",
+      "kept": "node/8168676361"
+    },
+    {
+      "source_id": "way/1189797530",
+      "kept": "way/1189797529"
+    },
+    {
+      "source_id": "way/1209821274",
+      "kept": "node/10980446294"
+    },
+    {
+      "source_id": "way/1217794608",
+      "kept": "node/10976896606"
+    },
+    {
+      "source_id": "way/1315036234",
+      "kept": "node/12171660913"
+    },
+    {
+      "source_id": "way/1315758305",
+      "kept": "node/12178825947"
+    },
+    {
+      "source_id": "way/1340041051",
+      "kept": "node/12395692673"
+    },
+    {
+      "source_id": "way/1495070202",
+      "kept": "node/6207376789"
+    },
+    {
+      "source_id": "way/165327427",
+      "kept": "node/1038219145"
+    },
+    {
+      "source_id": "way/174342543",
+      "kept": "node/1850409537"
+    },
+    {
+      "source_id": "way/225773650",
+      "kept": "way/223634109"
+    },
+    {
+      "source_id": "way/242428185",
+      "kept": "node/5300678627"
+    },
+    {
+      "source_id": "way/451554005",
+      "kept": "way/451554003"
+    },
+    {
+      "source_id": "way/551587926",
+      "kept": "way/1116576479"
+    },
+    {
+      "source_id": "way/559014822",
+      "kept": "way/1453554782"
+    },
+    {
+      "source_id": "way/604525347",
+      "kept": "node/5737494143"
+    },
+    {
+      "source_id": "way/614457116",
+      "kept": "node/5334913966"
+    },
+    {
+      "source_id": "way/644731417",
+      "kept": "node/6198281772"
+    },
+    {
+      "source_id": "way/679226642",
+      "kept": "node/30312226"
+    },
+    {
+      "source_id": "way/774535423",
+      "kept": "node/1843631150"
+    },
+    {
+      "source_id": "way/962038834",
+      "kept": "node/8899062475"
+    }
+  ],
+  "churches": [
+    {
+      "name": "Jesus winning souls church -Migadini",
+      "latitude": -4.0341089,
+      "longitude": 39.6220073,
+      "source_id": "node/12617801964",
+      "source_url": "https://www.openstreetmap.org/node/12617801964",
+      "county": "Mombasa",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Catholic Church",
+      "latitude": -1.2698172,
+      "longitude": 36.9144087,
+      "source_id": "node/3080433509",
+      "source_url": "https://www.openstreetmap.org/node/3080433509",
+      "county": "Nairobi",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "St. Andrew's",
+      "latitude": -1.28272385,
+      "longitude": 36.81347686285862,
+      "source_id": "relation/14115494",
+      "source_url": "https://www.openstreetmap.org/relation/14115494",
+      "county": "Nairobi",
+      "city": "Nairobi",
+      "denomination": "protestant",
+      "website": null
+    },
+    {
+      "name": "Christ faith church",
+      "latitude": -0.2156292,
+      "longitude": 36.1579491116929,
+      "source_id": "way/1037471429",
+      "source_url": "https://www.openstreetmap.org/way/1037471429",
+      "county": "Nakuru",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "AIC KABATINI",
+      "latitude": -0.2150607,
+      "longitude": 36.1665254959393,
+      "source_id": "way/1037521967",
+      "source_url": "https://www.openstreetmap.org/way/1037521967",
+      "county": "Nakuru",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "School Chapel",
+      "latitude": -1.2617194,
+      "longitude": 36.66651715335487,
+      "source_id": "way/1041247451",
+      "source_url": "https://www.openstreetmap.org/way/1041247451",
+      "county": "Kiambu",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Deliverance Church Kasarani",
+      "latitude": -1.2183063,
+      "longitude": 36.899439342441745,
+      "source_id": "way/1064262099",
+      "source_url": "https://www.openstreetmap.org/way/1064262099",
+      "county": "Nairobi",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Dirubi SDA Church",
+      "latitude": -0.4059914,
+      "longitude": 34.986125099999995,
+      "source_id": "way/1067391128",
+      "source_url": "https://www.openstreetmap.org/way/1067391128",
+      "county": "Kisumu",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Sondu Central SDA church",
+      "latitude": -0.3921517,
+      "longitude": 35.00990191076586,
+      "source_id": "way/1067596798",
+      "source_url": "https://www.openstreetmap.org/way/1067596798",
+      "county": "Homa Bay",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "A.C.K St. Stephen's Rukanga Parish",
+      "latitude": -3.8094156999999997,
+      "longitude": 38.639574759610795,
+      "source_id": "way/1076301974",
+      "source_url": "https://www.openstreetmap.org/way/1076301974",
+      "county": "Taita Taveta",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Catholic Church",
+      "latitude": -0.3632602,
+      "longitude": 35.29071307038933,
+      "source_id": "way/1093530915",
+      "source_url": "https://www.openstreetmap.org/way/1093530915",
+      "county": "Kericho",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "P.A.G Church",
+      "latitude": -0.36361845,
+      "longitude": 35.287293647011,
+      "source_id": "way/1098212411",
+      "source_url": "https://www.openstreetmap.org/way/1098212411",
+      "county": "Kericho",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Salvation Army",
+      "latitude": -0.3622281,
+      "longitude": 35.28899035,
+      "source_id": "way/1098212431",
+      "source_url": "https://www.openstreetmap.org/way/1098212431",
+      "county": "Kericho",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "RC church Embakasi Garisson",
+      "latitude": -1.3090548,
+      "longitude": 36.92607921546495,
+      "source_id": "way/1107911521",
+      "source_url": "https://www.openstreetmap.org/way/1107911521",
+      "county": "Nairobi",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "st James lunza ack",
+      "latitude": 0.23764144999999998,
+      "longitude": 34.54836513277027,
+      "source_id": "way/1124816328",
+      "source_url": "https://www.openstreetmap.org/way/1124816328",
+      "county": "Kakamega",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "German Speaking Evangelical Lutheran Congragation In Kenya",
+      "latitude": -1.2685852,
+      "longitude": 36.78429033945104,
+      "source_id": "way/1132502247",
+      "source_url": "https://www.openstreetmap.org/way/1132502247",
+      "county": "Nairobi",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "our lady of good counsel catholic church",
+      "latitude": -1.5936699,
+      "longitude": 37.255048576131685,
+      "source_id": "way/1149622128",
+      "source_url": "https://www.openstreetmap.org/way/1149622128",
+      "county": "Machakos",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Calvary Church",
+      "latitude": 0.5230878999999999,
+      "longitude": 35.30717492280754,
+      "source_id": "way/1155771682",
+      "source_url": "https://www.openstreetmap.org/way/1155771682",
+      "county": "Uasin Gishu",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "ACK church",
+      "latitude": 0.1589382,
+      "longitude": 34.45286386172413,
+      "source_id": "way/1159387172",
+      "source_url": "https://www.openstreetmap.org/way/1159387172",
+      "county": "Kakamega",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "North Horr Catholic Church",
+      "latitude": 3.32333195,
+      "longitude": 37.071701875984544,
+      "source_id": "way/1160228758",
+      "source_url": "https://www.openstreetmap.org/way/1160228758",
+      "county": "Marsabit",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Kalacha Catholic Church",
+      "latitude": 3.1295981,
+      "longitude": 37.42926379109895,
+      "source_id": "way/1160639829",
+      "source_url": "https://www.openstreetmap.org/way/1160639829",
+      "county": "Marsabit",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "PCEA Church of The Torch, Thogoto",
+      "latitude": -1.2664694,
+      "longitude": 36.66934649392486,
+      "source_id": "way/1162968262",
+      "source_url": "https://www.openstreetmap.org/way/1162968262",
+      "county": "Kiambu",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Seventh Day Adventist Church",
+      "latitude": 3.11394075,
+      "longitude": 35.59552243678112,
+      "source_id": "way/1169429292",
+      "source_url": "https://www.openstreetmap.org/way/1169429292",
+      "county": "Turkana",
+      "city": "Lodwar",
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Soul Winners Chapel",
+      "latitude": -2.33798775,
+      "longitude": 37.87943219033324,
+      "source_id": "way/1189795312",
+      "source_url": "https://www.openstreetmap.org/way/1189795312",
+      "county": "Makueni",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Ilatu SDA",
+      "latitude": -2.35690385,
+      "longitude": 37.84867424428733,
+      "source_id": "way/1189797513",
+      "source_url": "https://www.openstreetmap.org/way/1189797513",
+      "county": "Makueni",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Ilatu Salvation Army",
+      "latitude": -2.35770715,
+      "longitude": 37.84890434726821,
+      "source_id": "way/1189797514",
+      "source_url": "https://www.openstreetmap.org/way/1189797514",
+      "county": "Makueni",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Ilatu Baptist Church",
+      "latitude": -2.35737875,
+      "longitude": 37.8534607721371,
+      "source_id": "way/1189797515",
+      "source_url": "https://www.openstreetmap.org/way/1189797515",
+      "county": "Makueni",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Ilatu PCEA",
+      "latitude": -2.35919345,
+      "longitude": 37.85406173139237,
+      "source_id": "way/1189797516",
+      "source_url": "https://www.openstreetmap.org/way/1189797516",
+      "county": "Makueni",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Ilatu African Brotherhood Church",
+      "latitude": -2.3561511,
+      "longitude": 37.84866833665647,
+      "source_id": "way/1189797517",
+      "source_url": "https://www.openstreetmap.org/way/1189797517",
+      "county": "Makueni",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Ilatu African Inland Church",
+      "latitude": -2.3580997999999997,
+      "longitude": 37.849774250602096,
+      "source_id": "way/1189797527",
+      "source_url": "https://www.openstreetmap.org/way/1189797527",
+      "county": "Makueni",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Ilatu Redeemed Gospel Church",
+      "latitude": -2.35359535,
+      "longitude": 37.84798841156568,
+      "source_id": "way/1189797529",
+      "source_url": "https://www.openstreetmap.org/way/1189797529",
+      "county": "Makueni",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Ilatu Catholic Church",
+      "latitude": -2.3535556,
+      "longitude": 37.85168043568743,
+      "source_id": "way/1189797531",
+      "source_url": "https://www.openstreetmap.org/way/1189797531",
+      "county": "Makueni",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "CCI Kenze Church",
+      "latitude": -1.5376338500000002,
+      "longitude": 37.72056885,
+      "source_id": "way/1201007337",
+      "source_url": "https://www.openstreetmap.org/way/1201007337",
+      "county": "Machakos",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Ledec Church Smaller Sanctuary of Grace",
+      "latitude": -1.2573425999999999,
+      "longitude": 36.97652106150922,
+      "source_id": "way/1268544621",
+      "source_url": "https://www.openstreetmap.org/way/1268544621",
+      "county": "Nairobi",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Ledec Church Sancutuary of Grace",
+      "latitude": -1.25716435,
+      "longitude": 36.97658673310292,
+      "source_id": "way/1268544622",
+      "source_url": "https://www.openstreetmap.org/way/1268544622",
+      "county": "Nairobi",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Kapsoya Catholic Church",
+      "latitude": 0.52347685,
+      "longitude": 35.300833667441466,
+      "source_id": "way/1275251946",
+      "source_url": "https://www.openstreetmap.org/way/1275251946",
+      "county": "Uasin Gishu",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Jubilee Christian Church",
+      "latitude": -1.26956865,
+      "longitude": 36.824118850000005,
+      "source_id": "way/129001264",
+      "source_url": "https://www.openstreetmap.org/way/129001264",
+      "county": "Nairobi",
+      "city": "Nairobi",
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Our Lady Of Visitation Catholic Church",
+      "latitude": -1.295787,
+      "longitude": 36.86173090696609,
+      "source_id": "way/129323640",
+      "source_url": "https://www.openstreetmap.org/way/129323640",
+      "county": "Nairobi",
+      "city": "Nairobi",
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Starehe Chapel",
+      "latitude": -1.2810795499999998,
+      "longitude": 36.84046632577008,
+      "source_id": "way/130707856",
+      "source_url": "https://www.openstreetmap.org/way/130707856",
+      "county": "Nairobi",
+      "city": "Nairobi",
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "ACK St Peter's church Kamuiru",
+      "latitude": -0.4886798,
+      "longitude": 37.240724558555264,
+      "source_id": "way/1309840102",
+      "source_url": "https://www.openstreetmap.org/way/1309840102",
+      "county": "Kirinyaga",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "St Peter and Paul Kamuiru Catholic Church",
+      "latitude": -0.489517,
+      "longitude": 37.24109805251274,
+      "source_id": "way/1309929518",
+      "source_url": "https://www.openstreetmap.org/way/1309929518",
+      "county": "Kirinyaga",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Kagumo Catholic Church",
+      "latitude": -0.4707995,
+      "longitude": 37.23807998896929,
+      "source_id": "way/1310419311",
+      "source_url": "https://www.openstreetmap.org/way/1310419311",
+      "county": "Kirinyaga",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Nairobi Chapel Rongai",
+      "latitude": -1.3912191,
+      "longitude": 36.737550036973175,
+      "source_id": "way/1313084955",
+      "source_url": "https://www.openstreetmap.org/way/1313084955",
+      "county": "Kajiado",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Kwa Ndeke Catholic Church",
+      "latitude": -1.7875983,
+      "longitude": 37.22247229072237,
+      "source_id": "way/1318969916",
+      "source_url": "https://www.openstreetmap.org/way/1318969916",
+      "county": "Makueni",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Catholic Church Kenze",
+      "latitude": -1.53870315,
+      "longitude": 37.71974753759467,
+      "source_id": "way/1335031294",
+      "source_url": "https://www.openstreetmap.org/way/1335031294",
+      "county": "Machakos",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Catholic Church Malatani",
+      "latitude": -1.5555211,
+      "longitude": 37.705725367647055,
+      "source_id": "way/1335031329",
+      "source_url": "https://www.openstreetmap.org/way/1335031329",
+      "county": "Machakos",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Catholic Church Tulila",
+      "latitude": -1.56030205,
+      "longitude": 37.69386447262828,
+      "source_id": "way/1335038117",
+      "source_url": "https://www.openstreetmap.org/way/1335038117",
+      "county": "Machakos",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "St. Francis Xavier's Catholic Church",
+      "latitude": -1.26867355,
+      "longitude": 36.819894433056874,
+      "source_id": "way/133548143",
+      "source_url": "https://www.openstreetmap.org/way/133548143",
+      "county": "Nairobi",
+      "city": "Nairobi",
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "GNCA Church Ikalaasa",
+      "latitude": -1.53413285,
+      "longitude": 37.671473399999996,
+      "source_id": "way/1335930624",
+      "source_url": "https://www.openstreetmap.org/way/1335930624",
+      "county": "Machakos",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "St. John Baptist Church Ikalaasa",
+      "latitude": -1.5339606,
+      "longitude": 37.67097350348702,
+      "source_id": "way/1336781690",
+      "source_url": "https://www.openstreetmap.org/way/1336781690",
+      "county": "Machakos",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "ACK Katulani",
+      "latitude": -1.5266163000000001,
+      "longitude": 37.642816692429285,
+      "source_id": "way/1337095888",
+      "source_url": "https://www.openstreetmap.org/way/1337095888",
+      "county": "Machakos",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Konza Catholic Church",
+      "latitude": -1.570598,
+      "longitude": 37.68894084053067,
+      "source_id": "way/1340041044",
+      "source_url": "https://www.openstreetmap.org/way/1340041044",
+      "county": "Machakos",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Mwangoni Catholic",
+      "latitude": -1.55274645,
+      "longitude": 37.679964643635955,
+      "source_id": "way/1340041045",
+      "source_url": "https://www.openstreetmap.org/way/1340041045",
+      "county": "Machakos",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "AIC Ngumbau",
+      "latitude": -1.53774075,
+      "longitude": 37.68628544172783,
+      "source_id": "way/1340041047",
+      "source_url": "https://www.openstreetmap.org/way/1340041047",
+      "county": "Machakos",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "ACK Church Kyoowani",
+      "latitude": -1.530917,
+      "longitude": 37.71078952509881,
+      "source_id": "way/1340041048",
+      "source_url": "https://www.openstreetmap.org/way/1340041048",
+      "county": "Machakos",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "New St. Theresa Catholic Church Chemaner",
+      "latitude": -0.800763,
+      "longitude": 35.48881357101452,
+      "source_id": "way/1342391164",
+      "source_url": "https://www.openstreetmap.org/way/1342391164",
+      "county": "Bomet",
+      "city": "Chemaner",
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "PCEA Entasopia(Magadi zone)Nguruman",
+      "latitude": -1.7846663999999999,
+      "longitude": 36.055115049468085,
+      "source_id": "way/1357207257",
+      "source_url": "https://www.openstreetmap.org/way/1357207257",
+      "county": "Kajiado",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "shibanga ack",
+      "latitude": 0.2350607,
+      "longitude": 34.5334294896722,
+      "source_id": "way/1362299383",
+      "source_url": "https://www.openstreetmap.org/way/1362299383",
+      "county": "Kakamega",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Glad tidings church",
+      "latitude": -0.05869035,
+      "longitude": 34.42350485426134,
+      "source_id": "way/1364249773",
+      "source_url": "https://www.openstreetmap.org/way/1364249773",
+      "county": "Siaya",
+      "city": "South Gem ward",
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "The Door church",
+      "latitude": -1.30846935,
+      "longitude": 36.774188552080105,
+      "source_id": "way/1364321420",
+      "source_url": "https://www.openstreetmap.org/way/1364321420",
+      "county": "Nairobi",
+      "city": "Nairobi",
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Pap Alego SDA church",
+      "latitude": -0.6320266999999999,
+      "longitude": 34.429336847098874,
+      "source_id": "way/1427738844",
+      "source_url": "https://www.openstreetmap.org/way/1427738844",
+      "county": "Homa Bay",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "African Brotherhood Church Wamunyu",
+      "latitude": -1.4097924000000002,
+      "longitude": 37.56157747366327,
+      "source_id": "way/1427924752",
+      "source_url": "https://www.openstreetmap.org/way/1427924752",
+      "county": "Machakos",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "AIC Makutano",
+      "latitude": -1.41116765,
+      "longitude": 37.472951637077514,
+      "source_id": "way/1428539087",
+      "source_url": "https://www.openstreetmap.org/way/1428539087",
+      "county": "Machakos",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "GNCA Makutano Church",
+      "latitude": -1.4138795,
+      "longitude": 37.4685293641264,
+      "source_id": "way/1428539178",
+      "source_url": "https://www.openstreetmap.org/way/1428539178",
+      "county": "Machakos",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "JCC Makutano",
+      "latitude": -1.4130687499999999,
+      "longitude": 37.47048116589596,
+      "source_id": "way/1428543920",
+      "source_url": "https://www.openstreetmap.org/way/1428543920",
+      "county": "Machakos",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Kangundo Redeemed World Impact Centre",
+      "latitude": -1.3014746000000001,
+      "longitude": 37.347610166326774,
+      "source_id": "way/1431962046",
+      "source_url": "https://www.openstreetmap.org/way/1431962046",
+      "county": "Machakos",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Catholic Church Kangundo",
+      "latitude": -1.3050202,
+      "longitude": 37.34817352167661,
+      "source_id": "way/1432024469",
+      "source_url": "https://www.openstreetmap.org/way/1432024469",
+      "county": "Machakos",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Kangundo KAG Church",
+      "latitude": -1.29560305,
+      "longitude": 37.345699350000004,
+      "source_id": "way/1432266608",
+      "source_url": "https://www.openstreetmap.org/way/1432266608",
+      "county": "Machakos",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Presbyterian Church of East Africa",
+      "latitude": -1.3024027,
+      "longitude": 37.34215168230085,
+      "source_id": "way/1432266615",
+      "source_url": "https://www.openstreetmap.org/way/1432266615",
+      "county": "Machakos",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Delivarance Church Kangungo",
+      "latitude": -1.3020352,
+      "longitude": 37.34370369521364,
+      "source_id": "way/1432266616",
+      "source_url": "https://www.openstreetmap.org/way/1432266616",
+      "county": "Machakos",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "World Wide Gospel Church Tala",
+      "latitude": -1.2705688,
+      "longitude": 37.32615236849744,
+      "source_id": "way/1432528289",
+      "source_url": "https://www.openstreetmap.org/way/1432528289",
+      "county": "Machakos",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "St.Mary's Catholic Church Tala",
+      "latitude": -1.2721852,
+      "longitude": 37.32671652009573,
+      "source_id": "way/1432528294",
+      "source_url": "https://www.openstreetmap.org/way/1432528294",
+      "county": "Machakos",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "ABC Church Tala",
+      "latitude": -1.2699547,
+      "longitude": 37.32524645255931,
+      "source_id": "way/1432528349",
+      "source_url": "https://www.openstreetmap.org/way/1432528349",
+      "county": "Machakos",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Seventh Day Adventist Church - Tala",
+      "latitude": -1.2668537,
+      "longitude": 37.323038916458856,
+      "source_id": "way/1433564674",
+      "source_url": "https://www.openstreetmap.org/way/1433564674",
+      "county": "Machakos",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Deliverance Church - Tala",
+      "latitude": -1.26843035,
+      "longitude": 37.319155274718256,
+      "source_id": "way/1434009866",
+      "source_url": "https://www.openstreetmap.org/way/1434009866",
+      "county": "Machakos",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Gachiegoki PCEA church",
+      "latitude": -0.41792235,
+      "longitude": 37.73966601377164,
+      "source_id": "way/1434023190",
+      "source_url": "https://www.openstreetmap.org/way/1434023190",
+      "county": "Tharaka-Nithi",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "St. Peter's Catholic Church",
+      "latitude": 0.20126549999999999,
+      "longitude": 35.089985545887444,
+      "source_id": "way/1441495715",
+      "source_url": "https://www.openstreetmap.org/way/1441495715",
+      "county": "Nandi",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "KAG CHURCH",
+      "latitude": 0.29246859999999997,
+      "longitude": 36.60751292848276,
+      "source_id": "way/1444012401",
+      "source_url": "https://www.openstreetmap.org/way/1444012401",
+      "county": "Laikipia",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Outdoor Chapel",
+      "latitude": -0.2792445,
+      "longitude": 35.764459887335164,
+      "source_id": "way/1445361250",
+      "source_url": "https://www.openstreetmap.org/way/1445361250",
+      "county": "Nakuru",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "St. Daniel Comboni Catholic Church",
+      "latitude": -1.25671395,
+      "longitude": 36.87271911563204,
+      "source_id": "way/1459515451",
+      "source_url": "https://www.openstreetmap.org/way/1459515451",
+      "county": "Nairobi",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "catholic church",
+      "latitude": -0.48688699999999996,
+      "longitude": 36.971031141530055,
+      "source_id": "way/1501509628",
+      "source_url": "https://www.openstreetmap.org/way/1501509628",
+      "county": "Nyeri",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Kagumo People's Church",
+      "latitude": -0.4724046,
+      "longitude": 37.237826243723646,
+      "source_id": "way/1528997900",
+      "source_url": "https://www.openstreetmap.org/way/1528997900",
+      "county": "Kirinyaga",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Gathera Catholic Church",
+      "latitude": -0.45078799999999997,
+      "longitude": 37.234511747137915,
+      "source_id": "way/1528997901",
+      "source_url": "https://www.openstreetmap.org/way/1528997901",
+      "county": "Kirinyaga",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Gathera Ack Church",
+      "latitude": -0.45002735,
+      "longitude": 37.23381227887324,
+      "source_id": "way/1528997902",
+      "source_url": "https://www.openstreetmap.org/way/1528997902",
+      "county": "Kirinyaga",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Gatwe Catholic Church",
+      "latitude": -0.43590660000000003,
+      "longitude": 37.23881111249467,
+      "source_id": "way/1528997906",
+      "source_url": "https://www.openstreetmap.org/way/1528997906",
+      "county": "Kirinyaga",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Gatwe Ack Church",
+      "latitude": -0.43453220000000004,
+      "longitude": 37.23901698229254,
+      "source_id": "way/1528997907",
+      "source_url": "https://www.openstreetmap.org/way/1528997907",
+      "county": "Kirinyaga",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Church Of Believers (C.O.B) Kenya",
+      "latitude": -1.4094853,
+      "longitude": 37.467795441035754,
+      "source_id": "way/1552471381",
+      "source_url": "https://www.openstreetmap.org/way/1552471381",
+      "county": "Machakos",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "AIC Ndaptabwa Church",
+      "latitude": 0.2944995,
+      "longitude": 35.15081064212777,
+      "source_id": "way/1563933659",
+      "source_url": "https://www.openstreetmap.org/way/1563933659",
+      "county": "Nandi",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "ACK CHURCH",
+      "latitude": -1.2551923,
+      "longitude": 36.86835657348464,
+      "source_id": "way/224515486",
+      "source_url": "https://www.openstreetmap.org/way/224515486",
+      "county": "Nairobi",
+      "city": null,
+      "denomination": "anglican",
+      "website": null
+    },
+    {
+      "name": "St. Matthews Anglican Cathedral",
+      "latitude": 0.5159453,
+      "longitude": 35.28399615571429,
+      "source_id": "way/241554902",
+      "source_url": "https://www.openstreetmap.org/way/241554902",
+      "county": "Uasin Gishu",
+      "city": "Eldoret",
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Good Shepherd African Gospel Church",
+      "latitude": -1.29889315,
+      "longitude": 36.78956061524417,
+      "source_id": "way/247938343",
+      "source_url": "https://www.openstreetmap.org/way/247938343",
+      "county": "Nairobi",
+      "city": "Nairobi",
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "African Inland Church kabarnet",
+      "latitude": 0.49160645000000003,
+      "longitude": 35.740281257328476,
+      "source_id": "way/265630828",
+      "source_url": "https://www.openstreetmap.org/way/265630828",
+      "county": "Baringo",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "A.I.C Church Embakasi",
+      "latitude": -1.3108886,
+      "longitude": 36.91328904931582,
+      "source_id": "way/268558719",
+      "source_url": "https://www.openstreetmap.org/way/268558719",
+      "county": "Nairobi",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Deliverance Church Kitengela",
+      "latitude": -1.48405495,
+      "longitude": 36.96277996726601,
+      "source_id": "way/279952543",
+      "source_url": "https://www.openstreetmap.org/way/279952543",
+      "county": "Kajiado",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Madre Teresa Catholic",
+      "latitude": -1.2085718,
+      "longitude": 36.893341285067656,
+      "source_id": "way/309823589",
+      "source_url": "https://www.openstreetmap.org/way/309823589",
+      "county": "Nairobi",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "St. Peter's Church",
+      "latitude": -0.41853375,
+      "longitude": 36.94956128128156,
+      "source_id": "way/318209924",
+      "source_url": "https://www.openstreetmap.org/way/318209924",
+      "county": "Nyeri",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Orthodox Church",
+      "latitude": -1.29180805,
+      "longitude": 36.78765130654544,
+      "source_id": "way/372822972",
+      "source_url": "https://www.openstreetmap.org/way/372822972",
+      "county": "Nairobi",
+      "city": "Nairobi",
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Ong'ang' SDA",
+      "latitude": -0.44590195,
+      "longitude": 34.66442698508969,
+      "source_id": "way/451554003",
+      "source_url": "https://www.openstreetmap.org/way/451554003",
+      "county": "Homa Bay",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Future Life Ministries",
+      "latitude": 0.040184250000000005,
+      "longitude": 34.32641975718478,
+      "source_id": "way/453867806",
+      "source_url": "https://www.openstreetmap.org/way/453867806",
+      "county": "Siaya",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Kisii Central SDA Church",
+      "latitude": -0.6723248,
+      "longitude": 34.77332937798053,
+      "source_id": "way/456228078",
+      "source_url": "https://www.openstreetmap.org/way/456228078",
+      "county": "Kisii",
+      "city": "Kisii",
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Full Gospel Pentecostal Church of Kenya",
+      "latitude": -1.0150081,
+      "longitude": 36.90855591273608,
+      "source_id": "way/462605871",
+      "source_url": "https://www.openstreetmap.org/way/462605871",
+      "county": "Kiambu",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "F.P. F.K. Kibiko church ngong hills",
+      "latitude": -1.37384415,
+      "longitude": 36.63470412709618,
+      "source_id": "way/467417586",
+      "source_url": "https://www.openstreetmap.org/way/467417586",
+      "county": "Kajiado",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Deliverance Church Nakuru",
+      "latitude": -0.29763680000000003,
+      "longitude": 36.06904604530214,
+      "source_id": "way/488136925",
+      "source_url": "https://www.openstreetmap.org/way/488136925",
+      "county": "Nakuru",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "St Marks",
+      "latitude": -1.26055335,
+      "longitude": 36.79702003272576,
+      "source_id": "way/512903702",
+      "source_url": "https://www.openstreetmap.org/way/512903702",
+      "county": "Nairobi",
+      "city": null,
+      "denomination": "catholic",
+      "website": null
+    },
+    {
+      "name": "St. Mary Magdalene Catholic Parish",
+      "latitude": -1.1065189000000002,
+      "longitude": 37.16392301431523,
+      "source_id": "way/540823890",
+      "source_url": "https://www.openstreetmap.org/way/540823890",
+      "county": "Kiambu",
+      "city": null,
+      "denomination": "catholic",
+      "website": null
+    },
+    {
+      "name": "Kariokor Methodist Church",
+      "latitude": -1.2768978500000001,
+      "longitude": 36.83611154363359,
+      "source_id": "way/569279473",
+      "source_url": "https://www.openstreetmap.org/way/569279473",
+      "county": "Nairobi",
+      "city": "Nairobi",
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Anglican Church of Kenya - Diocese of Marsabit",
+      "latitude": 0.3338966,
+      "longitude": 37.57702697668336,
+      "source_id": "way/599628352",
+      "source_url": "https://www.openstreetmap.org/way/599628352",
+      "county": "Isiolo",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Cathedral of Our Lady of Africa",
+      "latitude": -1.36628735,
+      "longitude": 38.01279331480144,
+      "source_id": "way/626205424",
+      "source_url": "https://www.openstreetmap.org/way/626205424",
+      "county": "Kitui",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "St.Mary's Mabera catholic Church",
+      "latitude": -1.1603858,
+      "longitude": 34.4460499613081,
+      "source_id": "way/629036787",
+      "source_url": "https://www.openstreetmap.org/way/629036787",
+      "county": "Migori",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Nderiek AGC church",
+      "latitude": -0.72134975,
+      "longitude": 35.13533022185442,
+      "source_id": "way/685736653",
+      "source_url": "https://www.openstreetmap.org/way/685736653",
+      "county": "Bomet",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "nkarini catholic",
+      "latitude": -0.2446548,
+      "longitude": 37.878509407186144,
+      "source_id": "way/698416229",
+      "source_url": "https://www.openstreetmap.org/way/698416229",
+      "county": "Tharaka-Nithi",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Soimet AGC",
+      "latitude": -0.713179,
+      "longitude": 35.151349969568415,
+      "source_id": "way/698938377",
+      "source_url": "https://www.openstreetmap.org/way/698938377",
+      "county": "Bomet",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Faith church",
+      "latitude": -0.7137555,
+      "longitude": 35.14568218536147,
+      "source_id": "way/705572165",
+      "source_url": "https://www.openstreetmap.org/way/705572165",
+      "county": "Bomet",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "AIPCEA",
+      "latitude": -0.41435115,
+      "longitude": 36.95374719450354,
+      "source_id": "way/709895410",
+      "source_url": "https://www.openstreetmap.org/way/709895410",
+      "county": "Nyeri",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "gacheraka catholic",
+      "latitude": -0.27047305,
+      "longitude": 37.86889326605191,
+      "source_id": "way/725829598",
+      "source_url": "https://www.openstreetmap.org/way/725829598",
+      "county": "Tharaka-Nithi",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "yakanek AIC church",
+      "latitude": -0.7015236499999999,
+      "longitude": 35.15778616970863,
+      "source_id": "way/727352976",
+      "source_url": "https://www.openstreetmap.org/way/727352976",
+      "county": "Bomet",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Soimet AIC church",
+      "latitude": -0.71451525,
+      "longitude": 35.151093397793545,
+      "source_id": "way/729140509",
+      "source_url": "https://www.openstreetmap.org/way/729140509",
+      "county": "Bomet",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "KING OF KINGS CHURCH",
+      "latitude": 0.23538745,
+      "longitude": 37.937146004300274,
+      "source_id": "way/804145958",
+      "source_url": "https://www.openstreetmap.org/way/804145958",
+      "county": "Meru",
+      "city": "MAUA, KENYA",
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "St Paul's Chapel",
+      "latitude": -1.28164345,
+      "longitude": 36.81410788737572,
+      "source_id": "way/80594877",
+      "source_url": "https://www.openstreetmap.org/way/80594877",
+      "county": "Nairobi",
+      "city": "Nairobi",
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Mugae P.C.E.A",
+      "latitude": -0.15294354999999998,
+      "longitude": 37.6204030624786,
+      "source_id": "way/849484868",
+      "source_url": "https://www.openstreetmap.org/way/849484868",
+      "county": "Meru",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Kwa Dc Salvation Army Church",
+      "latitude": -1.7899503,
+      "longitude": 37.21762630133777,
+      "source_id": "way/853508355",
+      "source_url": "https://www.openstreetmap.org/way/853508355",
+      "county": "Makueni",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "Kenya Assenbly of God (Kwa Dc)",
+      "latitude": -1.7883515,
+      "longitude": 37.214502339054974,
+      "source_id": "way/853508368",
+      "source_url": "https://www.openstreetmap.org/way/853508368",
+      "county": "Makueni",
+      "city": null,
+      "denomination": null,
+      "website": null
+    },
+    {
+      "name": "ACK Wamba",
+      "latitude": 0.9794817,
+      "longitude": 37.326469700713666,
+      "source_id": "way/914632575",
+      "source_url": "https://www.openstreetmap.org/way/914632575",
+      "county": "Samburu",
+      "city": null,
+      "denomination": null,
+      "website": null
+    }
+  ],
+  "excluded_after_review": [
+    {
+      "source_id": "node/5798730245",
+      "name": "Ravine Bible College",
+      "reason": "Conflicting religion or institution/non-congregation name"
+    },
+    {
+      "source_id": "relation/13995868",
+      "name": "St. Thomas Aquinas Seminary",
+      "reason": "Conflicting religion or institution/non-congregation name"
+    },
+    {
+      "source_id": "way/1177910242",
+      "name": "Brothers of St. Joseph Mweiga",
+      "reason": "Conflicting religion or institution/non-congregation name"
+    },
+    {
+      "source_id": "way/1434045038",
+      "name": "church",
+      "reason": "Conflicting religion or institution/non-congregation name"
+    },
+    {
+      "source_id": "way/1445361246",
+      "name": "Marquee",
+      "reason": "Conflicting religion or institution/non-congregation name"
+    },
+    {
+      "source_id": "way/1465061920",
+      "name": "Church Hall",
+      "reason": "Conflicting religion or institution/non-congregation name"
+    },
+    {
+      "source_id": "way/511907807",
+      "name": "Taveta Jamia Mosque",
+      "reason": "Conflicting religion or institution/non-congregation name"
+    },
+    {
+      "source_id": "way/512905648",
+      "name": "St. Marks Office",
+      "reason": "Conflicting religion or institution/non-congregation name"
+    },
+    {
+      "source_id": "way/914632576",
+      "name": "ACK Houses",
+      "reason": "Conflicting religion or institution/non-congregation name"
+    }
+  ]
+}

@@ -18,12 +18,14 @@ export function MusicDiscovery({
   query = "",
   mediaType = "music",
   catalogPlayback = "all",
+  onBrowseChange,
 }: {
   onPlay: (video: YouTubeVideo) => void;
   onPlayItem: (item: MediaItem) => void;
   query?: string;
   mediaType?: "music" | "podcast";
   catalogPlayback?: "all" | "audio" | "video";
+  onBrowseChange?: (view: "artists" | "songs") => void;
 }) {
   const [selected, setSelected] = useState<Creator | null>(null);
   const [language, setLanguage] = useState("all");
@@ -33,6 +35,7 @@ export function MusicDiscovery({
   const contentLabel = isMusic ? "Songs" : "Episodes";
   const directory = useInfiniteQuery({
     queryKey: ["media-directory", mediaType, language, query],
+    enabled: view === creatorLabel && !selected,
     initialPageParam: 0,
     queryFn: ({ pageParam }) =>
       fetchMediaDirectory({ kind: mediaType, language, query, page: pageParam }),
@@ -58,7 +61,7 @@ export function MusicDiscovery({
           </p>
         </div>
         <div className="flex flex-wrap gap-2" aria-label="Browse library">
-          {["All", creatorLabel, contentLabel].map((label) => (
+          {[creatorLabel, contentLabel].map((label) => (
             <button
               key={label}
               type="button"
@@ -67,6 +70,7 @@ export function MusicDiscovery({
               onClick={() => {
                 setSelected(null);
                 setView(label);
+                onBrowseChange?.(label === creatorLabel ? "artists" : "songs");
               }}
             >
               {label === creatorLabel
@@ -96,7 +100,10 @@ export function MusicDiscovery({
         {selected ? (
           <button
             type="button"
-            onClick={() => setSelected(null)}
+            onClick={() => {
+              setSelected(null);
+              onBrowseChange?.("artists");
+            }}
             className="flex min-h-11 items-center gap-2 text-sm text-primary"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -137,7 +144,10 @@ export function MusicDiscovery({
                     type="button"
                     key={creator.id}
                     aria-label={`Browse ${creator.name}`}
-                    onClick={() => setSelected(creator)}
+                    onClick={() => {
+                      setSelected(creator);
+                      onBrowseChange?.("songs");
+                    }}
                     className={`nuru-card flex items-center gap-3 p-3 text-left ${view === "All" ? "w-56 shrink-0" : ""}`}
                   >
                     <CoverImage
@@ -182,7 +192,7 @@ export function MusicDiscovery({
         )}
         {selected && <h3 className="font-display text-xl font-semibold">{selected.name}</h3>}
       </div>
-      {(!selected || channelId) && (
+      {(selected || view === contentLabel) && (!selected || channelId) && (
         <>
           <MediaCatalog
             mediaType={mediaType}

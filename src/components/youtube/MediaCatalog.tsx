@@ -262,7 +262,14 @@ export function MediaPlayback({
 
   const queueLanguage = item.language_code ?? canonicalItem.data?.language_code;
   const queue = useQuery({
-    queryKey: ["media-up-next", queueMediaType, queuePlayback, item.id, item.external_id, queueLanguage],
+    queryKey: [
+      "media-up-next",
+      queueMediaType,
+      queuePlayback,
+      item.id,
+      item.external_id,
+      queueLanguage,
+    ],
     queryFn: async () => {
       const page = await fetchMediaCatalog({
         mediaType: queueMediaType,
@@ -298,7 +305,6 @@ export function MediaPlayback({
     setPlaying(false);
     onSelect(next);
   }
-
 
   const savedIds = useQuery({
     queryKey: ["saved-media-ids", userId],
@@ -407,7 +413,9 @@ export function MediaPlayback({
                 loop={repeat}
                 controls
                 autoplay
-                onEnded={() => { if (!repeat && nextItem) playQueueItem(nextItem); }}
+                onEnded={() => {
+                  if (!repeat && nextItem) playQueueItem(nextItem);
+                }}
                 onPlaybackChange={setPlaying}
                 className="aspect-video min-h-0 rounded-none"
               />
@@ -431,6 +439,23 @@ export function MediaPlayback({
             </h2>
             <p className="mt-2 text-[17px] text-[#647084]">{item.creator_name || "Nuru Faith"}</p>
           </div>
+
+          {audio && item.source === "nuru_audio" && item.category === "hymns" && (
+            <details className="mt-4 w-full rounded-2xl bg-white/70 p-4 text-sm text-[#647084]">
+              <summary className="cursor-pointer font-semibold">
+                Instrumental hymn · Track credits
+              </summary>
+              <p className="mt-2 leading-relaxed">{item.description}</p>
+              <a
+                href="https://creativecommons.org/licenses/by/4.0/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 inline-block underline"
+              >
+                Creative Commons Attribution 4.0
+              </a>
+            </details>
+          )}
 
           <div className="mt-6 flex items-center justify-center gap-7">
             <button

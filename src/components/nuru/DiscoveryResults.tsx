@@ -9,12 +9,14 @@ import { CardSkeleton, EmptyState, ErrorState, GhostButton, SectionHeader } from
 export function DiscoveryResults({
   kind,
   query,
+  county = "all",
   userId,
   hideWhenEmpty = false,
   onEmptyChange,
 }: {
   kind: DiscoveryKind;
   query: string;
+  county?: string;
   userId: string | null;
   /**
    * The "All" tab stacks every category at once, so a category with nothing in it
@@ -27,10 +29,10 @@ export function DiscoveryResults({
   onEmptyChange?: (empty: boolean) => void;
 }) {
   const results = useInfiniteQuery({
-    queryKey: ["discovery", userId, kind, query],
+    queryKey: ["discovery", userId, kind, query, county],
     enabled: !!userId,
     initialPageParam: 0,
-    queryFn: ({ pageParam }) => searchDiscovery({ data: { kind, query, page: pageParam } }),
+    queryFn: ({ pageParam }) => searchDiscovery({ data: { kind, query, county, page: pageParam } }),
     getNextPageParam: (last, pages) => (last.hasMore ? pages.length : undefined),
     staleTime: 60_000,
   });
@@ -78,7 +80,18 @@ export function DiscoveryResults({
           )}
           <span className="min-w-0 flex-1">
             <span className="block text-sm font-semibold break-words">{item.title}</span>
-            <span className="line-clamp-2 text-xs text-muted-foreground">{item.description}</span>
+            {kind === "churches" ? (
+              <>
+                <span className="mt-1 block text-xs font-medium text-primary">
+                  {item.location || "Area not recorded"}
+                </span>
+                <span className="mt-1 block text-[11px] text-muted-foreground">
+                  {item.sourceUrl ? "Public map listing" : item.description}
+                </span>
+              </>
+            ) : (
+              <span className="line-clamp-2 text-xs text-muted-foreground">{item.description}</span>
+            )}
           </span>
         </Link>
       ))}

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { z } from "zod";
+import { KENYA_COUNTIES } from "@/lib/kenyaCounties";
 import { useAuth } from "@/hooks/useAuth";
 import {
   DISCOVERY_KINDS,
@@ -36,6 +37,7 @@ function ExploreScreen() {
   const search: z.infer<typeof schema> = Route.useSearch();
   const navigate = Route.useNavigate();
   const [input, setInput] = useState(search.q);
+  const [county, setCounty] = useState("all");
   const [recent, setRecent] = useState<string[]>([]);
   useEffect(() => setInput(search.q), [search.q]);
   useEffect(() => {
@@ -98,12 +100,26 @@ function ExploreScreen() {
           <Search className="pointer-events-none absolute left-4 top-4 h-4 w-4 text-muted-foreground" />
           <input
             aria-label="Search Nuru Faith"
-            className="input-nuru pl-11"
-            placeholder="Search faith, people and teachings"
+            className="input-nuru pl-11 pr-12"
+            placeholder={
+              search.kind === "churches"
+                ? "Search church name, town or area…"
+                : "Search faith, people and teachings"
+            }
             maxLength={120}
             value={input}
             onChange={(event) => setInput(event.target.value)}
           />
+          {input && (
+            <button
+              type="button"
+              aria-label="Clear search"
+              onClick={() => setInput("")}
+              className="absolute right-2 top-1 flex h-10 w-10 items-center justify-center text-muted-foreground"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </form>
         <div
           aria-label="Content categories"
@@ -120,6 +136,24 @@ function ExploreScreen() {
             </button>
           ))}
         </div>
+        {search.kind === "churches" && (
+          <label className="block text-sm font-medium">
+            County in Kenya
+            <select
+              value={county}
+              onChange={(event) => setCounty(event.target.value)}
+              className="input-nuru mt-2 w-full"
+              aria-label="Filter churches by county"
+            >
+              <option value="all">All counties</option>
+              {KENYA_COUNTIES.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         {!search.q && (
           <div>
             <p className="mb-2 text-xs text-muted-foreground">Suggested searches</p>
@@ -174,6 +208,7 @@ function ExploreScreen() {
             key={kind}
             kind={kind}
             query={search.q}
+            county={kind === "churches" ? county : "all"}
             userId={userId}
             hideWhenEmpty={search.kind === "all"}
             onEmptyChange={emptyHandlers[kind]}

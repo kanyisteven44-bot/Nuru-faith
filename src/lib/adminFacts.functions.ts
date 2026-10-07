@@ -40,6 +40,8 @@ export type AdminFactSnapshot = {
     posts: number;
     prayerRequests: number;
     directMessages: number;
+    mediaItemsTotal: number;
+    pendingMediaItems: number;
     approvedMusicSources: number;
     approvedPodcastSources: number;
     approvedMusicItems: number;
@@ -79,6 +81,8 @@ export const getAdminFactSnapshot = createServerFn({ method: "GET" })
       posts,
       prayerRequests,
       directMessages,
+      mediaItemsTotal,
+      pendingMediaItems,
       approvedMusicSources,
       approvedPodcastSources,
       approvedMusicItems,
@@ -107,6 +111,10 @@ export const getAdminFactSnapshot = createServerFn({ method: "GET" })
       exactCount(context.supabase.from("posts").select("id", { head: true, count: "exact" })),
       exactCount(context.supabase.from("prayer_requests").select("id", { head: true, count: "exact" })),
       exactCount(context.supabase.from("direct_messages").select("id", { head: true, count: "exact" })),
+      exactCount(context.supabase.from("media_items").select("id", { head: true, count: "exact" })),
+      exactCount(
+        context.supabase.from("media_items").select("id", { head: true, count: "exact" }).eq("is_approved", false),
+      ),
       exactCount(
         context.supabase
           .from("media_sources")
@@ -198,6 +206,8 @@ export const getAdminFactSnapshot = createServerFn({ method: "GET" })
         posts,
         prayerRequests,
         directMessages,
+        mediaItemsTotal,
+        pendingMediaItems,
         approvedMusicSources,
         approvedPodcastSources,
         approvedMusicItems,

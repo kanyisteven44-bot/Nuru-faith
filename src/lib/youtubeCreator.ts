@@ -42,19 +42,21 @@ export function parseYouTubeCreatorReference(raw: string): YouTubeCreatorReferen
   if (videoId && VIDEO_ID.test(videoId)) return { kind: "video", id: videoId };
 
   const parts = url.pathname.split("/").filter(Boolean);
-  if (!parts.length) return null;
+  const first = parts[0];
+  const second = parts[1];
+  if (!first) return null;
 
-  if (parts[0] === "channel" && parts[1] && CHANNEL_ID.test(parts[1])) {
-    return { kind: "channel", id: parts[1] };
+  if (first === "channel" && second && CHANNEL_ID.test(second)) {
+    return { kind: "channel", id: second };
   }
-  if (parts[0].startsWith("@") && parts[0].length > 1) {
-    return { kind: "handle", handle: decodeURIComponent(parts[0].slice(1)) };
+  if (first.startsWith("@") && first.length > 1) {
+    return { kind: "handle", handle: decodeURIComponent(first.slice(1)) };
   }
-  if (parts[0] === "user" && parts[1]) {
-    return { kind: "username", username: decodeURIComponent(parts[1]) };
+  if (first === "user" && second) {
+    return { kind: "username", username: decodeURIComponent(second) };
   }
-  if (["shorts", "embed", "live"].includes(parts[0]) && parts[1] && VIDEO_ID.test(parts[1])) {
-    return { kind: "video", id: parts[1] };
+  if (["shorts", "embed", "live"].includes(first) && second && VIDEO_ID.test(second)) {
+    return { kind: "video", id: second };
   }
 
   return null;

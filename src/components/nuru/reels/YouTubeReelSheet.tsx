@@ -1,19 +1,27 @@
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { fetchYouTubeReelDetails } from "@/lib/youtubeReel.functions";
 import { InAppMediaPlayer } from "@/components/youtube/InAppMediaPlayer";
 import { useState } from "react";
+import {
+  postYouTubeComment,
+  connectYouTube,
+  YouTubeConnectionRequired,
+} from "@/services/youtubeRatings";
+import { toast } from "sonner";
 
 export function YouTubeReelSheet({
   videoId,
   section,
   onClose,
   onNuruComments,
+  returnTo = "/reels",
 }: {
   videoId: string;
   section: "comments" | "channel";
   onClose: () => void;
   onNuruComments?: (() => void) | undefined;
+  returnTo?: "/reels" | "/music";
 }) {
   const [playing, setPlaying] = useState<string | null>(null);
   const details = useInfiniteQuery({
@@ -26,6 +34,24 @@ export function YouTubeReelSheet({
     retry: false,
   });
   const first = details.data?.pages[0];
+  const qc = useQueryClient();
+  const [comment, setComment] = useState("");
+  const [needsConnection, setNeedsConnection] = useState(false);
+  const [connecting, setConnecting] = useState(false);
+  const publish = useMutation({
+    mutationFn: () => postYouTubeComment(videoId, first!.creator.id, comment),
+    retry: false,
+    onSuccess: () => {
+      setComment("");
+      toast.success("Comment posted to YouTube");
+      void qc.invalidateQueries({ queryKey: ["youtube-reel", videoId, "comments"] });
+      void qc.invalidateQueries({ queryKey: ["youtube-reel-details", videoId] });
+    },
+    onError: (error) => {
+      if (error instanceof YouTubeConnectionRequired) setNeedsConnection(true);
+      else toast.error(error.message);
+    },
+  });
   return (
     <Dialog
       open
@@ -33,7 +59,7 @@ export function YouTubeReelSheet({
         if (!open) onClose();
       }}
     >
-      <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-xl">
+      <DialogContent className="z-[110] max-h-[85dvh] overflow-y-auto sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>
             {section === "comments"
@@ -99,9 +125,56 @@ export function YouTubeReelSheet({
         )}
         {section === "comments" && (
           <>
-            <p className="text-sm text-muted-foreground">
-              Public YouTube comments. Nuru comments are separate.
-            </p>
+            {first && (
+              <form
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  if (!publish.isPending && comment.trim()) publish.mutate();
+                }}
+                className="space-y-2"
+              >
+                <label htmlFor="youtube-comment" className="text-sm font-medium">
+                  Comment on YouTube
+                </label>
+                <textarea
+                  id="youtube-comment"
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  maxLength={10000}
+                  rows={3}
+                  placeholder="Write a comment…"
+                  className="w-full rounded-xl border border-border bg-background p-3 text-sm"
+                />
+                <button
+                  type="submit"
+                  disabled={publish.isPending || !comment.trim()}
+                  className="min-h-11 rounded-xl bg-primary px-4 text-primary-foreground disabled:opacity-50"
+                >
+                  {publish.isPending ? "Posting…" : "Post to YouTube"}
+                </button>
+              </form>
+            )}
+            {needsConnection && (
+              <div className="space-y-2 rounded-xl border border-border p-3">
+                <p className="text-sm">
+                  Choose the Google account you use for YouTube. It can have a different email from
+                  Nuru.
+                </p>
+                <button
+                  disabled={connecting}
+                  className="min-h-11 text-primary"
+                  onClick={() => {
+                    setConnecting(true);
+                    void connectYouTube(videoId, returnTo).catch((e) => {
+                      setConnecting(false);
+                      toast.error(e.message);
+                    });
+                  }}
+                >
+                  {connecting ? "Connecting…" : "Continue with Google"}
+                </button>
+              </div>
+            )}
             {onNuruComments && (
               <button className="min-h-11 text-primary" onClick={onNuruComments}>
                 Nuru discussion
@@ -113,7 +186,7 @@ export function YouTubeReelSheet({
               target="_blank"
               rel="noopener noreferrer"
             >
-              Comment on YouTube
+              Open on YouTube
             </a>
             {details.data?.pages
               .flatMap((p) => p.comments)

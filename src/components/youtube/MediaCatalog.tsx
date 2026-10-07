@@ -29,6 +29,7 @@ import { InAppMediaPlayer as YouTubePlayer } from "./InAppMediaPlayer";
 import { useAuth } from "@/hooks/useAuth";
 import { useShareSheet } from "@/hooks/useShareSheet";
 import { toast } from "sonner";
+import { YouTubeSongActions } from "./YouTubeSongActions";
 
 export function MediaCatalog({
   mediaType,
@@ -300,6 +301,72 @@ export function MediaPlayback({
   const upNext = queue.data ?? [];
   const nextItem = upNext[0] ?? null;
 
+  // Native audio remains active when the browser is backgrounded. Media Session
+  // exposes controls to the phone without depending on a YouTube embed.
+  const audioControls = useRef({ nextItem, onSelect });
+  useEffect(() => {
+    audioControls.current = { nextItem, onSelect };
+  }, [nextItem, onSelect]);
+  useEffect(() => {
+    if (isVideo || !audio || !("mediaSession" in navigator)) return;
+    const session = navigator.mediaSession;
+    if (typeof MediaMetadata !== "undefined")
+      session.metadata = new MediaMetadata({
+        title: item.title,
+        artist: item.creator_name ?? "Nuru Faith",
+        album: "Nuru Faith",
+        artwork: artwork ? [{ src: artwork }] : [],
+      });
+    const player = () => audioRef.current;
+    const handlers: Partial<Record<MediaSessionAction, MediaSessionActionHandler>> = {
+      play: () => {
+        void player()
+          ?.play()
+          .catch(() => setAudioFailed(true));
+      },
+      pause: () => player()?.pause(),
+      seekbackward: (d) => {
+        const p = player();
+        if (p) p.currentTime = Math.max(0, p.currentTime - (d.seekOffset ?? 10));
+      },
+      seekforward: (d) => {
+        const p = player();
+        if (p && Number.isFinite(p.duration))
+          p.currentTime = Math.min(p.duration, p.currentTime + (d.seekOffset ?? 10));
+      },
+      seekto: (d) => {
+        const p = player();
+        if (p && d.seekTime !== undefined) p.currentTime = d.seekTime;
+      },
+      nexttrack: () => {
+        const c = audioControls.current;
+        if (c.nextItem && c.onSelect) c.onSelect(c.nextItem);
+      },
+    };
+    for (const [action, handler] of Object.entries(handlers)) {
+      try {
+        session.setActionHandler(action as MediaSessionAction, handler);
+      } catch {
+        /* Browser may not support every action. */
+      }
+    }
+    return () => {
+      for (const action of Object.keys(handlers)) {
+        try {
+          session.setActionHandler(action as MediaSessionAction, null);
+        } catch {
+          /* Unsupported action. */
+        }
+      }
+      session.metadata = null;
+      session.playbackState = "none";
+    };
+  }, [isVideo, audio, item.title, item.creator_name, artwork]);
+  useEffect(() => {
+    if (!isVideo && audio && "mediaSession" in navigator)
+      navigator.mediaSession.playbackState = playing ? "playing" : "paused";
+  }, [isVideo, audio, playing]);
+
   function playQueueItem(next: MediaItem) {
     if (!onSelect) return;
     setPlaying(false);
@@ -439,6 +506,10 @@ export function MediaPlayback({
             </h2>
             <p className="mt-2 text-[17px] text-[#647084]">{item.creator_name || "Nuru Faith"}</p>
           </div>
+
+          {video && (
+            <YouTubeSongActions key={video} videoId={video} onPanelOpen={() => setPlaying(false)} />
+          )}
 
           {audio && item.source === "nuru_audio" && item.category === "hymns" && (
             <details className="mt-4 w-full rounded-2xl bg-white/70 p-4 text-sm text-[#647084]">

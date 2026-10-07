@@ -51,7 +51,9 @@ function GoogleAuthCallback() {
         if (connection.userId !== data.session.user.id) {
           sessionStorage.removeItem(YOUTUBE_CONNECT_KEY);
           await supabase.auth.signOut({ scope: "local" });
-          setErrorMessage("Choose the Google account connected to your Nuru profile.");
+          setErrorMessage(
+            "The YouTube connection did not preserve your Nuru account. Please sign in to Nuru and try again.",
+          );
           return;
         }
       }
@@ -63,7 +65,11 @@ function GoogleAuthCallback() {
       } else {
         if (pending) {
           sessionStorage.removeItem(YOUTUBE_CONNECT_KEY);
-          void navigate({ to: "/reels", replace: true });
+          const connection = JSON.parse(pending) as { returnTo?: string };
+          void navigate({
+            to: connection.returnTo === "/music" ? "/music" : "/reels",
+            replace: true,
+          });
         } else void navigate({ to: "/home", replace: true });
       }
     }

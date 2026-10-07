@@ -41,6 +41,7 @@ function RailButton({
 /** The familiar vertical rail: creator, like, comments, share, save, more. */
 export function ReelActions({
   horizontal = false,
+  youtubeStats,
   avatarUrl,
   creatorName,
   likeCount,
@@ -55,6 +56,7 @@ export function ReelActions({
   onMore,
 }: {
   horizontal?: boolean;
+  youtubeStats?: { likes: string | null; comments: string | null } | undefined;
   avatarUrl: string | null;
   creatorName: string;
   likeCount: number;
@@ -96,16 +98,32 @@ export function ReelActions({
       </button>
 
       <RailButton
-        aria={liked ? "Unlike Reel" : "Like Reel"}
+        aria={
+          youtubeStats
+            ? liked
+              ? "Remove Nuru like; YouTube count shown"
+              : "Like in Nuru; YouTube count shown"
+            : liked
+              ? "Unlike Reel"
+              : "Like Reel"
+        }
         onClick={onLike}
-        label={compactNumber(likeCount)}
+        label={
+          youtubeStats
+            ? `${youtubeStats.likes === null ? "—" : compactNumber(Number(youtubeStats.likes))} · YT`
+            : compactNumber(likeCount)
+        }
         tint={liked ? "destructive" : undefined}
         icon={<Heart className={cn("h-6 w-6", liked && "fill-destructive text-destructive")} />}
       />
       <RailButton
         aria={`Open ${commentCount} comments`}
         onClick={onComments}
-        label={compactNumber(commentCount)}
+        label={
+          youtubeStats
+            ? `${youtubeStats.comments === null ? "—" : compactNumber(Number(youtubeStats.comments))} · YT`
+            : compactNumber(commentCount)
+        }
         icon={<MessageCircle className="h-6 w-6" />}
       />
       <RailButton aria="Share Reel" onClick={onShare} icon={<Share2 className="h-5.5 w-5.5" />} />

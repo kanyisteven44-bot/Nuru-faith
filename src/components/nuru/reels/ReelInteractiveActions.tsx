@@ -13,6 +13,8 @@ import {
   toggleExternalReelLike,
   toggleExternalReelSave,
 } from "@/services/externalReelInteractions";
+import { fetchYouTubeReelDetails } from "@/lib/youtubeReel.functions";
+import { YouTubeReelSheet } from "./YouTubeReelSheet";
 import { ReelActions } from "./ReelActions";
 
 type ExternalReelState = Awaited<ReturnType<typeof fetchExternalReelState>>;
@@ -48,8 +50,16 @@ export function ReelInteractiveActions({
   const qc = useQueryClient();
   const shareSheet = useShareSheet();
   const [commentsOpen, setCommentsOpen] = useState(false);
+  const [commentSource, setCommentSource] = useState<"youtube" | "nuru">("youtube");
   const isExternal = reel.source_type === "youtube" && !!reel.external_id;
   const externalId = reel.external_id ?? "";
+  const details = useQuery({
+    queryKey: ["youtube-reel-details", externalId],
+    queryFn: () => fetchYouTubeReelDetails({ data: { videoId: externalId } }),
+    enabled: isExternal && near,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
   const stateKey = ["external-reel-state", userId, externalId] as const;
 
   const state = useQuery({
@@ -121,9 +131,12 @@ export function ReelInteractiveActions({
     <>
       <ReelActions
         horizontal={horizontal}
-        avatarUrl={reel.creator_avatar_url}
+        youtubeStats={
+          isExternal ? (details.data?.stats ?? { likes: null, comments: null }) : undefined
+        }
+        avatarUrl={details.data?.creator.avatar ?? reel.creator_avatar_url}
         creatorName={reel.creator_name}
-        likeCount={isExternal ? reel.like_count + (state.data?.liked ? 1 : 0) : reel.like_count}
+        likeCount={reel.like_count}
         commentCount={isExternal ? (state.data?.commentCount ?? 0) : reel.comment_count}
         liked={isExternal ? !!state.data?.liked : liked}
         saved={isExternal ? !!state.data?.saved : saved}
@@ -131,10 +144,14 @@ export function ReelInteractiveActions({
         onLike={() => {
           if (!isExternal) return onLike();
           if (!userId) return toast.error("Sign in to like Reels");
-          if (!likeExternal.isPending) likeExternal.mutate(!!state.data?.liked);
+          if (!likeExternal.isPending) {
+            likeExternal.mutate(!!state.data?.liked);
+            toast.info("This like is saved in Nuru. The displayed total is from YouTube.");
+          }
         }}
         onComments={() => {
           if (!isExternal) return onComments();
+          setCommentSource("youtube");
           setCommentsOpen(true);
           onCommentsVisibilityChange?.(true);
         }}
@@ -150,10 +167,21 @@ export function ReelInteractiveActions({
         onMore={onMore}
       />
 
-      {isExternal && commentsOpen && (
+      {isExternal && commentsOpen && commentSource === "nuru" && (
         <ExternalCommentsSheet
           externalReelId={externalId}
           userId={userId}
+          onClose={() => {
+            setCommentsOpen(false);
+            onCommentsVisibilityChange?.(false);
+          }}
+        />
+      )}
+      {isExternal && commentsOpen && commentSource === "youtube" && (
+        <YouTubeReelSheet
+          videoId={externalId}
+          section="comments"
+          onNuruComments={() => setCommentSource("nuru")}
           onClose={() => {
             setCommentsOpen(false);
             onCommentsVisibilityChange?.(false);
@@ -221,7 +249,7 @@ function ExternalCommentsSheet({
       >
         <header className="flex items-center justify-between border-b border-border/70 px-4 py-3">
           <div>
-            <h2 className="font-display text-base font-semibold">Comments</h2>
+            <h2 className="font-display text-base font-semibold">Nuru comments</h2>
             <p className="text-[11px] text-muted-foreground">
               {comments.data?.length ?? 0} on this Reel
             </p>
@@ -287,7 +315,7 @@ function ExternalCommentsSheet({
             onChange={(e) => setText(e.target.value)}
             maxLength={800}
             disabled={!userId || send.isPending}
-            placeholder={userId ? "Add a comment…" : "Sign in to comment"}
+            placeholder={userId ? "Add a Nuru comment…" : "Sign in to comment"}
             className="input-nuru flex-1"
           />
           <button

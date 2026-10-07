@@ -33,6 +33,7 @@ import { AppShell } from "@/components/nuru/AppShell";
 import { CardSkeleton } from "@/components/nuru/Primitives";
 import { ReelFeedTabs } from "@/components/nuru/reels/ReelFeedTabs";
 import { ReelGrid } from "@/components/nuru/reels/ReelGrid";
+import { YouTubeReelSheet } from "@/components/nuru/reels/YouTubeReelSheet";
 import { ReelPane } from "@/components/nuru/reels/ReelPane";
 import { ReelComments } from "@/components/nuru/reels/ReelComments";
 import { ReelMoreMenu, ReelWhySheet } from "@/components/nuru/reels/ReelMoreMenu";
@@ -108,6 +109,7 @@ function ReelsScreen() {
   const [youtubeVisibleCount, setYoutubeVisibleCount] = useState(YOUTUBE_BATCH_SIZE);
   const [watchedExternalIds, setWatchedExternalIds] = useState<Set<string>>(new Set());
   const [hiddenIds, setHiddenIds] = useState<string[]>([]);
+  const [channelFor, setChannelFor] = useState<Reel | null>(null);
   const [commentsFor, setCommentsFor] = useState<Reel | null>(null);
   const [readFor, setReadFor] = useState<Reel | null>(null);
   const [reportFor, setReportFor] = useState<Reel | null>(null);
@@ -496,7 +498,9 @@ function ReelsScreen() {
                 </button>
               )}
               <div className="min-w-0">
-                <p className="truncate font-display text-[22px] font-semibold leading-none">Nuru Faith</p>
+                <p className="truncate font-display text-[22px] font-semibold leading-none">
+                  Nuru Faith
+                </p>
                 <p className="mt-1 text-[11px] text-[#7A8597]">Faith-filled short videos</p>
               </div>
             </div>
@@ -555,7 +559,7 @@ function ReelsScreen() {
                 saved={saveSet.includes(reel.id)}
                 isFollowing={!!reel.author_id && followingIds.includes(reel.author_id)}
                 isMine={!!userId && reel.author_id === userId}
-                commentsOpen={commentsFor?.id === reel.id}
+                commentsOpen={commentsFor?.id === reel.id || !!channelFor}
                 onActive={onActive}
                 onView={onView}
                 onToggleMuted={toggleMuted}
@@ -610,7 +614,9 @@ function ReelsScreen() {
                 onShare={() => void share(reel)}
                 onMore={() => setMoreFor(reel)}
                 onProfile={() => {
-                  if (reel.author_id) {
+                  if (reel.source_type === "youtube" && reel.external_id) {
+                    setChannelFor(reel);
+                  } else if (reel.author_id) {
                     void navigate({
                       to: "/discovery/$kind/$id",
                       params: { kind: "profile", id: reel.author_id },
@@ -684,6 +690,13 @@ function ReelsScreen() {
         )}
       </div>
 
+      {channelFor?.external_id && (
+        <YouTubeReelSheet
+          videoId={channelFor.external_id}
+          section="channel"
+          onClose={() => setChannelFor(null)}
+        />
+      )}
       {commentsFor && (
         <ReelComments
           reelId={commentsFor.id}

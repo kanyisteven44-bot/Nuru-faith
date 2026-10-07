@@ -11,12 +11,14 @@ export function ReelCaption({
   canFollow,
   onFollow,
   onOpenScripture,
+  onProfile,
 }: {
   reel: Reel;
   isFollowing: boolean;
   canFollow: boolean;
   onFollow: () => void;
   onOpenScripture: () => void;
+  onProfile: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const caption = reel.caption ?? "";
@@ -28,24 +30,31 @@ export function ReelCaption({
   return (
     <div className="min-w-0 flex-1 text-white">
       <div className="flex items-center gap-2">
-        <img
-          src={reel.creator_avatar_url || generatedAvatar(reel.creator_name, reel.creator_name)}
-          onError={(event) => {
-            event.currentTarget.onerror = null;
-            event.currentTarget.src = generatedAvatar(reel.creator_name, reel.creator_name);
-          }}
-          alt=""
-          width={32}
-          height={32}
-          loading="lazy"
-          className="h-8 w-8 rounded-full object-cover ring-2 ring-primary"
-        />
-        <p className="flex min-w-0 items-center gap-1 truncate text-sm font-semibold drop-shadow">
-          <span className="truncate">{reel.creator_name}</span>
-          {reel.churches?.verified && (
-            <BadgeCheck className="h-3.5 w-3.5 shrink-0 fill-leaf text-background" />
-          )}
-        </p>
+        <button
+          type="button"
+          onClick={onProfile}
+          aria-label={`Open ${reel.creator_name}'s profile`}
+          className="flex min-h-11 min-w-0 items-center gap-2 text-left"
+        >
+          <img
+            src={reel.creator_avatar_url || generatedAvatar(reel.creator_name, reel.creator_name)}
+            onError={(event) => {
+              event.currentTarget.onerror = null;
+              event.currentTarget.src = generatedAvatar(reel.creator_name, reel.creator_name);
+            }}
+            alt=""
+            width={32}
+            height={32}
+            loading="lazy"
+            className="h-8 w-8 rounded-full object-cover ring-2 ring-primary"
+          />
+          <p className="flex min-w-0 items-center gap-1 truncate text-sm font-semibold drop-shadow">
+            <span className="truncate">{reel.creator_name}</span>
+            {reel.churches?.verified && (
+              <BadgeCheck className="h-3.5 w-3.5 shrink-0 fill-leaf text-background" />
+            )}
+          </p>
+        </button>
         {canFollow && (
           <button
             type="button"

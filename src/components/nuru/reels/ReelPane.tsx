@@ -1,3 +1,5 @@
+import { useQuery } from "@tanstack/react-query";
+import { fetchYouTubeReelDetails } from "@/lib/youtubeReel.functions";
 import { reelPlaybackPolicy, isReelTap } from "@/lib/reelPlaybackPolicy";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Clapperboard, ExternalLink, Heart, Pause, Play, Volume2, VolumeX } from "lucide-react";
@@ -71,6 +73,13 @@ export function ReelPane(props: ReelPaneProps) {
   const commentsVisible = commentsOpen || externalCommentsOpen;
   const hasVideo = !!reel.video_url;
   const isYouTubeEmbed = reel.source_type === "youtube" && !!reel.external_id;
+  const youtubeDetails = useQuery({
+    queryKey: ["youtube-reel-details", reel.external_id ?? ""],
+    queryFn: () => fetchYouTubeReelDetails({ data: { videoId: reel.external_id! } }),
+    enabled: isYouTubeEmbed && near,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
   const isLinkOutOnly =
     (reel.source_type === "tiktok" || reel.source_type === "instagram") && !!reel.external_url;
   const { load: shouldLoad, play: shouldPlay } = reelPlaybackPolicy({
@@ -251,11 +260,11 @@ export function ReelPane(props: ReelPaneProps) {
             title={reel.caption || reel.creator_name}
             autoplay={autoplayAllowed}
             loop
-            controls={false}
+            controls
             muted={muted}
             playing={shouldPlay}
             onPlaybackChange={setPlaying}
-            interactive={false}
+            interactive
             className="h-full rounded-none"
           />
         ) : reel.poster_url ? (
@@ -435,7 +444,12 @@ export function ReelPane(props: ReelPaneProps) {
 
           <div className="min-w-0 flex-1">
             <ReelCaption
-              reel={reel}
+              reel={
+                youtubeDetails.data?.creator.avatar
+                  ? { ...reel, creator_avatar_url: youtubeDetails.data.creator.avatar }
+                  : reel
+              }
+              onProfile={props.onProfile}
               isFollowing={props.isFollowing}
               canFollow={!props.isMine && !!reel.author_id}
               onFollow={props.onFollow}
@@ -455,7 +469,11 @@ export function ReelPane(props: ReelPaneProps) {
 
         <div className="pointer-events-auto flex items-center gap-2 px-2 pb-1">
           <span className="shrink-0 pl-1 text-[10px] text-white/70">
-            {compactNumber(reel.view_count)} views
+            {isYouTubeEmbed
+              ? youtubeDetails.data?.stats.views == null
+                ? "YouTube views unavailable"
+                : `${compactNumber(Number(youtubeDetails.data.stats.views))} YouTube views`
+              : `${compactNumber(reel.view_count)} views`}
           </span>
           {hasVideo ? (
             shouldLoad ? (

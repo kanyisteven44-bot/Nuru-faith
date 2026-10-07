@@ -64,6 +64,7 @@ export function AdminMediaWorkspace() {
   const [presetChannelId, setPresetChannelId] = useState("");
   const [presetKind, setPresetKind] = useState<"music" | "podcast">("music");
   const [youtubeCheck, setYoutubeCheck] = useState<"not-tested" | "working" | "error">("not-tested");
+  const activeSourceChannelId = selectedChannel?.channelId ?? selectedVideo?.channelId ?? "";
 
   const facts = useQuery({
     queryKey: ["admin-fact-snapshot"],
@@ -74,13 +75,13 @@ export function AdminMediaWorkspace() {
   });
 
   const sourceStatus = useQuery({
-    queryKey: ["admin-media-source-status", selectedChannel?.channelId],
-    enabled: Boolean(selectedChannel?.channelId),
+    queryKey: ["admin-media-source-status", activeSourceChannelId],
+    enabled: Boolean(activeSourceChannelId),
     queryFn: async () => {
       const result = await supabase
         .from("media_sources")
         .select("id,name,is_approved,is_verified,content_kind,updated_at")
-        .eq("youtube_channel_id", selectedChannel!.channelId)
+        .eq("youtube_channel_id", activeSourceChannelId)
         .maybeSingle();
       if (result.error) throw result.error;
       return result.data;
@@ -234,11 +235,17 @@ export function AdminMediaWorkspace() {
 
   const approveSource = useMutation({
     mutationFn: async () => {
-      if (!selectedChannel) throw new Error("Choose a YouTube channel first.");
+      if (!activeSourceChannelId) throw new Error("Choose a YouTube channel or video first.");
+      const contentKind =
+        selectedChannel
+          ? sourceKind
+          : tab === "Podcasts"
+            ? "podcast"
+            : "music";
       return approveYouTubeSource({
         data: {
-          channelId: selectedChannel.channelId,
-          contentKind: sourceKind,
+          channelId: activeSourceChannelId,
+          contentKind,
           languageCodes: ["en"],
         },
       });
@@ -625,7 +632,7 @@ export function AdminMediaWorkspace() {
                   <p className="mt-1 text-xs text-slate-400">{selectedVideo.channelName}</p>
                   <div className="mt-4 flex flex-wrap gap-2">
                     <FactBadge
-                      label="Nuru status"
+                      label="Creator source"
                       value={
                         sourceStatus.isLoading
                           ? "Checking…"
@@ -643,16 +650,37 @@ export function AdminMediaWorkspace() {
                   </div>
 
                   <div className="mt-3 flex flex-wrap gap-2">
+                    {!sourceStatus.isLoading &&
+                      !(sourceStatus.data?.is_approved && sourceStatus.data?.is_verified) && (
+                        <PrimaryButton
+                          disabled={approveSource.isPending}
+                          onClick={() => approveSource.mutate()}
+                          className="min-h-10 px-4 text-xs"
+                        >
+                          {approveSource.isPending
+                            ? "Approving creator…"
+                            : `Approve creator for ${activeVideoType === "podcast" ? "podcasts" : "music"}`}
+                        </PrimaryButton>
+                      )}
                     <PrimaryButton
-                      disabled={approveVideo.isPending || videoStatus.data?.is_approved === true}
+                      disabled={
+                        approveVideo.isPending ||
+                        videoStatus.data?.is_approved === true ||
+                        sourceStatus.isLoading ||
+                        !(sourceStatus.data?.is_approved && sourceStatus.data?.is_verified)
+                      }
                       onClick={() => approveVideo.mutate()}
                       className="min-h-10 px-4 text-xs"
                     >
                       {videoStatus.data?.is_approved
                         ? "Already approved"
-                        : approveVideo.isPending
-                          ? "Checking…"
-                          : `Approve as ${activeVideoType === "podcast" ? "podcast" : "song"}`}
+                        : sourceStatus.isLoading
+                          ? "Checking creator…"
+                          : !(sourceStatus.data?.is_approved && sourceStatus.data?.is_verified)
+                            ? "Approve creator first"
+                            : approveVideo.isPending
+                              ? "Checking…"
+                              : `Approve as ${activeVideoType === "podcast" ? "podcast" : "song"}`}
                     </PrimaryButton>
                     <a
                       href={`https://www.youtube.com/watch?v=${selectedVideo.videoId}`}
@@ -665,7 +693,7 @@ export function AdminMediaWorkspace() {
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <FactBadge
-                      label="Catalogue"
+                      label="Video catalogue"
                       value={
                         videoStatus.isLoading
                           ? "Checking…"

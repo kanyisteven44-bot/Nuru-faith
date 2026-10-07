@@ -13,6 +13,7 @@ export const Route = createFileRoute("/reset-password")({
       { name: "description", content: "Choose a new password for your Nuru Faith account." },
       { property: "og:title", content: "Set a new password — Nuru Faith" },
       { property: "og:description", content: "Choose a new password for your account." },
+      { name: "robots", content: "noindex, nofollow" },
     ],
   }),
   component: ResetPassword,

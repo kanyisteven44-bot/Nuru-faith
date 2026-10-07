@@ -27,13 +27,22 @@ import { LearningLinks } from "@/components/nuru/LearningLinks";
 export const Route = createFileRoute("/faith-courses/")({
   head: () => ({
     meta: [
-      { title: "Faith Courses — Nuru Faith" },
+      { title: "Christian Faith Courses & Bible Studies | Nuru Faith" },
       {
         name: "description",
         content:
-          "Structured Christian learning on baptism, prayer, discipleship, relationships, Scripture and everyday faith.",
+          "Explore Christian courses on prayer, discipleship, baptism, relationships, Scripture and everyday faith with Nuru Faith.",
       },
+      { name: "robots", content: "index, follow, max-image-preview:large" },
+      { property: "og:title", content: "Christian Faith Courses & Bible Studies | Nuru Faith" },
+      {
+        property: "og:description",
+        content:
+          "Structured Christian learning on prayer, discipleship, Scripture, relationships and everyday faith.",
+      },
+      { property: "og:url", content: "https://nurufaith.website/faith-courses/" },
     ],
+    links: [{ rel: "canonical", href: "https://nurufaith.website/faith-courses/" }],
   }),
   component: FaithCoursesScreen,
 });

@@ -5,16 +5,65 @@ import { NuruMark } from "@/components/nuru/Logo";
 export const Route = createFileRoute("/about")({
   head: () => ({
     meta: [
-      { title: "Nuru Faith — Connect. Grow. Live Your Faith." },
+      { title: "Nuru Faith | Christian Bible, Prayer & Community App" },
       {
         name: "description",
         content:
-          "Nuru Faith is a Christian faith and community platform for Bible reading, learning, worship media, Reels, prayer, mentorship and meaningful community.",
+          "Read the Bible, grow through Christian courses and devotions, discover gospel music, pray, find mentorship and join meaningful faith community with Nuru Faith.",
+      },
+      { name: "robots", content: "index, follow, max-image-preview:large" },
+      { property: "og:title", content: "Nuru Faith | Christian Bible, Prayer & Community App" },
+      {
+        property: "og:description",
+        content:
+          "Read Scripture, learn, pray, discover gospel music and grow in Christian community with Nuru Faith.",
+      },
+      { property: "og:url", content: "https://nurufaith.website/about" },
+      { property: "og:image", content: "https://nurufaith.website/photos/friends-outdoors.jpg" },
+      { name: "twitter:title", content: "Nuru Faith | Christian Bible, Prayer & Community App" },
+      {
+        name: "twitter:description",
+        content: "A digital home for Bible reading, Christian learning, prayer, worship and community.",
       },
     ],
+    links: [{ rel: "canonical", href: "https://nurufaith.website/about" }],
   }),
   component: AboutPage,
 });
+
+const SEO_STRUCTURED_DATA = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://nurufaith.website/#organization",
+      name: "Vortiqora Technologies",
+      url: "https://nurufaith.website/about",
+      logo: {
+        "@type": "ImageObject",
+        url: "https://nurufaith.website/icons/icon-512.png",
+      },
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://nurufaith.website/#website",
+      url: "https://nurufaith.website",
+      name: "Nuru Faith",
+      inLanguage: "en",
+      publisher: { "@id": "https://nurufaith.website/#organization" },
+    },
+    {
+      "@type": "WebApplication",
+      name: "Nuru Faith",
+      url: "https://nurufaith.website/about",
+      applicationCategory: "LifestyleApplication",
+      operatingSystem: "Web",
+      description:
+        "A Christian faith and community app for Bible reading, courses, devotions, prayer, gospel media, mentorship and meaningful community.",
+      publisher: { "@id": "https://nurufaith.website/#organization" },
+    },
+  ],
+};
 
 const features = [
   {
@@ -52,6 +101,10 @@ const features = [
 function AboutPage() {
   return (
     <main className="min-h-dvh bg-background text-foreground">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(SEO_STRUCTURED_DATA) }}
+      />
       <div className="mx-auto max-w-5xl px-5 py-8 sm:px-8 sm:py-12">
         <header className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">

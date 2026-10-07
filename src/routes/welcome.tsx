@@ -12,6 +12,7 @@ export const Route = createFileRoute("/welcome")({
         name: "description",
         content: "A safe, Christ-centered community for young people. Connect, grow and serve.",
       },
+      { name: "robots", content: "noindex, follow" },
     ],
   }),
   component: Welcome,

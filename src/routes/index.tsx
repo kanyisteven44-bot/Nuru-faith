@@ -16,7 +16,9 @@ export const Route = createFileRoute("/")({
         property: "og:description",
         content: "Know God, grow in faith, find real community, and live out your purpose.",
       },
+      { name: "robots", content: "noindex, follow" },
     ],
+    links: [{ rel: "canonical", href: "https://nurufaith.website/about" }],
   }),
   component: Splash,
 });

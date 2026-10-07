@@ -32,12 +32,20 @@ function eligibleVideo(video: CatalogVideo, channelId: string): boolean {
   );
 }
 export function eligibleMusicVideo(video: CatalogVideo, channelId: string): boolean {
+  const title = video.snippet?.title ?? "";
+  const explicitlyNonMusic =
+    /\b(podcast|sermon|interview|announcement|trailer|teaser|marriage|relationship|investments?|tour|vlog|behind the scenes|ministers training|bible study|episode\s*\d+)\b/i.test(
+      title,
+    );
+  const strongMusicSignal =
+    /\b(music video|official audio|official lyric(?:s)?|lyric video|live music video|audio track)\b/i.test(
+      title,
+    );
+
   return (
     eligibleVideo(video, channelId) &&
-    video.snippet?.categoryId === "10" &&
-    !/\b(podcast|sermon|interview|announcement|trailer|teaser|marriage|relationship|investments?|tour|vlog|behind the scenes|ministers training|bible study|episode\s*\d+)\b/i.test(
-      video.snippet.title ?? "",
-    )
+    !explicitlyNonMusic &&
+    (video.snippet?.categoryId === "10" || strongMusicSignal)
   );
 }
 

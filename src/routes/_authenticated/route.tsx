@@ -5,6 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
+  head: () => ({
+    meta: [{ name: "robots", content: "noindex, nofollow" }],
+  }),
   beforeLoad: async ({ location }) => {
     // Design-preview escape hatch, for screenshotting screens against real
     // components and real data without a session (see scripts/ui-shots.mjs).

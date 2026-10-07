@@ -281,9 +281,6 @@ export function AdminMediaWorkspace() {
         totalAdded += result.added;
         hasMore = Boolean(result.next);
 
-        // A single click handles up to 5,000 uploads. Larger creator catalogues
-        // keep their server checkpoint and can continue from the Importer tab.
-        if (pages >= 100 && hasMore) break;
       } while (hasMore);
 
       return {
@@ -308,6 +305,7 @@ export function AdminMediaWorkspace() {
         client.invalidateQueries({ queryKey: ["admin-fact-snapshot"] }),
         client.invalidateQueries({ queryKey: ["admin-media-source-status"] }),
         client.invalidateQueries({ queryKey: ["media-sources"] }),
+        client.invalidateQueries({ queryKey: ["media-directory"] }),
         client.invalidateQueries({ queryKey: ["media-catalog"] }),
       ]);
       toast.success(
@@ -443,8 +441,9 @@ export function AdminMediaWorkspace() {
             <div>
               <h2 className="text-sm font-semibold text-white">Add a YouTube creator</h2>
               <p className="mt-1 max-w-2xl text-[11px] leading-5 text-slate-500">
-                Paste the creator's channel or @handle. Nuru reviews the source first, then imports
-                only eligible uploads. Existing catalogue items are skipped.
+                Paste the creator's channel or @handle. After you approve the source, Nuru scans
+                the full uploads list and adds every public, embeddable music upload that is
+                available in Kenya, while skipping clear non-music videos and duplicates.
               </p>
             </div>
           </div>

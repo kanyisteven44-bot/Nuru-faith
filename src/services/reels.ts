@@ -301,6 +301,44 @@ export async function recordReelView(
   if (error) throw new Error(error.message);
 }
 
+export async function fetchViewedExternalReelIds(
+  userId: string,
+  externalIds: string[],
+): Promise<Set<string>> {
+  if (externalIds.length === 0) return new Set();
+
+  const { data, error } = await supabase
+    .from("media_history")
+    .select("external_id")
+    .eq("user_id", userId)
+    .eq("source", "youtube_reel")
+    .in("external_id", externalIds);
+  if (error) throw new Error(error.message);
+
+  return new Set(
+    (data ?? [])
+      .map((row) => row.external_id)
+      .filter((id): id is string => typeof id === "string" && id.length > 0),
+  );
+}
+
+export async function recordExternalReelView(
+  userId: string,
+  input: { externalId: string; title: string; thumbnailUrl?: string | null },
+) {
+  const { error } = await supabase.from("media_history").insert({
+    user_id: userId,
+    item_id: null,
+    source: "youtube_reel",
+    external_id: input.externalId,
+    title: input.title,
+    thumbnail_url: input.thumbnailUrl ?? null,
+    media_type: "reel",
+    progress_seconds: 0,
+  });
+  if (error) throw new Error(error.message);
+}
+
 export async function reportReel(input: {
   reelId: string;
   userId: string;

@@ -19,6 +19,8 @@ import {
   fetchMyReelFeedback,
   fetchReelPage,
   fetchReelById,
+  fetchViewedExternalReelIds,
+  recordExternalReelView,
   recordReelView,
   toggleFollow,
   type Reel,
@@ -214,6 +216,21 @@ function ReelsScreen() {
     () => (youtubeFallback.data?.pages ?? []).flatMap((page) => page.videos),
     [youtubeFallback.data],
   );
+  const loadedYoutubeIds = useMemo(
+    () => [...new Set(loadedYoutubeVideos.map((video) => video.youtubeVideoId))].slice(-240),
+    [loadedYoutubeVideos],
+  );
+  const persistedExternalViews = useQuery({
+    queryKey: ["external-reel-views", userId, loadedYoutubeIds],
+    queryFn: () => fetchViewedExternalReelIds(userId!, loadedYoutubeIds),
+    enabled: !!userId && loadedYoutubeIds.length > 0,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  useEffect(() => {
+    if (!persistedExternalViews.data?.size) return;
+    setWatchedExternalIds((current) => new Set([...current, ...persistedExternalViews.data]));
+  }, [persistedExternalViews.data]);
 
   const unseenYoutubeVideos = useMemo(() => {
     const seen = new Set<string>();
@@ -393,14 +410,20 @@ function ReelsScreen() {
   const onView = useCallback(
     (reel: Reel) => {
       const key = reelContentKey(reel);
-      const alreadyWatched = readWatchedExternalReelIds(userId).has(key);
+      const alreadyWatched = watchedExternalIds.has(key);
       rememberWatchedExternalReel(userId, key);
       setWatchedExternalIds((previous) => new Set([...previous, key]));
       if (!alreadyWatched && userId && /^[0-9a-f-]{36}$/i.test(reel.id)) {
         void recordReelView(userId, reel.id, 2, false).catch(() => undefined);
+      } else if (!alreadyWatched && userId && reel.source_type === "youtube" && reel.external_id) {
+        void recordExternalReelView(userId, {
+          externalId: reel.external_id,
+          title: reel.title ?? reel.caption ?? "YouTube Reel",
+          thumbnailUrl: reel.poster_url,
+        }).catch(() => undefined);
       }
     },
-    [userId],
+    [userId, watchedExternalIds],
   );
 
   function advanceReel(reel: Reel) {

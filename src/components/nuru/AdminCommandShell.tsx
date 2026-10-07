@@ -122,26 +122,33 @@ export function AdminCommandShell({
 
   return (
     <div className="min-h-dvh bg-[#020a13] text-slate-100 lg:flex">
-      <aside className="hidden w-[250px] shrink-0 border-r border-[#12314a] bg-[#03101d] p-4 lg:flex lg:flex-col">
-        <Link to="/home" className="flex flex-col items-center rounded-2xl px-3 py-4 text-center">
-          <NuruMark className="h-16 w-16" />
-          <span className="mt-2 font-display text-2xl tracking-[0.16em] text-white">NURU</span>
-          <span className="text-[10px] font-semibold uppercase tracking-[0.4em] text-cyan-300">Faith</span>
+      <aside className="hidden w-[248px] shrink-0 border-r border-[#142b3d] bg-[#06111c] px-3 py-4 lg:flex lg:flex-col">
+        <Link
+          to="/home"
+          className="flex items-center gap-3 rounded-xl px-2 py-2.5 text-left transition hover:bg-white/[0.03]"
+        >
+          <NuruMark className="h-10 w-10 shrink-0" />
+          <span className="min-w-0">
+            <span className="block font-display text-base font-semibold tracking-[0.08em] text-white">
+              NURU FAITH
+            </span>
+            <span className="block text-[10px] text-slate-500">Administration</span>
+          </span>
         </Link>
 
-        <nav className="mt-4 flex-1 space-y-1" aria-label="Admin navigation">
+        <nav className="mt-5 flex-1 space-y-1" aria-label="Admin navigation">
           {menu.map((item, index) => {
             const active = item.kind === "section" && item.id === activeSection;
             const row = (
               <span
                 className={[
-                  "flex min-h-11 items-center gap-3 rounded-xl border px-3 text-sm font-semibold transition",
+                  "flex min-h-10 items-center gap-3 rounded-lg border-l-2 border-y-0 border-r-0 px-3 text-[13px] font-medium transition-colors",
                   active
-                    ? "border-cyan-400/60 bg-cyan-500/12 text-white shadow-[0_0_22px_rgba(34,211,238,0.12)]"
-                    : "border-transparent text-slate-300 hover:border-[#193b56] hover:bg-[#081a2b] hover:text-white",
+                    ? "border-l-cyan-300 bg-[#0b2031] text-white"
+                    : "border-l-transparent text-slate-400 hover:bg-white/[0.035] hover:text-slate-100",
                 ].join(" ")}
               >
-                <item.icon className={["h-[18px] w-[18px]", active ? "text-cyan-300" : "text-slate-400"].join(" ")} />
+                <item.icon className={["h-4 w-4", active ? "text-cyan-300" : "text-slate-500"].join(" ")} />
                 <span className="flex-1">{item.label}</span>
                 {!!item.badge && item.badge > 0 && (
                   <span className="rounded-full bg-rose-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
@@ -171,14 +178,14 @@ export function AdminCommandShell({
           })}
         </nav>
 
-        <div className="mt-4 overflow-hidden rounded-2xl border border-cyan-400/20 bg-[#071a2b]">
-          <div className="relative h-36">
-            <img src="/photos/friends-outdoors.jpg" alt="" className="h-full w-full object-cover opacity-60" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#03101d] via-[#03101d]/55 to-transparent" />
-            <p className="absolute inset-x-4 bottom-4 font-display text-sm leading-snug text-white">
-              A brighter generation for a brighter world.
-            </p>
-          </div>
+        <div className="mt-4 border-t border-[#142b3d] px-2 pt-4">
+          <Link
+            to="/home"
+            className="flex min-h-10 items-center gap-2 rounded-lg px-2 text-xs font-medium text-slate-400 transition hover:bg-white/[0.035] hover:text-white"
+          >
+            <Home className="h-4 w-4" />
+            Back to Nuru Faith
+          </Link>
         </div>
       </aside>
 
@@ -186,9 +193,9 @@ export function AdminCommandShell({
         <header className="sticky top-0 z-40 border-b border-[#12314a] bg-[#03101d]/95 backdrop-blur-xl">
           <div className="flex min-h-16 items-center gap-3 px-4 sm:px-5 lg:px-6">
             <div className="min-w-0 shrink-0">
-              <p className="font-display text-lg font-semibold text-white">Nuru Faith Admin</p>
-              <p className="hidden text-[10px] text-slate-400 sm:block">
-                Manage. Empower. Build a brighter generation.
+              <p className="font-display text-base font-semibold text-white">Nuru Faith Admin</p>
+              <p className="hidden text-[10px] text-slate-500 sm:block">
+                Content, community and platform operations
               </p>
             </div>
 
@@ -205,8 +212,8 @@ export function AdminCommandShell({
                   ref={searchRef}
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Search or jump to users, churches, content, reports…"
-                  className="min-h-10 w-full rounded-full border border-[#1b4969] bg-[#07192a] pl-10 pr-14 text-sm text-slate-100 outline-none placeholder:text-slate-500 focus:border-cyan-400/60"
+                  placeholder="Search admin sections…"
+                  className="min-h-10 w-full rounded-xl border border-[#17364c] bg-[#071522] pl-10 pr-14 text-sm text-slate-100 outline-none placeholder:text-slate-600 focus:border-cyan-400/50"
                 />
                 <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded-md border border-[#234d6c] px-1.5 py-0.5 text-[9px] font-semibold text-slate-400">
                   ⌘K
@@ -216,7 +223,7 @@ export function AdminCommandShell({
 
             <Link
               to="/notifications"
-              className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#1b405d] bg-[#07192a] text-slate-300 transition hover:text-white"
+              className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#17364c] bg-[#071522] text-slate-400 transition hover:border-[#23506d] hover:text-white"
               aria-label="Notifications"
             >
               <Bell className="h-4.5 w-4.5" />
@@ -224,7 +231,7 @@ export function AdminCommandShell({
 
             <Link
               to="/profile"
-              className="flex shrink-0 items-center gap-2 rounded-xl border border-[#1b405d] bg-[#07192a] px-2 py-1.5"
+              className="flex shrink-0 items-center gap-2 rounded-lg border border-[#17364c] bg-[#071522] px-2 py-1.5"
             >
               <Avatar
                 url={avatarUrl}
@@ -256,10 +263,10 @@ export function AdminCommandShell({
                       type="button"
                       onClick={() => onSectionChange(item.id)}
                       className={[
-                        "min-h-9 rounded-xl border px-3 text-xs font-semibold",
+                        "min-h-9 rounded-lg border px-3 text-xs font-medium",
                         active
-                          ? "border-cyan-400/50 bg-cyan-500/10 text-cyan-100"
-                          : "border-[#173750] bg-[#071727] text-slate-400",
+                          ? "border-[#2d6687] bg-[#0b2031] text-white"
+                          : "border-[#173750] bg-[#071522] text-slate-400",
                       ].join(" ")}
                     >
                       {item.label}

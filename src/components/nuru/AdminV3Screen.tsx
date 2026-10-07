@@ -37,6 +37,7 @@ import {
 import { CardSkeleton, EmptyState, GhostButton } from "@/components/nuru/Primitives";
 import { AdminMediaWorkspace } from "@/components/nuru/AdminMediaWorkspace";
 import { getPilotMetrics } from "@/lib/pilot.functions";
+import { getAdminFactSnapshot } from "@/lib/adminFacts.functions";
 import { AdminOperations } from "@/components/nuru/AdminOperations";
 import { AdminRoleManager } from "@/components/nuru/AdminRoleManager";
 import {
@@ -109,6 +110,14 @@ export function AdminV3Screen({ initialSection }: { initialSection: AdminSection
     queryFn: () => getPilotMetrics(),
     enabled: !!userId && (isSuper || isModerator),
     staleTime: 30_000,
+    refetchInterval: 60_000,
+    refetchIntervalInBackground: false,
+  });
+  const facts = useQuery({
+    queryKey: ["admin-fact-snapshot"],
+    queryFn: () => getAdminFactSnapshot(),
+    enabled: !!userId && (isSuper || isModerator),
+    staleTime: 15_000,
     refetchInterval: 60_000,
     refetchIntervalInBackground: false,
   });
@@ -191,7 +200,10 @@ export function AdminV3Screen({ initialSection }: { initialSection: AdminSection
     },
     { label: "Moderation", error: moderation.isError, loading: moderation.isLoading },
     ...(isSuper || isModerator
-      ? [{ label: "Pilot metrics", error: pilot.isError, loading: pilot.isLoading }]
+      ? [
+          { label: "Pilot metrics", error: pilot.isError, loading: pilot.isLoading },
+          { label: "Fact snapshot", error: facts.isError, loading: facts.isLoading },
+        ]
       : []),
   ];
 
@@ -273,6 +285,9 @@ export function AdminV3Screen({ initialSection }: { initialSection: AdminSection
           openReports={openReports}
           unverifiedMentorCount={unverifiedMentors.length}
           healthChecks={healthChecks}
+          facts={facts.data}
+          factsLoading={facts.isLoading}
+          factsError={facts.isError}
           onNavigate={setActiveSection}
         />
       )}

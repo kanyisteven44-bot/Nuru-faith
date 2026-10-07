@@ -32,6 +32,28 @@ test("real durations and safe playback URLs", () => {
   assert.equal(youtubeVideoId("wrong"), null);
 });
 
+test("explicit music-video titles can pass when YouTube category metadata is inconsistent", () => {
+  const liveMusicVideo = {
+    ...video,
+    snippet: {
+      ...video.snippet,
+      categoryId: "22",
+      title: "Rehema Simfukwe - Ndio (Live Music Video)",
+    },
+  };
+  assert.equal(eligibleMusicVideo(liveMusicVideo, "official"), true);
+
+  const genericNonMusic = {
+    ...video,
+    snippet: {
+      ...video.snippet,
+      categoryId: "22",
+      title: "Weekly update",
+    },
+  };
+  assert.equal(eligibleMusicVideo(genericNonMusic, "official"), false);
+});
+
 test("spoken uploads and short promotions stay out of music", () => {
   for (const title of ["The Bold Podcast: Handling Conflicts", "New music teaser", "Tour announcement", "Marriage works", "Spirit Of Praise 12 | Behind The Scenes", "ANGOLA FOR JESUS II MINISTERS TRAINING", "The Gathering | Episode 10 I 04 October 2026", "Wednesday Bible Study"])
     assert.equal(eligibleMusicVideo({ ...video, snippet: { ...video.snippet, title } }, "official"), false);

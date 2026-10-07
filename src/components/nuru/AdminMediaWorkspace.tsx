@@ -157,20 +157,20 @@ export function AdminMediaWorkspace() {
         setSelectedChannel({
           channelId: item.youtubeChannelId,
           title: item.title,
-          description: item.description,
-          thumbnail: item.thumbnail,
-          subscriberCount: item.subscriberCount,
+          description: item.description ?? "",
+          thumbnail: item.thumbnail ?? "",
+          subscriberCount: item.subscriberCount ?? null,
         });
       } else if (parsed.kind === "video" && "youtubeVideoId" in item) {
         setSelectedChannel(null);
         setSelectedVideo({
           videoId: item.youtubeVideoId,
           title: item.title,
-          description: item.description,
-          thumbnail: item.thumbnail,
-          channelId: item.channelId,
-          channelName: item.channelName,
-          publishedAt: item.publishedAt,
+          description: item.description ?? "",
+          thumbnail: item.thumbnail ?? "",
+          channelId: item.channelId ?? "",
+          channelName: item.channelName ?? "",
+          publishedAt: item.publishedAt ?? "",
           durationSeconds: 0,
         });
         if (tab === "Artists" || tab === "Pending" || tab === "Importer") setTab("Songs");

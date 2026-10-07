@@ -51,7 +51,9 @@ function GoogleAuthCallback() {
         if (connection.userId !== data.session.user.id) {
           sessionStorage.removeItem(YOUTUBE_CONNECT_KEY);
           await supabase.auth.signOut({ scope: "local" });
-          setErrorMessage("Choose the Google account connected to your Nuru profile.");
+          setErrorMessage(
+            "The YouTube connection did not preserve your Nuru account. Please sign in to Nuru and try again.",
+          );
           return;
         }
       }

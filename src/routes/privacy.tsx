@@ -48,12 +48,19 @@ function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="font-display text-xl font-semibold">Google sign-in and external media</h2>
+            <h2 className="font-display text-xl font-semibold">Google sign-in and Google user data</h2>
             <p className="mt-2 leading-7 text-ink-2">
-              If you choose Google sign-in, Google provides the basic account information needed
-              to authenticate you. Nuru Faith also displays media and public metadata from
-              external platforms such as YouTube. When you choose to interact with an external
-              platform, that platform's own privacy terms may also apply.
+              If you choose Google sign-in, Nuru Faith receives the basic Google account
+              information needed to authenticate you, such as your name, email address and profile
+              picture when provided by Google. We use this information to create or sign in to
+              your Nuru account and to display your profile.
+            </p>
+            <p className="mt-3 leading-7 text-ink-2">
+              If you separately choose to connect your YouTube account for an action such as
+              rating or commenting on a video, Nuru may request the YouTube permission required
+              for that action. We use that permission only to perform the user-requested action.
+              We do not use Google user data for advertising, sell it, or use it to train
+              generalized AI or machine-learning models.
             </p>
           </section>
 
@@ -79,9 +86,10 @@ function PrivacyPage() {
           <section>
             <h2 className="font-display text-xl font-semibold">Data choices</h2>
             <p className="mt-2 leading-7 text-ink-2">
-              You can update profile information and account settings inside Nuru Faith. Where the
-              app provides deletion or history controls, you can use them to remove the relevant
-              data. You may also stop using connected third-party services at any time.
+              You can update profile information and account settings inside Nuru Faith. You can
+              delete your Nuru account from Settings where that control is available, which starts
+              removal of account data subject to legitimate security and legal retention needs.
+              You may also revoke Google access from your Google Account permissions at any time.
             </p>
           </section>
 
@@ -103,6 +111,9 @@ function PrivacyPage() {
           </section>
 
           <div className="flex flex-wrap gap-3 border-t border-border pt-5">
+            <Link to="/about" className="min-h-11 rounded-full border border-border px-5 py-3 text-sm font-semibold">
+              About Nuru Faith
+            </Link>
             <Link to="/auth" className="min-h-11 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground">
               Back to sign in
             </Link>

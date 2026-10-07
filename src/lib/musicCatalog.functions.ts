@@ -3,7 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { trustedChannel } from "./content-policy";
-import { eligibleMusicVideo, eligiblePodcastVideo, isoSeconds } from "./musicImport";
+import { eligiblePodcastVideo, eligibleReviewedMusicUpload, isoSeconds } from "./musicImport";
 
 const thumb = z.object({ url: z.string() });
 const videoSchema = z.object({
@@ -12,7 +12,7 @@ const videoSchema = z.object({
     title: z.string(),
     channelId: z.string(),
     channelTitle: z.string(),
-    categoryId: z.string(),
+    categoryId: z.string().optional(),
     publishedAt: z.string(),
     defaultAudioLanguage: z.string().optional(),
     thumbnails: z.object({ high: thumb.optional(), medium: thumb.optional() }),

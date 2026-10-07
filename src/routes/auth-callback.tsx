@@ -8,7 +8,12 @@ import { getMfaRequirement } from "@/lib/accountSecurity";
 
 export const Route = createFileRoute("/auth-callback")({
   ssr: false,
-  head: () => ({ meta: [{ title: "Signing in — Nuru Faith" }] }),
+  head: () => ({
+    meta: [
+      { title: "Signing in — Nuru Faith" },
+      { name: "robots", content: "noindex, nofollow" },
+    ],
+  }),
   component: GoogleAuthCallback,
 });
 

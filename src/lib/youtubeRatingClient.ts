@@ -31,3 +31,44 @@ export async function youtubeRatingRequest(
   const body = await res.json();
   return body.items?.[0]?.rating as "like" | "dislike" | "none" | undefined;
 }
+
+/** Publish only after an explicit user submission; never retry a POST automatically. */
+export async function youtubeCommentRequest(
+  videoId: string,
+  channelId: string,
+  text: string,
+  token: string | null | undefined,
+  transport: typeof fetch = fetch,
+) {
+  if (!/^[A-Za-z0-9_-]{11}$/.test(videoId) || !/^UC[A-Za-z0-9_-]{22}$/.test(channelId))
+    throw new Error("This video is unavailable.");
+  const comment = text.trim();
+  if (!comment || comment.length > 10000)
+    throw new Error("Enter a comment of up to 10,000 characters.");
+  if (!token) throw new YouTubeConnectionRequired("Connect YouTube to comment.");
+  const res = await transport("https://www.googleapis.com/youtube/v3/commentThreads?part=snippet", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      snippet: { channelId, videoId, topLevelComment: { snippet: { textOriginal: comment } } },
+    }),
+    signal: AbortSignal.timeout(12000),
+  });
+  if (res.status === 401) throw new YouTubeConnectionRequired("Reconnect YouTube to continue.");
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    const reasons = body?.error?.errors?.map((e: { reason: string }) => e.reason) ?? [];
+    if (
+      reasons.some((r: string) =>
+        ["insufficientPermissions", "youtubeSignupRequired", "ineligibleAccount"].includes(r),
+      )
+    )
+      throw new YouTubeConnectionRequired("Connect your YouTube account to continue.");
+    throw new Error(
+      reasons.includes("commentsDisabled")
+        ? "Comments are turned off for this video."
+        : "YouTube could not confirm this comment. Check YouTube before trying again.",
+    );
+  }
+  return res.json();
+}

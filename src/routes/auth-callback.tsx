@@ -65,7 +65,11 @@ function GoogleAuthCallback() {
       } else {
         if (pending) {
           sessionStorage.removeItem(YOUTUBE_CONNECT_KEY);
-          void navigate({ to: "/reels", replace: true });
+          const connection = JSON.parse(pending) as { returnTo?: string };
+          void navigate({
+            to: connection.returnTo === "/music" ? "/music" : "/reels",
+            replace: true,
+          });
         } else void navigate({ to: "/home", replace: true });
       }
     }

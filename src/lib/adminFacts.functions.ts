@@ -4,7 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const requireStaff = createMiddleware({ type: "function" })
   .middleware([requireSupabaseAuth])
   .server(async ({ context, next }) => {
-    const roles = await db
+    const roles = await context.supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", context.userId)

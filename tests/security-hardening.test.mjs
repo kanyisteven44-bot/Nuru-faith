@@ -140,3 +140,17 @@ test("prayer request authors are never readable through the API", () => {
   const service = read("src/services/content.ts");
   assert.match(service, /rpc\("list_prayer_requests"/);
 });
+
+test("group calls and posts cannot be hijacked or spoofed", () => {
+  const migration = read(
+    "supabase/migrations/20261007130000_close_group_call_and_post_spoofing.sql",
+  );
+  assert.match(migration, /participants update own heartbeat[\s\S]*join public\.group_members gm/);
+  assert.match(migration, /grant update \(status, ended_at\) on public\.group_call_rooms/);
+  assert.match(migration, /posts insert own[\s\S]*private\.is_group_member/);
+  assert.match(migration, /revoke insert, update on public\.posts from authenticated/);
+  const postColumns = migration.match(/grant insert \(([^)]*)\) on public\.posts/)[1];
+  for (const column of ["author_name", "author_handle", "author_avatar_url", "like_count"]) {
+    assert.doesNotMatch(postColumns, new RegExp(`\\b${column}\\b`));
+  }
+});

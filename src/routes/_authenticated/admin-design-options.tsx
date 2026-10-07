@@ -73,7 +73,7 @@ const options: Array<{
 
 function AdminDesignOptions() {
   const [selected, setSelected] = useState<OptionId>(1);
-  const active = options.find((option) => option.id === selected) ?? options[0];
+  const active = options.find((option) => option.id === selected) ?? options[0]!;
 
   return (
     <div className="min-h-dvh bg-[#020a13] text-slate-100">

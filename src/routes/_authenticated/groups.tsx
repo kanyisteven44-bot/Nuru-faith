@@ -372,7 +372,51 @@ function GroupSpace({ groupId }: { groupId: string }) {
   return (
     <>
       <AppShell>
-        <ScreenHeader title={group.data.name} back />
+        <ScreenHeader
+          title={group.data.name}
+          back
+          right={
+            isMember ? (
+              activeGroupCall.data ? (
+                <button
+                  type="button"
+                  onClick={() => void openGroupCall(activeGroupCall.data!.kind)}
+                  disabled={startingCall}
+                  aria-label={`Join active group ${activeGroupCall.data.kind} call`}
+                  className="relative flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground disabled:opacity-50"
+                >
+                  {activeGroupCall.data.kind === "video" ? (
+                    <Video className="h-5 w-5" />
+                  ) : (
+                    <Phone className="h-5 w-5" />
+                  )}
+                  <span className="absolute right-0 top-0 h-2.5 w-2.5 rounded-full bg-emerald-400 ring-2 ring-card" />
+                </button>
+              ) : (
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => void openGroupCall("audio")}
+                    disabled={startingCall}
+                    aria-label="Start group audio call"
+                    className="flex h-10 w-10 items-center justify-center rounded-full text-primary transition-colors hover:bg-surface-2 disabled:opacity-50"
+                  >
+                    <Phone className="h-5 w-5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void openGroupCall("video")}
+                    disabled={startingCall}
+                    aria-label="Start group video call"
+                    className="flex h-10 w-10 items-center justify-center rounded-full text-primary transition-colors hover:bg-surface-2 disabled:opacity-50"
+                  >
+                    <Video className="h-5 w-5" />
+                  </button>
+                </div>
+              )
+            ) : undefined
+          }
+        />
 
       <div className="mx-auto w-full max-w-3xl pb-8">
         <section className="relative overflow-hidden">
@@ -432,47 +476,6 @@ function GroupSpace({ groupId }: { groupId: string }) {
 
               {tab === "Messages" && userId && (
                 <div className="space-y-3">
-                  <div className="rounded-2xl border border-primary/20 bg-primary/5 p-3">
-                    {activeGroupCall.data ? (
-                      <button
-                        type="button"
-                        onClick={() => void openGroupCall(activeGroupCall.data!.kind)}
-                        disabled={startingCall}
-                        className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50"
-                      >
-                        {activeGroupCall.data.kind === "video" ? (
-                          <Video className="h-4 w-4" />
-                        ) : (
-                          <Phone className="h-4 w-4" />
-                        )}
-                        Join active {activeGroupCall.data.kind} group call
-                      </button>
-                    ) : (
-                      <div className="grid grid-cols-2 gap-2">
-                        <button
-                          type="button"
-                          onClick={() => void openGroupCall("audio")}
-                          disabled={startingCall}
-                          className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-primary/25 bg-card text-sm font-bold text-primary disabled:opacity-50"
-                        >
-                          <Phone className="h-4 w-4" />
-                          Group audio
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => void openGroupCall("video")}
-                          disabled={startingCall}
-                          className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-bold text-primary-foreground disabled:opacity-50"
-                        >
-                          <Video className="h-4 w-4" />
-                          Group video
-                        </button>
-                      </div>
-                    )}
-                    <p className="mt-2 text-center text-[10px] text-muted-foreground">
-                      Group members can join the same live room and talk together.
-                    </p>
-                  </div>
                   <RichChatThread
                     target={{ group: groupId }}
                     userId={userId}

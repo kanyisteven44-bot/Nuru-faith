@@ -209,28 +209,44 @@ function MessagesScreen() {
                 </button>
               </div>
             )}
-            {group && (
-              <div className="flex shrink-0 gap-1">
+            {group &&
+              (activeGroupCall.data ? (
                 <button
                   type="button"
-                  onClick={() => void openGroupCall("audio")}
+                  onClick={() => void openGroupCall(activeGroupCall.data!.kind)}
                   disabled={startingGroupCall}
-                  aria-label={activeGroupCall.data ? "Join group audio call" : "Start group audio call"}
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary transition hover:bg-primary/15 disabled:opacity-50"
+                  aria-label={`Join active group ${activeGroupCall.data.kind} call`}
+                  className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground disabled:opacity-50"
                 >
-                  <Phone className="h-5 w-5" />
+                  {activeGroupCall.data.kind === "video" ? (
+                    <Video className="h-5 w-5" />
+                  ) : (
+                    <Phone className="h-5 w-5" />
+                  )}
+                  <span className="absolute right-0 top-0 h-2.5 w-2.5 rounded-full bg-emerald-400 ring-2 ring-card" />
                 </button>
-                <button
-                  type="button"
-                  onClick={() => void openGroupCall("video")}
-                  disabled={startingGroupCall}
-                  aria-label={activeGroupCall.data ? "Join group video call" : "Start group video call"}
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground transition hover:brightness-105 disabled:opacity-50"
-                >
-                  <Video className="h-5 w-5" />
-                </button>
-              </div>
-            )}
+              ) : (
+                <div className="flex shrink-0 gap-1">
+                  <button
+                    type="button"
+                    onClick={() => void openGroupCall("audio")}
+                    disabled={startingGroupCall}
+                    aria-label="Start group audio call"
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary transition hover:bg-primary/15 disabled:opacity-50"
+                  >
+                    <Phone className="h-5 w-5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void openGroupCall("video")}
+                    disabled={startingGroupCall}
+                    aria-label="Start group video call"
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground transition hover:brightness-105 disabled:opacity-50"
+                  >
+                    <Video className="h-5 w-5" />
+                  </button>
+                </div>
+              ))}
           </header>
           <div className="flex min-h-0 flex-1 flex-col">
             <ThreadView
@@ -437,38 +453,7 @@ function ThreadView({
                 <span className="block text-xs text-white/75">Open group activity</span>
               </span>
             </Link>
-            <div className="grid shrink-0 grid-cols-2 gap-2 border-b border-border bg-card px-3 py-2">
-              {activeGroupCall.data ? (
-                <button
-                  type="button"
-                  onClick={() => void openGroupCall(activeGroupCall.data!.kind)}
-                  disabled={startingGroupCall}
-                  className="col-span-2 flex min-h-10 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50"
-                >
-                  {activeGroupCall.data.kind === "video" ? <Video className="h-4 w-4" /> : <Phone className="h-4 w-4" />}
-                  Join active {activeGroupCall.data.kind} call
-                </button>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => void openGroupCall("audio")}
-                    disabled={startingGroupCall}
-                    className="flex min-h-10 items-center justify-center gap-2 rounded-xl border border-primary/25 text-xs font-bold text-primary disabled:opacity-50"
-                  >
-                    <Phone className="h-4 w-4" /> Group audio
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void openGroupCall("video")}
-                    disabled={startingGroupCall}
-                    className="flex min-h-10 items-center justify-center gap-2 rounded-xl bg-primary text-xs font-bold text-primary-foreground disabled:opacity-50"
-                  >
-                    <Video className="h-4 w-4" /> Group video
-                  </button>
-                </>
-              )}
-            </div>
+
           </>
         )}
 

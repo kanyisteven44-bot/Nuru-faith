@@ -6,7 +6,9 @@ import {
   createChatMediaSignedUrl,
   fetchChatMessages,
   fetchChatNames,
+  fetchDirectPeerOnline,
   markDirectThreadRead,
+  touchDirectPresence,
   removeChatMedia,
   sendChatMessage,
   uploadVoiceNote,
@@ -42,7 +44,14 @@ export function RichChatThread({
     refetchIntervalInBackground: false,
   });
   const callPeer = "user" in target ? target.user : null;
-  const [peerOnline, setPeerOnline] = useState(false);
+  const peerPresence = useQuery({
+    queryKey: ["direct-presence", userId, callPeer],
+    enabled: !!callPeer,
+    queryFn: () => fetchDirectPeerOnline(userId, callPeer!),
+    refetchInterval: 15_000,
+    refetchIntervalInBackground: false,
+  });
+  const peerOnline = peerPresence.data ?? false;
   const callHistory = useQuery({
     queryKey: ["call-history", userId, callPeer],
     enabled: !!callPeer,
@@ -193,34 +202,35 @@ export function RichChatThread({
     "group" in target ? target.group : "user" in target ? target.user : target.mentor;
 
   useEffect(() => {
-    if (!callPeer) {
-      setPeerOnline(false);
-      return;
-    }
+    if (!callPeer) return;
 
-    const pair = [userId, callPeer].sort().join("-");
-    const presence = supabase.channel(`direct-presence-${pair}`, {
-      config: { presence: { key: userId } },
-    });
-    const syncPresence = () => {
-      const state = presence.presenceState();
-      setPeerOnline(Array.isArray(state[callPeer]) && state[callPeer]!.length > 0);
+    const heartbeat = () => {
+      void touchDirectPresence(userId, callPeer).catch(() => undefined);
     };
-    presence
-      .on("presence", { event: "sync" }, syncPresence)
-      .on("presence", { event: "join" }, syncPresence)
-      .on("presence", { event: "leave" }, syncPresence)
-      .subscribe((status) => {
-        if (status === "SUBSCRIBED") {
-          void presence.track({ user_id: userId, online_at: new Date().toISOString() });
-        }
-      });
+    heartbeat();
+    const timer = window.setInterval(heartbeat, 15_000);
+
+    const presence = supabase
+      .channel(`direct-presence-db-${userId}-${callPeer}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "direct_presence",
+          filter: `user_id=eq.${callPeer}`,
+        },
+        () => {
+          void qc.invalidateQueries({ queryKey: ["direct-presence", userId, callPeer] });
+        },
+      )
+      .subscribe();
+
     return () => {
-      setPeerOnline(false);
-      void presence.untrack();
+      window.clearInterval(timer);
       void supabase.removeChannel(presence);
     };
-  }, [callPeer, userId]);
+  }, [callPeer, qc, userId]);
 
   useEffect(() => {
     if (realtimeKind === "mentor") return;

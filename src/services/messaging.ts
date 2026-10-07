@@ -239,6 +239,30 @@ export async function markDirectThreadRead(userId: string, peerId: string) {
   if (error) throw new Error(error.message);
 }
 
+export async function touchDirectPresence(userId: string, peerId: string) {
+  const { error } = await supabase.from("direct_presence").upsert(
+    {
+      user_id: userId,
+      peer_id: peerId,
+      last_seen_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id,peer_id" },
+  );
+  if (error) throw new Error("Couldn't update chat presence.");
+}
+
+export async function fetchDirectPeerOnline(userId: string, peerId: string) {
+  const { data, error } = await supabase
+    .from("direct_presence")
+    .select("last_seen_at")
+    .eq("user_id", peerId)
+    .eq("peer_id", userId)
+    .maybeSingle();
+  if (error) throw new Error("Couldn't check online status.");
+  if (!data?.last_seen_at) return false;
+  return Date.now() - new Date(data.last_seen_at).getTime() < 45_000;
+}
+
 export async function fetchDirectThreads(userId: string) {
   const { data, error } = await supabase
     .from("direct_messages")

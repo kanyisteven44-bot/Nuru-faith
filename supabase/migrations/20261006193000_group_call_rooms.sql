@@ -161,15 +161,14 @@ using (
   recipient_id = (select auth.uid()) or sender_id = (select auth.uid())
 );
 
-revoke all on public.group_call_rooms from authenticated;
+revoke all on public.group_call_rooms from anon, authenticated;
 grant select, insert on public.group_call_rooms to authenticated;
 grant update (status, ended_at) on public.group_call_rooms to authenticated;
 
-revoke all on public.group_call_participants from authenticated;
-grant select, insert, delete on public.group_call_participants to authenticated;
-grant update (updated_at) on public.group_call_participants to authenticated;
+revoke all on public.group_call_participants from anon, authenticated;
+grant select, insert, update, delete on public.group_call_participants to authenticated;
 
-revoke all on public.group_call_signals from authenticated;
+revoke all on public.group_call_signals from anon, authenticated;
 grant select, insert, delete on public.group_call_signals to authenticated;
 
 do $$

@@ -1,3 +1,4 @@
+
 create index if not exists media_items_approved_type_channel_idx
   on public.media_items (media_type, youtube_channel_id)
   where is_approved = true and youtube_channel_id is not null;

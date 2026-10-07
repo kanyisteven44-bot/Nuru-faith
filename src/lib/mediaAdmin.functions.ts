@@ -319,6 +319,42 @@ export const reviewMediaItem = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     assertAdminWriteAssurance(context.claims.aal);
+
+    const item = await context.supabase
+      .from("media_items")
+      .select("id,source,external_id,media_type,youtube_channel_id,source_id")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (item.error || !item.data) throw new Error("Media item not found.");
+
+    if (data.approved && item.data.source === "youtube") {
+      if (!["music", "podcast"].includes(item.data.media_type)) {
+        throw new Error("Only reviewed music and podcast videos can be approved here.");
+      }
+      const channelId = item.data.youtube_channel_id ?? "";
+      const source = await context.supabase
+        .from("media_sources")
+        .select("id,is_approved,is_verified,content_kind")
+        .eq("id", item.data.source_id ?? "")
+        .maybeSingle();
+      if (source.error || !source.data?.is_approved || !source.data.is_verified) {
+        throw new Error("Approve and verify the YouTube source before approving this video.");
+      }
+      const response = await youtubeCall("videos", {
+        part: "snippet,status,contentDetails",
+        id: item.data.external_id,
+      });
+      const video = response.items?.[0] as any;
+      if (!video) throw new Error("YouTube no longer returns this video.");
+      const eligible =
+        item.data.media_type === "music"
+          ? eligibleMusicVideo(video, channelId)
+          : eligiblePodcastVideo(video, channelId);
+      if (!eligible) {
+        throw new Error("This video no longer passes Nuru's playback and content eligibility checks.");
+      }
+    }
+
     const patch: { is_approved: boolean; is_featured?: boolean } = {
       is_approved: data.approved,
     };

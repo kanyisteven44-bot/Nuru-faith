@@ -9,7 +9,7 @@ import {
   Podcast,
   Search,
   ShieldCheck,
-  Sparkles,
+  Link2,
   Youtube,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -434,91 +434,92 @@ export function AdminMediaWorkspace() {
         <SummaryCard label="Pending review" value={factCounts?.pendingMediaItems ?? summary.data?.pending ?? "—"} icon={ShieldCheck} />
       </section>
 
-      <section className="overflow-hidden rounded-[26px] border border-cyan-400/25 bg-[linear-gradient(135deg,#071727_0%,#09243a_100%)] p-4 shadow-[0_18px_55px_rgba(0,0,0,0.18)]">
-        <div className="grid gap-4 xl:grid-cols-[0.7fr_1.3fr] xl:items-end">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="flex h-9 w-9 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10 text-cyan-300">
-                <Sparkles className="h-4 w-4" />
-              </span>
-              <div>
-                <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-cyan-300">
-                  Fast approval
-                </p>
-                <h2 className="font-display text-lg font-semibold text-white">
-                  Paste one creator link
-                </h2>
-              </div>
+      <section className="rounded-2xl border border-[#19364a] bg-[#071522]">
+        <div className="border-b border-[#142f43] px-5 py-4">
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#234a63] bg-[#0a2030] text-cyan-300">
+              <Link2 className="h-4 w-4" />
+            </span>
+            <div>
+              <h2 className="text-sm font-semibold text-white">Add a YouTube creator</h2>
+              <p className="mt-1 max-w-2xl text-[11px] leading-5 text-slate-500">
+                Paste the creator's channel or @handle. Nuru reviews the source first, then imports
+                only eligible uploads. Existing catalogue items are skipped.
+              </p>
             </div>
-            <p className="mt-3 max-w-md text-xs leading-5 text-slate-400">
-              Nuru resolves the exact YouTube creator, approves that source, then scans the creator's
-              uploads and automatically adds only the songs or podcast episodes that pass the live
-              Nuru checks. Existing catalogue items are not duplicated.
-            </p>
-          </div>
-
-          <div className="rounded-[22px] border border-[#1b4969] bg-[#04111f]/80 p-3">
-            <div className="grid gap-2 md:grid-cols-[1fr_auto_auto]">
-              <input
-                value={quickLink}
-                onChange={(event) => setQuickLink(event.target.value)}
-                placeholder="YouTube @handle, channel link, or any video link from the creator"
-                className="min-h-11 min-w-0 rounded-full border border-[#1b4969] bg-[#071727] px-4 text-xs text-white outline-none placeholder:text-slate-600 focus:border-cyan-400/60"
-              />
-              <select
-                value={quickKind}
-                disabled={quickApproveCreator.isPending}
-                onChange={(event) => setQuickKind(event.target.value as "music" | "podcast")}
-                className="min-h-11 rounded-full border border-[#1b4969] bg-[#071727] px-4 text-xs font-semibold text-white outline-none"
-                aria-label="Creator content type"
-              >
-                <option value="music">Music / songs</option>
-                <option value="podcast">Video podcasts</option>
-              </select>
-              <PrimaryButton
-                disabled={quickApproveCreator.isPending || !quickLink.trim()}
-                onClick={() => quickApproveCreator.mutate()}
-                className="min-h-11 whitespace-nowrap px-5 text-xs"
-              >
-                {quickApproveCreator.isPending ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Working…
-                  </>
-                ) : quickKind === "music" ? (
-                  "Approve + import songs"
-                ) : (
-                  "Approve + import episodes"
-                )}
-              </PrimaryButton>
-            </div>
-
-            <p className="mt-2 text-[10px] leading-4 text-slate-500">
-              Supported: youtube.com/@handle, /channel/UC…, legacy /user/…, a channel ID, or a
-              YouTube video/Short from that creator. Approval remains MFA-protected.
-            </p>
-            {quickProgress && (
-              <div
-                className="mt-3 rounded-xl border border-cyan-400/15 bg-cyan-400/[0.05] px-3 py-2 text-[10px] leading-4 text-cyan-100"
-                role="status"
-              >
-                {quickProgress}
-              </div>
-            )}
           </div>
         </div>
+
+        <div className="grid gap-4 p-5 xl:grid-cols-[minmax(0,1fr)_190px_auto] xl:items-end">
+          <label className="block min-w-0">
+            <span className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+              Creator link
+            </span>
+            <input
+              value={quickLink}
+              onChange={(event) => setQuickLink(event.target.value)}
+              placeholder="https://www.youtube.com/@Marionshakoke"
+              className="min-h-11 w-full rounded-xl border border-[#1b4058] bg-[#04111f] px-3.5 text-xs text-white outline-none placeholder:text-slate-600 focus:border-cyan-400/50"
+            />
+          </label>
+
+          <label className="block">
+            <span className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+              Content type
+            </span>
+            <select
+              value={quickKind}
+              disabled={quickApproveCreator.isPending}
+              onChange={(event) => setQuickKind(event.target.value as "music" | "podcast")}
+              className="min-h-11 w-full rounded-xl border border-[#1b4058] bg-[#04111f] px-3.5 text-xs font-semibold text-white outline-none focus:border-cyan-400/50"
+              aria-label="Creator content type"
+            >
+              <option value="music">Music / songs</option>
+              <option value="podcast">Video podcasts</option>
+            </select>
+          </label>
+
+          <PrimaryButton
+            disabled={quickApproveCreator.isPending || !quickLink.trim()}
+            onClick={() => quickApproveCreator.mutate()}
+            className="min-h-11 whitespace-nowrap px-5 text-xs"
+          >
+            {quickApproveCreator.isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Processing…
+              </>
+            ) : quickKind === "music" ? (
+              "Approve and import"
+            ) : (
+              "Approve and import"
+            )}
+          </PrimaryButton>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#142f43] px-5 py-3">
+          <p className="text-[10px] leading-4 text-slate-600">
+            Accepts @handle, channel, legacy user, video and Shorts links. Admin approval remains MFA-protected.
+          </p>
+          <p className="text-[10px] text-slate-600">Example: youtube.com/@Marionshakoke</p>
+        </div>
+
+        {quickProgress && (
+          <div className="border-t border-[#142f43] bg-[#061a28] px-5 py-3" role="status">
+            <p className="text-[10px] leading-4 text-slate-300">{quickProgress}</p>
+          </div>
+        )}
       </section>
 
-      <section className="rounded-[24px] border border-[#153b5c] bg-[#071727] p-4">
+      <section className="rounded-2xl border border-[#19364a] bg-[#071522] p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
-              <Youtube className="h-5 w-5 text-red-400" />
-              <h2 className="font-display text-xl font-semibold text-white">YouTube review workspace</h2>
+              <Youtube className="h-4 w-4 text-red-400" />
+              <h2 className="text-sm font-semibold text-white">YouTube review workspace</h2>
             </div>
             <p className="mt-1 max-w-2xl text-xs leading-5 text-slate-400">
-              Search YouTube from the admin panel, preview the original video here, explicitly approve
-              artists and creators, then keep importing songs and video podcasts from reviewed sources.
+              Search, preview and review YouTube content before it enters the Nuru catalogue.
             </p>
           </div>
           <div className="flex flex-wrap justify-end gap-2">
@@ -573,7 +574,7 @@ export function AdminMediaWorkspace() {
           </div>
           <div className="grid gap-4 xl:grid-cols-[1fr_0.72fr]">
           <MusicCatalogImport presetChannelId={presetChannelId} presetKind={presetKind} />
-          <section className="rounded-[24px] border border-[#153b5c] bg-[#071727] p-5">
+          <section className="rounded-2xl border border-[#19364a] bg-[#071522] p-5">
             <h3 className="font-display text-lg font-semibold text-white">How approvals flow</h3>
             <div className="mt-4 space-y-3 text-xs leading-5 text-slate-400">
               <FlowStep n="1" text="Search and review the real YouTube artist or podcast creator." />
@@ -596,7 +597,7 @@ export function AdminMediaWorkspace() {
           </div>
         </div>
       ) : tab === "Pending" ? (
-        <section className="rounded-[24px] border border-[#153b5c] bg-[#071727] p-4">
+        <section className="rounded-2xl border border-[#19364a] bg-[#071522] p-4">
           <div className="mb-4 flex items-center justify-between gap-3">
             <div>
               <h3 className="font-display text-lg font-semibold text-white">Pending YouTube media</h3>
@@ -613,7 +614,7 @@ export function AdminMediaWorkspace() {
           ) : (
             <div className="grid gap-3 lg:grid-cols-2">
               {(pendingItems.data ?? []).map((item) => (
-                <article key={item.id} className="flex gap-3 rounded-2xl border border-[#163a55] bg-[#04111f] p-3">
+                <article key={item.id} className="flex gap-3 rounded-xl border border-[#16364b] bg-[#04111f] p-3">
                   <button
                     type="button"
                     onClick={() => {
@@ -663,7 +664,7 @@ export function AdminMediaWorkspace() {
         </section>
       ) : (
         <div className="grid gap-4 xl:grid-cols-[1fr_0.82fr]">
-          <section className="rounded-[24px] border border-[#153b5c] bg-[#071727] p-4">
+          <section className="rounded-2xl border border-[#19364a] bg-[#071522] p-4">
             <form
               onSubmit={(event) => {
                 event.preventDefault();
@@ -705,7 +706,7 @@ export function AdminMediaWorkspace() {
               ))}
             </div>
 
-            <div className="mt-4 rounded-2xl border border-[#163a55] bg-[#04111f] p-3">
+            <div className="mt-4 rounded-xl border border-[#16364b] bg-[#04111f] p-3">
               <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
                 Or paste a YouTube link
               </p>
@@ -737,7 +738,7 @@ export function AdminMediaWorkspace() {
                         setSelectedChannel(channel);
                         setSelectedVideo(null);
                       }}
-                      className="flex w-full items-center gap-3 rounded-2xl border border-[#163a55] bg-[#04111f] p-3 text-left transition hover:border-cyan-400/35"
+                      className="flex w-full items-center gap-3 rounded-xl border border-[#16364b] bg-[#04111f] p-3 text-left transition hover:border-cyan-400/35"
                     >
                       <span className="h-12 w-12 shrink-0 overflow-hidden rounded-full border border-[#1c425f] bg-[#0a2033]">
                         {channel.thumbnail && <img src={channel.thumbnail} alt="" className="h-full w-full object-cover" />}
@@ -761,7 +762,7 @@ export function AdminMediaWorkspace() {
                         setSelectedVideo(video);
                         setSelectedChannel(null);
                       }}
-                      className="flex w-full items-center gap-3 rounded-2xl border border-[#163a55] bg-[#04111f] p-3 text-left transition hover:border-cyan-400/35"
+                      className="flex w-full items-center gap-3 rounded-xl border border-[#16364b] bg-[#04111f] p-3 text-left transition hover:border-cyan-400/35"
                     >
                       <span className="h-16 w-24 shrink-0 overflow-hidden rounded-xl border border-[#1c425f] bg-[#0a2033]">
                         {video.thumbnail && <img src={video.thumbnail} alt="" className="h-full w-full object-cover" />}
@@ -777,7 +778,7 @@ export function AdminMediaWorkspace() {
               {!search.isPending && search.isSuccess && (
                 tab === "Artists" ? channelResults.length === 0 : videoResults.length === 0
               ) && (
-                <div className="rounded-2xl border border-[#163a55] bg-[#04111f] p-5 text-sm text-slate-400">
+                <div className="rounded-xl border border-[#16364b] bg-[#04111f] p-5 text-sm text-slate-400">
                   No matching YouTube results were returned.
                 </div>
               )}
@@ -785,7 +786,7 @@ export function AdminMediaWorkspace() {
           </section>
 
           <aside className="xl:sticky xl:top-24 xl:self-start">
-            <section className="overflow-hidden rounded-[24px] border border-[#153b5c] bg-[#071727]">
+            <section className="overflow-hidden rounded-2xl border border-[#19364a] bg-[#071522]">
               <div className="flex items-center gap-2 border-b border-[#153b5c] px-4 py-3">
                 <Youtube className="h-4 w-4 text-red-400" />
                 <h3 className="text-sm font-semibold text-white">YouTube preview</h3>
@@ -989,7 +990,7 @@ function ImportFactCard({
     | undefined;
 }) {
   return (
-    <div className="rounded-[22px] border border-[#153b5c] bg-[#071727] p-4">
+    <div className="rounded-xl border border-[#19364a] bg-[#071522] p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-semibold text-white">{label}</p>
@@ -1062,9 +1063,9 @@ function SummaryCard({
   icon: typeof Music2;
 }) {
   return (
-    <div className="rounded-[22px] border border-[#153b5c] bg-[#071727] p-4">
+    <div className="rounded-xl border border-[#19364a] bg-[#071522] p-4">
       <div className="flex items-center gap-3">
-        <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10 text-cyan-300">
+        <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#234a63] bg-[#0a2030] text-cyan-300">
           <Icon className="h-4 w-4" />
         </span>
         <div>

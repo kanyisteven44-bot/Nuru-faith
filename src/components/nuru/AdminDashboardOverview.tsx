@@ -10,11 +10,13 @@ import {
   CircleCheck,
   Clapperboard,
   FileCheck2,
+  Gauge,
   HeartHandshake,
   MessageCircle,
   Music2,
   ShieldCheck,
   Sparkles,
+  TriangleAlert,
   UserCog,
   UserPlus,
   Users,
@@ -73,6 +75,8 @@ export function AdminDashboardOverview({
       };
     },
     staleTime: 30_000,
+    refetchInterval: 60_000,
+    refetchIntervalInBackground: false,
   });
 
   const signupTrend = useQuery({
@@ -87,6 +91,8 @@ export function AdminDashboardOverview({
       return result.data ?? [];
     },
     staleTime: 30_000,
+    refetchInterval: 60_000,
+    refetchIntervalInBackground: false,
   });
 
   const platformSummary = useQuery({
@@ -115,6 +121,8 @@ export function AdminDashboardOverview({
       };
     },
     staleTime: 30_000,
+    refetchInterval: 60_000,
+    refetchIntervalInBackground: false,
   });
 
   const pendingMedia = useQuery({
@@ -130,6 +138,8 @@ export function AdminDashboardOverview({
       return result.data ?? [];
     },
     staleTime: 30_000,
+    refetchInterval: 60_000,
+    refetchIntervalInBackground: false,
   });
 
   const recentPeople = useQuery({
@@ -144,6 +154,8 @@ export function AdminDashboardOverview({
       return result.data ?? [];
     },
     staleTime: 30_000,
+    refetchInterval: 60_000,
+    refetchIntervalInBackground: false,
   });
 
   const recentChurches = useQuery({
@@ -158,6 +170,8 @@ export function AdminDashboardOverview({
       return result.data ?? [];
     },
     staleTime: 30_000,
+    refetchInterval: 60_000,
+    refetchIntervalInBackground: false,
   });
 
   const recentPosts = useQuery({
@@ -172,6 +186,8 @@ export function AdminDashboardOverview({
       return result.data ?? [];
     },
     staleTime: 30_000,
+    refetchInterval: 60_000,
+    refetchIntervalInBackground: false,
   });
 
   const signupDays = useMemo(() => {
@@ -230,6 +246,23 @@ export function AdminDashboardOverview({
   const healthy = healthChecks.every((check) => !check.error) && !mediaSummary.isError;
   const firstName = userName.trim().split(/\s+/)[0] || "Admin";
   const maxSignups = Math.max(1, ...signupDays.map((day) => day.count));
+  const totalMedia = mediaSummary.data?.totalItems ?? 0;
+  const pendingMediaCount = mediaSummary.data?.pendingItems ?? 0;
+  const pendingMediaRate = totalMedia ? Math.round((pendingMediaCount / totalMedia) * 1000) / 10 : 0;
+  const learningLibrary =
+    (platformSummary.data?.devotionals ?? 0) +
+    (platformSummary.data?.series ?? 0) +
+    (platformSummary.data?.courses ?? 0);
+  const communitySignals =
+    (platformSummary.data?.messages ?? 0) +
+    (platformSummary.data?.prayers ?? 0) +
+    (platformSummary.data?.posts ?? 0);
+  const attentionSources =
+    healthChecks.filter((check) => check.error).length + (mediaSummary.isError ? 1 : 0);
+  const connectedSources =
+    healthChecks.filter((check) => !check.error && !check.loading).length +
+    (!mediaSummary.isError && !mediaSummary.isLoading ? 1 : 0);
+  const totalHealthSources = healthChecks.length + 1;
 
   const metrics = [
     {
@@ -287,6 +320,10 @@ export function AdminDashboardOverview({
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-200 sm:text-base">
               Run the community, content and safety side of Nuru Faith from one clear workspace.
             </p>
+            <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-[10px] font-semibold text-emerald-300">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
+              Live operations · dashboard data refreshes every 60 seconds
+            </div>
             <div className="mt-5 flex flex-wrap gap-2">
               <GradientButton onClick={() => onNavigate("content")} className="min-h-10 px-4 text-xs">
                 <BookOpenCheck className="h-4 w-4" />
@@ -510,6 +547,98 @@ export function AdminDashboardOverview({
           </GhostButton>
         </BentoCard>
 
+        <BentoCard className="xl:col-span-8" title="Operational Intelligence" icon={Gauge}>
+          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+            <IntelligenceStat
+              label="Media scale"
+              value={totalMedia}
+              detail="Total catalogue items"
+              tone="cyan"
+            />
+            <IntelligenceStat
+              label="Learning library"
+              value={learningLibrary}
+              detail="Devotions + series + courses"
+              tone="blue"
+            />
+            <IntelligenceStat
+              label="Approval load"
+              value={pendingMediaRate + "%"}
+              detail={pendingMediaCount.toLocaleString() + " media items pending"}
+              tone={pendingMediaRate > 10 ? "amber" : "green"}
+            />
+            <IntelligenceStat
+              label="Community signals"
+              value={communitySignals}
+              detail="Messages + prayer + posts"
+              tone="purple"
+            />
+          </div>
+
+          <div className="mt-3 grid gap-2 md:grid-cols-3">
+            <div className="rounded-2xl border border-[#163a55] bg-[#04111f] p-4">
+              <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-slate-500">
+                Admin data coverage
+              </p>
+              <p className="mt-2 font-display text-2xl font-semibold text-white">
+                {connectedSources}/{totalHealthSources}
+              </p>
+              <p className="mt-1 text-[10px] text-slate-500">Connected data sources operational</p>
+            </div>
+            <div className="rounded-2xl border border-[#163a55] bg-[#04111f] p-4">
+              <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-slate-500">
+                Safety workload
+              </p>
+              <p className="mt-2 font-display text-2xl font-semibold text-white">
+                {openReports.length.toLocaleString()}
+              </p>
+              <p className="mt-1 text-[10px] text-slate-500">Open or in-review safety reports</p>
+            </div>
+            <div className="rounded-2xl border border-[#163a55] bg-[#04111f] p-4">
+              <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-slate-500">
+                Verification workload
+              </p>
+              <p className="mt-2 font-display text-2xl font-semibold text-white">
+                {unverifiedMentorCount.toLocaleString()}
+              </p>
+              <p className="mt-1 text-[10px] text-slate-500">Mentors still awaiting verification</p>
+            </div>
+          </div>
+        </BentoCard>
+
+        <BentoCard className="xl:col-span-4" title="Attention Center" icon={TriangleAlert}>
+          <div className="space-y-2">
+            <AttentionAction
+              label="Media awaiting review"
+              value={pendingMediaCount}
+              detail="Open the content and music review flow"
+              urgent={pendingMediaCount > 0}
+              onClick={() => onNavigate("content")}
+            />
+            <AttentionAction
+              label="Safety reports"
+              value={openReports.length}
+              detail="Review reports that still need an admin decision"
+              urgent={openReports.length > 0}
+              onClick={() => onNavigate("moderation")}
+            />
+            <AttentionAction
+              label="Mentor verification"
+              value={unverifiedMentorCount}
+              detail="Check mentors awaiting verification"
+              urgent={unverifiedMentorCount > 0}
+              onClick={() => onNavigate("users")}
+            />
+            <AttentionAction
+              label="Data sources"
+              value={attentionSources}
+              detail={attentionSources ? "One or more data sources needs attention" : "All connected data sources are healthy"}
+              urgent={attentionSources > 0}
+              onClick={() => onNavigate("dashboard")}
+            />
+          </div>
+        </BentoCard>
+
         <BentoCard className="xl:col-span-12" title="System Status" icon={ShieldCheck}>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             {healthChecks.map((check) => (
@@ -690,6 +819,70 @@ function LibraryStat({ label, value }: { label: string; value: number | string }
         {typeof value === "number" ? value.toLocaleString() : value}
       </p>
     </div>
+  );
+}
+
+function IntelligenceStat({
+  label,
+  value,
+  detail,
+  tone,
+}: {
+  label: string;
+  value: number | string;
+  detail: string;
+  tone: "cyan" | "blue" | "purple" | "amber" | "green";
+}) {
+  const toneClasses = {
+    cyan: "border-cyan-400/20 bg-cyan-400/[0.06] text-cyan-300",
+    blue: "border-blue-400/20 bg-blue-400/[0.06] text-blue-300",
+    purple: "border-violet-400/20 bg-violet-400/[0.06] text-violet-300",
+    amber: "border-amber-400/20 bg-amber-400/[0.06] text-amber-300",
+    green: "border-emerald-400/20 bg-emerald-400/[0.06] text-emerald-300",
+  }[tone];
+
+  return (
+    <div className={["rounded-2xl border p-4", toneClasses].join(" ")}>
+      <p className="text-[9px] font-bold uppercase tracking-[0.14em] opacity-80">{label}</p>
+      <p className="mt-2 font-display text-2xl font-semibold text-white">
+        {typeof value === "number" ? value.toLocaleString() : value}
+      </p>
+      <p className="mt-1 text-[10px] text-slate-500">{detail}</p>
+    </div>
+  );
+}
+
+function AttentionAction({
+  label,
+  value,
+  detail,
+  urgent,
+  onClick,
+}: {
+  label: string;
+  value: number;
+  detail: string;
+  urgent: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <GhostButton onClick={onClick} className="min-h-14 w-full justify-start rounded-2xl px-3 py-2.5 text-left">
+      <span
+        className={[
+          "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-xs font-bold",
+          urgent
+            ? "border-amber-400/25 bg-amber-400/10 text-amber-300"
+            : "border-emerald-400/25 bg-emerald-400/10 text-emerald-300",
+        ].join(" ")}
+      >
+        {value > 99 ? "99+" : value}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[11px] font-semibold text-white">{label}</span>
+        <span className="block truncate text-[9px] text-slate-500">{detail}</span>
+      </span>
+      <ArrowRight className="h-3.5 w-3.5 shrink-0 opacity-60" />
+    </GhostButton>
   );
 }
 

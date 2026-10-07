@@ -25,6 +25,7 @@ export const Route = createFileRoute("/auth")({
       },
       { property: "og:title", content: "Sign in — Nuru Faith" },
       { property: "og:description", content: "Continue your journey with Nuru Faith." },
+      { name: "robots", content: "noindex, nofollow" },
     ],
   }),
   component: AuthPage,

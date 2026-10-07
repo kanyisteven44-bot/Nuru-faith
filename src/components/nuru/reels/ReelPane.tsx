@@ -32,6 +32,7 @@ export type ReelPaneProps = {
   commentsOpen: boolean;
   onActive: (index: number) => void;
   onView: (reel: Reel) => void;
+  onEnded: () => void;
   onToggleMuted: () => void;
   onLike: () => void;
   onDoubleLike: () => void;
@@ -250,7 +251,7 @@ export function ReelPane(props: ReelPaneProps) {
               setPlaybackError("This video could not load. Check your connection and retry.");
             }}
             playsInline
-            loop
+            onEnded={props.onEnded}
             muted={muted}
             preload={active ? "auto" : "metadata"}
             className="h-full w-full object-cover"
@@ -261,7 +262,7 @@ export function ReelPane(props: ReelPaneProps) {
             videoId={reel.external_id!}
             title={reel.caption || reel.creator_name}
             autoplay={autoplayAllowed}
-            loop
+            onEnded={props.onEnded}
             controls={false}
             muted={muted}
             playing={shouldPlay}

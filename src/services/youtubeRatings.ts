@@ -17,14 +17,19 @@ export async function connectYouTube(videoId: string) {
   const options = {
     scopes: "https://www.googleapis.com/auth/youtube.force-ssl",
     redirectTo: `${window.location.origin}/auth-callback`,
-    queryParams: { prompt: "consent", ...(user.email ? { login_hint: user.email } : {}) },
+    queryParams: {
+      prompt: "consent select_account",
+      ...(user.email ? { login_hint: user.email } : {}),
+    },
     skipBrowserRedirect: true,
   };
-  // Existing Google identities renew consent; other identities are linked to
-  // the current Nuru account, never silently replaced by another account.
-  const result = user.identities?.some((i) => i.provider === "google")
-    ? await supabase.auth.signInWithOAuth({ provider: "google", options })
-    : await supabase.auth.linkIdentity({ provider: "google", options });
+  if (!user.email || !user.email_confirmed_at) {
+    sessionStorage.removeItem(YOUTUBE_CONNECT_KEY);
+    throw new Error("Verify your Nuru email before connecting YouTube.");
+  }
+  // Supabase automatically links a verified matching Google email. The
+  // callback rejects a different Nuru user before accepting the connection.
+  const result = await supabase.auth.signInWithOAuth({ provider: "google", options });
   if (result.error || !result.data.url) {
     sessionStorage.removeItem(YOUTUBE_CONNECT_KEY);
     throw new Error("YouTube connection is unavailable. Please try again later.");

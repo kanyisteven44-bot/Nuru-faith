@@ -52,7 +52,7 @@ export function ReelInteractiveActions({
   onMore: () => void;
   onCommentsVisibilityChange?: (open: boolean) => void;
 }) {
-  const { userId } = useAuth();
+  const { userId, user } = useAuth();
   const qc = useQueryClient();
   const [connectOpen, setConnectOpen] = useState(false);
   const [connecting, setConnecting] = useState(false);
@@ -214,7 +214,8 @@ export function ReelInteractiveActions({
               <DialogTitle>Connect YouTube</DialogTitle>
             </DialogHeader>
             <p className="text-sm text-muted-foreground">
-              Connect your account to like this video on YouTube.
+              Connect your account to like this video on YouTube.{" "}
+              {user?.email && `Choose ${user.email} when Google asks you to sign in.`}
             </p>
             <button
               className="min-h-11 rounded-xl bg-primary px-4 text-primary-foreground"

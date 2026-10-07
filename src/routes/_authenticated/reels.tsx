@@ -20,14 +20,18 @@ import {
   fetchReelPage,
   fetchReelById,
   recordReelView,
-  REELS_PAGE_SIZE,
   toggleFollow,
   type Reel,
   type ReelFeed,
 } from "@/services/reels";
 import { addPrayerJournalEntry } from "@/services/ai";
 import { youtubeReelsInfiniteQuery } from "@/services/youtubeService";
-import { readWatchedExternalReelIds, rememberWatchedExternalReel } from "@/lib/reelWatchHistory";
+import { reelContentKey, unseenReelQueue, nextReelId } from "@/lib/reelQueue";
+import {
+  currentLocalDay,
+  readWatchedExternalReelIds,
+  rememberWatchedExternalReel,
+} from "@/lib/reelWatchHistory";
 import { AppShell } from "@/components/nuru/AppShell";
 import { CardSkeleton } from "@/components/nuru/Primitives";
 import { ReelFeedTabs } from "@/components/nuru/reels/ReelFeedTabs";
@@ -102,6 +106,8 @@ function ReelsScreen() {
   const [muted, setMuted] = useState(true);
   const [dataSaver, setDataSaver] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [retainedId, setRetainedId] = useState<string | null>(linkedId ?? null);
+  const [advanceAfter, setAdvanceAfter] = useState<string | null>(null);
   // A shared reel link should open straight into the full-screen player;
   // otherwise Reels opens on the browsable grid.
   const [view, setView] = useState<"grid" | "feed">(linkedId ? "feed" : "grid");
@@ -124,7 +130,22 @@ function ReelsScreen() {
   }, []);
 
   useEffect(() => {
-    setWatchedExternalIds(readWatchedExternalReelIds(userId));
+    let day = currentLocalDay();
+    const refresh = () => setWatchedExternalIds(readWatchedExternalReelIds(userId));
+    const rollover = window.setInterval(() => {
+      if (currentLocalDay() !== day) {
+        day = currentLocalDay();
+        refresh();
+      }
+    }, 30_000);
+    refresh();
+    window.addEventListener("storage", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      window.clearInterval(rollover);
+      window.removeEventListener("storage", refresh);
+      document.removeEventListener("visibilitychange", refresh);
+    };
   }, [userId]);
 
   const interests = useQuery({
@@ -178,8 +199,7 @@ function ReelsScreen() {
         churchId,
         followingIds,
       }),
-    getNextPageParam: (lastPage, allPages) =>
-      lastPage.length === REELS_PAGE_SIZE ? allPages.length : undefined,
+    getNextPageParam: (lastPage, allPages) => (lastPage.hasMore ? allPages.length : undefined),
   });
 
   /*
@@ -198,12 +218,16 @@ function ReelsScreen() {
   const unseenYoutubeVideos = useMemo(() => {
     const seen = new Set<string>();
     return loadedYoutubeVideos.filter((video) => {
-      if (watchedExternalIds.has(video.youtubeVideoId) || seen.has(video.youtubeVideoId))
+      if (
+        (watchedExternalIds.has(video.youtubeVideoId) &&
+          retainedId !== `yt:${video.youtubeVideoId}`) ||
+        seen.has(video.youtubeVideoId)
+      )
         return false;
       seen.add(video.youtubeVideoId);
       return true;
     });
-  }, [loadedYoutubeVideos, watchedExternalIds]);
+  }, [loadedYoutubeVideos, watchedExternalIds, retainedId]);
 
   const youtubeReels = useMemo<Reel[]>(() => {
     return unseenYoutubeVideos.slice(0, youtubeVisibleCount).map((v) => ({
@@ -250,7 +274,7 @@ function ReelsScreen() {
       seen.add(linkedReel.data.id);
     }
     for (const page of reels.data?.pages ?? []) {
-      for (const r of page) {
+      for (const r of page.items) {
         if (seen.has(r.id) || hidden.has(r.id)) continue;
         seen.add(r.id);
         out.push(r);
@@ -265,8 +289,17 @@ function ReelsScreen() {
         out.push(r);
       }
     }
-    return out;
-  }, [reels.data, feedback.data, hiddenIds, feed, linkedReel.data, youtubeReels]);
+    return unseenReelQueue(out, watchedExternalIds, retainedId);
+  }, [
+    reels.data,
+    feedback.data,
+    hiddenIds,
+    feed,
+    linkedReel.data,
+    youtubeReels,
+    watchedExternalIds,
+    retainedId,
+  ]);
 
   /* auto-load the next DB/YouTube page only as the viewer approaches the end */
   useEffect(() => {
@@ -316,6 +349,8 @@ function ReelsScreen() {
   useEffect(() => {
     scrollerRef.current?.scrollTo({ top: 0 });
     setActiveIndex(0);
+    setRetainedId(linkedId ?? null);
+    setAdvanceAfter(null);
     setView(linkedId ? "feed" : "grid");
     setYoutubeVisibleCount(YOUTUBE_BATCH_SIZE);
     // Only react to the person switching feeds, not to linkedId itself.
@@ -332,25 +367,96 @@ function ReelsScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view]);
 
-  const onActive = useCallback((index: number) => setActiveIndex(index), []);
+  useLayoutEffect(() => {
+    if (view !== "feed" || !retainedId) return;
+    const index = items.findIndex((r) => r.id === retainedId);
+    if (index >= 0 && index !== activeIndex) {
+      setActiveIndex(index);
+      if (scrollerRef.current)
+        scrollerRef.current.scrollTop = index * scrollerRef.current.clientHeight;
+    }
+  }, [items, retainedId, view, activeIndex]);
+  const onActive = useCallback(
+    (index: number) => {
+      const item = items[index];
+      if (!item) return;
+      setRetainedId(item.id);
+      setActiveIndex(index);
+    },
+    [items],
+  );
   function openReel(index: number) {
+    setRetainedId(items[index]?.id ?? null);
     setActiveIndex(index);
     setView("feed");
   }
   const onView = useCallback(
     (reel: Reel) => {
-      if (reel.external_id) {
-        // Persist for the next feed load without removing the Reel while it is
-        // actively playing. Removing it immediately would make the screen jump.
-        rememberWatchedExternalReel(userId, reel.external_id);
-        return;
-      }
-      if (userId && /^[0-9a-f-]{36}$/i.test(reel.id)) {
+      const key = reelContentKey(reel);
+      const alreadyWatched = readWatchedExternalReelIds(userId).has(key);
+      rememberWatchedExternalReel(userId, key);
+      setWatchedExternalIds((previous) => new Set([...previous, key]));
+      if (!alreadyWatched && userId && /^[0-9a-f-]{36}$/i.test(reel.id)) {
         void recordReelView(userId, reel.id, 2, false).catch(() => undefined);
       }
     },
     [userId],
   );
+
+  function advanceReel(reel: Reel) {
+    onView(reel);
+    setAdvanceAfter(reel.id);
+  }
+  useEffect(() => {
+    if (!advanceAfter || view !== "feed") return;
+    const next = nextReelId(items, advanceAfter);
+    if (next) {
+      setRetainedId(next);
+      setAdvanceAfter(null);
+      const index = items.findIndex((r) => r.id === next);
+      setActiveIndex(index);
+      scrollerRef.current?.scrollTo({
+        top: index * scrollerRef.current.clientHeight,
+        behavior: "instant",
+      });
+    } else if (reels.hasNextPage && !reels.isFetchingNextPage) void reels.fetchNextPage();
+    else if (hasBufferedYouTube)
+      setYoutubeVisibleCount((count) => Math.min(count + YOUTUBE_BATCH_SIZE, youtubeTotal));
+    else if (
+      feed === "For You" &&
+      youtubeFallback.hasNextPage &&
+      !youtubeFallback.isFetchingNextPage
+    )
+      void youtubeFallback.fetchNextPage();
+    else if (!reels.isFetchingNextPage && !youtubeFallback.isFetchingNextPage)
+      setAdvanceAfter(null);
+  }, [
+    advanceAfter,
+    items,
+    view,
+    reels.hasNextPage,
+    reels.isFetchingNextPage,
+    hasBufferedYouTube,
+    youtubeTotal,
+    feed,
+    youtubeFallback.hasNextPage,
+    youtubeFallback.isFetchingNextPage,
+  ]);
+  // Entire watched pages still have a cursor. Continue until an unseen page or
+  // genuine exhaustion, rather than treating an empty filtered page as the end.
+  useEffect(() => {
+    if (items.length) return;
+    if (reels.hasNextPage && !reels.isFetchingNextPage) void reels.fetchNextPage();
+    if (feed === "For You" && youtubeFallback.hasNextPage && !youtubeFallback.isFetchingNextPage)
+      void youtubeFallback.fetchNextPage();
+  }, [
+    items.length,
+    feed,
+    reels.hasNextPage,
+    reels.isFetchingNextPage,
+    youtubeFallback.hasNextPage,
+    youtubeFallback.isFetchingNextPage,
+  ]);
 
   function toggleMuted() {
     setMuted((m) => {
@@ -561,6 +667,7 @@ function ReelsScreen() {
                 commentsOpen={commentsFor?.id === reel.id || !!channelFor}
                 onActive={onActive}
                 onView={onView}
+                onEnded={() => advanceReel(reel)}
                 onToggleMuted={toggleMuted}
                 onLike={() =>
                   requireAuth(() =>

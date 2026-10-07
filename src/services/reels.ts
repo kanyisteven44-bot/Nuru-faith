@@ -94,7 +94,8 @@ export async function fetchViewedReelIds(
     .from("reel_views")
     .select("reel_id")
     .eq("user_id", userId)
-    .in("reel_id", candidateIds);
+    .in("reel_id", candidateIds)
+    .gte("created_at", new Date(new Date().setHours(0, 0, 0, 0)).toISOString());
   if (error) throw new Error(error.message);
   return new Set((data ?? []).map((row) => row.reel_id));
 }
@@ -115,7 +116,7 @@ export async function fetchReelPage(params: {
   interests: string[];
   churchId: string | null;
   followingIds: string[];
-}): Promise<Reel[]> {
+}): Promise<{ items: Reel[]; hasMore: boolean }> {
   const { feed, page, userId, interests, churchId, followingIds } = params;
   const candidateFrom = page * CANDIDATE_WINDOW_SIZE;
   const candidateTo = candidateFrom + CANDIDATE_WINDOW_SIZE - 1;
@@ -128,11 +129,11 @@ export async function fetchReelPage(params: {
     .range(candidateFrom, candidateTo);
 
   if (feed === "Following") {
-    if (followingIds.length === 0) return [];
+    if (followingIds.length === 0) return { items: [], hasMore: false };
     q = q.in("author_id", followingIds);
   }
   if (feed === "My Church") {
-    if (!churchId) return [];
+    if (!churchId) return { items: [], hasMore: false };
     q = q.eq("church_id", churchId);
   }
 
@@ -166,7 +167,7 @@ export async function fetchReelPage(params: {
     return score(b) - score(a);
   });
 
-  return ranked.slice(0, REELS_PAGE_SIZE);
+  return { items: ranked, hasMore: candidates.length === CANDIDATE_WINDOW_SIZE };
 }
 
 /** Reels this person published, for the profile grid. */

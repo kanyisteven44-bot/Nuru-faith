@@ -23,9 +23,33 @@ additional database/edge capacity.
 - Added indexes for unread notifications, Reel feed filters, Reel-view
   exclusion, follower ordering, comment ordering, and people discovery.
 
+## Polling budget (October 2026 pass)
+
+Every signed-in tab mounts `CallManager` and `MessageAlerts`, so their polls
+multiply by the number of open tabs. Both already receive Realtime events, so
+polling is only a fallback:
+
+| Poll | Before | After |
+| --- | --- | --- |
+| Incoming call check | 2s, also in hidden tabs | 10s, visible tabs only (Web Push covers hidden) |
+| Unread message alerts | 5s, also in hidden tabs | 30s, visible tabs only |
+| Open direct/group chat | 3s | 15s (mentor chats, which have no Realtime, stay 5s) |
+| Inbox thread list | 5s | 30s |
+| Chat call history | 5s | 30s |
+| Active group-call check | 4s | 10s |
+
+With 1,000 simultaneously open tabs, the always-on background load drops from
+roughly 700 requests/second to roughly 130, before counting hidden tabs, which
+now poll nothing. `tests/polling-budget.test.mjs` guards these limits.
+
 ## Infrastructure gate
 
 For a serious 10k-user launch, use Supabase Pro rather than Free.
+
+The production database currently allows 60 Postgres connections (the
+smallest compute size). PostgREST pools these, which is fine for 10,000
+registered users, but upgrade compute before running more than a few hundred
+simultaneously active users or the 500-VU load-test stage.
 
 The Free plan is suitable for development/pilots but has a 200 concurrent
 Realtime-client limit, 5 GB egress, 500 MB database size, and no automatic

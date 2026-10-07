@@ -40,7 +40,9 @@ export function RichChatThread({
   const messages = useQuery({
     queryKey: key,
     queryFn: () => fetchChatMessages(target),
-    refetchInterval: 3000,
+    // Realtime refreshes direct and group threads; mentor threads have no
+    // Realtime channel, so they keep a faster poll.
+    refetchInterval: "mentor" in target ? 5000 : 15_000,
     refetchIntervalInBackground: false,
   });
   const callPeer = "user" in target ? target.user : null;
@@ -56,7 +58,7 @@ export function RichChatThread({
     queryKey: ["call-history", userId, callPeer],
     enabled: !!callPeer,
     queryFn: () => fetchCallHistory(userId, callPeer!),
-    refetchInterval: 5000,
+    refetchInterval: 30_000,
   });
   const [older, setOlder] = useState<ChatMessage[]>([]);
   const [loadingOlder, setLoadingOlder] = useState(false);

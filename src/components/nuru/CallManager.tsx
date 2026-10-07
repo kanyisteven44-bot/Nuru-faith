@@ -33,8 +33,10 @@ export function CallManager({ children }: { children: ReactNode }) {
     queryKey: ["incoming-call", userId],
     queryFn: () => fetchIncomingCall(userId!),
     enabled: !!userId && !activeCall,
-    refetchInterval: activeCall ? false : 2000,
-    refetchIntervalInBackground: true,
+    // Realtime (below) refreshes this instantly and Web Push covers hidden tabs;
+    // the poll is only a fallback, so keep it slow enough to scale.
+    refetchInterval: activeCall ? false : 10_000,
+    refetchIntervalInBackground: false,
   });
   const callerId = incoming.data?.caller_id;
   const profiles = useQuery({

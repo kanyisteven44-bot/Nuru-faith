@@ -280,7 +280,7 @@ function GroupSpace({ groupId }: { groupId: string }) {
     queryKey: ["active-group-call", groupId],
     queryFn: () => fetchActiveGroupCall(groupId),
     enabled: isMember,
-    refetchInterval: isMember && !callRoom ? 4000 : false,
+    refetchInterval: isMember && !callRoom ? 10_000 : false,
   });
 
   const posts = useQuery({

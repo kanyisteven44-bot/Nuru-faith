@@ -78,7 +78,8 @@ function MessagesScreen() {
     queryKey: ["direct-threads", userId],
     queryFn: () => fetchDirectThreads(userId!),
     enabled: !!userId,
-    refetchInterval: 5000,
+    // MessageAlerts/RichChatThread Realtime invalidates this on new messages.
+    refetchInterval: 30_000,
   });
   useEffect(() => {
     if (!userId) return;
@@ -109,7 +110,7 @@ function MessagesScreen() {
     queryKey: ["active-group-call", group?.id],
     queryFn: () => fetchActiveGroupCall(group!.id),
     enabled: !!userId && !!group,
-    refetchInterval: group && !groupCallRoom ? 4000 : false,
+    refetchInterval: group && !groupCallRoom ? 10_000 : false,
   });
 
   const target: ChatTarget | undefined =
@@ -404,7 +405,7 @@ function ThreadView({
     queryKey: ["active-group-call", groupId],
     queryFn: () => fetchActiveGroupCall(groupId!),
     enabled: !!groupId && !!userId,
-    refetchInterval: groupId && userId && !groupCallRoom ? 4000 : false,
+    refetchInterval: groupId && userId && !groupCallRoom ? 10_000 : false,
   });
 
   async function openGroupCall(kind: GroupCallKind) {

@@ -28,8 +28,9 @@ export function MessageAlerts() {
       if (error) throw error;
       return { messages: data ?? [], count: count ?? 0 };
     },
-    refetchInterval: 5000,
-    refetchIntervalInBackground: true,
+    // Realtime invalidates this on every new message; the poll is a fallback.
+    refetchInterval: 30_000,
+    refetchIntervalInBackground: false,
   });
   useEffect(() => {
     seen.current.clear();

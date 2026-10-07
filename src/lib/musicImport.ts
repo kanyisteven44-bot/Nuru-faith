@@ -16,23 +16,40 @@ export type CatalogVideo = {
   };
 };
 
-function eligibleVideo(video: CatalogVideo, channelId: string): boolean {
+export type MediaEligibility = {
+  eligible: boolean;
+  reasons: string[];
+};
+
+function baseVideoEligibility(video: CatalogVideo, channelId: string): MediaEligibility {
+  const reasons: string[] = [];
   const region = video.contentDetails?.regionRestriction;
-  return (
-    !!video.id &&
-    /^[\w-]{11}$/.test(video.id) &&
-    video.snippet?.channelId === channelId &&
-    !!video.snippet.title &&
-    video.status?.embeddable === true &&
-    video.status.privacyStatus === "public" &&
-    video.status.uploadStatus === "processed" &&
-    isoSeconds(video.contentDetails?.duration ?? "") >= 120 &&
-    !region?.blocked?.includes("KE") &&
-    (!region?.allowed || region.allowed.includes("KE"))
-  );
+  const seconds = isoSeconds(video.contentDetails?.duration ?? "");
+
+  if (!video.id || !/^[\w-]{11}$/.test(video.id)) reasons.push("invalid YouTube video ID");
+  if (video.snippet?.channelId !== channelId) reasons.push("video belongs to a different YouTube channel");
+  if (!video.snippet?.title) reasons.push("video title is missing");
+  if (video.status?.embeddable !== true) reasons.push("YouTube reports the video is not embeddable");
+  if (video.status?.privacyStatus !== "public") {
+    reasons.push(`YouTube privacy status is ${video.status?.privacyStatus ?? "unknown"}, not public`);
+  }
+  if (video.status?.uploadStatus !== "processed") {
+    reasons.push(`YouTube upload status is ${video.status?.uploadStatus ?? "unknown"}, not processed`);
+  }
+  if (seconds < 120) reasons.push(`duration is ${seconds}s; Nuru requires at least 120s`);
+  if (region?.blocked?.includes("KE")) reasons.push("YouTube blocks this video in Kenya");
+  if (region?.allowed && !region.allowed.includes("KE")) {
+    reasons.push("YouTube's allowed-region list does not include Kenya");
+  }
+
+  return { eligible: reasons.length === 0, reasons };
 }
-export function eligibleMusicVideo(video: CatalogVideo, channelId: string): boolean {
+
+export function musicVideoEligibility(video: CatalogVideo, channelId: string): MediaEligibility {
+  const base = baseVideoEligibility(video, channelId);
+  const reasons = [...base.reasons];
   const title = video.snippet?.title ?? "";
+
   const explicitlyNonMusic =
     /\b(podcast|sermon|interview|announcement|trailer|teaser|marriage|relationship|investments?|tour|vlog|behind the scenes|ministers training|bible study|episode\s*\d+)\b/i.test(
       title,
@@ -42,15 +59,22 @@ export function eligibleMusicVideo(video: CatalogVideo, channelId: string): bool
       title,
     );
 
-  return (
-    eligibleVideo(video, channelId) &&
-    !explicitlyNonMusic &&
-    (video.snippet?.categoryId === "10" || strongMusicSignal)
-  );
+  if (explicitlyNonMusic) reasons.push("title matches Nuru's non-music content filter");
+  if (video.snippet?.categoryId !== "10" && !strongMusicSignal) {
+    reasons.push(
+      `YouTube category is ${video.snippet?.categoryId ?? "unknown"}, and the title has no explicit music-video/audio signal`,
+    );
+  }
+
+  return { eligible: reasons.length === 0, reasons };
+}
+
+export function eligibleMusicVideo(video: CatalogVideo, channelId: string): boolean {
+  return musicVideoEligibility(video, channelId).eligible;
 }
 
 export function eligiblePodcastVideo(video: CatalogVideo, channelId: string): boolean {
-  return eligibleVideo(video, channelId);
+  return baseVideoEligibility(video, channelId).eligible;
 }
 
 export const MUSIC_SOURCE_NAMES = [

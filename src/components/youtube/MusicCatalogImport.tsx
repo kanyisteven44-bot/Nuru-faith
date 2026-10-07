@@ -2,6 +2,7 @@ import { catalogueTarget, MUSIC_SOURCE_TARGET } from "@/lib/catalogTargets";
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { importReviewedCatalogPage } from "@/lib/musicCatalog.functions";
+import { resolveYouTubeCreatorLink } from "@/lib/mediaAdmin.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { PrimaryButton } from "@/components/nuru/Primitives";
 
@@ -89,11 +90,32 @@ export function MusicCatalogImport({
       current = false;
     };
   }, [kind, target]);
+  async function resolveChannelIds() {
+    const entries = [...new Set(channelFilter.split(/[\n,]+/).map((value) => value.trim()).filter(Boolean))];
+    if (entries.length > 25) {
+      throw new Error("Use up to 25 creator links or channel IDs in one import run.");
+    }
+
+    const resolved: string[] = [];
+    for (const entry of entries) {
+      if (/^UC[A-Za-z0-9_-]{22}$/.test(entry)) {
+        resolved.push(entry);
+        continue;
+      }
+      setMessage(`Resolving YouTube creator: ${entry}`);
+      const creator = await resolveYouTubeCreatorLink({ data: { input: entry } });
+      resolved.push(creator.channelId);
+    }
+    return [...new Set(resolved)];
+  }
+
   async function run(fresh: boolean) {
     if (active.current) return;
-    const channelIds = [...new Set(channelFilter.split(/[\s,]+/).filter(Boolean))];
-    if (channelIds.length > 200 || channelIds.some((id) => !/^UC[A-Za-z0-9_-]{22}$/.test(id))) {
-      setMessage("Enter up to 200 valid YouTube channel IDs, separated by lines or commas.");
+    let channelIds: string[] = [];
+    try {
+      channelIds = await resolveChannelIds();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not resolve the selected YouTube creator.");
       return;
     }
     active.current = true;
@@ -101,26 +123,57 @@ export function MusicCatalogImport({
     setRunning(true);
     let restart = fresh;
     try {
+      let fetched = 0;
+      let parsed = 0;
+      let eligible = 0;
+      let inserted = 0;
+      let skippedExisting = 0;
+      let pages = 0;
+
       while (!pause.current) {
         const result = await importReviewedCatalogPage({ data: { kind, restart, channelIds } });
         restart = false;
+        pages += 1;
+        fetched += result.stats.fetched;
+        parsed += result.stats.parsed;
+        eligible += result.stats.eligible;
+        inserted += result.stats.inserted;
+        skippedExisting += result.stats.skippedExisting;
         setTotal(result.total);
-        await client.invalidateQueries({ queryKey: ["media-catalog"] });
+        await Promise.all([
+          client.invalidateQueries({ queryKey: ["media-catalog"] }),
+          client.invalidateQueries({ queryKey: ["admin-fact-snapshot"] }),
+          client.invalidateQueries({ queryKey: ["admin-media-workspace-summary"] }),
+        ]);
+
+        const progressText =
+          `Scanned ${fetched.toLocaleString()} uploads · ` +
+          `${eligible.toLocaleString()} eligible · ` +
+          `${inserted.toLocaleString()} new · ` +
+          `${skippedExisting.toLocaleString()} already in Nuru`;
+
         if (!result.next) {
-          setMessage(
-            result.targetReached
-              ? "Catalogue target reached."
-              : channelIds.length
-                ? "Selected reviewed sources finished. All eligible songs were imported without duplicates."
-                : kind === "music"
-                  ? "All currently reviewed artist sources have been scanned. Newly approved artists can be picked up with Scan again."
-                  : "Reviewed sources exhausted below the target. Add more reviewed creators to continue; entries have not been duplicated.",
-          );
+          if (result.targetReached) {
+            setMessage(`Catalogue target reached. ${progressText}.`);
+          } else if (channelIds.length) {
+            setMessage(
+              inserted > 0
+                ? `Creator scan complete. ${progressText}.`
+                : eligible > 0
+                  ? `Creator scan complete. No new items were added because all ${eligible.toLocaleString()} eligible uploads are already in Nuru.`
+                  : `Creator scan complete. YouTube returned ${fetched.toLocaleString()} uploads, but none passed the current Nuru ${kind === "music" ? "music" : "podcast"} checks.`,
+            );
+          } else {
+            setMessage(
+              kind === "music"
+                ? `Reviewed-source scan complete. ${progressText}.`
+                : `Reviewed-source scan complete. ${progressText}.`,
+            );
+          }
           break;
         }
-        setMessage(
-          "Importing reviewed videos. Progress is saved on the server; keep this page open to continue.",
-        );
+
+        setMessage(`Importing… ${progressText}. Page ${pages.toLocaleString()} completed.`);
       }
       if (pause.current)
         setMessage("Paused after the current batch. Resume to continue from saved progress.");
@@ -152,20 +205,20 @@ export function MusicCatalogImport({
         </select>
       </label>
       <label className="block text-sm">
-        Channel IDs (optional)
+        YouTube creators (optional)
         <textarea
-          aria-label="Channel IDs (optional)"
-          className="input-nuru mt-2 min-h-20"
-          rows={3}
+          aria-label="YouTube creators (optional)"
+          className="input-nuru mt-2 min-h-24"
+          rows={4}
           disabled={running}
           value={channelFilter}
           onChange={(event) => setChannelFilter(event.target.value)}
-          placeholder="Leave empty to scan all reviewed sources"
+          placeholder={"https://www.youtube.com/@Marionshakoke\n@anothercreator\nUC..."}
         />
       </label>
-      <p className="text-xs text-muted-foreground">
-        Import selected channels after verifying and approving them. This field does not approve
-        sources.
+      <p className="text-xs leading-5 text-muted-foreground">
+        Paste an @handle, channel link, video link, Shorts link, legacy user link, or channel ID.
+        Put one creator per line. Leave this empty to scan every reviewed source.
       </p>
       <p className="text-sm text-muted-foreground" role="status">
         {message}

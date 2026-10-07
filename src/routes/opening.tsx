@@ -4,7 +4,12 @@ import { SplashScreen } from "@/components/nuru/SplashScreen";
 import { NuruLockup } from "@/components/nuru/Logo";
 
 export const Route = createFileRoute("/opening")({
-  head: () => ({ meta: [{ title: "Opening preview — Nuru Faith" }] }),
+  head: () => ({
+    meta: [
+      { title: "Opening preview — Nuru Faith" },
+      { name: "robots", content: "noindex, nofollow" },
+    ],
+  }),
   component: OpeningPreview,
 });
 

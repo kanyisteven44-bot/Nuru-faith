@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertAdminWriteAssurance } from "@/lib/adminDirectoryAccess";
 import { eligibleMusicVideo, eligiblePodcastVideo, isoSeconds, musicVideoEligibility } from "@/lib/musicImport";
+import { parseYouTubeCreatorReference } from "@/lib/youtubeCreator";
 
 const requireMediaAdmin = createMiddleware({ type: "function" })
   .middleware([requireSupabaseAuth])
@@ -140,6 +141,66 @@ export const adminYouTubeSearch = createServerFn({ method: "POST" })
           durationSeconds: isoSeconds(item.contentDetails?.duration ?? ""),
         })),
     };
+  });
+
+export const resolveYouTubeCreatorLink = createServerFn({ method: "POST" })
+  .middleware([requireMediaAdmin])
+  .validator(
+    z.object({
+      input: z.string().trim().min(2).max(500),
+    }),
+  )
+  .handler(async ({ data }) => {
+    const reference = parseYouTubeCreatorReference(data.input);
+    if (!reference) {
+      throw new Error(
+        "Use a YouTube @handle link, /channel/ link, legacy /user/ link, channel ID, or any video link from the creator.",
+      );
+    }
+
+    let channelId = "";
+    if (reference.kind === "channel") {
+      channelId = reference.id;
+    } else if (reference.kind === "handle") {
+      const channels = await youtubeCall("channels", {
+        part: "snippet,statistics",
+        forHandle: reference.handle,
+      });
+      channelId = String((channels.items?.[0] as any)?.id ?? "");
+    } else if (reference.kind === "username") {
+      const channels = await youtubeCall("channels", {
+        part: "snippet,statistics",
+        forUsername: reference.username,
+      });
+      channelId = String((channels.items?.[0] as any)?.id ?? "");
+    } else {
+      const videos = await youtubeCall("videos", {
+        part: "snippet",
+        id: reference.id,
+      });
+      channelId = String((videos.items?.[0] as any)?.snippet?.channelId ?? "");
+    }
+
+    if (!channelId) {
+      throw new Error("YouTube could not resolve that link to a creator channel.");
+    }
+
+    const details = await youtubeCall("channels", {
+      part: "snippet,statistics",
+      id: channelId,
+    });
+    const channel = details.items?.[0] as any;
+    if (!channel) throw new Error("YouTube could not load that creator channel.");
+
+    return {
+      channelId,
+      title: String(channel.snippet?.title ?? ""),
+      description: String(channel.snippet?.description ?? ""),
+      thumbnail: thumbOf(channel.snippet),
+      subscriberCount: channel.statistics?.hiddenSubscriberCount
+        ? null
+        : String(channel.statistics?.subscriberCount ?? "") || null,
+    } satisfies ChannelResult;
   });
 
 export const approveYouTubeSource = createServerFn({ method: "POST" })

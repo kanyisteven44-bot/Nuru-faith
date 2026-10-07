@@ -18,6 +18,7 @@ import {
   adminYouTubeSearch,
   approveYouTubeSource,
   approveYouTubeVideo,
+  resolveYouTubeCreatorLink,
   reviewMediaItem,
 } from "@/lib/mediaAdmin.functions";
 import { youtubeLookup } from "@/lib/youtube.functions";
@@ -27,6 +28,7 @@ import { MusicCatalogImport } from "@/components/youtube/MusicCatalogImport";
 import { GhostButton, PillTabs, PrimaryButton } from "@/components/nuru/Primitives";
 import { MfaChallenge } from "@/components/nuru/MfaSecurity";
 import { getAdminFactSnapshot } from "@/lib/adminFacts.functions";
+import { importReviewedCatalogPage } from "@/lib/musicCatalog.functions";
 
 const TABS = ["Artists", "Songs", "Podcasts", "Pending", "Importer"] as const;
 type Tab = (typeof TABS)[number];
@@ -64,6 +66,10 @@ export function AdminMediaWorkspace() {
   const [presetChannelId, setPresetChannelId] = useState("");
   const [presetKind, setPresetKind] = useState<"music" | "podcast">("music");
   const [youtubeCheck, setYoutubeCheck] = useState<"not-tested" | "working" | "error">("not-tested");
+  const [quickLink, setQuickLink] = useState("");
+  const [quickKind, setQuickKind] = useState<"music" | "podcast">("music");
+  const [quickProgress, setQuickProgress] = useState("");
+  const [quickRetryAfterMfa, setQuickRetryAfterMfa] = useState(false);
   const activeSourceChannelId = selectedChannel?.channelId ?? selectedVideo?.channelId ?? "";
 
   const facts = useQuery({
@@ -233,6 +239,94 @@ export function AdminMediaWorkspace() {
     toast.error(message);
   }
 
+  const quickApproveCreator = useMutation({
+    mutationFn: async () => {
+      const input = quickLink.trim();
+      if (!input) throw new Error("Paste a YouTube creator, channel, @handle, or video link first.");
+
+      setQuickProgress("Resolving the exact YouTube creator…");
+      const creator = await resolveYouTubeCreatorLink({ data: { input } });
+      setYoutubeCheck("working");
+      setSelectedChannel(creator);
+      setSelectedVideo(null);
+      setSourceKind(quickKind);
+
+      setQuickProgress(`Approving ${creator.title} as a reviewed ${quickKind === "music" ? "music" : "podcast"} source…`);
+      const approved = await approveYouTubeSource({
+        data: {
+          channelId: creator.channelId,
+          contentKind: quickKind,
+          languageCodes: ["en"],
+        },
+      });
+
+      let totalAdded = 0;
+      let pages = 0;
+      let restart = true;
+      let hasMore = false;
+
+      do {
+        setQuickProgress(
+          `Scanning ${creator.title} · page ${pages + 1} · ${totalAdded.toLocaleString()} new eligible ${quickKind === "music" ? "songs" : "episodes"} so far…`,
+        );
+        const result = await importReviewedCatalogPage({
+          data: {
+            kind: quickKind,
+            restart,
+            channelIds: [creator.channelId],
+          },
+        });
+        restart = false;
+        pages += 1;
+        totalAdded += result.added;
+        hasMore = Boolean(result.next);
+
+        // A single click handles up to 5,000 uploads. Larger creator catalogues
+        // keep their server checkpoint and can continue from the Importer tab.
+        if (pages >= 100 && hasMore) break;
+      } while (hasMore);
+
+      return {
+        creator,
+        approved,
+        totalAdded,
+        pages,
+        complete: !hasMore,
+      };
+    },
+    onSuccess: async (result) => {
+      setQuickRetryAfterMfa(false);
+      setPresetChannelId(result.creator.channelId);
+      setPresetKind(quickKind);
+      setQuickProgress(
+        result.complete
+          ? `Done. ${result.creator.title} is approved and ${result.totalAdded.toLocaleString()} new eligible ${quickKind === "music" ? "songs" : "episodes"} were added without duplicates.`
+          : `Creator approved. ${result.totalAdded.toLocaleString()} new eligible ${quickKind === "music" ? "songs" : "episodes"} were added in this run. The remaining catalogue is checkpointed; open Importer to continue.`,
+      );
+      await Promise.all([
+        client.invalidateQueries({ queryKey: ["admin-media-workspace-summary"] }),
+        client.invalidateQueries({ queryKey: ["admin-fact-snapshot"] }),
+        client.invalidateQueries({ queryKey: ["admin-media-source-status"] }),
+        client.invalidateQueries({ queryKey: ["media-sources"] }),
+        client.invalidateQueries({ queryKey: ["media-catalog"] }),
+      ]);
+      toast.success(
+        `${result.creator.title} approved · ${result.totalAdded.toLocaleString()} new eligible ${quickKind === "music" ? "songs" : "episodes"} added.`,
+      );
+    },
+    onError: (error) => {
+      const message = error instanceof Error ? error.message : "Creator approval failed.";
+      if (/authenticator|aal2|assurance|verification/i.test(message)) {
+        setNeedsMfa(true);
+        setQuickRetryAfterMfa(true);
+        setQuickProgress("Verify your authenticator once, then Nuru will continue this creator approval automatically.");
+      } else {
+        setQuickProgress(message);
+      }
+      toast.error(message);
+    },
+  });
+
   const approveSource = useMutation({
     mutationFn: async () => {
       if (!activeSourceChannelId) throw new Error("Choose a YouTube channel or video first.");
@@ -323,7 +417,11 @@ export function AdminMediaWorkspace() {
           title="Verify before approving YouTube media"
           onSuccess={() => {
             setNeedsMfa(false);
-            toast.success("Admin session verified. You can approve media now.");
+            toast.success("Admin session verified.");
+            if (quickRetryAfterMfa && !quickApproveCreator.isPending) {
+              setQuickRetryAfterMfa(false);
+              quickApproveCreator.mutate();
+            }
           }}
         />
       )}
@@ -334,6 +432,81 @@ export function AdminMediaWorkspace() {
         <SummaryCard label="Approved songs" value={factCounts?.approvedMusicItems ?? summary.data?.music ?? "—"} icon={BadgeCheck} />
         <SummaryCard label="Video podcasts" value={factCounts?.approvedPodcastItems ?? summary.data?.podcasts ?? "—"} icon={Youtube} />
         <SummaryCard label="Pending review" value={factCounts?.pendingMediaItems ?? summary.data?.pending ?? "—"} icon={ShieldCheck} />
+      </section>
+
+      <section className="overflow-hidden rounded-[26px] border border-cyan-400/25 bg-[linear-gradient(135deg,#071727_0%,#09243a_100%)] p-4 shadow-[0_18px_55px_rgba(0,0,0,0.18)]">
+        <div className="grid gap-4 xl:grid-cols-[0.7fr_1.3fr] xl:items-end">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="flex h-9 w-9 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10 text-cyan-300">
+                <Sparkles className="h-4 w-4" />
+              </span>
+              <div>
+                <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-cyan-300">
+                  Fast approval
+                </p>
+                <h2 className="font-display text-lg font-semibold text-white">
+                  Paste one creator link
+                </h2>
+              </div>
+            </div>
+            <p className="mt-3 max-w-md text-xs leading-5 text-slate-400">
+              Nuru resolves the exact YouTube creator, approves that source, then scans the creator's
+              uploads and automatically adds only the songs or podcast episodes that pass the live
+              Nuru checks. Existing catalogue items are not duplicated.
+            </p>
+          </div>
+
+          <div className="rounded-[22px] border border-[#1b4969] bg-[#04111f]/80 p-3">
+            <div className="grid gap-2 md:grid-cols-[1fr_auto_auto]">
+              <input
+                value={quickLink}
+                onChange={(event) => setQuickLink(event.target.value)}
+                placeholder="YouTube @handle, channel link, or any video link from the creator"
+                className="min-h-11 min-w-0 rounded-full border border-[#1b4969] bg-[#071727] px-4 text-xs text-white outline-none placeholder:text-slate-600 focus:border-cyan-400/60"
+              />
+              <select
+                value={quickKind}
+                disabled={quickApproveCreator.isPending}
+                onChange={(event) => setQuickKind(event.target.value as "music" | "podcast")}
+                className="min-h-11 rounded-full border border-[#1b4969] bg-[#071727] px-4 text-xs font-semibold text-white outline-none"
+                aria-label="Creator content type"
+              >
+                <option value="music">Music / songs</option>
+                <option value="podcast">Video podcasts</option>
+              </select>
+              <PrimaryButton
+                disabled={quickApproveCreator.isPending || !quickLink.trim()}
+                onClick={() => quickApproveCreator.mutate()}
+                className="min-h-11 whitespace-nowrap px-5 text-xs"
+              >
+                {quickApproveCreator.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Working…
+                  </>
+                ) : quickKind === "music" ? (
+                  "Approve + import songs"
+                ) : (
+                  "Approve + import episodes"
+                )}
+              </PrimaryButton>
+            </div>
+
+            <p className="mt-2 text-[10px] leading-4 text-slate-500">
+              Supported: youtube.com/@handle, /channel/UC…, legacy /user/…, a channel ID, or a
+              YouTube video/Short from that creator. Approval remains MFA-protected.
+            </p>
+            {quickProgress && (
+              <div
+                className="mt-3 rounded-xl border border-cyan-400/15 bg-cyan-400/[0.05] px-3 py-2 text-[10px] leading-4 text-cyan-100"
+                role="status"
+              >
+                {quickProgress}
+              </div>
+            )}
+          </div>
+        </div>
       </section>
 
       <section className="rounded-[24px] border border-[#153b5c] bg-[#071727] p-4">

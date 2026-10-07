@@ -211,7 +211,7 @@ export const importReviewedCatalogPage = createServerFn({ method: "POST" })
         return parsed.success ? [parsed.data] : [];
       });
       const eligibleVideos = parsedVideos.filter((video) =>
-        (data.kind === "music" ? eligibleMusicVideo : eligiblePodcastVideo)(video, channelId),
+        (data.kind === "music" ? eligibleReviewedMusicUpload : eligiblePodcastVideo)(video, channelId),
       );
       const rows = eligibleVideos.map((video) => ({
         source: "youtube",

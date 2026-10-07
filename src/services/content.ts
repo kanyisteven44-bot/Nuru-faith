@@ -535,17 +535,18 @@ export type PrayerRequestRow = {
 };
 
 /**
- * Prayer requests are read without author identity on purpose. There is no FK
- * from prayer_requests to profiles (unlike posts and reel_comments), so names
- * cannot be embedded anyway — and a prayer request is sensitive enough that
- * attributing one is a product decision, not a default. The caller's own rows
- * are marked so they can delete them.
- *
- * Note the row is still only as private as the table: the SELECT policy is
- * `USING (true)`, so user_id is reachable by anyone calling the REST API
- * directly, anonymous rows included. Closing that needs a database-side view.
+ * Prayer requests are read without author identity on purpose: a prayer
+ * request is sensitive, and attributing one is a product decision, not a
+ * default. list_prayer_requests() compares user_id server-side and returns
+ * only `is_mine`, and authenticated has no SELECT on user_id, so authors stay
+ * hidden from the REST API too (anonymous rows included).
  */
 export async function fetchPrayerRequests(userId: string | null): Promise<PrayerRequestRow[]> {
+  const { data, error } = await supabase.rpc("list_prayer_requests", { p_limit: 30 });
+  if (!error) return (data ?? []) as PrayerRequestRow[];
+  // Until the hide_prayer_request_authors migration is applied the RPC is missing.
+  if (error.code !== "PGRST202" && error.code !== "42883") throw new Error(error.message);
+
   const rows = unwrap(
     await supabase
       .from("prayer_requests")

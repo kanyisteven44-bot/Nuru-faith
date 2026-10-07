@@ -3448,6 +3448,17 @@ export type Database = {
       get_nuru_admin_overview: { Args: never; Returns: Json }
       get_nuru_pilot_metrics: { Args: never; Returns: Json }
       get_web_push_server_config: { Args: never; Returns: Json }
+      list_prayer_requests: {
+        Args: { p_limit?: number }
+        Returns: {
+          body: string
+          created_at: string
+          id: string
+          is_anonymous: boolean
+          is_mine: boolean
+          title: string | null
+        }[]
+      }
       record_nuru_activity: { Args: never; Returns: undefined }
     }
     Enums: {

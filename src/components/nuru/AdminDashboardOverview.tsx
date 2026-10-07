@@ -283,6 +283,8 @@ export function AdminDashboardOverview({
       label: "Churches",
       value: counts?.churches ?? churchCount,
       detail:
+        String(counts?.verifiedChurches ?? 0) +
+        " verified · " +
         String(counts?.groups ?? groupCount) +
         " groups · " +
         String(counts?.events ?? eventCount) +
@@ -292,7 +294,7 @@ export function AdminDashboardOverview({
       onClick: () => onNavigate("churches"),
     },
     {
-      label: "Approved Artists",
+      label: "Reviewed music sources",
       value: counts?.approvedMusicSources ?? "—",
       detail: "Verified + approved YouTube music sources",
       icon: Music2,
@@ -648,12 +650,12 @@ export function AdminDashboardOverview({
                 detail="Approved YouTube items"
               />
               <MiniData
-                label="Music sources"
+                label="Reviewed music sources"
                 value={counts?.approvedMusicSources ?? "—"}
                 detail="Approved + verified"
               />
               <MiniData
-                label="Podcast sources"
+                label="Reviewed podcast sources"
                 value={counts?.approvedPodcastSources ?? "—"}
                 detail="Approved + verified"
               />

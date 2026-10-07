@@ -322,8 +322,8 @@ export function AdminMediaWorkspace() {
       )}
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-        <SummaryCard label="Approved artists" value={factCounts?.approvedMusicSources ?? summary.data?.musicSources ?? "—"} icon={Music2} />
-        <SummaryCard label="Podcast creators" value={factCounts?.approvedPodcastSources ?? summary.data?.podcastSources ?? "—"} icon={Podcast} />
+        <SummaryCard label="Reviewed music sources" value={factCounts?.approvedMusicSources ?? summary.data?.musicSources ?? "—"} icon={Music2} />
+        <SummaryCard label="Reviewed podcast sources" value={factCounts?.approvedPodcastSources ?? summary.data?.podcastSources ?? "—"} icon={Podcast} />
         <SummaryCard label="Approved songs" value={factCounts?.approvedMusicItems ?? summary.data?.music ?? "—"} icon={BadgeCheck} />
         <SummaryCard label="Video podcasts" value={factCounts?.approvedPodcastItems ?? summary.data?.podcasts ?? "—"} icon={Youtube} />
         <SummaryCard label="Pending review" value={factCounts?.pendingMediaItems ?? summary.data?.pending ?? "—"} icon={ShieldCheck} />

@@ -103,7 +103,13 @@ export const importReviewedCatalogPage = createServerFn({ method: "POST" })
       };
       const before = await songCount();
       if (stopAtTarget && before >= target)
-        return { total: before, added: 0, next: null, targetReached: true };
+        return {
+          total: before,
+          added: 0,
+          next: null,
+          targetReached: true,
+          stats: { fetched: 0, parsed: 0, eligible: 0, inserted: 0, skippedExisting: 0 },
+        };
       function sourceQuery() {
         let query = db
           .from("media_sources")
@@ -124,7 +130,13 @@ export const importReviewedCatalogPage = createServerFn({ method: "POST" })
       if (!source) {
         if (cursor.channelId)
           throw new Error("This source is no longer approved. Start a fresh scan.");
-        return { total: before, added: 0, next: null, targetReached: false };
+        return {
+          total: before,
+          added: 0,
+          next: null,
+          targetReached: false,
+          stats: { fetched: 0, parsed: 0, eligible: 0, inserted: 0, skippedExisting: 0 },
+        };
       }
       const { data: following, error: nextError } = await sourceQuery()
         .gt("id", source.id)
@@ -146,6 +158,7 @@ export const importReviewedCatalogPage = createServerFn({ method: "POST" })
           added: 0,
           next: nextChannel ? { channelId: nextChannel, pageToken: null } : null,
           targetReached: false,
+          stats: { fetched: 0, parsed: 0, eligible: 0, inserted: 0, skippedExisting: 0 },
         };
 
       const channel = z
@@ -166,6 +179,7 @@ export const importReviewedCatalogPage = createServerFn({ method: "POST" })
           added: 0,
           next: nextChannel ? { channelId: nextChannel, pageToken: null } : null,
           targetReached: false,
+          stats: { fetched: 0, parsed: 0, eligible: 0, inserted: 0, skippedExisting: 0 },
         };
       const page = z
         .object({
@@ -190,39 +204,41 @@ export const importReviewedCatalogPage = createServerFn({ method: "POST" })
               await call("videos", { part: "snippet,status,contentDetails", id: ids.join(",") }),
             )
         : { items: [] };
-      const rows = response.items
-        .flatMap((item) => {
-          // Upcoming/deleted uploads may lack duration or status metadata.
-          // Reject only that incomplete video, preserving valid items in its page.
-          const parsed = videoSchema.safeParse(item);
-          return parsed.success ? [parsed.data] : [];
-        })
-        .filter((video) =>
-          (data.kind === "music" ? eligibleMusicVideo : eligiblePodcastVideo)(video, channelId),
-        )
-        .map((video) => ({
-          source: "youtube",
-          external_id: video.id,
-          source_id: source.id,
-          title: video.snippet.title,
-          creator_name: video.snippet.channelTitle,
-          youtube_channel_id: channelId,
-          media_type: data.kind,
-          category: data.kind === "music" ? "worship" : "faith",
-          language_code:
-            video.snippet.defaultAudioLanguage?.split("-")[0] ?? source.language_codes[0] ?? "und",
-          thumbnail_url:
-            video.snippet.thumbnails.high?.url ?? video.snippet.thumbnails.medium?.url ?? null,
-          duration_seconds: isoSeconds(video.contentDetails.duration),
-          published_at: video.snippet.publishedAt,
-          is_approved: true,
-          can_download: false,
-        }));
+      const parsedVideos = response.items.flatMap((item) => {
+        // Upcoming/deleted uploads may lack duration or status metadata.
+        // Reject only that incomplete video, preserving valid items in its page.
+        const parsed = videoSchema.safeParse(item);
+        return parsed.success ? [parsed.data] : [];
+      });
+      const eligibleVideos = parsedVideos.filter((video) =>
+        (data.kind === "music" ? eligibleMusicVideo : eligiblePodcastVideo)(video, channelId),
+      );
+      const rows = eligibleVideos.map((video) => ({
+        source: "youtube",
+        external_id: video.id,
+        source_id: source.id,
+        title: video.snippet.title,
+        creator_name: video.snippet.channelTitle,
+        youtube_channel_id: channelId,
+        media_type: data.kind,
+        category: data.kind === "music" ? "worship" : "faith",
+        language_code:
+          video.snippet.defaultAudioLanguage?.split("-")[0] ?? source.language_codes[0] ?? "und",
+        thumbnail_url:
+          video.snippet.thumbnails.high?.url ?? video.snippet.thumbnails.medium?.url ?? null,
+        duration_seconds: isoSeconds(video.contentDetails.duration),
+        published_at: video.snippet.publishedAt,
+        is_approved: true,
+        can_download: false,
+      }));
+      let inserted = 0;
       if (rows.length) {
-        const { error } = await db
+        const { data: insertedRows, error } = await db
           .from("media_items")
-          .upsert(rows, { onConflict: "source,external_id", ignoreDuplicates: true });
+          .upsert(rows, { onConflict: "source,external_id", ignoreDuplicates: true })
+          .select("id");
         if (error) throw new Error(`Catalogue database error (${error.code}): ${error.message}`);
+        inserted = insertedRows?.length ?? 0;
       }
       const total = await songCount();
       const next = page.nextPageToken
@@ -232,9 +248,16 @@ export const importReviewedCatalogPage = createServerFn({ method: "POST" })
           : null;
       return {
         total,
-        added: total - before,
+        added: inserted,
         next: stopAtTarget && total >= target ? null : next,
         targetReached: stopAtTarget && total >= target,
+        stats: {
+          fetched: ids.length,
+          parsed: parsedVideos.length,
+          eligible: eligibleVideos.length,
+          inserted,
+          skippedExisting: Math.max(0, eligibleVideos.length - inserted),
+        },
       };
     }
     try {
@@ -251,7 +274,7 @@ export const importReviewedCatalogPage = createServerFn({ method: "POST" })
             : result.next
               ? "running"
               : data.channelIds.length
-                ? "paused"
+                ? "complete"
                 : "exhausted",
           last_error: null,
           updated_at: new Date().toISOString(),

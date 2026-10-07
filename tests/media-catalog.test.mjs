@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { eligibleMusicVideo, eligiblePodcastVideo, isoSeconds } from "../src/lib/musicImport.ts";
+import { eligibleMusicVideo, eligiblePodcastVideo, isoSeconds, musicVideoEligibility } from "../src/lib/musicImport.ts";
 import { playableAudioUrl, youtubeVideoId } from "../src/lib/mediaPlayback.ts";
 const video = {
   id: "abcdefghijk",
@@ -20,6 +20,19 @@ test("catalogue excludes non-music, private, unembeddable, foreign-channel and K
   ])
     assert.equal(eligibleMusicVideo({ ...video, ...patch }, "official"), false);
 });
+test("music eligibility explains the exact rejection reason", () => {
+  const blocked = {
+    ...video,
+    snippet: { ...video.snippet, categoryId: "22", title: "Weekly update" },
+    contentDetails: { duration: "PT1M30S", regionRestriction: { blocked: ["KE"] } },
+  };
+  const result = musicVideoEligibility(blocked, "official");
+  assert.equal(result.eligible, false);
+  assert.ok(result.reasons.some((reason) => reason.includes("duration is 90s")));
+  assert.ok(result.reasons.some((reason) => reason.includes("blocks this video in Kenya")));
+  assert.ok(result.reasons.some((reason) => reason.includes("category is 22")));
+});
+
 test("real durations and safe playback URLs", () => {
   assert.equal(isoSeconds("PT1H2M3S"), 3723);
   assert.equal(isoSeconds("live"), 0);

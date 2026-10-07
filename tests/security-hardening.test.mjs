@@ -12,6 +12,12 @@ test("Vercel deploys browser security headers", () => {
   const byName = new Map(headers.map((entry) => [entry.key.toLowerCase(), entry.value]));
 
   assert.match(byName.get("strict-transport-security") ?? "", /max-age=63072000/);
+  assert.match(byName.get("strict-transport-security") ?? "", /includeSubDomains/);
+  assert.match(byName.get("strict-transport-security") ?? "", /preload/);
+  assert.match(byName.get("content-security-policy") ?? "", /upgrade-insecure-requests/);
+  assert.match(byName.get("content-security-policy") ?? "", /base-uri 'self'/);
+  assert.equal(byName.get("referrer-policy"), "strict-origin-when-cross-origin");
+  assert.equal(config.headers?.[0]?.source, "/(.*)");
   assert.equal(byName.get("x-content-type-options"), "nosniff");
   assert.equal(byName.get("x-frame-options"), "DENY");
   assert.match(byName.get("content-security-policy") ?? "", /frame-ancestors 'none'/);
@@ -153,4 +159,14 @@ test("group calls and posts cannot be hijacked or spoofed", () => {
   for (const column of ["author_name", "author_handle", "author_avatar_url", "like_count"]) {
     assert.doesNotMatch(postColumns, new RegExp(`\\b${column}\\b`));
   }
+});
+
+test("the CSP only allows encrypted connections to third parties", () => {
+  const config = JSON.parse(read("vercel.json"));
+  const csp =
+    config.headers?.[0]?.headers?.find((entry) => entry.key === "Content-Security-Policy")?.value ??
+    "";
+  // Every host source must be https: or wss:, never plain http: or ws:.
+  assert.doesNotMatch(csp, /(^|\s)(http|ws):/);
+  assert.doesNotMatch(csp, /'unsafe-eval'/);
 });

@@ -252,7 +252,13 @@ export function AdminV3Screen({ initialSection }: { initialSection: AdminSection
       roleLabel={roleLabel}
       attentionCount={attentionCount}
     >
-      <div className="mb-4 flex items-center justify-end">
+      <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
+        <Link
+          to="/admin-design-options"
+          className="rounded-xl border border-cyan-400/25 bg-cyan-400/10 px-3 py-2 text-xs font-semibold text-cyan-100 transition hover:border-cyan-300/50 hover:bg-cyan-400/15"
+        >
+          Compare 5 UI options
+        </Link>
         <button
           type="button"
           onClick={() => void refreshAdminData()}

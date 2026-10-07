@@ -15,7 +15,9 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthCallbackRouteImport } from './routes/auth-callback'
 import { Route as DesignPreviewRouteImport } from './routes/design-preview'
 import { Route as OpeningRouteImport } from './routes/opening'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as YoutubeAccountRouteImport } from './routes/youtube-account'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
@@ -82,9 +84,19 @@ const OpeningRoute = OpeningRouteImport.update({
   path: '/opening',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WelcomeRoute = WelcomeRouteImport.update({
@@ -282,7 +294,9 @@ export interface FileRoutesByFullPath {
   '/auth-callback': typeof AuthCallbackRoute
   '/design-preview': typeof DesignPreviewRoute
   '/opening': typeof OpeningRoute
+  '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/terms': typeof TermsRoute
   '/welcome': typeof WelcomeRoute
   '/youtube-account': typeof YoutubeAccountRoute
   '/admin': typeof AuthenticatedAdminRoute
@@ -326,7 +340,9 @@ export interface FileRoutesByTo {
   '/auth-callback': typeof AuthCallbackRoute
   '/design-preview': typeof DesignPreviewRoute
   '/opening': typeof OpeningRoute
+  '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/terms': typeof TermsRoute
   '/welcome': typeof WelcomeRoute
   '/youtube-account': typeof YoutubeAccountRoute
   '/admin': typeof AuthenticatedAdminRoute
@@ -372,7 +388,9 @@ export interface FileRoutesById {
   '/auth-callback': typeof AuthCallbackRoute
   '/design-preview': typeof DesignPreviewRoute
   '/opening': typeof OpeningRoute
+  '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/terms': typeof TermsRoute
   '/welcome': typeof WelcomeRoute
   '/youtube-account': typeof YoutubeAccountRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
@@ -418,7 +436,9 @@ export interface FileRouteTypes {
     | '/auth-callback'
     | '/design-preview'
     | '/opening'
+    | '/privacy'
     | '/reset-password'
+    | '/terms'
     | '/welcome'
     | '/youtube-account'
     | '/admin'
@@ -462,7 +482,9 @@ export interface FileRouteTypes {
     | '/auth-callback'
     | '/design-preview'
     | '/opening'
+    | '/privacy'
     | '/reset-password'
+    | '/terms'
     | '/welcome'
     | '/youtube-account'
     | '/admin'
@@ -507,7 +529,9 @@ export interface FileRouteTypes {
     | '/auth-callback'
     | '/design-preview'
     | '/opening'
+    | '/privacy'
     | '/reset-password'
+    | '/terms'
     | '/welcome'
     | '/youtube-account'
     | '/_authenticated/admin'
@@ -553,7 +577,9 @@ export interface RootRouteChildren {
   AuthCallbackRoute: typeof AuthCallbackRoute
   DesignPreviewRoute: typeof DesignPreviewRoute
   OpeningRoute: typeof OpeningRoute
+  PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  TermsRoute: typeof TermsRoute
   WelcomeRoute: typeof WelcomeRoute
   YoutubeAccountRoute: typeof YoutubeAccountRoute
   BooksBookIdRoute: typeof BooksBookIdRoute
@@ -605,11 +631,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OpeningRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reset-password': {
       id: '/reset-password'
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/welcome': {
@@ -945,7 +985,9 @@ const rootRouteChildren: RootRouteChildren = {
   AuthCallbackRoute: AuthCallbackRoute,
   DesignPreviewRoute: DesignPreviewRoute,
   OpeningRoute: OpeningRoute,
+  PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  TermsRoute: TermsRoute,
   WelcomeRoute: WelcomeRoute,
   YoutubeAccountRoute: YoutubeAccountRoute,
   BooksBookIdRoute: BooksBookIdRoute,

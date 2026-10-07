@@ -123,3 +123,20 @@ test("admin AI reporting exposes only privacy-safe aggregates behind a super-adm
     /jsonb_build_object\([^;]*'(content|prompt|answer|conversation_id|user_id)'/,
   );
 });
+
+test("prayer request authors are never readable through the API", () => {
+  const migration = read("supabase/migrations/20261007120000_hide_prayer_request_authors.sql");
+  assert.match(migration, /revoke select on public\.prayer_requests from anon, authenticated/);
+  assert.match(
+    migration,
+    /grant select \(id, title, body, is_anonymous, prayer_count, created_at\)/,
+  );
+  assert.match(migration, /security definer/);
+  assert.match(
+    migration,
+    /revoke all on function public\.list_prayer_requests\(integer\) from public, anon/,
+  );
+
+  const service = read("src/services/content.ts");
+  assert.match(service, /rpc\("list_prayer_requests"/);
+});

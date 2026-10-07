@@ -25,6 +25,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { timeAgo } from "@/lib/format";
 import type { PilotMetrics } from "@/services/pilot";
+import type { AdminFactSnapshot } from "@/lib/adminFacts.functions";
 import type { ModerationItem } from "@/services/content";
 import type { AdminSectionId } from "@/components/nuru/AdminCommandShell";
 import { GhostButton, GradientButton } from "@/components/nuru/Primitives";
@@ -40,6 +41,9 @@ export function AdminDashboardOverview({
   openReports,
   unverifiedMentorCount,
   healthChecks,
+  facts,
+  factsLoading,
+  factsError,
   onNavigate,
 }: {
   userName: string;
@@ -50,6 +54,9 @@ export function AdminDashboardOverview({
   openReports: ModerationItem[];
   unverifiedMentorCount: number;
   healthChecks: HealthCheck[];
+  facts: AdminFactSnapshot | undefined;
+  factsLoading: boolean;
+  factsError: boolean;
   onNavigate: (section: AdminSectionId) => void;
 }) {
   const since = useMemo(
@@ -241,50 +248,53 @@ export function AdminDashboardOverview({
       .slice(0, 7);
   }, [recentPeople.data, recentChurches.data, recentPosts.data]);
 
-  const pendingCount =
-    (mediaSummary.data?.pendingItems ?? 0) + openReports.length + unverifiedMentorCount;
-  const healthy = healthChecks.every((check) => !check.error) && !mediaSummary.isError;
+  const counts = facts?.counts;
+  const pendingMediaCount = counts?.pendingMediaItems ?? mediaSummary.data?.pendingItems ?? 0;
+  const pendingCount = pendingMediaCount + openReports.length + unverifiedMentorCount;
+  const healthy = healthChecks.every((check) => !check.error) && !factsError;
   const firstName = userName.trim().split(/\s+/)[0] || "Admin";
   const maxSignups = Math.max(1, ...signupDays.map((day) => day.count));
-  const totalMedia = mediaSummary.data?.totalItems ?? 0;
-  const pendingMediaCount = mediaSummary.data?.pendingItems ?? 0;
+  const totalMedia = counts?.mediaItemsTotal ?? mediaSummary.data?.totalItems ?? 0;
   const pendingMediaRate = totalMedia ? Math.round((pendingMediaCount / totalMedia) * 1000) / 10 : 0;
   const learningLibrary =
-    (platformSummary.data?.devotionals ?? 0) +
-    (platformSummary.data?.series ?? 0) +
-    (platformSummary.data?.courses ?? 0);
-  const communitySignals =
-    (platformSummary.data?.messages ?? 0) +
-    (platformSummary.data?.prayers ?? 0) +
-    (platformSummary.data?.posts ?? 0);
-  const attentionSources =
-    healthChecks.filter((check) => check.error).length + (mediaSummary.isError ? 1 : 0);
-  const connectedSources =
-    healthChecks.filter((check) => !check.error && !check.loading).length +
-    (!mediaSummary.isError && !mediaSummary.isLoading ? 1 : 0);
-  const totalHealthSources = healthChecks.length + 1;
+    (counts?.devotionals ?? platformSummary.data?.devotionals ?? 0) +
+    (counts?.scriptureSeries ?? platformSummary.data?.series ?? 0) +
+    (counts?.courses ?? platformSummary.data?.courses ?? 0);
+  const communityRecords =
+    (counts?.directMessages ?? platformSummary.data?.messages ?? 0) +
+    (counts?.prayerRequests ?? platformSummary.data?.prayers ?? 0) +
+    (counts?.posts ?? platformSummary.data?.posts ?? 0);
+  const attentionSources = healthChecks.filter((check) => check.error).length;
+  const connectedSources = healthChecks.filter((check) => !check.error && !check.loading).length;
+  const totalHealthSources = healthChecks.length;
+  const musicImport = facts?.imports.find((row) => row.kind === "music");
+  const podcastImport = facts?.imports.find((row) => row.kind === "podcast");
 
   const metrics = [
     {
       label: "Total Users",
-      value: pilot?.profiles ?? "—",
-      detail: pilot ? String(pilot.active_7d) + " active in 7 days" : "Live profile count",
+      value: counts?.profiles ?? pilot?.profiles ?? "—",
+      detail: pilot ? String(pilot.active_7d) + " active in 7 days" : "Exact profile count",
       icon: Users,
       accent: "cyan" as const,
       onClick: () => onNavigate("users"),
     },
     {
       label: "Churches",
-      value: churchCount,
-      detail: String(groupCount) + " groups · " + String(eventCount) + " events",
+      value: counts?.churches ?? churchCount,
+      detail:
+        String(counts?.groups ?? groupCount) +
+        " groups · " +
+        String(counts?.events ?? eventCount) +
+        " events",
       icon: Church,
       accent: "blue" as const,
       onClick: () => onNavigate("churches"),
     },
     {
       label: "Approved Artists",
-      value: mediaSummary.data?.approvedSources ?? "—",
-      detail: "Verified and approved media sources",
+      value: counts?.approvedMusicSources ?? "—",
+      detail: "Verified + approved YouTube music sources",
       icon: Music2,
       accent: "purple" as const,
       onClick: () => onNavigate("music"),
@@ -292,7 +302,13 @@ export function AdminDashboardOverview({
     {
       label: "Pending Reviews",
       value: pendingCount,
-      detail: String(openReports.length) + " safety reports",
+      detail:
+        String(pendingMediaCount) +
+        " media · " +
+        String(openReports.length) +
+        " reports · " +
+        String(unverifiedMentorCount) +
+        " mentors",
       icon: FileCheck2,
       accent: "amber" as const,
       onClick: () => onNavigate(openReports.length ? "moderation" : "content"),
@@ -320,9 +336,18 @@ export function AdminDashboardOverview({
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-200 sm:text-base">
               Run the community, content and safety side of Nuru Faith from one clear workspace.
             </p>
-            <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-[10px] font-semibold text-emerald-300">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
-              Live operations · dashboard data refreshes every 60 seconds
+            <div className="mt-3 flex flex-wrap gap-2">
+              <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-[10px] font-semibold text-emerald-300">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
+                Live operations · refreshes every 60 seconds
+              </span>
+              <span className="inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-[10px] font-semibold text-cyan-200">
+                {factsLoading
+                  ? "Refreshing production facts…"
+                  : facts
+                    ? `Supabase production · captured ${timeAgo(facts.capturedAt)}`
+                    : "Production fact snapshot unavailable"}
+              </span>
             </div>
             <div className="mt-5 flex flex-wrap gap-2">
               <GradientButton onClick={() => onNavigate("content")} className="min-h-10 px-4 text-xs">
@@ -347,8 +372,8 @@ export function AdminDashboardOverview({
           <div className="grid grid-cols-2 gap-2 self-stretch">
             <HeroMiniStat label="Active today" value={pilot?.active_today ?? "—"} icon={Activity} />
             <HeroMiniStat label="New signups" value={signupTrend.data?.length ?? "—"} icon={UserPlus} />
-            <HeroMiniStat label="Reels" value={platformSummary.data?.reels ?? "—"} icon={Clapperboard} />
-            <HeroMiniStat label="Media items" value={mediaSummary.data?.totalItems ?? "—"} icon={Music2} />
+            <HeroMiniStat label="Reels" value={counts?.reels ?? platformSummary.data?.reels ?? "—"} icon={Clapperboard} />
+            <HeroMiniStat label="Media items" value={totalMedia || "—"} icon={Music2} />
           </div>
         </div>
       </section>
@@ -404,10 +429,10 @@ export function AdminDashboardOverview({
 
         <BentoCard className="xl:col-span-4" title="Faith & community pulse" icon={HeartHandshake}>
           <div className="grid grid-cols-2 gap-2">
-            <PulseStat label="Prayer requests" value={platformSummary.data?.prayers ?? "—"} />
-            <PulseStat label="Direct messages" value={platformSummary.data?.messages ?? "—"} />
-            <PulseStat label="Groups" value={groupCount} />
-            <PulseStat label="Events" value={eventCount} />
+            <PulseStat label="Prayer requests" value={counts?.prayerRequests ?? platformSummary.data?.prayers ?? "—"} />
+            <PulseStat label="Direct messages" value={counts?.directMessages ?? platformSummary.data?.messages ?? "—"} />
+            <PulseStat label="Groups" value={counts?.groups ?? groupCount} />
+            <PulseStat label="Events" value={counts?.events ?? eventCount} />
           </div>
           <div className="mt-3 rounded-2xl border border-cyan-400/15 bg-cyan-400/[0.05] p-4">
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-300">
@@ -417,7 +442,8 @@ export function AdminDashboardOverview({
               More people. Deeper faith. Stronger community.
             </p>
             <p className="mt-2 text-xs leading-5 text-slate-400">
-              This card uses live Nuru community records rather than estimated impact numbers.
+              The figures above are record counts from the production database. They do not claim
+              spiritual impact, engagement quality or outcomes that Nuru has not measured.
             </p>
           </div>
         </BentoCard>
@@ -428,7 +454,7 @@ export function AdminDashboardOverview({
               All {pendingCount}
             </span>
             <span className="rounded-full border border-[#234b68] px-3 py-1 text-slate-400">
-              Media {mediaSummary.data?.pendingItems ?? 0}
+              Media {pendingMediaCount}
             </span>
             <span className="rounded-full border border-[#234b68] px-3 py-1 text-slate-400">
               Reports {openReports.length}
@@ -535,12 +561,12 @@ export function AdminDashboardOverview({
 
         <BentoCard className="xl:col-span-3" title="Content library" icon={BookOpen}>
           <div className="grid grid-cols-2 gap-2">
-            <LibraryStat label="Media" value={mediaSummary.data?.totalItems ?? "—"} />
-            <LibraryStat label="Reels" value={platformSummary.data?.reels ?? "—"} />
-            <LibraryStat label="Devotions" value={platformSummary.data?.devotionals ?? "—"} />
-            <LibraryStat label="Series" value={platformSummary.data?.series ?? "—"} />
-            <LibraryStat label="Courses" value={platformSummary.data?.courses ?? "—"} />
-            <LibraryStat label="Posts" value={platformSummary.data?.posts ?? "—"} />
+            <LibraryStat label="Media" value={totalMedia || "—"} />
+            <LibraryStat label="Reels" value={counts?.reels ?? platformSummary.data?.reels ?? "—"} />
+            <LibraryStat label="Devotions" value={counts?.devotionals ?? platformSummary.data?.devotionals ?? "—"} />
+            <LibraryStat label="Series" value={counts?.scriptureSeries ?? platformSummary.data?.series ?? "—"} />
+            <LibraryStat label="Courses" value={counts?.courses ?? platformSummary.data?.courses ?? "—"} />
+            <LibraryStat label="Posts" value={counts?.posts ?? platformSummary.data?.posts ?? "—"} />
           </div>
           <GhostButton onClick={() => onNavigate("content")} className="mt-3 min-h-9 w-full text-[10px]">
             Manage content <ArrowRight className="h-3.5 w-3.5" />
@@ -568,9 +594,9 @@ export function AdminDashboardOverview({
               tone={pendingMediaRate > 10 ? "amber" : "green"}
             />
             <IntelligenceStat
-              label="Community signals"
-              value={communitySignals}
-              detail="Messages + prayer + posts"
+              label="Community records"
+              value={communityRecords}
+              detail="Messages + prayer requests + posts"
               tone="purple"
             />
           </div>
@@ -606,6 +632,38 @@ export function AdminDashboardOverview({
           </div>
         </BentoCard>
 
+        <BentoCard className="xl:col-span-4" title="Catalogue Operations" icon={Music2}>
+          <div className="space-y-2">
+            <ImportStatusRow label="Music scan" row={musicImport} />
+            <ImportStatusRow label="Podcast scan" row={podcastImport} />
+            <div className="grid grid-cols-2 gap-2">
+              <MiniData
+                label="Approved songs"
+                value={counts?.approvedMusicItems ?? "—"}
+                detail="YouTube music items"
+              />
+              <MiniData
+                label="Video podcasts"
+                value={counts?.approvedPodcastItems ?? "—"}
+                detail="Approved YouTube items"
+              />
+              <MiniData
+                label="Music sources"
+                value={counts?.approvedMusicSources ?? "—"}
+                detail="Approved + verified"
+              />
+              <MiniData
+                label="Podcast sources"
+                value={counts?.approvedPodcastSources ?? "—"}
+                detail="Approved + verified"
+              />
+            </div>
+            <GhostButton onClick={() => onNavigate("music")} className="min-h-10 w-full text-[10px]">
+              Open media operations <ArrowRight className="h-3.5 w-3.5" />
+            </GhostButton>
+          </div>
+        </BentoCard>
+
         <BentoCard className="xl:col-span-4" title="Attention Center" icon={TriangleAlert}>
           <div className="space-y-2">
             <AttentionAction
@@ -613,7 +671,7 @@ export function AdminDashboardOverview({
               value={pendingMediaCount}
               detail="Open the content and music review flow"
               urgent={pendingMediaCount > 0}
-              onClick={() => onNavigate("content")}
+              onClick={() => onNavigate("music")}
             />
             <AttentionAction
               label="Safety reports"
@@ -645,9 +703,10 @@ export function AdminDashboardOverview({
               <HealthTile key={check.label} label={check.label} error={check.error} loading={check.loading} />
             ))}
             <HealthTile
-              label="Media catalogue"
-              error={mediaSummary.isError}
-              loading={mediaSummary.isLoading}
+              label="YouTube API config"
+              error={facts ? !facts.youtubeApiConfigured : factsError}
+              loading={factsLoading}
+              okText={facts?.youtubeApiConfigured ? "Configured" : "Unavailable"}
             />
           </div>
           <div className="mt-3 flex items-center gap-2 text-[10px] font-semibold">
@@ -886,20 +945,82 @@ function AttentionAction({
   );
 }
 
+function ImportStatusRow({
+  label,
+  row,
+}: {
+  label: string;
+  row:
+    | {
+        status: string;
+        importedTotal: number;
+        pagesProcessed: number;
+        hasNextPage: boolean;
+        lastError: string | null;
+        updatedAt: string;
+      }
+    | undefined;
+}) {
+  if (!row) {
+    return (
+      <div className="rounded-2xl border border-[#163a55] bg-[#04111f] p-3">
+        <p className="text-[10px] font-semibold text-slate-300">{label}</p>
+        <p className="mt-1 text-[10px] text-slate-500">No import record is available.</p>
+      </div>
+    );
+  }
+  const problem = Boolean(row.lastError);
+  return (
+    <div className="rounded-2xl border border-[#163a55] bg-[#04111f] p-3">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-[10px] font-semibold text-slate-300">{label}</p>
+        <span
+          className={[
+            "rounded-full border px-2 py-0.5 text-[9px] font-semibold capitalize",
+            problem
+              ? "border-rose-400/20 bg-rose-400/10 text-rose-300"
+              : row.status === "running"
+                ? "border-cyan-400/20 bg-cyan-400/10 text-cyan-300"
+                : "border-emerald-400/20 bg-emerald-400/10 text-emerald-300",
+          ].join(" ")}
+        >
+          {problem ? "attention" : row.status}
+        </span>
+      </div>
+      <div className="mt-2 grid grid-cols-2 gap-2 text-[10px]">
+        <div>
+          <p className="text-slate-600">Imported total</p>
+          <p className="mt-0.5 font-semibold text-white">{row.importedTotal.toLocaleString()}</p>
+        </div>
+        <div>
+          <p className="text-slate-600">Pages processed</p>
+          <p className="mt-0.5 font-semibold text-white">{row.pagesProcessed.toLocaleString()}</p>
+        </div>
+      </div>
+      <p className="mt-2 text-[9px] text-slate-600">
+        Updated {timeAgo(row.updatedAt)}{row.hasNextPage ? " · continuation saved" : ""}
+      </p>
+      {row.lastError && <p className="mt-1 text-[9px] text-rose-300">{row.lastError}</p>}
+    </div>
+  );
+}
+
 function HealthTile({
   label,
   error,
   loading,
+  okText = "Operational",
 }: {
   label: string;
   error: boolean;
   loading: boolean;
+  okText?: string;
 }) {
   const state = error
     ? { text: "Attention", textClass: "text-rose-300", dot: "bg-rose-400" }
     : loading
       ? { text: "Syncing", textClass: "text-amber-300", dot: "bg-amber-400" }
-      : { text: "Operational", textClass: "text-emerald-300", dot: "bg-emerald-400" };
+      : { text: okText, textClass: "text-emerald-300", dot: "bg-emerald-400" };
 
   return (
     <div className="rounded-2xl border border-[#163a55] bg-[#04111f] p-3">

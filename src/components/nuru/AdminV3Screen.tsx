@@ -1,4 +1,4 @@
-import { useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
+import { useEffect, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -64,10 +64,12 @@ export function AdminV3Screen({ initialSection }: { initialSection: AdminSection
     void navigate({ to: "/admin", search: { section }, replace: true });
   }
 
+  useEffect(() => { setLocalSection(initialSection); }, [initialSection]);
+
   async function refreshAdminData() {
     setIsRefreshing(true);
     try {
-      await qc.refetchQueries({ type: "active" });
+      await qc.refetchQueries({ type: "active" }, { throwOnError: true });
       toast.success("Admin data refreshed.");
     } catch {
       toast.error("Some admin data could not be refreshed.");
@@ -148,6 +150,10 @@ export function AdminV3Screen({ initialSection }: { initialSection: AdminSection
         <CardSkeleton count={5} height="h-24" />
       </div>
     );
+  }
+
+  if (roles.isError) {
+    return <div className="mx-auto max-w-md p-6"><EmptyState title="Could not verify admin access" description="Retry loading your roles." action={<button type="button" onClick={() => void roles.refetch()}>Retry</button>} /></div>;
   }
 
   if (!isAdmin) {

@@ -18,10 +18,11 @@ export type MediaItem = {
   scripture_ref: string | null;
   can_download: boolean;
   is_featured: boolean;
+  language_code?: string;
 };
 
 const ITEM_COLUMNS =
-  "id, source, external_id, title, description, thumbnail_url, media_type, category, creator_name, youtube_channel_id, church_id, audio_url, duration_seconds, scripture_ref, can_download, is_featured";
+  "id, source, external_id, title, description, thumbnail_url, media_type, category, creator_name, youtube_channel_id, church_id, audio_url, duration_seconds, scripture_ref, can_download, is_featured, language_code";
 
 export async function fetchMediaCategories() {
   const { data, error } = await supabase

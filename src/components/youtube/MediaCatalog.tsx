@@ -137,7 +137,9 @@ export function MediaCatalog({
           description={
             query
               ? "Try a title or creator name."
-              : "New media will appear here when it is published."
+              : playback === "audio" && mediaType === "music"
+                ? "No audio-only songs are published yet. Choose Video to listen to the available worship songs."
+                : "New media will appear here when it is published."
           }
         />
       )}
@@ -226,7 +228,7 @@ export function MediaPlayback({
   const audioRef = useRef<HTMLAudioElement>(null);
   const [audioFailed, setAudioFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
-  const [playing, setPlaying] = useState(false);
+  const [playing, setPlaying] = useState(true);
   const [muted, setMuted] = useState(false);
   const [repeat, setRepeat] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -235,7 +237,7 @@ export function MediaPlayback({
 
   useEffect(() => {
     setAudioFailed(false);
-    setPlaying(false);
+    setPlaying(true);
     setMuted(false);
     setRepeat(false);
     setCurrentTime(0);
@@ -250,12 +252,22 @@ export function MediaPlayback({
   const queueMediaType: "music" | "podcast" = item.media_type === "podcast" ? "podcast" : "music";
   const queuePlayback: "audio" | "video" = isVideo ? "video" : "audio";
 
+  const canonicalItem = useQuery({
+    queryKey: ["canonical-media-item", item.source, item.external_id],
+    queryFn: () => fetchMediaItemBySourceExternalId(item.source, item.external_id),
+    enabled: !!item.external_id && !/^[0-9a-f-]{36}$/i.test(item.id),
+    staleTime: 5 * 60 * 1000,
+  });
+  const canonicalId = /^[0-9a-f-]{36}$/i.test(item.id) ? item.id : (canonicalItem.data?.id ?? null);
+
+  const queueLanguage = item.language_code ?? canonicalItem.data?.language_code;
   const queue = useQuery({
-    queryKey: ["media-up-next", queueMediaType, queuePlayback, item.id, item.external_id],
+    queryKey: ["media-up-next", queueMediaType, queuePlayback, item.id, item.external_id, queueLanguage],
     queryFn: async () => {
       const page = await fetchMediaCatalog({
         mediaType: queueMediaType,
         playback: queuePlayback,
+        language: queueLanguage && queueLanguage !== "und" ? queueLanguage : "all",
         page: 0,
       });
       const currentIndex = page.items.findIndex(
@@ -275,6 +287,7 @@ export function MediaPlayback({
         )
         .slice(0, 8);
     },
+    enabled: !canonicalItem.isLoading,
     staleTime: 60_000,
   });
   const upNext = queue.data ?? [];
@@ -286,13 +299,6 @@ export function MediaPlayback({
     onSelect(next);
   }
 
-  const canonicalItem = useQuery({
-    queryKey: ["canonical-media-item", item.source, item.external_id],
-    queryFn: () => fetchMediaItemBySourceExternalId(item.source, item.external_id),
-    enabled: !!item.external_id && !/^[0-9a-f-]{36}$/i.test(item.id),
-    staleTime: 5 * 60 * 1000,
-  });
-  const canonicalId = /^[0-9a-f-]{36}$/i.test(item.id) ? item.id : (canonicalItem.data?.id ?? null);
 
   const savedIds = useQuery({
     queryKey: ["saved-media-ids", userId],
@@ -400,6 +406,8 @@ export function MediaPlayback({
                 playing={playing}
                 loop={repeat}
                 controls
+                autoplay
+                onEnded={() => { if (!repeat && nextItem) playQueueItem(nextItem); }}
                 onPlaybackChange={setPlaying}
                 className="aspect-video min-h-0 rounded-none"
               />
@@ -631,7 +639,11 @@ export function MediaPlayback({
               onTimeUpdate={(event) => setCurrentTime(event.currentTarget.currentTime)}
               onPlay={() => setPlaying(true)}
               onPause={() => setPlaying(false)}
-              onEnded={() => setPlaying(false)}
+              autoPlay
+              onEnded={() => {
+                setPlaying(false);
+                if (!repeat && nextItem) playQueueItem(nextItem);
+              }}
               onError={() => setAudioFailed(true)}
             />
           )}

@@ -16,6 +16,7 @@ export function InAppMediaPlayer({
   controls = true,
   interactive = true,
   onPlaybackChange,
+  onEnded,
 }: {
   videoId?: string;
   playlistId?: string;
@@ -28,16 +29,17 @@ export function InAppMediaPlayer({
   controls?: boolean;
   interactive?: boolean;
   onPlaybackChange?: (playing: boolean) => void;
+  onEnded?: () => void;
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<YoutubePlayer | null>(null);
   const ready = useRef(false);
-  const latest = useRef({ muted, playing, onPlaybackChange });
+  const latest = useRef({ muted, playing, onPlaybackChange, onEnded });
   const [notice, setNotice] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
-    latest.current = { muted, playing, onPlaybackChange };
-  }, [muted, playing, onPlaybackChange]);
+    latest.current = { muted, playing, onPlaybackChange, onEnded };
+  }, [muted, playing, onPlaybackChange, onEnded]);
   const src = useMemo(
     () => youtubeEmbedUrl({ videoId, playlistId, autoplay, muted, loop, controls }),
     // Sound and playback changes must not reload a video.
@@ -52,7 +54,6 @@ export function InAppMediaPlayer({
     let player: YoutubePlayer | undefined;
     ready.current = false;
     setNotice(null);
-    latest.current.onPlaybackChange?.(false);
     // The API owns this iframe, so destroy() never removes React-owned children.
     const frame = document.createElement("iframe");
     const url = new URL(src);
@@ -104,7 +105,9 @@ export function InAppMediaPlayer({
             onStateChange: (event) => {
               if (cancelled) return;
               clearBuffering();
-              latest.current.onPlaybackChange?.(event.data === 1);
+              if ([0, 1, 2].includes(event.data))
+                latest.current.onPlaybackChange?.(event.data === 1);
+              if (event.data === 0) latest.current.onEnded?.();
               if (event.data === 1) setNotice(null);
               if (event.data === 3)
                 bufferingTimer = window.setTimeout(() => {

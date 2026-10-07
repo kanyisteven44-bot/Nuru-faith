@@ -529,9 +529,15 @@ function AuthPage() {
         )}
 
         <p className="mt-auto pt-8 text-center text-[11px] leading-relaxed text-muted-foreground">
-          By continuing, you agree to our Terms and
-          <br />
-          Privacy Policy.
+          By continuing, you agree to our{" "}
+          <Link to="/terms" className="font-medium text-foreground hover:underline">
+            Terms
+          </Link>{" "}
+          and{" "}
+          <Link to="/privacy" className="font-medium text-foreground hover:underline">
+            Privacy Policy
+          </Link>
+          .
         </p>
       </div>
     </div>

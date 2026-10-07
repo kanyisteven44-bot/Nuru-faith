@@ -26,6 +26,7 @@ import { InAppMediaPlayer, YouTubeNotice } from "@/components/youtube/InAppMedia
 import { MusicCatalogImport } from "@/components/youtube/MusicCatalogImport";
 import { GhostButton, PillTabs, PrimaryButton } from "@/components/nuru/Primitives";
 import { MfaChallenge } from "@/components/nuru/MfaSecurity";
+import { getAdminFactSnapshot } from "@/lib/adminFacts.functions";
 
 const TABS = ["Artists", "Songs", "Podcasts", "Pending", "Importer"] as const;
 type Tab = (typeof TABS)[number];
@@ -62,6 +63,44 @@ export function AdminMediaWorkspace() {
   const [needsMfa, setNeedsMfa] = useState(false);
   const [presetChannelId, setPresetChannelId] = useState("");
   const [presetKind, setPresetKind] = useState<"music" | "podcast">("music");
+  const [youtubeCheck, setYoutubeCheck] = useState<"not-tested" | "working" | "error">("not-tested");
+
+  const facts = useQuery({
+    queryKey: ["admin-fact-snapshot"],
+    queryFn: () => getAdminFactSnapshot(),
+    staleTime: 15_000,
+    refetchInterval: 60_000,
+    refetchIntervalInBackground: false,
+  });
+
+  const sourceStatus = useQuery({
+    queryKey: ["admin-media-source-status", selectedChannel?.channelId],
+    enabled: Boolean(selectedChannel?.channelId),
+    queryFn: async () => {
+      const result = await supabase
+        .from("media_sources")
+        .select("id,name,is_approved,is_verified,content_kind,updated_at")
+        .eq("youtube_channel_id", selectedChannel!.channelId)
+        .maybeSingle();
+      if (result.error) throw result.error;
+      return result.data;
+    },
+  });
+
+  const videoStatus = useQuery({
+    queryKey: ["admin-media-video-status", selectedVideo?.videoId],
+    enabled: Boolean(selectedVideo?.videoId),
+    queryFn: async () => {
+      const result = await supabase
+        .from("media_items")
+        .select("id,title,is_approved,media_type,updated_at")
+        .eq("source", "youtube")
+        .eq("external_id", selectedVideo!.videoId)
+        .maybeSingle();
+      if (result.error) throw result.error;
+      return result.data;
+    },
+  });
 
   const summary = useQuery({
     queryKey: ["admin-media-workspace-summary"],
@@ -135,10 +174,14 @@ export function AdminMediaWorkspace() {
       return adminYouTubeSearch({ data: { query: term, type, maxResults: 12 } });
     },
     onSuccess: () => {
+      setYoutubeCheck("working");
       setSelectedChannel(null);
       setSelectedVideo(null);
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "YouTube search failed."),
+    onError: (error) => {
+      setYoutubeCheck("error");
+      toast.error(error instanceof Error ? error.message : "YouTube search failed.");
+    },
   });
 
   const lookup = useMutation({
@@ -151,6 +194,7 @@ export function AdminMediaWorkspace() {
       return { parsed, item: result.item };
     },
     onSuccess: ({ parsed, item }) => {
+      setYoutubeCheck("working");
       if (parsed.kind === "channel" && "youtubeChannelId" in item) {
         setTab("Artists");
         setSelectedVideo(null);
@@ -176,7 +220,10 @@ export function AdminMediaWorkspace() {
         if (tab === "Artists" || tab === "Pending" || tab === "Importer") setTab("Songs");
       }
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "YouTube lookup failed."),
+    onError: (error) => {
+      setYoutubeCheck("error");
+      toast.error(error instanceof Error ? error.message : "YouTube lookup failed.");
+    },
   });
 
   function approvalError(error: unknown) {
@@ -197,8 +244,12 @@ export function AdminMediaWorkspace() {
       });
     },
     onSuccess: async (result) => {
-      await client.invalidateQueries({ queryKey: ["admin-media-workspace-summary"] });
-      await client.invalidateQueries({ queryKey: ["media-sources"] });
+      await Promise.all([
+        client.invalidateQueries({ queryKey: ["admin-media-workspace-summary"] }),
+        client.invalidateQueries({ queryKey: ["admin-fact-snapshot"] }),
+        client.invalidateQueries({ queryKey: ["admin-media-source-status"] }),
+        client.invalidateQueries({ queryKey: ["media-sources"] }),
+      ]);
       setPresetChannelId(result.channelId);
       setPresetKind(result.contentKind === "podcast" ? "podcast" : "music");
       toast.success(`${result.name} is approved and ready for catalogue scanning.`);
@@ -217,8 +268,12 @@ export function AdminMediaWorkspace() {
       });
     },
     onSuccess: async (result) => {
-      await client.invalidateQueries({ queryKey: ["admin-media-workspace-summary"] });
-      await client.invalidateQueries({ queryKey: ["media-catalog"] });
+      await Promise.all([
+        client.invalidateQueries({ queryKey: ["admin-media-workspace-summary"] }),
+        client.invalidateQueries({ queryKey: ["admin-fact-snapshot"] }),
+        client.invalidateQueries({ queryKey: ["admin-media-video-status"] }),
+        client.invalidateQueries({ queryKey: ["media-catalog"] }),
+      ]);
       toast.success(`${result.title} is approved in Nuru.`);
     },
     onError: approvalError,
@@ -231,6 +286,7 @@ export function AdminMediaWorkspace() {
         client.invalidateQueries({ queryKey: ["admin-media-workspace-summary"] }),
         client.invalidateQueries({ queryKey: ["admin-media-pending-items"] }),
         client.invalidateQueries({ queryKey: ["admin-dashboard-media-summary"] }),
+        client.invalidateQueries({ queryKey: ["admin-fact-snapshot"] }),
       ]);
       toast.success(`${result.title} approved.`);
     },
@@ -239,6 +295,9 @@ export function AdminMediaWorkspace() {
 
   const channelResults = search.data?.channels ?? [];
   const videoResults = search.data?.videos ?? [];
+  const factCounts = facts.data?.counts;
+  const musicImport = facts.data?.imports.find((row) => row.kind === "music");
+  const podcastImport = facts.data?.imports.find((row) => row.kind === "podcast");
   const activeVideoType = tab === "Podcasts" ? "podcast" : "music";
   const suggestions = useMemo(
     () =>
@@ -263,11 +322,11 @@ export function AdminMediaWorkspace() {
       )}
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-        <SummaryCard label="Approved artists" value={summary.data?.musicSources ?? "—"} icon={Music2} />
-        <SummaryCard label="Podcast creators" value={summary.data?.podcastSources ?? "—"} icon={Podcast} />
-        <SummaryCard label="Approved songs" value={summary.data?.music ?? "—"} icon={BadgeCheck} />
-        <SummaryCard label="Video podcasts" value={summary.data?.podcasts ?? "—"} icon={Youtube} />
-        <SummaryCard label="Pending review" value={summary.data?.pending ?? "—"} icon={ShieldCheck} />
+        <SummaryCard label="Approved artists" value={factCounts?.approvedMusicSources ?? summary.data?.musicSources ?? "—"} icon={Music2} />
+        <SummaryCard label="Podcast creators" value={factCounts?.approvedPodcastSources ?? summary.data?.podcastSources ?? "—"} icon={Podcast} />
+        <SummaryCard label="Approved songs" value={factCounts?.approvedMusicItems ?? summary.data?.music ?? "—"} icon={BadgeCheck} />
+        <SummaryCard label="Video podcasts" value={factCounts?.approvedPodcastItems ?? summary.data?.podcasts ?? "—"} icon={Youtube} />
+        <SummaryCard label="Pending review" value={factCounts?.pendingMediaItems ?? summary.data?.pending ?? "—"} icon={ShieldCheck} />
       </section>
 
       <section className="rounded-[24px] border border-[#153b5c] bg-[#071727] p-4">
@@ -282,9 +341,40 @@ export function AdminMediaWorkspace() {
               artists and creators, then keep importing songs and video podcasts from reviewed sources.
             </p>
           </div>
-          <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-[10px] font-semibold text-emerald-300">
-            YouTube API connected
-          </span>
+          <div className="flex flex-wrap justify-end gap-2">
+            <span
+              className={[
+                "rounded-full border px-3 py-1 text-[10px] font-semibold",
+                facts.data?.youtubeApiConfigured
+                  ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-300"
+                  : facts.isLoading
+                    ? "border-amber-400/20 bg-amber-400/10 text-amber-300"
+                    : "border-rose-400/20 bg-rose-400/10 text-rose-300",
+              ].join(" ")}
+            >
+              {facts.isLoading
+                ? "Checking YouTube configuration…"
+                : facts.data?.youtubeApiConfigured
+                  ? "YouTube API key configured"
+                  : "YouTube API not configured"}
+            </span>
+            <span
+              className={[
+                "rounded-full border px-3 py-1 text-[10px] font-semibold",
+                youtubeCheck === "working"
+                  ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-300"
+                  : youtubeCheck === "error"
+                    ? "border-rose-400/20 bg-rose-400/10 text-rose-300"
+                    : "border-[#234b68] bg-[#0a2033] text-slate-400",
+              ].join(" ")}
+            >
+              {youtubeCheck === "working"
+                ? "Last YouTube request succeeded"
+                : youtubeCheck === "error"
+                  ? "Last YouTube request failed"
+                  : "YouTube request not tested this session"}
+            </span>
+          </div>
         </div>
 
         <div className="mt-4">
@@ -296,7 +386,12 @@ export function AdminMediaWorkspace() {
       </section>
 
       {tab === "Importer" ? (
-        <div className="grid gap-4 xl:grid-cols-[1fr_0.72fr]">
+        <div className="space-y-4">
+          <div className="grid gap-3 md:grid-cols-2">
+            <ImportFactCard label="Music catalogue scan" row={musicImport} />
+            <ImportFactCard label="Podcast catalogue scan" row={podcastImport} />
+          </div>
+          <div className="grid gap-4 xl:grid-cols-[1fr_0.72fr]">
           <MusicCatalogImport presetChannelId={presetChannelId} presetKind={presetKind} />
           <section className="rounded-[24px] border border-[#153b5c] bg-[#071727] p-5">
             <h3 className="font-display text-lg font-semibold text-white">How approvals flow</h3>
@@ -318,6 +413,7 @@ export function AdminMediaWorkspace() {
               </div>
             )}
           </section>
+          </div>
         </div>
       ) : tab === "Pending" ? (
         <section className="rounded-[24px] border border-[#153b5c] bg-[#071727] p-4">
@@ -528,12 +624,35 @@ export function AdminMediaWorkspace() {
                   <h4 className="mt-4 text-sm font-semibold text-white">{selectedVideo.title}</h4>
                   <p className="mt-1 text-xs text-slate-400">{selectedVideo.channelName}</p>
                   <div className="mt-4 flex flex-wrap gap-2">
+                    <FactBadge
+                      label="Nuru status"
+                      value={
+                        sourceStatus.isLoading
+                          ? "Checking…"
+                          : sourceStatus.data?.is_approved && sourceStatus.data?.is_verified
+                            ? "Approved + verified"
+                            : sourceStatus.data
+                              ? "Needs review"
+                              : "Not stored"
+                      }
+                      good={Boolean(sourceStatus.data?.is_approved && sourceStatus.data?.is_verified)}
+                    />
+                    {sourceStatus.data?.content_kind && (
+                      <FactBadge label="Current type" value={sourceStatus.data.content_kind} />
+                    )}
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap gap-2">
                     <PrimaryButton
-                      disabled={approveVideo.isPending}
+                      disabled={approveVideo.isPending || videoStatus.data?.is_approved === true}
                       onClick={() => approveVideo.mutate()}
                       className="min-h-10 px-4 text-xs"
                     >
-                      {approveVideo.isPending ? "Checking…" : `Approve as ${activeVideoType === "podcast" ? "podcast" : "song"}`}
+                      {videoStatus.data?.is_approved
+                        ? "Already approved"
+                        : approveVideo.isPending
+                          ? "Checking…"
+                          : `Approve as ${activeVideoType === "podcast" ? "podcast" : "song"}`}
                     </PrimaryButton>
                     <a
                       href={`https://www.youtube.com/watch?v=${selectedVideo.videoId}`}
@@ -544,9 +663,27 @@ export function AdminMediaWorkspace() {
                       Open YouTube <ExternalLink className="h-3.5 w-3.5" />
                     </a>
                   </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <FactBadge
+                      label="Catalogue"
+                      value={
+                        videoStatus.isLoading
+                          ? "Checking…"
+                          : videoStatus.data?.is_approved
+                            ? "Approved"
+                            : videoStatus.data
+                              ? "Pending"
+                              : "Not stored"
+                      }
+                      good={videoStatus.data?.is_approved === true}
+                    />
+                    {videoStatus.data?.media_type && (
+                      <FactBadge label="Stored type" value={videoStatus.data.media_type} />
+                    )}
+                  </div>
                   <p className="mt-3 text-[10px] leading-4 text-slate-500">
-                    Nuru re-checks that the video is public, embeddable, available in Kenya and eligible
-                    for the selected media type before approval.
+                    Nuru re-checks the current YouTube record before approval: public status,
+                    embeddability, Kenya availability, source approval and media-type eligibility.
                   </p>
                 </div>
               ) : selectedChannel ? (
@@ -583,7 +720,11 @@ export function AdminMediaWorkspace() {
                       onClick={() => approveSource.mutate()}
                       className="min-h-10 px-4 text-xs"
                     >
-                      {approveSource.isPending ? "Approving…" : "Approve source"}
+                      {approveSource.isPending
+                        ? "Saving…"
+                        : sourceStatus.data?.is_approved && sourceStatus.data?.is_verified
+                          ? "Update approved source"
+                          : "Approve source"}
                     </PrimaryButton>
                     <a
                       href={`https://www.youtube.com/channel/${selectedChannel.channelId}`}
@@ -627,6 +768,86 @@ export function AdminMediaWorkspace() {
         </div>
       )}
     </div>
+  );
+}
+
+function ImportFactCard({
+  label,
+  row,
+}: {
+  label: string;
+  row:
+    | {
+        status: string;
+        importedTotal: number;
+        pagesProcessed: number;
+        hasNextPage: boolean;
+        lastError: string | null;
+        updatedAt: string;
+      }
+    | undefined;
+}) {
+  return (
+    <div className="rounded-[22px] border border-[#153b5c] bg-[#071727] p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold text-white">{label}</p>
+          <p className="mt-1 text-[10px] text-slate-500">
+            {row ? `Last updated ${new Date(row.updatedAt).toLocaleString()}` : "No import record"}
+          </p>
+        </div>
+        <span
+          className={[
+            "rounded-full border px-2.5 py-1 text-[9px] font-semibold capitalize",
+            row?.lastError
+              ? "border-rose-400/20 bg-rose-400/10 text-rose-300"
+              : row?.status === "running"
+                ? "border-cyan-400/20 bg-cyan-400/10 text-cyan-300"
+                : "border-emerald-400/20 bg-emerald-400/10 text-emerald-300",
+          ].join(" ")}
+        >
+          {row?.lastError ? "attention" : row?.status ?? "unknown"}
+        </span>
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <div className="rounded-xl border border-[#163a55] bg-[#04111f] p-3">
+          <p className="text-[9px] text-slate-600">Imported total</p>
+          <p className="mt-1 font-display text-xl font-semibold text-white">
+            {row ? row.importedTotal.toLocaleString() : "—"}
+          </p>
+        </div>
+        <div className="rounded-xl border border-[#163a55] bg-[#04111f] p-3">
+          <p className="text-[9px] text-slate-600">Pages processed</p>
+          <p className="mt-1 font-display text-xl font-semibold text-white">
+            {row ? row.pagesProcessed.toLocaleString() : "—"}
+          </p>
+        </div>
+      </div>
+      {row?.lastError && <p className="mt-2 text-[10px] text-rose-300">{row.lastError}</p>}
+    </div>
+  );
+}
+
+function FactBadge({
+  label,
+  value,
+  good = false,
+}: {
+  label: string;
+  value: string;
+  good?: boolean;
+}) {
+  return (
+    <span
+      className={[
+        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[9px] font-semibold",
+        good
+          ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-300"
+          : "border-[#234b68] bg-[#0a2033] text-slate-300",
+      ].join(" ")}
+    >
+      <span className="text-slate-500">{label}:</span> {value}
+    </span>
   );
 }
 

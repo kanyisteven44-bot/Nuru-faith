@@ -356,7 +356,7 @@ export function AdminDashboardOverview({
           </div>
         </BentoCard>
 
-        <BentoCard className="xl:col-span-3" title="Quick actions" icon={Sparkles}>
+        <BentoCard className="xl:col-span-3" title="Quick Actions" icon={Sparkles}>
           <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
             <QuickAction label="Add church" icon={Church} onClick={() => onNavigate("churches")} />
             <QuickAction label="Review content" icon={BookOpenCheck} onClick={() => onNavigate("content")} />
@@ -385,7 +385,7 @@ export function AdminDashboardOverview({
           </div>
         </BentoCard>
 
-        <BentoCard className="xl:col-span-5" title="Pending approvals" icon={FileCheck2}>
+        <BentoCard className="xl:col-span-5" title="Pending Approvals" icon={FileCheck2}>
           <div className="mb-3 flex flex-wrap gap-2 text-[10px] font-semibold">
             <span className="rounded-full border border-cyan-400/35 bg-cyan-500/10 px-3 py-1 text-cyan-100">
               All {pendingCount}
@@ -469,7 +469,7 @@ export function AdminDashboardOverview({
           </div>
         </BentoCard>
 
-        <BentoCard className="xl:col-span-4" title="Recent activity" icon={Activity}>
+        <BentoCard className="xl:col-span-4" title="Recent Activity" icon={Activity}>
           <div className="space-y-1">
             {activityRows.map((row) => {
               const Icon = row.type === "user" ? Users : row.type === "church" ? Church : MessageCircle;
@@ -510,7 +510,7 @@ export function AdminDashboardOverview({
           </GhostButton>
         </BentoCard>
 
-        <BentoCard className="xl:col-span-12" title="Platform health" icon={ShieldCheck}>
+        <BentoCard className="xl:col-span-12" title="System Status" icon={ShieldCheck}>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             {healthChecks.map((check) => (
               <HealthTile key={check.label} label={check.label} error={check.error} loading={check.loading} />

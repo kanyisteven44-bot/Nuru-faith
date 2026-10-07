@@ -35,7 +35,7 @@ import {
   type ModerationItem,
 } from "@/services/content";
 import { CardSkeleton, EmptyState, GhostButton } from "@/components/nuru/Primitives";
-import { MusicCatalogImport } from "@/components/youtube/MusicCatalogImport";
+import { AdminMediaWorkspace } from "@/components/nuru/AdminMediaWorkspace";
 import { getPilotMetrics } from "@/lib/pilot.functions";
 import { AdminOperations } from "@/components/nuru/AdminOperations";
 import { AdminRoleManager } from "@/components/nuru/AdminRoleManager";
@@ -334,8 +334,11 @@ export function AdminV3Screen({ initialSection }: { initialSection: AdminSection
       )}
 
       {activeSection === "music" && (
-        <AdminPanel title="Music" subtitle="Review and operate the approved Nuru media catalogue.">
-          {isSuper || isModerator ? <MusicCatalogImport /> : <ScopedNotice />}
+        <AdminPanel
+          title="Music, YouTube & Podcasts"
+          subtitle="Search YouTube, preview original media, approve artists and creators, and keep expanding the reviewed Nuru catalogue."
+        >
+          {isSuper || isModerator ? <AdminMediaWorkspace /> : <ScopedNotice />}
         </AdminPanel>
       )}
 

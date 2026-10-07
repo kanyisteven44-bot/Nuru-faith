@@ -5,9 +5,15 @@ import { importReviewedCatalogPage } from "@/lib/musicCatalog.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { PrimaryButton } from "@/components/nuru/Primitives";
 
-export function MusicCatalogImport() {
+export function MusicCatalogImport({
+  presetChannelId = "",
+  presetKind,
+}: {
+  presetChannelId?: string;
+  presetKind?: "music" | "podcast";
+} = {}) {
   const client = useQueryClient();
-  const [kind, setKind] = useState<"music" | "podcast">("music");
+  const [kind, setKind] = useState<"music" | "podcast">(presetKind ?? "music");
   const target = catalogueTarget(kind);
   const [running, setRunning] = useState(false);
   const [channelFilter, setChannelFilter] = useState("");
@@ -24,6 +30,14 @@ export function MusicCatalogImport() {
     },
     [],
   );
+  useEffect(() => {
+    if (running) return;
+    if (presetKind) setKind(presetKind);
+    if (presetChannelId) {
+      setChannelFilter(presetChannelId);
+      setMessage("Selected reviewed YouTube source is ready to scan.");
+    }
+  }, [presetChannelId, presetKind, running]);
   useEffect(() => {
     let current = true;
     void Promise.all([

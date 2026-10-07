@@ -2,7 +2,7 @@ import { createMiddleware, createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertAdminWriteAssurance } from "@/lib/adminDirectoryAccess";
-import { eligibleMusicVideo, eligiblePodcastVideo, isoSeconds } from "@/lib/musicImport";
+import { eligibleMusicVideo, eligiblePodcastVideo, isoSeconds, musicVideoEligibility } from "@/lib/musicImport";
 
 const requireMediaAdmin = createMiddleware({ type: "function" })
   .middleware([requireSupabaseAuth])
@@ -269,14 +269,16 @@ export const approveYouTubeVideo = createServerFn({ method: "POST" })
       );
     }
 
+    const musicCheck =
+      data.mediaType === "music" ? musicVideoEligibility(video, channelId) : null;
     const eligible =
       data.mediaType === "music"
-        ? eligibleMusicVideo(video, channelId)
+        ? musicCheck!.eligible
         : eligiblePodcastVideo(video, channelId);
     if (!eligible) {
       throw new Error(
         data.mediaType === "music"
-          ? "This video does not pass Nuru's music checks (public, embeddable, Kenya-available, long enough, and Music-category)."
+          ? `This video cannot be approved as music: ${musicCheck!.reasons.join("; ")}.`
           : "This video does not pass Nuru's podcast checks (public, embeddable, Kenya-available and long enough).",
       );
     }
@@ -346,12 +348,18 @@ export const reviewMediaItem = createServerFn({ method: "POST" })
       });
       const video = response.items?.[0] as any;
       if (!video) throw new Error("YouTube no longer returns this video.");
+      const musicCheck =
+        item.data.media_type === "music" ? musicVideoEligibility(video, channelId) : null;
       const eligible =
         item.data.media_type === "music"
-          ? eligibleMusicVideo(video, channelId)
+          ? musicCheck!.eligible
           : eligiblePodcastVideo(video, channelId);
       if (!eligible) {
-        throw new Error("This video no longer passes Nuru's playback and content eligibility checks.");
+        throw new Error(
+          item.data.media_type === "music"
+            ? `This video cannot be approved as music: ${musicCheck!.reasons.join("; ")}.`
+            : "This video no longer passes Nuru's podcast playback and content eligibility checks.",
+        );
       }
     }
 

@@ -27,7 +27,7 @@ test("admin command center keeps the approved navigation structure", () => {
     assert.match(shell, new RegExp(label));
   }
   assert.match(shell, /Nuru Faith Admin/);
-  assert.match(shell, /Manage\. Empower\. Build a brighter generation\./);
+  assert.match(shell, /Content, community and platform operations/);
 });
 
 test("admin dashboard uses real operational data instead of mock metrics", () => {

@@ -4,7 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const requireStaff = createMiddleware({ type: "function" })
   .middleware([requireSupabaseAuth])
   .server(async ({ context, next }) => {
-    const roles = await context.supabase
+    const roles = await db
       .from("user_roles")
       .select("role")
       .eq("user_id", context.userId)
@@ -65,7 +65,10 @@ export type AdminFactSnapshot = {
 
 export const getAdminFactSnapshot = createServerFn({ method: "GET" })
   .middleware([requireStaff])
-  .handler(async ({ context }): Promise<AdminFactSnapshot> => {
+  .handler(async (): Promise<AdminFactSnapshot> => {
+    // Staff authorization runs before the privileged client is loaded. Only aggregate
+    // operational facts are returned; private message/prayer contents never leave the database.
+    const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
     const [
       profiles,
       churches,
@@ -93,30 +96,30 @@ export const getAdminFactSnapshot = createServerFn({ method: "GET" })
       imports,
       latestMedia,
     ] = await Promise.all([
-      exactCount(context.supabase.from("profiles").select("id", { head: true, count: "exact" })),
-      exactCount(context.supabase.from("churches").select("id", { head: true, count: "exact" })),
+      exactCount(db.from("profiles").select("id", { head: true, count: "exact" })),
+      exactCount(db.from("churches").select("id", { head: true, count: "exact" })),
       exactCount(
-        context.supabase.from("churches").select("id", { head: true, count: "exact" }).eq("verified", true),
+        db.from("churches").select("id", { head: true, count: "exact" }).eq("verified", true),
       ),
-      exactCount(context.supabase.from("groups").select("id", { head: true, count: "exact" })),
-      exactCount(context.supabase.from("events").select("id", { head: true, count: "exact" })),
-      exactCount(context.supabase.from("mentors").select("id", { head: true, count: "exact" })),
+      exactCount(db.from("groups").select("id", { head: true, count: "exact" })),
+      exactCount(db.from("events").select("id", { head: true, count: "exact" })),
+      exactCount(db.from("mentors").select("id", { head: true, count: "exact" })),
       exactCount(
-        context.supabase.from("mentors").select("id", { head: true, count: "exact" }).eq("verified", true),
+        db.from("mentors").select("id", { head: true, count: "exact" }).eq("verified", true),
       ),
-      exactCount(context.supabase.from("reels").select("id", { head: true, count: "exact" })),
-      exactCount(context.supabase.from("courses").select("id", { head: true, count: "exact" })),
-      exactCount(context.supabase.from("devotionals").select("id", { head: true, count: "exact" })),
-      exactCount(context.supabase.from("scripture_series").select("id", { head: true, count: "exact" })),
-      exactCount(context.supabase.from("posts").select("id", { head: true, count: "exact" })),
-      exactCount(context.supabase.from("prayer_requests").select("id", { head: true, count: "exact" })),
-      exactCount(context.supabase.from("direct_messages").select("id", { head: true, count: "exact" })),
-      exactCount(context.supabase.from("media_items").select("id", { head: true, count: "exact" })),
+      exactCount(db.from("reels").select("id", { head: true, count: "exact" })),
+      exactCount(db.from("courses").select("id", { head: true, count: "exact" })),
+      exactCount(db.from("devotionals").select("id", { head: true, count: "exact" })),
+      exactCount(db.from("scripture_series").select("id", { head: true, count: "exact" })),
+      exactCount(db.from("posts").select("id", { head: true, count: "exact" })),
+      exactCount(db.from("prayer_requests").select("id", { head: true, count: "exact" })),
+      exactCount(db.from("direct_messages").select("id", { head: true, count: "exact" })),
+      exactCount(db.from("media_items").select("id", { head: true, count: "exact" })),
       exactCount(
-        context.supabase.from("media_items").select("id", { head: true, count: "exact" }).eq("is_approved", false),
+        db.from("media_items").select("id", { head: true, count: "exact" }).eq("is_approved", false),
       ),
       exactCount(
-        context.supabase
+        db
           .from("media_sources")
           .select("id", { head: true, count: "exact" })
           .eq("source_type", "youtube")
@@ -125,7 +128,7 @@ export const getAdminFactSnapshot = createServerFn({ method: "GET" })
           .in("content_kind", ["music", "mixed"]),
       ),
       exactCount(
-        context.supabase
+        db
           .from("media_sources")
           .select("id", { head: true, count: "exact" })
           .eq("source_type", "youtube")
@@ -134,7 +137,7 @@ export const getAdminFactSnapshot = createServerFn({ method: "GET" })
           .in("content_kind", ["podcast", "mixed"]),
       ),
       exactCount(
-        context.supabase
+        db
           .from("media_items")
           .select("id", { head: true, count: "exact" })
           .eq("source", "youtube")
@@ -142,7 +145,7 @@ export const getAdminFactSnapshot = createServerFn({ method: "GET" })
           .eq("is_approved", true),
       ),
       exactCount(
-        context.supabase
+        db
           .from("media_items")
           .select("id", { head: true, count: "exact" })
           .eq("source", "youtube")
@@ -150,7 +153,7 @@ export const getAdminFactSnapshot = createServerFn({ method: "GET" })
           .eq("is_approved", true),
       ),
       exactCount(
-        context.supabase
+        db
           .from("media_items")
           .select("id", { head: true, count: "exact" })
           .eq("source", "youtube")
@@ -158,7 +161,7 @@ export const getAdminFactSnapshot = createServerFn({ method: "GET" })
           .eq("is_approved", false),
       ),
       exactCount(
-        context.supabase
+        db
           .from("media_items")
           .select("id", { head: true, count: "exact" })
           .eq("source", "youtube")
@@ -166,17 +169,17 @@ export const getAdminFactSnapshot = createServerFn({ method: "GET" })
           .eq("is_approved", false),
       ),
       exactCount(
-        context.supabase
+        db
           .from("approved_youtube_channels")
           .select("id", { head: true, count: "exact" })
           .eq("is_verified", true)
           .in("trust_level", ["official", "verified", "trusted"]),
       ),
-      context.supabase
+      db
         .from("media_catalog_imports")
         .select("kind,status,imported_total,pages_processed,channel_id,page_token,last_error,updated_at")
         .order("kind"),
-      context.supabase
+      db
         .from("media_items")
         .select("updated_at")
         .order("updated_at", { ascending: false })

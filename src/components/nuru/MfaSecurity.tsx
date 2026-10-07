@@ -205,12 +205,24 @@ export function MfaSecurityPanel({
 
       for (const factor of currentTotp.filter((item) => item.status !== "verified")) {
         const removed = await supabase.auth.mfa.unenroll({ factorId: factor.id });
-        if (removed.error) throw removed.error;
+        if (removed.error) {
+          // Continue with a unique name below. Some stale enrollments can exist on the
+          // Auth server without being removable from an aal1 session.
+          console.warn("Could not remove unfinished MFA factor", removed.error.message);
+        }
       }
+
+      // Friendly names must be unique for a user. Never reuse a fixed name such as
+      // "Primary authenticator" because an abandoned enrollment can reserve it.
+      const uniqueSuffix = Date.now().toString(36).slice(-6);
+      const friendlyName =
+        currentVerified.length === 0
+          ? `Nuru authenticator ${uniqueSuffix}`
+          : `Nuru backup authenticator ${uniqueSuffix}`;
 
       const { data, error } = await supabase.auth.mfa.enroll({
         factorType: "totp",
-        friendlyName: currentVerified.length === 0 ? "Primary authenticator" : `Backup authenticator ${currentTotp.length + 1}`,
+        friendlyName,
       });
       if (error) throw error;
 

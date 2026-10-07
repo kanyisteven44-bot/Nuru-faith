@@ -34,6 +34,27 @@ export function MfaChallenge({
     };
   }, []);
 
+  async function finishInlineSetup() {
+    try {
+      const assurance = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (assurance.error) throw assurance.error;
+      if (assurance.data.currentLevel === "aal2") {
+        onSuccess();
+        return;
+      }
+
+      const listed = await supabase.auth.mfa.listFactors();
+      if (listed.error) throw listed.error;
+      const verified = listed.data.totp.filter((factor) => factor.status === "verified");
+      setFactors(verified);
+      if (verified.length) {
+        toast.message("Authenticator enabled. Enter a fresh 6-digit code to verify this admin session.");
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not finish MFA setup");
+    }
+  }
+
   async function verify(e: React.FormEvent) {
     e.preventDefault();
     const factor = factors[0];
@@ -84,9 +105,18 @@ export function MfaChallenge({
           <Loader2 className="h-5 w-5 animate-spin text-leaf" />
         </div>
       ) : factors.length === 0 ? (
-        <p className="mt-5 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
-          This account requires MFA but no verified authenticator factor is available.
-        </p>
+        <div className="mt-5 space-y-4">
+          <div className="rounded-xl border border-amber-400/30 bg-amber-400/10 p-3">
+            <p className="text-xs font-semibold text-amber-200">
+              Authenticator setup is incomplete for this admin account.
+            </p>
+            <p className="mt-1 text-[11px] leading-relaxed text-amber-100/75">
+              Sensitive admin actions need a verified authenticator. Finish setup below, then Nuru
+              will return you to this approval flow automatically.
+            </p>
+          </div>
+          <MfaSecurityPanel required onReady={() => void finishInlineSetup()} />
+        </div>
       ) : (
         <form onSubmit={verify} className="mt-5 space-y-3">
           <input

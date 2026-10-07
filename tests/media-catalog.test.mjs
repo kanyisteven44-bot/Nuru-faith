@@ -1,6 +1,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { eligibleMusicVideo, eligiblePodcastVideo, isoSeconds, musicVideoEligibility } from "../src/lib/musicImport.ts";
+import {
+  eligibleMusicVideo,
+  eligiblePodcastVideo,
+  eligibleReviewedMusicUpload,
+  isoSeconds,
+  musicVideoEligibility,
+} from "../src/lib/musicImport.ts";
 import { playableAudioUrl, youtubeVideoId } from "../src/lib/mediaPlayback.ts";
 const video = {
   id: "abcdefghijk",
@@ -73,6 +79,37 @@ test("spoken uploads and short promotions stay out of music", () => {
   assert.equal(eligibleMusicVideo({ ...video, snippet: { ...video.snippet, title: "The Message (Official Music Video)" } }, "official"), true);
   assert.equal(eligibleMusicVideo({ ...video, contentDetails: { duration: "PT1M59S" } }, "official"), false);
   assert.equal(eligibleMusicVideo({ ...video, contentDetails: { duration: "PT2M" } }, "official"), true);
+});
+
+test("reviewed music creators import normal song uploads even with inconsistent categories", () => {
+  const plainSong = {
+    ...video,
+    snippet: {
+      ...video.snippet,
+      categoryId: "22",
+      title: "Marion Shako - Ahadi Zake",
+    },
+  };
+  assert.equal(eligibleMusicVideo(plainSong, "official"), false);
+  assert.equal(eligibleReviewedMusicUpload(plainSong, "official"), true);
+
+  const shortSong = {
+    ...plainSong,
+    contentDetails: { duration: "PT45S" },
+  };
+  assert.equal(eligibleReviewedMusicUpload(shortSong, "official"), true);
+
+  const interview = {
+    ...plainSong,
+    snippet: { ...plainSong.snippet, title: "Marion Shako interview" },
+  };
+  assert.equal(eligibleReviewedMusicUpload(interview, "official"), false);
+
+  const kenyaBlocked = {
+    ...plainSong,
+    contentDetails: { duration: "PT4M", regionRestriction: { blocked: ["KE"] } },
+  };
+  assert.equal(eligibleReviewedMusicUpload(kenyaBlocked, "official"), false);
 });
 
 test("video episodes accept teaching categories but enforce channel and playback eligibility", () => {

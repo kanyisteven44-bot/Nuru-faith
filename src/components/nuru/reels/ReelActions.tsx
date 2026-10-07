@@ -98,19 +98,11 @@ export function ReelActions({
       </button>
 
       <RailButton
-        aria={
-          youtubeStats
-            ? liked
-              ? "Remove Nuru like; YouTube count shown"
-              : "Like in Nuru; YouTube count shown"
-            : liked
-              ? "Unlike Reel"
-              : "Like Reel"
-        }
+        aria={liked ? "Unlike video" : "Like video"}
         onClick={onLike}
         label={
           youtubeStats
-            ? `${youtubeStats.likes === null ? "—" : compactNumber(Number(youtubeStats.likes))} · YT`
+            ? `${youtubeStats.likes === null ? "—" : compactNumber(Number(youtubeStats.likes))}`
             : compactNumber(likeCount)
         }
         tint={liked ? "destructive" : undefined}
@@ -121,7 +113,7 @@ export function ReelActions({
         onClick={onComments}
         label={
           youtubeStats
-            ? `${youtubeStats.comments === null ? "—" : compactNumber(Number(youtubeStats.comments))} · YT`
+            ? `${youtubeStats.comments === null ? "—" : compactNumber(Number(youtubeStats.comments))}`
             : compactNumber(commentCount)
         }
         icon={<MessageCircle className="h-6 w-6" />}

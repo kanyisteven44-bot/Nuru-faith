@@ -12,8 +12,9 @@ import type { Reel } from "@/services/reels";
 import { SOURCE_LABEL, type ImportedSource } from "@/lib/reelImport";
 import { InAppMediaPlayer } from "@/components/youtube/InAppMediaPlayer";
 import { ReelInteractiveActions } from "./ReelInteractiveActions";
-import { ReelCaption } from "./ReelCaption";
+import { Sheet } from "@/components/nuru/Sheet";
 import { ReelFaithActions } from "./ReelFaithActions";
+import { ReelCaption } from "./ReelCaption";
 import { ReelProgress } from "./ReelProgress";
 
 export type ReelPaneProps = {
@@ -69,8 +70,9 @@ export function ReelPane(props: ReelPaneProps) {
   const [burst, setBurst] = useState<{ x: number; y: number; key: number } | null>(null);
   const [manualStart, setManualStart] = useState(false);
   const [externalCommentsOpen, setExternalCommentsOpen] = useState(false);
+  const [toolsOpen, setToolsOpen] = useState(false);
 
-  const commentsVisible = commentsOpen || externalCommentsOpen;
+  const commentsVisible = commentsOpen || externalCommentsOpen || toolsOpen;
   const hasVideo = !!reel.video_url;
   const isYouTubeEmbed = reel.source_type === "youtube" && !!reel.external_id;
   const youtubeDetails = useQuery({
@@ -260,11 +262,11 @@ export function ReelPane(props: ReelPaneProps) {
             title={reel.caption || reel.creator_name}
             autoplay={autoplayAllowed}
             loop
-            controls
+            controls={false}
             muted={muted}
             playing={shouldPlay}
             onPlaybackChange={setPlaying}
-            interactive
+            interactive={false}
             className="h-full rounded-none"
           />
         ) : reel.poster_url ? (
@@ -423,6 +425,40 @@ export function ReelPane(props: ReelPaneProps) {
         </button>
       )}
 
+      {toolsOpen && (
+        <Sheet label="Reel actions" onClose={() => setToolsOpen(false)} height="max-h-[60dvh]">
+          <div className="space-y-4 p-4">
+            <ReelFaithActions
+              hasScripture={!!reel.scripture_ref}
+              onRead={() => {
+                setToolsOpen(false);
+                props.onRead();
+              }}
+              onPray={() => {
+                setToolsOpen(false);
+                props.onPray();
+              }}
+              onAskAi={() => {
+                setToolsOpen(false);
+                props.onAskAi();
+              }}
+              onDiscuss={() => {
+                setToolsOpen(false);
+                props.onDiscuss();
+              }}
+            />
+            <button
+              className="min-h-11 w-full text-left font-semibold"
+              onClick={() => {
+                setToolsOpen(false);
+                props.onMore();
+              }}
+            >
+              More options
+            </button>
+          </div>
+        </Sheet>
+      )}
       <div className="pointer-events-none absolute inset-x-0 bottom-0">
         {/* Keep the action rail on the right and leave the video centre clear. */}
         <div className="pointer-events-auto flex items-end gap-3 px-3 pb-1">
@@ -437,7 +473,7 @@ export function ReelPane(props: ReelPaneProps) {
               onComments={props.onComments}
               onShare={props.onShare}
               onSave={props.onSave}
-              onMore={props.onMore}
+              onMore={() => setToolsOpen(true)}
               onCommentsVisibilityChange={setExternalCommentsOpen}
             />
           </div>
@@ -455,15 +491,6 @@ export function ReelPane(props: ReelPaneProps) {
               onFollow={props.onFollow}
               onOpenScripture={props.onRead}
             />
-            <div className="mt-3">
-              <ReelFaithActions
-                hasScripture={!!reel.scripture_ref}
-                onRead={props.onRead}
-                onPray={props.onPray}
-                onAskAi={props.onAskAi}
-                onDiscuss={props.onDiscuss}
-              />
-            </div>
           </div>
         </div>
 
@@ -471,8 +498,8 @@ export function ReelPane(props: ReelPaneProps) {
           <span className="shrink-0 pl-1 text-[10px] text-white/70">
             {isYouTubeEmbed
               ? youtubeDetails.data?.stats.views == null
-                ? "YouTube views unavailable"
-                : `${compactNumber(Number(youtubeDetails.data.stats.views))} YouTube views`
+                ? ""
+                : `${compactNumber(Number(youtubeDetails.data.stats.views))} views`
               : `${compactNumber(reel.view_count)} views`}
           </span>
           {hasVideo ? (

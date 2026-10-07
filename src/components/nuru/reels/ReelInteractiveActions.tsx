@@ -10,11 +10,17 @@ import {
   deleteExternalReelComment,
   fetchExternalReelComments,
   fetchExternalReelState,
-  toggleExternalReelLike,
   toggleExternalReelSave,
 } from "@/services/externalReelInteractions";
 import { fetchYouTubeReelDetails } from "@/lib/youtubeReel.functions";
 import { YouTubeReelSheet } from "./YouTubeReelSheet";
+import {
+  getYouTubeRating,
+  setYouTubeRating,
+  connectYouTube,
+  YouTubeConnectionRequired,
+} from "@/services/youtubeRatings";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ReelActions } from "./ReelActions";
 
 type ExternalReelState = Awaited<ReturnType<typeof fetchExternalReelState>>;
@@ -48,6 +54,8 @@ export function ReelInteractiveActions({
 }) {
   const { userId } = useAuth();
   const qc = useQueryClient();
+  const [connectOpen, setConnectOpen] = useState(false);
+  const [connecting, setConnecting] = useState(false);
   const shareSheet = useShareSheet();
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [commentSource, setCommentSource] = useState<"youtube" | "nuru">("youtube");
@@ -73,26 +81,40 @@ export function ReelInteractiveActions({
 
   useEffect(() => () => onCommentsVisibilityChange?.(false), [onCommentsVisibilityChange]);
 
+  const ratingKey = ["youtube-rating", userId, externalId] as const;
+  const rating = useQuery({
+    queryKey: ratingKey,
+    queryFn: () => getYouTubeRating(externalId),
+    enabled: isExternal && !!userId && near,
+    staleTime: 60_000,
+    retry: false,
+  });
   const likeExternal = useMutation({
-    mutationFn: (liked: boolean) => {
-      if (!userId) throw new Error("Sign in to like Reels");
-      return toggleExternalReelLike(userId, externalId, liked);
+    mutationFn: (next: "like" | "none") => setYouTubeRating(externalId, next),
+    onSuccess: (next) => {
+      qc.setQueryData(ratingKey, next);
     },
-    onMutate: async (liked) => {
-      await qc.cancelQueries({ queryKey: stateKey });
-      const previous = qc.getQueryData<ExternalReelState>(stateKey) ?? state.data;
-      const base = previous ?? { liked, saved: false, commentCount: 0 };
-      qc.setQueryData<ExternalReelState>(stateKey, { ...base, liked: !liked });
-      return { previous };
-    },
-    onError: (e, _liked, context) => {
-      if (context?.previous) qc.setQueryData(stateKey, context.previous);
-      toast.error(e instanceof Error ? e.message : "Couldn't update like");
-    },
-    onSettled: async () => {
-      await qc.invalidateQueries({ queryKey: stateKey });
+    onError: (error) => {
+      if (error instanceof YouTubeConnectionRequired) setConnectOpen(true);
+      else toast.error(error.message);
     },
   });
+  function likeYouTube(forceLike = false) {
+    if (likeExternal.isPending) return;
+    if (rating.isPending) return;
+    if (rating.error instanceof YouTubeConnectionRequired) {
+      setConnectOpen(true);
+      return;
+    }
+    likeExternal.mutate(forceLike || rating.data !== "like" ? "like" : "none");
+  }
+  useEffect(() => {
+    const handle = (event: Event) => {
+      if ((event as CustomEvent<string>).detail === externalId) likeYouTube(true);
+    };
+    window.addEventListener("nuru:youtube-like", handle);
+    return () => window.removeEventListener("nuru:youtube-like", handle);
+  }, [externalId, rating.data, rating.error, rating.isPending, likeExternal.isPending]);
 
   const saveExternal = useMutation({
     mutationFn: (saved: boolean) => {
@@ -138,16 +160,13 @@ export function ReelInteractiveActions({
         creatorName={reel.creator_name}
         likeCount={reel.like_count}
         commentCount={isExternal ? (state.data?.commentCount ?? 0) : reel.comment_count}
-        liked={isExternal ? !!state.data?.liked : liked}
+        liked={isExternal ? rating.data === "like" : liked}
         saved={isExternal ? !!state.data?.saved : saved}
         onProfile={onProfile}
         onLike={() => {
           if (!isExternal) return onLike();
           if (!userId) return toast.error("Sign in to like Reels");
-          if (!likeExternal.isPending) {
-            likeExternal.mutate(!!state.data?.liked);
-            toast.info("This like is saved in Nuru. The displayed total is from YouTube.");
-          }
+          likeYouTube();
         }}
         onComments={() => {
           if (!isExternal) return onComments();
@@ -187,6 +206,39 @@ export function ReelInteractiveActions({
             onCommentsVisibilityChange?.(false);
           }}
         />
+      )}
+      {connectOpen && (
+        <Dialog open onOpenChange={setConnectOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Connect YouTube</DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground">
+              Connect your account to like this video on YouTube.
+            </p>
+            <button
+              className="min-h-11 rounded-xl bg-primary px-4 text-primary-foreground"
+              disabled={connecting}
+              onClick={() => {
+                setConnecting(true);
+                void connectYouTube(externalId).catch((error) => {
+                  setConnecting(false);
+                  toast.error(error.message);
+                });
+              }}
+            >
+              {connecting ? "Connecting…" : "Continue with Google"}
+            </button>
+            <a
+              className="text-sm text-primary"
+              target="_blank"
+              rel="noopener noreferrer"
+              href={`https://www.youtube.com/watch?v=${externalId}`}
+            >
+              Open on YouTube
+            </a>
+          </DialogContent>
+        </Dialog>
       )}
       {shareSheet.node}
     </>

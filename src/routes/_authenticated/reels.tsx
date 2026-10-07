@@ -28,7 +28,6 @@ import {
 import { addPrayerJournalEntry } from "@/services/ai";
 import { youtubeReelsInfiniteQuery } from "@/services/youtubeService";
 import { readWatchedExternalReelIds, rememberWatchedExternalReel } from "@/lib/reelWatchHistory";
-import { ensureExternalReelLike } from "@/services/externalReelInteractions";
 import { AppShell } from "@/components/nuru/AppShell";
 import { CardSkeleton } from "@/components/nuru/Primitives";
 import { ReelFeedTabs } from "@/components/nuru/reels/ReelFeedTabs";
@@ -552,7 +551,7 @@ function ReelsScreen() {
                 reel={reel}
                 index={i}
                 active={activeIndex === i}
-                near={Math.abs(activeIndex - i) <= 1}
+                near={i >= activeIndex - 1 && i <= activeIndex + 2}
                 muted={muted}
                 autoplayAllowed={!dataSaver}
                 liked={likeSet.includes(reel.id)}
@@ -570,26 +569,9 @@ function ReelsScreen() {
                 }
                 onDoubleLike={() => {
                   if (reel.external_id) {
-                    requireAuth(() => {
-                      const stateKey = ["external-reel-state", userId, reel.external_id] as const;
-                      qc.setQueryData(
-                        stateKey,
-                        (
-                          old:
-                            { liked?: boolean; saved?: boolean; commentCount?: number } | undefined,
-                        ) => ({
-                          liked: true,
-                          saved: old?.saved ?? false,
-                          commentCount: old?.commentCount ?? 0,
-                        }),
-                      );
-                      void ensureExternalReelLike(userId!, reel.external_id!)
-                        .then(() => qc.invalidateQueries({ queryKey: stateKey }))
-                        .catch(() => {
-                          void qc.invalidateQueries({ queryKey: stateKey });
-                          toast.error("Couldn't save that like");
-                        });
-                    });
+                    window.dispatchEvent(
+                      new CustomEvent("nuru:youtube-like", { detail: reel.external_id }),
+                    );
                   } else if (!likeSet.includes(reel.id)) {
                     requireAuth(() => likeMutation.mutate({ reelId: reel.id, liked: false }));
                   }

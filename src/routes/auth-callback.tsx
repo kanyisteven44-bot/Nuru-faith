@@ -3,6 +3,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { NuruMark } from "@/components/nuru/Logo";
+import { YOUTUBE_CONNECT_KEY } from "@/services/youtubeRatings";
 import { getMfaRequirement } from "@/lib/accountSecurity";
 
 export const Route = createFileRoute("/auth-callback")({
@@ -28,6 +29,7 @@ function GoogleAuthCallback() {
         fragment.get("error");
 
       if (oauthError) {
+        sessionStorage.removeItem(YOUTUBE_CONNECT_KEY);
         if (active) setErrorMessage(oauthError.replace(/\+/g, " "));
         return;
       }
@@ -43,13 +45,26 @@ function GoogleAuthCallback() {
         return;
       }
 
+      const pending = sessionStorage.getItem(YOUTUBE_CONNECT_KEY);
+      if (pending) {
+        const connection = JSON.parse(pending) as { userId: string; videoId: string };
+        if (connection.userId !== data.session.user.id) {
+          sessionStorage.removeItem(YOUTUBE_CONNECT_KEY);
+          await supabase.auth.signOut({ scope: "local" });
+          setErrorMessage("Choose the Google account connected to your Nuru profile.");
+          return;
+        }
+      }
       const requirement = await getMfaRequirement();
       if (requirement === "challenge") {
         void navigate({ to: "/auth", search: { mode: "mfa" }, replace: true });
       } else if (requirement === "setup") {
         void navigate({ to: "/auth", search: { mode: "mfa-setup" }, replace: true });
       } else {
-        void navigate({ to: "/home", replace: true });
+        if (pending) {
+          sessionStorage.removeItem(YOUTUBE_CONNECT_KEY);
+          void navigate({ to: "/reels", replace: true });
+        } else void navigate({ to: "/home", replace: true });
       }
     }
 

@@ -142,6 +142,7 @@ export function MusicCatalogImport({
         setTotal(result.total);
         await Promise.all([
           client.invalidateQueries({ queryKey: ["media-catalog"] }),
+          client.invalidateQueries({ queryKey: ["media-directory"] }),
           client.invalidateQueries({ queryKey: ["admin-fact-snapshot"] }),
           client.invalidateQueries({ queryKey: ["admin-media-workspace-summary"] }),
         ]);

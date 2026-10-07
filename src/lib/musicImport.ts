@@ -21,7 +21,11 @@ export type MediaEligibility = {
   reasons: string[];
 };
 
-function baseVideoEligibility(video: CatalogVideo, channelId: string): MediaEligibility {
+function baseVideoEligibility(
+  video: CatalogVideo,
+  channelId: string,
+  minimumDurationSeconds = 120,
+): MediaEligibility {
   const reasons: string[] = [];
   const region = video.contentDetails?.regionRestriction;
   const seconds = isoSeconds(video.contentDetails?.duration ?? "");
@@ -36,7 +40,9 @@ function baseVideoEligibility(video: CatalogVideo, channelId: string): MediaElig
   if (video.status?.uploadStatus !== "processed") {
     reasons.push(`YouTube upload status is ${video.status?.uploadStatus ?? "unknown"}, not processed`);
   }
-  if (seconds < 120) reasons.push(`duration is ${seconds}s; Nuru requires at least 120s`);
+  if (seconds < minimumDurationSeconds) {
+    reasons.push(`duration is ${seconds}s; Nuru requires at least ${minimumDurationSeconds}s`);
+  }
   if (region?.blocked?.includes("KE")) reasons.push("YouTube blocks this video in Kenya");
   if (region?.allowed && !region.allowed.includes("KE")) {
     reasons.push("YouTube's allowed-region list does not include Kenya");
@@ -71,6 +77,33 @@ export function musicVideoEligibility(video: CatalogVideo, channelId: string): M
 
 export function eligibleMusicVideo(video: CatalogVideo, channelId: string): boolean {
   return musicVideoEligibility(video, channelId).eligible;
+}
+
+/**
+ * Import policy for a creator that an admin has explicitly reviewed as a music source.
+ *
+ * Once the source itself is approved, YouTube category metadata is not treated as proof that an
+ * upload is or is not music: many real artist uploads are filed under People & Blogs. Keep the
+ * hard playback checks and reject titles that clearly describe non-music content, while allowing
+ * normal song titles and shorter legitimate tracks into the stored catalogue.
+ */
+export function reviewedMusicUploadEligibility(
+  video: CatalogVideo,
+  channelId: string,
+): MediaEligibility {
+  const base = baseVideoEligibility(video, channelId, 20);
+  const reasons = [...base.reasons];
+  const title = video.snippet?.title ?? "";
+  const explicitlyNonMusic =
+    /\b(podcast|sermon|interview|announcement|trailer|teaser|tour|vlog|behind the scenes|ministers training|bible study|episode\s*\d+|q\s*&\s*a|question and answer|livestream chat)\b/i.test(
+      title,
+    );
+  if (explicitlyNonMusic) reasons.push("title clearly describes non-music content");
+  return { eligible: reasons.length === 0, reasons };
+}
+
+export function eligibleReviewedMusicUpload(video: CatalogVideo, channelId: string): boolean {
+  return reviewedMusicUploadEligibility(video, channelId).eligible;
 }
 
 export function eligiblePodcastVideo(video: CatalogVideo, channelId: string): boolean {

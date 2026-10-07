@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   BarChart3,
@@ -67,6 +67,23 @@ export function AdminCommandShell({
 }) {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        searchRef.current?.focus();
+        searchRef.current?.select();
+      }
+      if (event.key === "Escape" && document.activeElement === searchRef.current) {
+        setSearch("");
+        searchRef.current?.blur();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   const menu: MenuItem[] = [
     { kind: "section", id: "dashboard", label: "Dashboard", icon: Home },
@@ -185,13 +202,14 @@ export function AdminCommandShell({
               <label className="relative block">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
                 <input
+                  ref={searchRef}
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Search users, churches, content, or anything…"
+                  placeholder="Search or jump to users, churches, content, reports…"
                   className="min-h-10 w-full rounded-full border border-[#1b4969] bg-[#07192a] pl-10 pr-14 text-sm text-slate-100 outline-none placeholder:text-slate-500 focus:border-cyan-400/60"
                 />
                 <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded-md border border-[#234d6c] px-1.5 py-0.5 text-[9px] font-semibold text-slate-400">
-                  ↵
+                  ⌘K
                 </span>
               </label>
             </form>

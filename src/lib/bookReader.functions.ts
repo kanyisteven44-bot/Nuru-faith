@@ -93,3 +93,8 @@ export const fetchBookSection = createServerFn({ method: "GET" })
     const section = Math.min(data.section, sections.length - 1);
     return { text: sections[section]!, section, total: sections.length };
   });
+
+/** Approved archive text only; bounded by the same complete-edition validation. */
+export const fetchBookDownload = createServerFn({ method: "GET" })
+  .validator((data: unknown) => input.pick({ id: true }).parse(data))
+  .handler(async ({ data }) => ({ sections: await loadText(data.id) }));

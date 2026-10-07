@@ -1,6 +1,7 @@
-const CACHE_NAME = "nuru-static-v6-arch-icon";
+const CACHE_NAME = "nuru-static-v7-offline-reading";
 const PRECACHE = [
   "/offline.html",
+  "/offline-reader.js",
   "/photos/mountain-lake.jpg",
   "/manifest.webmanifest",
   "/favicon.png?v=arch1",
@@ -24,7 +25,11 @@ self.addEventListener("activate", (event) => {
       caches
         .keys()
         .then((keys) =>
-          Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))),
+          Promise.all(
+            keys
+              .filter((key) => key.startsWith("nuru-static-") && key !== CACHE_NAME)
+              .map((key) => caches.delete(key)),
+          ),
         ),
       self.clients.claim(),
     ]),
@@ -40,10 +45,29 @@ self.addEventListener("fetch", (event) => {
 
   if (request.mode === "navigate") {
     event.respondWith(
-      fetch(request).catch(async () => {
+      Promise.race([
+        fetch(request),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Navigation timeout")), 5000)),
+      ]).catch(async () => {
         const fallback = await caches.match("/offline.html");
         return fallback || Response.error();
       }),
+    );
+    return;
+  }
+
+  // The standalone reader is public and tiny. Refresh it online, reuse offline.
+  if (url.pathname === "/offline-reader.js") {
+    event.respondWith(
+      fetch(request)
+        .then(async (response) => {
+          if (response.ok) {
+            const cache = await caches.open(CACHE_NAME);
+            await cache.put(request, response.clone());
+          }
+          return response;
+        })
+        .catch(async () => (await caches.match(request)) || Response.error()),
     );
     return;
   }

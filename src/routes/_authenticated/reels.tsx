@@ -649,104 +649,123 @@ function ReelsScreen() {
         {items.length > 0 && view === "feed" && (
           <div
             ref={scrollerRef}
+            onScroll={(event) => {
+              const node = event.currentTarget;
+              const index = Math.max(
+                0,
+                Math.min(
+                  items.length - 1,
+                  Math.round(node.scrollTop / Math.max(node.clientHeight, 1)),
+                ),
+              );
+              if (index !== activeIndex) onActive(index);
+            }}
             className="no-scrollbar mx-auto mt-28 h-[calc(100%_-_7rem)] w-full max-w-[440px] snap-y snap-mandatory overflow-y-auto overscroll-contain md:rounded-t-2xl"
           >
-            {items.map((reel, i) => (
-              <ReelPane
-                key={reel.id}
-                reel={reel}
-                index={i}
-                active={activeIndex === i}
-                near={i >= activeIndex - 1 && i <= activeIndex + 2}
-                muted={muted}
-                autoplayAllowed={!dataSaver}
-                liked={likeSet.includes(reel.id)}
-                saved={saveSet.includes(reel.id)}
-                isFollowing={!!reel.author_id && followingIds.includes(reel.author_id)}
-                isMine={!!userId && reel.author_id === userId}
-                commentsOpen={commentsFor?.id === reel.id || !!channelFor}
-                onActive={onActive}
-                onView={onView}
-                onEnded={() => advanceReel(reel)}
-                onToggleMuted={toggleMuted}
-                onLike={() =>
-                  requireAuth(() =>
-                    likeMutation.mutate({ reelId: reel.id, liked: likeSet.includes(reel.id) }),
-                  )
-                }
-                onDoubleLike={() => {
-                  if (reel.external_id) {
-                    window.dispatchEvent(
-                      new CustomEvent("nuru:youtube-like", { detail: reel.external_id }),
-                    );
-                  } else if (!likeSet.includes(reel.id)) {
-                    requireAuth(() => likeMutation.mutate({ reelId: reel.id, liked: false }));
-                  }
-                }}
-                onSave={() =>
-                  requireAuth(() =>
-                    saveMutation.mutate({ reelId: reel.id, saved: saveSet.includes(reel.id) }),
-                  )
-                }
-                onFollow={() =>
-                  requireAuth(() => {
-                    void toggleFollow(
-                      userId!,
-                      reel.author_id!,
-                      followingIds.includes(reel.author_id!),
+            {items.map((reel, i) =>
+              i < activeIndex - 1 || i > activeIndex + 2 ? (
+                <article
+                  key={reel.id}
+                  className="h-full w-full shrink-0 snap-start snap-always bg-black"
+                  aria-label={`Reel by ${reel.creator_name}`}
+                />
+              ) : (
+                <ReelPane
+                  key={reel.id}
+                  reel={reel}
+                  index={i}
+                  active={activeIndex === i}
+                  near={i >= activeIndex - 1 && i <= activeIndex + 2}
+                  muted={muted}
+                  autoplayAllowed={!dataSaver}
+                  liked={likeSet.includes(reel.id)}
+                  saved={saveSet.includes(reel.id)}
+                  isFollowing={!!reel.author_id && followingIds.includes(reel.author_id)}
+                  isMine={!!userId && reel.author_id === userId}
+                  commentsOpen={commentsFor?.id === reel.id || !!channelFor}
+                  onActive={onActive}
+                  onView={onView}
+                  onEnded={() => advanceReel(reel)}
+                  onToggleMuted={toggleMuted}
+                  onLike={() =>
+                    requireAuth(() =>
+                      likeMutation.mutate({ reelId: reel.id, liked: likeSet.includes(reel.id) }),
                     )
-                      .then(() => qc.invalidateQueries({ queryKey: ["following", userId] }))
-                      .catch(() => toast.error("Couldn't update follow"));
-                  })
-                }
-                onComments={() => setCommentsFor(reel)}
-                onShare={() => void share(reel)}
-                onMore={() => setMoreFor(reel)}
-                onProfile={() => {
-                  if (reel.source_type === "youtube" && reel.external_id) {
-                    setChannelFor(reel);
-                  } else if (reel.author_id) {
-                    void navigate({
-                      to: "/discovery/$kind/$id",
-                      params: { kind: "profile", id: reel.author_id },
-                    });
-                  } else if (reel.external_url) {
-                    window.open(reel.external_url, "_blank", "noopener,noreferrer");
                   }
-                }}
-                onRead={() => setReadFor(reel)}
-                onPray={() =>
-                  requireAuth(() => {
-                    void addPrayerJournalEntry({
-                      userId: userId!,
-                      title: reel.caption?.slice(0, 60) ?? "Prayer from a Reel",
-                      content: `Lord, take what I just heard and make it real in my life.\n\n"${reel.caption ?? ""}"${reel.external_url ? `\n\nSource: ${reel.external_url}` : ""}`,
-                      scriptureRef: reel.scripture_ref,
-                      source: reel.external_id ? "external_reel" : "reel",
-                      sourceId: /^[0-9a-f-]{36}$/i.test(reel.id) ? reel.id : null,
+                  onDoubleLike={() => {
+                    if (reel.external_id) {
+                      window.dispatchEvent(
+                        new CustomEvent("nuru:youtube-like", { detail: reel.external_id }),
+                      );
+                    } else if (!likeSet.includes(reel.id)) {
+                      requireAuth(() => likeMutation.mutate({ reelId: reel.id, liked: false }));
+                    }
+                  }}
+                  onSave={() =>
+                    requireAuth(() =>
+                      saveMutation.mutate({ reelId: reel.id, saved: saveSet.includes(reel.id) }),
+                    )
+                  }
+                  onFollow={() =>
+                    requireAuth(() => {
+                      void toggleFollow(
+                        userId!,
+                        reel.author_id!,
+                        followingIds.includes(reel.author_id!),
+                      )
+                        .then(() => qc.invalidateQueries({ queryKey: ["following", userId] }))
+                        .catch(() => toast.error("Couldn't update follow"));
                     })
-                      .then(() => toast.success("Saved to your prayer journal"))
-                      .catch(() => toast.error("Couldn't save that"));
-                  })
-                }
-                onAskAi={() =>
-                  navigate({
-                    to: "/ai",
-                    search: {
-                      contextType: "reel",
-                      contextId: reel.id,
-                      contextLabel: `Reel by ${reel.creator_name}${reel.topic ? ` · ${reel.topic}` : ""}${
-                        reel.churches?.name ? ` · ${reel.churches.name}` : ""
-                      }${reel.caption ? ` — "${reel.caption.slice(0, 140)}"` : ""}`,
-                      q: reel.scripture_ref
-                        ? `Explain ${reel.scripture_ref} and what this teaching means.`
-                        : "Explain what this teaching means and where it comes from in the Bible.",
-                    },
-                  })
-                }
-                onDiscuss={() => navigate({ to: "/community" })}
-              />
-            ))}
+                  }
+                  onComments={() => setCommentsFor(reel)}
+                  onShare={() => void share(reel)}
+                  onMore={() => setMoreFor(reel)}
+                  onProfile={() => {
+                    if (reel.source_type === "youtube" && reel.external_id) {
+                      setChannelFor(reel);
+                    } else if (reel.author_id) {
+                      void navigate({
+                        to: "/discovery/$kind/$id",
+                        params: { kind: "profile", id: reel.author_id },
+                      });
+                    } else if (reel.external_url) {
+                      window.open(reel.external_url, "_blank", "noopener,noreferrer");
+                    }
+                  }}
+                  onRead={() => setReadFor(reel)}
+                  onPray={() =>
+                    requireAuth(() => {
+                      void addPrayerJournalEntry({
+                        userId: userId!,
+                        title: reel.caption?.slice(0, 60) ?? "Prayer from a Reel",
+                        content: `Lord, take what I just heard and make it real in my life.\n\n"${reel.caption ?? ""}"${reel.external_url ? `\n\nSource: ${reel.external_url}` : ""}`,
+                        scriptureRef: reel.scripture_ref,
+                        source: reel.external_id ? "external_reel" : "reel",
+                        sourceId: /^[0-9a-f-]{36}$/i.test(reel.id) ? reel.id : null,
+                      })
+                        .then(() => toast.success("Saved to your prayer journal"))
+                        .catch(() => toast.error("Couldn't save that"));
+                    })
+                  }
+                  onAskAi={() =>
+                    navigate({
+                      to: "/ai",
+                      search: {
+                        contextType: "reel",
+                        contextId: reel.id,
+                        contextLabel: `Reel by ${reel.creator_name}${reel.topic ? ` · ${reel.topic}` : ""}${
+                          reel.churches?.name ? ` · ${reel.churches.name}` : ""
+                        }${reel.caption ? ` — "${reel.caption.slice(0, 140)}"` : ""}`,
+                        q: reel.scripture_ref
+                          ? `Explain ${reel.scripture_ref} and what this teaching means.`
+                          : "Explain what this teaching means and where it comes from in the Bible.",
+                      },
+                    })
+                  }
+                  onDiscuss={() => navigate({ to: "/community" })}
+                />
+              ),
+            )}
 
             <div ref={sentinelRef} aria-hidden="true" className="h-1" />
 

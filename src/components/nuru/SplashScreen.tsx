@@ -4,8 +4,8 @@ import { NuruGlyph } from "@/components/nuru/Logo";
 import { cn } from "@/lib/utils";
 
 const SESSION_KEY = "nuru-opening-v5-shown";
-const HOLD_MS = 2300;
-const MAX_MS = 4200;
+const HOLD_MS = 650;
+const MAX_MS = 1800;
 const EXIT_MS = 320;
 
 const OPENING_PHOTOS = [

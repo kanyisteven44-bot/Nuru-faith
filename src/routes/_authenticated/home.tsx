@@ -82,7 +82,6 @@ function HomeScreen() {
     staleTime: 30_000,
   });
 
-
   const reference = verse.data?.reference ?? verseOfTheDayRef();
   const verseText = verse.data?.text ?? "";
 
@@ -216,6 +215,13 @@ function HomeScreen() {
           </div>
 
           <div className="grid gap-5 lg:content-start">
+            <a
+              href="/offline.html"
+              className="nuru-card flex min-h-12 items-center gap-2 px-4 py-3 text-sm font-semibold text-primary"
+            >
+              <BookOpen className="h-4 w-4" /> Offline reading room
+            </a>
+
             {/* Quick Access */}
             <section>
               <h2 className="px-1 pb-2.5 text-[11px] font-semibold tracking-[0.14em] text-ink-3 uppercase">

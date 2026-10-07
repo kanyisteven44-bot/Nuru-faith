@@ -26,8 +26,8 @@ test("opening shows an app-loading indicator while auth restores", () => {
 });
 
 test("opening stays short and supports reduced motion", () => {
-  assert.match(splash, /const HOLD_MS = 2300/);
-  assert.match(splash, /const MAX_MS = 4200/);
+  assert.ok(Number(splash.match(/const HOLD_MS = (\d+)/)[1]) <= 1000);
+  assert.ok(Number(splash.match(/const MAX_MS = (\d+)/)[1]) <= 2000);
   assert.match(styles, /prefers-reduced-motion: reduce/);
 });
 

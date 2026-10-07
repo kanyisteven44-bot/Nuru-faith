@@ -34,8 +34,14 @@ export function OfflineNotice() {
       <div className="min-w-0">
         <p className="text-sm font-semibold">You’re offline</p>
         <p className="text-[11px] leading-relaxed text-muted-foreground">
-          Fresh community and account changes will sync after you reconnect.
+          Music and community need internet. Your saved readings are available here.
         </p>
+        <a
+          href="/offline.html"
+          className="inline-flex min-h-11 items-center text-sm font-semibold text-primary underline"
+        >
+          Open offline reading room
+        </a>
       </div>
     </div>
   );

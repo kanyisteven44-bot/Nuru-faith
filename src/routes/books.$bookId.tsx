@@ -13,9 +13,10 @@ import {
 } from "lucide-react";
 import books from "@/data/christianBooks.json";
 import { BookCover } from "@/components/nuru/BookCover";
-import { fetchBookSection } from "@/lib/bookReader.functions";
+import { fetchBookSection, fetchBookDownload } from "@/lib/bookReader.functions";
 import { DEFAULT_READER, parseReaderPreferences, type ReaderPreferences } from "@/lib/bookReader";
 import { cn } from "@/lib/utils";
+import { SaveOffline } from "@/components/nuru/SaveOffline";
 
 export const Route = createFileRoute("/books/$bookId")({
   head: ({ params }) => ({
@@ -150,6 +151,20 @@ function BookReader({ book }: { book: Book }) {
             </p>
           </div>
         </section>
+        <SaveOffline
+          key={book.id}
+          label="Download book for offline"
+          prepare={async () => {
+            const download = await fetchBookDownload({ data: { id: book.id } });
+            return {
+              id: `book:${book.id}`,
+              kind: "book",
+              title: book.title,
+              subtitle: `${book.author} · Project Gutenberg · Source licence preserved in text`,
+              sections: download.sections.map((text, i) => ({ title: `Section ${i + 1}`, text })),
+            };
+          }}
+        />
         <details className="group mt-5 rounded-2xl border border-current/15">
           <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-primary">
             <span className="flex items-center gap-2">

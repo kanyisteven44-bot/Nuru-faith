@@ -54,6 +54,8 @@ import { BOOK_ART, bookAbbr } from "@/lib/bookArt";
 import { AppShell, BrandBar } from "@/components/nuru/AppShell";
 import { CardSkeleton, EmptyState, PillTabs, PrimaryButton } from "@/components/nuru/Primitives";
 import { Sheet } from "@/components/nuru/Sheet";
+import { SaveOffline } from "@/components/nuru/SaveOffline";
+import { passageText } from "@/lib/offlineReading";
 
 const ALL_BOOKS: BibleBook[] = [...OLD_TESTAMENT, ...NEW_TESTAMENT];
 
@@ -137,6 +139,12 @@ function BibleScreen() {
       <BrandBar />
 
       <div className="px-4">
+        <a
+          href="/offline.html"
+          className="inline-flex min-h-11 items-center text-sm text-primary underline"
+        >
+          Offline reading room
+        </a>
         {/* Serif title with the search control beside it, per the board. */}
         <div className="flex items-center justify-between gap-3">
           <h1 className="font-display text-[40px] leading-none">Bible</h1>
@@ -767,6 +775,43 @@ function Reader({
       </div>
 
       <div className="px-4 pb-28 pt-2">
+        {passage.data && (
+          <SaveOffline
+            key={`${reference}:${translation}`}
+            label="Save chapter for offline"
+            prepare={async () => {
+              const data = passage.data!;
+              return {
+                id: `bible:${translation}:${reference}`,
+                kind: "bible",
+                title: data.reference,
+                subtitle: data.translation,
+                sections: [{ title: data.reference, text: passageText(data.verses) }],
+              };
+            }}
+          />
+        )}
+        {!unavailable && (
+          <SaveOffline
+            key={`book:${book.name}:${translation}`}
+            label={`Download ${book.name} for offline`}
+            prepare={async (report) => {
+              const sections = [];
+              for (let number = 1; number <= book.chapters; number++) {
+                report(`Downloading ${number} of ${book.chapters} chapters…`);
+                const data = await fetchChapterPassage(`${book.name} ${number}`, translation);
+                sections.push({ title: data.reference, text: passageText(data.verses) });
+              }
+              return {
+                id: `bible-book:${translation}:${book.name}`,
+                kind: "bible",
+                title: book.name,
+                subtitle: TRANSLATIONS.find((t) => t.id === translation)?.label ?? translation,
+                sections,
+              };
+            }}
+          />
+        )}
         {passage.isLoading && <CardSkeleton count={4} height="h-6" />}
         {passage.isError && (
           <EmptyState

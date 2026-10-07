@@ -20,6 +20,8 @@ import { faithCourseBySlug } from "@/data/faithCourses";
 import { resolveMedia } from "@/lib/media";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { SaveOffline } from "@/components/nuru/SaveOffline";
+import { passageText } from "@/lib/offlineReading";
 import { ReadingTools } from "@/components/nuru/ReadingTools";
 import { fetchPassage, DEFAULT_TRANSLATION } from "@/lib/bible";
 
@@ -160,6 +162,40 @@ function FaithCourseDetail() {
       </div>
 
       <div className="mx-auto max-w-4xl space-y-5 px-4 py-6 sm:px-8">
+        <SaveOffline
+          key={course.slug}
+          label="Download course for offline"
+          prepare={async (report) => {
+            const sections = [];
+            for (const part of course.lessons) {
+              report(`Downloading lesson ${sections.length + 1} of ${course.lessons.length}…`);
+              const passages = await Promise.all(
+                part.references.map((reference) => fetchPassage(reference, DEFAULT_TRANSLATION)),
+              );
+              sections.push({
+                title: part.title,
+                text: [
+                  part.focus,
+                  ...passages.map(
+                    (p) => `${p.reference} · ${p.translation}\n\n${passageText(p.verses)}`,
+                  ),
+                  `Context\n${part.focus} Begin by reading the whole passage around ${part.references.join(" and ")}, not only the quoted verse. Ask who is speaking, who is listening, what problem is being addressed, and what comes immediately before and after.`,
+                  `What it means\n${course.description} In this lesson, the goal is not merely to collect information. Look for what the passage reveals about God's character, human motives, the work of Christ, and the kind of response Scripture calls faithful.`,
+                  `Real-life examples\n${course.examples.join("\n")}`,
+                  "Put it into practice\nTurn the lesson into one concrete response this week. Keep it specific enough to practise and small enough to repeat. Christian formation usually happens through faithful patterns over time, not one intense moment.",
+                  "Reflect\nWhat does this lesson reveal about God? What does it expose or encourage in your own life? What is one faithful response you can practise before the next lesson?",
+                ].join("\n\n"),
+              });
+            }
+            return {
+              id: `course:${course.slug}`,
+              kind: "course",
+              title: course.title,
+              subtitle: `${course.category} · ${course.description}`,
+              sections,
+            };
+          }}
+        />
         <section className="nuru-card p-4">
           <p className="text-sm leading-relaxed text-secondary-foreground">{course.description}</p>
           <div className="mt-4">

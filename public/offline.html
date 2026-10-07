@@ -4,24 +4,135 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
     <meta name="theme-color" content="#06152A" />
-    <title>Nuru Faith — Offline</title>
+    <title>Offline reading — Nuru Faith</title>
     <style>
-      :root { color-scheme: dark; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-      * { box-sizing: border-box; }
-      body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #06152a; color: #f8fafc; padding: 24px; }
-      main { width: min(100%, 420px); text-align: center; }
-      .mark { width: 68px; height: 68px; margin: 0 auto 20px; border-radius: 999px; display: grid; place-items: center; border: 1px solid rgba(34,211,238,.35); background: rgba(34,211,238,.1); font-size: 30px; }
-      h1 { margin: 0; font-size: 1.35rem; }
-      p { color: #aab8cb; line-height: 1.6; font-size: .92rem; }
-      button { margin-top: 14px; min-height: 44px; border: 0; border-radius: 12px; padding: 0 18px; background: #22d3ee; color: #052235; font-weight: 700; cursor: pointer; }
+      :root {
+        color-scheme: dark;
+        font-family: system-ui, sans-serif;
+        background: #06152a;
+        color: #f8fafc;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 24px 18px 60px;
+      }
+      main {
+        max-width: 760px;
+        margin: auto;
+      }
+      a {
+        color: #7dd3fc;
+      }
+      h1 {
+        font-family: Georgia, serif;
+        font-size: 2rem;
+      }
+      h2 {
+        font-family: Georgia, serif;
+        font-size: 1.4rem;
+      }
+      p {
+        color: #bac9dd;
+        line-height: 1.7;
+      }
+      header {
+        margin-bottom: 24px;
+      }
+      .controls,
+      nav {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+      }
+      input,
+      select,
+      button {
+        font: inherit;
+        min-height: 44px;
+        border-radius: 12px;
+        border: 1px solid #3a5271;
+        padding: 10px 14px;
+        background: #102943;
+        color: inherit;
+      }
+      input {
+        flex: 1;
+        min-width: 160px;
+      }
+      button {
+        cursor: pointer;
+      }
+      button:disabled {
+        opacity: 0.4;
+      }
+      article {
+        border: 1px solid #284667;
+        border-radius: 20px;
+        padding: 20px;
+        margin: 16px 0;
+        background: #0d223b;
+      }
+      article span {
+        font-size: 0.72rem;
+        letter-spacing: 0.12em;
+        color: #7dd3fc;
+      }
+      article button {
+        margin-right: 10px;
+      }
+      .reading-text {
+        white-space: pre-wrap;
+        font:
+          20px/1.9 Georgia,
+          serif;
+        overflow-wrap: anywhere;
+      }
+      .large .reading-text {
+        font-size: 25px;
+      }
+      [hidden] {
+        display: none !important;
+      }
+      #reader {
+        padding-bottom: 32px;
+      }
+      #status {
+        font-size: 0.9rem;
+      }
     </style>
+    <script src="/offline-reader.js" defer></script>
   </head>
   <body>
     <main>
-      <div class="mark" aria-hidden="true">✦</div>
-      <h1>You’re offline</h1>
-      <p>Nuru Faith can’t reach the server right now. Reconnect to sync fresh community, mentorship and account data.</p>
-      <button type="button" onclick="location.reload()">Try again</button>
+      <header>
+        <a href="/home">← Nuru Faith</a>
+        <h1>Offline reading room</h1>
+        <p id="status" role="status">Opening saved readings…</p>
+        <p>
+          Save Bible chapters, courses and books while online, then read them here without mobile
+          data. Clearing browser data removes downloads.
+        </p>
+      </header>
+      <div class="controls">
+        <input
+          id="search"
+          type="search"
+          placeholder="Search saved readings"
+          aria-label="Search saved readings"
+        /><select id="filter" aria-label="Reading type">
+          <option value="">All readings</option>
+          <option value="bible">Bible</option>
+          <option value="course">Courses</option>
+          <option value="book">Books</option>
+        </select>
+      </div>
+      <section id="list" aria-label="Saved readings"></section>
+      <section id="reader" aria-label="Offline reader" hidden></section>
+      <noscript>Enable JavaScript to open your saved readings.</noscript>
     </main>
   </body>
 </html>

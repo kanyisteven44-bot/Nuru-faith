@@ -81,8 +81,8 @@ const CANDIDATE_WINDOW_SIZE = 48;
 
 /**
  * Reel ids the person has already watched (logged after ~2s of active view).
- * Watched reels are excluded from normal feeds; an intentional direct link can
- * still open one through fetchReelById.
+ * Watch history is all-time: normal feeds never recycle a viewed Reel. An
+ * intentional direct link can still open one through fetchReelById.
  */
 export async function fetchViewedReelIds(
   userId: string,
@@ -94,8 +94,7 @@ export async function fetchViewedReelIds(
     .from("reel_views")
     .select("reel_id")
     .eq("user_id", userId)
-    .in("reel_id", candidateIds)
-    .gte("created_at", new Date(new Date().setHours(0, 0, 0, 0)).toISOString());
+    .in("reel_id", candidateIds);
   if (error) throw new Error(error.message);
   return new Set((data ?? []).map((row) => row.reel_id));
 }

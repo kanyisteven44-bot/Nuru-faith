@@ -136,6 +136,51 @@
       "license_url": "https://creativecommons.org/licenses/by/4.0/",
       "verified_at": "2026-10-07T04:08:23.024216+00:00",
       "http_content_type": "application/octet-stream"
+    },
+    {
+      "external_id": "USUAN1100679",
+      "title": "Agnus Dei X",
+      "creator_name": "Kevin MacLeod",
+      "audio_url": "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Agnus%20Dei%20X.mp3",
+      "duration_seconds": 91,
+      "language_code": "zxx",
+      "category": "hymns",
+      "thumbnail_url": "/photos/church-sunlight.jpg",
+      "description": "Instrumental Christian hymn. Agnus Dei X by Kevin MacLeod (incompetech.com). Licensed under Creative Commons Attribution 4.0: https://creativecommons.org/licenses/by/4.0/ . Unmodified recording. Publisher: https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100679",
+      "publisher_page": "https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100679",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "verified_at": "2026-10-07T06:21:56.322733+00:00",
+      "http_content_type": "application/octet-stream"
+    },
+    {
+      "external_id": "USUAN1100191",
+      "title": "It Came Upon a Midnight Clear",
+      "creator_name": "Kevin MacLeod",
+      "audio_url": "https://incompetech.com/music/royalty-free/mp3-royaltyfree/It%20Came%20Upon%20a%20Midnight%20Clear.mp3",
+      "duration_seconds": 266,
+      "language_code": "zxx",
+      "category": "hymns",
+      "thumbnail_url": "/photos/church-sunlight.jpg",
+      "description": "Instrumental Christian hymn. It Came Upon a Midnight Clear by Kevin MacLeod (incompetech.com). Licensed under Creative Commons Attribution 4.0: https://creativecommons.org/licenses/by/4.0/ . Unmodified recording. Publisher: https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100191",
+      "publisher_page": "https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100191",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "verified_at": "2026-10-07T06:21:56.331428+00:00",
+      "http_content_type": "application/octet-stream"
+    },
+    {
+      "external_id": "USUAN1100012",
+      "title": "What Child is This",
+      "creator_name": "Kevin MacLeod",
+      "audio_url": "https://incompetech.com/music/royalty-free/mp3-royaltyfree/What%20Child%20is%20This.mp3",
+      "duration_seconds": 140,
+      "language_code": "zxx",
+      "category": "hymns",
+      "thumbnail_url": "/photos/church-sunlight.jpg",
+      "description": "Instrumental Christian hymn. What Child is This by Kevin MacLeod (incompetech.com). Licensed under Creative Commons Attribution 4.0: https://creativecommons.org/licenses/by/4.0/ . Unmodified recording. Publisher: https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100012",
+      "publisher_page": "https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100012",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "verified_at": "2026-10-07T06:21:57.216361+00:00",
+      "http_content_type": "application/octet-stream"
     }
   ]
 }

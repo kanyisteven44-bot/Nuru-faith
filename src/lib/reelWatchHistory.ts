@@ -1,8 +1,7 @@
 const WATCHED_EXTERNAL_REELS_KEY = "nuru_watched_external_reels";
-const MAX_DAILY_WATCHED_IDS = 20_000;
+const MAX_CACHED_WATCHED_IDS = 20_000;
 
-type DailyWatchHistory = {
-  day: string;
+type WatchHistory = {
   ids: string[];
 };
 
@@ -20,20 +19,19 @@ function cleanIds(value: unknown): Set<string> {
 
 export function parseWatchedExternalReelIds(
   value: string | null,
-  today = currentLocalDay(),
+  _today = currentLocalDay(),
 ): Set<string> {
   if (!value) return new Set();
   try {
     const parsed: unknown = JSON.parse(value);
 
-    // Backwards compatibility with the old all-time array format. Treat it as
-    // today's list once; the next write migrates it to the daily structure.
+    // Backwards compatibility:
+    // - the oldest format was a plain array
+    // - the previous format was { day, ids } and reset at midnight
+    // Both now migrate to one all-time set so a watched Reel stays watched.
     if (Array.isArray(parsed)) return cleanIds(parsed);
-
     if (!parsed || typeof parsed !== "object") return new Set();
-    const history = parsed as Partial<DailyWatchHistory>;
-    if (history.day !== today) return new Set();
-    return cleanIds(history.ids);
+    return cleanIds((parsed as Partial<WatchHistory>).ids);
   } catch {
     return new Set();
   }
@@ -56,8 +54,8 @@ export function rememberWatchedExternalReel(userId: string | null, contentId: st
   if (typeof window === "undefined" || !contentId) return;
   const ids = readWatchedExternalReelIds(userId);
   ids.add(contentId);
-  const boundedIds = [...ids].slice(-MAX_DAILY_WATCHED_IDS);
-  const payload: DailyWatchHistory = { day: currentLocalDay(), ids: boundedIds };
+  const boundedIds = [...ids].slice(-MAX_CACHED_WATCHED_IDS);
+  const payload: WatchHistory = { ids: boundedIds };
   try {
     window.localStorage.setItem(storageKey(userId), JSON.stringify(payload));
   } catch {

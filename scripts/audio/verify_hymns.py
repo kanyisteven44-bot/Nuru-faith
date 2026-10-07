@@ -7,7 +7,7 @@ from pathlib import Path
 from datetime import datetime, timezone
 CATALOGUE = 'https://incompetech.com/music/royalty-free/pieces.json'
 LICENSE = 'https://incompetech.com/music/royalty-free/licenses/'
-IDS = {'USUAN2100022','USUAN2100021','USUAN1100891','USUAN1100820','USUAN1100329','USUAN1100307','USUAN1100189','USUAN1100127','USUAN1100075'}
+IDS = {'USUAN2100022','USUAN2100021','USUAN1100891','USUAN1100820','USUAN1100329','USUAN1100307','USUAN1100189','USUAN1100127','USUAN1100075','USUAN1100679','USUAN1100191','USUAN1100012'}
 with urllib.request.urlopen(CATALOGUE, timeout=40) as response:
     catalogue = json.load(response)
 def verify(row):

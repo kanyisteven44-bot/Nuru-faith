@@ -7,7 +7,7 @@ export function isoSeconds(value: string): number {
 
 export type CatalogVideo = {
   id?: string;
-  snippet?: { channelId?: string; categoryId?: string; title?: string };
+  snippet?: { channelId?: string; categoryId?: string | undefined; title?: string };
   status?: { embeddable?: boolean; privacyStatus?: string; uploadStatus?: string };
   contentDetails?: {
     duration?: string;

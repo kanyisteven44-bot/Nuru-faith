@@ -1,26 +1,17 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Send, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useShareSheet } from "@/hooks/useShareSheet";
 import type { Reel } from "@/services/reels";
 import {
-  addExternalReelComment,
-  deleteExternalReelComment,
-  fetchExternalReelComments,
   fetchExternalReelState,
+  toggleExternalReelLike,
   toggleExternalReelSave,
 } from "@/services/externalReelInteractions";
 import { fetchYouTubeReelDetails } from "@/lib/youtubeReel.functions";
+import { ExternalVideoCommentsSheet } from "@/components/nuru/ExternalVideoCommentsSheet";
 import { YouTubeReelSheet } from "./YouTubeReelSheet";
-import {
-  getYouTubeRating,
-  setYouTubeRating,
-  connectYouTube,
-  YouTubeConnectionRequired,
-} from "@/services/youtubeRatings";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ReelActions } from "./ReelActions";
 
 type ExternalReelState = Awaited<ReturnType<typeof fetchExternalReelState>>;
@@ -54,13 +45,12 @@ export function ReelInteractiveActions({
 }) {
   const { userId } = useAuth();
   const qc = useQueryClient();
-  const [connectOpen, setConnectOpen] = useState(false);
-  const [connecting, setConnecting] = useState(false);
   const shareSheet = useShareSheet();
   const [commentsOpen, setCommentsOpen] = useState(false);
-  const [commentSource, setCommentSource] = useState<"youtube" | "nuru">("youtube");
+  const [commentSource, setCommentSource] = useState<"youtube" | "nuru">("nuru");
   const isExternal = reel.source_type === "youtube" && !!reel.external_id;
   const externalId = reel.external_id ?? "";
+
   const details = useQuery({
     queryKey: ["youtube-reel-details", externalId],
     queryFn: () => fetchYouTubeReelDetails({ data: { videoId: externalId } }),
@@ -68,72 +58,85 @@ export function ReelInteractiveActions({
     staleTime: 5 * 60 * 1000,
     retry: false,
   });
-  const stateKey = ["external-reel-state", userId, externalId] as const;
 
+  const stateKey = ["external-reel-state", userId, externalId] as const;
   const state = useQuery({
     queryKey: stateKey,
     queryFn: () => fetchExternalReelState(userId!, externalId),
-    // A long feed can contain hundreds of external videos. Only hydrate
-    // interaction state for the active Reel and its immediate neighbours.
     enabled: isExternal && !!userId && near,
     staleTime: 30_000,
   });
 
   useEffect(() => () => onCommentsVisibilityChange?.(false), [onCommentsVisibilityChange]);
 
-  const ratingKey = ["youtube-rating", userId, externalId] as const;
-  const rating = useQuery({
-    queryKey: ratingKey,
-    queryFn: () => getYouTubeRating(externalId),
-    enabled: isExternal && !!userId && near,
-    staleTime: 60_000,
-    retry: false,
-  });
   const likeExternal = useMutation({
-    mutationFn: (next: "like" | "none") => setYouTubeRating(externalId, next),
-    onSuccess: (next) => {
-      qc.setQueryData(ratingKey, next);
+    mutationFn: (currentlyLiked: boolean) => {
+      if (!userId) throw new Error("Sign in to like Reels");
+      return toggleExternalReelLike(userId, externalId, currentlyLiked);
     },
-    onError: (error) => {
-      if (error instanceof YouTubeConnectionRequired) setConnectOpen(true);
-      else toast.error(error.message);
-    },
-  });
-  function likeYouTube(forceLike = false) {
-    if (likeExternal.isPending) return;
-    if (rating.isPending) return;
-    if (rating.error instanceof YouTubeConnectionRequired) {
-      setConnectOpen(true);
-      return;
-    }
-    likeExternal.mutate(forceLike || rating.data !== "like" ? "like" : "none");
-  }
-  useEffect(() => {
-    const handle = (event: Event) => {
-      if ((event as CustomEvent<string>).detail === externalId) likeYouTube(true);
-    };
-    window.addEventListener("nuru:youtube-like", handle);
-    return () => window.removeEventListener("nuru:youtube-like", handle);
-  }, [externalId, rating.data, rating.error, rating.isPending, likeExternal.isPending]);
-
-  const saveExternal = useMutation({
-    mutationFn: (saved: boolean) => {
-      if (!userId) throw new Error("Sign in to save Reels");
-      return toggleExternalReelSave(userId, externalId, saved);
-    },
-    onMutate: async (saved) => {
+    onMutate: async (currentlyLiked) => {
       await qc.cancelQueries({ queryKey: stateKey });
       const previous = qc.getQueryData<ExternalReelState>(stateKey) ?? state.data;
-      const base = previous ?? { liked: false, saved, commentCount: 0 };
-      qc.setQueryData<ExternalReelState>(stateKey, { ...base, saved: !saved });
+      const base =
+        previous ??
+        ({
+          liked: currentlyLiked,
+          saved: false,
+          commentCount: 0,
+          likeCount: 0,
+        } satisfies ExternalReelState);
+      const nextLiked = !currentlyLiked;
+      qc.setQueryData<ExternalReelState>(stateKey, {
+        ...base,
+        liked: nextLiked,
+        likeCount: Math.max(0, base.likeCount + (nextLiked ? 1 : -1)),
+      });
       return { previous };
     },
-    onSuccess: (_data, saved) => {
-      toast.success(saved ? "Removed from saved" : "Saved");
-    },
-    onError: (e, _saved, context) => {
+    onError: (error, _liked, context) => {
       if (context?.previous) qc.setQueryData(stateKey, context.previous);
-      toast.error(e instanceof Error ? e.message : "Couldn't save Reel");
+      toast.error(error instanceof Error ? error.message : "Couldn't save that like");
+    },
+    onSettled: async () => {
+      await qc.invalidateQueries({ queryKey: stateKey });
+    },
+  });
+
+  useEffect(() => {
+    const handle = (event: Event) => {
+      if ((event as CustomEvent<string>).detail !== externalId) return;
+      if (!userId || state.data?.liked || likeExternal.isPending) return;
+      likeExternal.mutate(false);
+    };
+    window.addEventListener("nuru:external-like", handle);
+    return () => window.removeEventListener("nuru:external-like", handle);
+  }, [externalId, userId, state.data?.liked, likeExternal.isPending]);
+
+  const saveExternal = useMutation({
+    mutationFn: (currentlySaved: boolean) => {
+      if (!userId) throw new Error("Sign in to save Reels");
+      return toggleExternalReelSave(userId, externalId, currentlySaved);
+    },
+    onMutate: async (currentlySaved) => {
+      await qc.cancelQueries({ queryKey: stateKey });
+      const previous = qc.getQueryData<ExternalReelState>(stateKey) ?? state.data;
+      const base =
+        previous ??
+        ({
+          liked: false,
+          saved: currentlySaved,
+          commentCount: 0,
+          likeCount: 0,
+        } satisfies ExternalReelState);
+      qc.setQueryData<ExternalReelState>(stateKey, { ...base, saved: !currentlySaved });
+      return { previous };
+    },
+    onSuccess: (_data, currentlySaved) => {
+      toast.success(currentlySaved ? "Removed from saved" : "Saved");
+    },
+    onError: (error, _saved, context) => {
+      if (context?.previous) qc.setQueryData(stateKey, context.previous);
+      toast.error(error instanceof Error ? error.message : "Couldn't save Reel");
     },
     onSettled: async () => {
       await qc.invalidateQueries({ queryKey: stateKey });
@@ -153,24 +156,21 @@ export function ReelInteractiveActions({
     <>
       <ReelActions
         horizontal={horizontal}
-        youtubeStats={
-          isExternal ? (details.data?.stats ?? { likes: null, comments: null }) : undefined
-        }
         avatarUrl={details.data?.creator.avatar ?? reel.creator_avatar_url}
         creatorName={reel.creator_name}
-        likeCount={reel.like_count}
+        likeCount={isExternal ? (state.data?.likeCount ?? 0) : reel.like_count}
         commentCount={isExternal ? (state.data?.commentCount ?? 0) : reel.comment_count}
-        liked={isExternal ? rating.data === "like" : liked}
+        liked={isExternal ? !!state.data?.liked : liked}
         saved={isExternal ? !!state.data?.saved : saved}
         onProfile={onProfile}
         onLike={() => {
           if (!isExternal) return onLike();
           if (!userId) return toast.error("Sign in to like Reels");
-          likeYouTube();
+          if (!likeExternal.isPending) likeExternal.mutate(!!state.data?.liked);
         }}
         onComments={() => {
           if (!isExternal) return onComments();
-          setCommentSource("youtube");
+          setCommentSource("nuru");
           setCommentsOpen(true);
           onCommentsVisibilityChange?.(true);
         }}
@@ -187,15 +187,17 @@ export function ReelInteractiveActions({
       />
 
       {isExternal && commentsOpen && commentSource === "nuru" && (
-        <ExternalCommentsSheet
-          externalReelId={externalId}
+        <ExternalVideoCommentsSheet
+          externalId={externalId}
           userId={userId}
+          onOpenSourceComments={() => setCommentSource("youtube")}
           onClose={() => {
             setCommentsOpen(false);
             onCommentsVisibilityChange?.(false);
           }}
         />
       )}
+
       {isExternal && commentsOpen && commentSource === "youtube" && (
         <YouTubeReelSheet
           videoId={externalId}
@@ -207,180 +209,8 @@ export function ReelInteractiveActions({
           }}
         />
       )}
-      {connectOpen && (
-        <Dialog open onOpenChange={setConnectOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Connect YouTube</DialogTitle>
-            </DialogHeader>
-            <p className="text-sm text-muted-foreground">
-              Choose the Google account you use for YouTube. It can have a different email from your
-              Nuru account.
-            </p>
-            <button
-              className="min-h-11 rounded-xl bg-primary px-4 text-primary-foreground"
-              disabled={connecting}
-              onClick={() => {
-                setConnecting(true);
-                void connectYouTube(externalId).catch((error) => {
-                  setConnecting(false);
-                  toast.error(error.message);
-                });
-              }}
-            >
-              {connecting ? "Connecting…" : "Continue with Google"}
-            </button>
-            <a
-              className="text-sm text-primary"
-              target="_blank"
-              rel="noopener noreferrer"
-              href={`https://www.youtube.com/watch?v=${externalId}`}
-            >
-              Open on YouTube
-            </a>
-          </DialogContent>
-        </Dialog>
-      )}
+
       {shareSheet.node}
     </>
-  );
-}
-
-function ExternalCommentsSheet({
-  externalReelId,
-  userId,
-  onClose,
-}: {
-  externalReelId: string;
-  userId: string | null;
-  onClose: () => void;
-}) {
-  const qc = useQueryClient();
-  const [text, setText] = useState("");
-  const key = ["external-reel-comments", externalReelId];
-
-  const comments = useQuery({
-    queryKey: key,
-    queryFn: () => fetchExternalReelComments(externalReelId),
-  });
-
-  const send = useMutation({
-    mutationFn: async () => {
-      if (!userId) throw new Error("Sign in to comment");
-      const body = text.trim();
-      if (!body) return;
-      await addExternalReelComment(userId, externalReelId, body);
-    },
-    onSuccess: async () => {
-      setText("");
-      await Promise.all([
-        qc.invalidateQueries({ queryKey: key }),
-        qc.invalidateQueries({ queryKey: ["external-reel-state", userId, externalReelId] }),
-      ]);
-    },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Couldn't post comment"),
-  });
-
-  async function remove(commentId: string) {
-    if (!userId) return;
-    try {
-      await deleteExternalReelComment(userId, commentId);
-      await Promise.all([
-        qc.invalidateQueries({ queryKey: key }),
-        qc.invalidateQueries({ queryKey: ["external-reel-state", userId, externalReelId] }),
-      ]);
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Couldn't delete comment");
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 z-[80] flex items-end bg-black/45" onClick={onClose}>
-      <section
-        className="max-h-[72dvh] w-full overflow-hidden rounded-t-[28px] border border-white/10 bg-background shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="flex items-center justify-between border-b border-border/70 px-4 py-3">
-          <div>
-            <h2 className="font-display text-base font-semibold">Nuru comments</h2>
-            <p className="text-[11px] text-muted-foreground">
-              {comments.data?.length ?? 0} on this Reel
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-full p-2"
-            aria-label="Close comments"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </header>
-
-        <div className="max-h-[50dvh] space-y-4 overflow-y-auto px-4 py-4">
-          {comments.isLoading && <p className="text-sm text-muted-foreground">Loading comments…</p>}
-          {!comments.isLoading && (comments.data?.length ?? 0) === 0 && (
-            <div className="py-8 text-center">
-              <p className="font-semibold">No comments yet</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Be the first to join the conversation.
-              </p>
-            </div>
-          )}
-          {(comments.data ?? []).map((comment) => (
-            <article key={comment.id} className="flex gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-2 text-xs font-bold text-leaf">
-                {comment.user_id === userId ? "You" : "N"}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-xs font-semibold">
-                    {comment.user_id === userId ? "You" : "Nuru member"}
-                  </span>
-                  {comment.user_id === userId && (
-                    <button
-                      type="button"
-                      onClick={() => void remove(comment.id)}
-                      aria-label="Delete comment"
-                      className="rounded-full p-1.5 text-muted-foreground hover:text-destructive"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  )}
-                </div>
-                <p className="mt-0.5 break-words text-sm text-secondary-foreground">
-                  {comment.content}
-                </p>
-              </div>
-            </article>
-          ))}
-        </div>
-
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (text.trim()) send.mutate();
-          }}
-          className="flex items-center gap-2 border-t border-border/70 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
-        >
-          <input
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            maxLength={800}
-            disabled={!userId || send.isPending}
-            placeholder={userId ? "Add a Nuru comment…" : "Sign in to comment"}
-            className="input-nuru flex-1"
-          />
-          <button
-            type="submit"
-            disabled={!userId || !text.trim() || send.isPending}
-            className="flex h-11 w-11 items-center justify-center rounded-full nuru-gradient-bg disabled:opacity-50"
-            aria-label="Post comment"
-          >
-            <Send className="h-4.5 w-4.5 text-primary-foreground" />
-          </button>
-        </form>
-      </section>
-    </div>
   );
 }

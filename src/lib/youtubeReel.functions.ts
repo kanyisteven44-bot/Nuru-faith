@@ -71,6 +71,17 @@ export const fetchYouTubeReelDetails = createServerFn({ method: "POST" })
       if (!approved.data?.length)
         throw new Error("This creator is not available in the approved directory.");
     }
+    const videoDetails = {
+      id: data.videoId,
+      title: video.snippet?.title ?? "YouTube video",
+      description: video.snippet?.description ?? "",
+      thumbnail:
+        video.snippet?.thumbnails?.["high"]?.url ??
+        video.snippet?.thumbnails?.["medium"]?.url ??
+        video.snippet?.thumbnails?.["default"]?.url ??
+        null,
+      publishedAt: video.snippet?.publishedAt ?? null,
+    };
     const stats = {
       likes: video.statistics?.likeCount ?? null,
       comments: video.statistics?.commentCount ?? null,
@@ -143,5 +154,5 @@ export const fetchYouTubeReelDetails = createServerFn({ method: "POST" })
           }));
       }
     }
-    return { stats, creator, comments, uploads, nextPageToken };
+    return { video: videoDetails, stats, creator, comments, uploads, nextPageToken };
   });

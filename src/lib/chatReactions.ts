@@ -559,7 +559,7 @@ const packs = [
       ["🌟", "This is your time"],
       ["😎", "Too smooth"],
     ],
-  },,
+  },
   {
     name: "Morning",
     color: "#fef9c3",

@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -159,6 +160,7 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
 
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
@@ -193,7 +195,7 @@ function RootComponent() {
         <Outlet />
         <Toaster position="top-center" />
         <OfflineNotice />
-        <SplashScreen initialOnly />
+        {pathname === "/" && <SplashScreen initialOnly />}
       </ThemeProvider>
     </QueryClientProvider>
   );

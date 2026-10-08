@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, type SearchSchemaInput } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Loader2, Lock, Mail, MailCheck, Phone, User as UserIcon } from "lucide-react";
@@ -8,14 +8,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { NuruMark } from "@/components/nuru/Logo";
 import { newPasswordError } from "@/lib/accountSecurity";
 import { authAvailability } from "@/lib/authAvailability.functions";
+import { optionalOneOf } from "@/lib/searchParams";
 
-const searchSchema = z.object({
-  mode: z.enum(["login", "signup", "forgot", "mfa", "mfa-setup"]).optional().default("login"),
-});
+const AUTH_MODES = ["login", "signup", "forgot", "mfa", "mfa-setup"] as const;
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
-  validateSearch: searchSchema,
+  // SearchSchemaInput keeps `mode` optional on links; the value is still checked.
+  validateSearch: (search: { mode?: (typeof AUTH_MODES)[number] } & SearchSchemaInput) => ({
+    mode: optionalOneOf(search.mode, AUTH_MODES) ?? "login",
+  }),
   head: () => ({
     meta: [
       { title: "Sign in — Nuru Faith" },

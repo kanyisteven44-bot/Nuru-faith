@@ -27,7 +27,6 @@ import {
 import { CardSkeleton, EmptyState, ErrorState } from "@/components/nuru/Primitives";
 import { resolveMedia } from "@/lib/media";
 import { cn } from "@/lib/utils";
-import { z } from "zod";
 import { toast } from "sonner";
 import { MoreVertical, Palette } from "lucide-react";
 import {
@@ -36,16 +35,22 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
+import { optionalUuid } from "@/lib/searchParams";
 
-const searchSchema = z.object({
-  user: z.string().uuid().optional(),
-  mentor: z.string().uuid().optional(),
-  requester: z.string().uuid().optional(),
-  group: z.string().uuid().optional(),
-});
+type MessagesSearch = {
+  user?: string | undefined;
+  mentor?: string | undefined;
+  requester?: string | undefined;
+  group?: string | undefined;
+};
 
 export const Route = createFileRoute("/_authenticated/messages")({
-  validateSearch: searchSchema,
+  validateSearch: (search: Record<string, unknown>): MessagesSearch => ({
+    user: optionalUuid(search["user"]),
+    mentor: optionalUuid(search["mentor"]),
+    requester: optionalUuid(search["requester"]),
+    group: optionalUuid(search["group"]),
+  }),
   head: () => ({ meta: [{ title: "Messages — Nuru Faith" }] }),
   component: MessagesScreen,
 });

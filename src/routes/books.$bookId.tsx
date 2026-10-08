@@ -19,12 +19,14 @@ import { cn } from "@/lib/utils";
 import { SaveOffline } from "@/components/nuru/SaveOffline";
 
 export const Route = createFileRoute("/books/$bookId")({
-  head: ({ params }) => ({
-    meta: [
-      {
-        title: `${books.find((book) => String(book.id) === params.bookId)?.title ?? "Book reader"} — Nuru Faith`,
-      },
-    ],
+  // The catalogue is imported lazily here: route options ship in the main
+  // bundle, and a static import would put every book on every page.
+  loader: async ({ params }) => {
+    const { default: catalogue } = await import("@/data/christianBooks.json");
+    return { title: catalogue.find((book) => String(book.id) === params.bookId)?.title ?? null };
+  },
+  head: ({ loaderData }) => ({
+    meta: [{ title: `${loaderData?.title ?? "Book reader"} — Nuru Faith` }],
   }),
   component: ReaderRoute,
 });

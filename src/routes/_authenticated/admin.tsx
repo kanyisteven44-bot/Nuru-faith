@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { z } from "zod";
 import { AdminV3Screen } from "@/components/nuru/AdminV3Screen";
 import type { AdminSectionId } from "@/components/nuru/AdminCommandShell";
+import { optionalOneOf } from "@/lib/searchParams";
 
 const ADMIN_SECTION_IDS = [
   "dashboard",
@@ -15,12 +15,12 @@ const ADMIN_SECTION_IDS = [
   "roles",
 ] as const;
 
-const adminSearchSchema = z.object({
-  section: z.enum(ADMIN_SECTION_IDS).optional(),
-});
-
 export const Route = createFileRoute("/_authenticated/admin")({
-  validateSearch: adminSearchSchema,
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { section?: (typeof ADMIN_SECTION_IDS)[number] | undefined } => ({
+    section: optionalOneOf(search["section"], ADMIN_SECTION_IDS),
+  }),
   head: () => ({
     meta: [
       { title: "Nuru Faith Admin" },

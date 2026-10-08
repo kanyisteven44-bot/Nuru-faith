@@ -3,7 +3,6 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Image as ImageIcon, Music2, Search, Video, X } from "lucide-react";
 import { toast } from "sonner";
-import { z } from "zod";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { createPost, fetchMyGroupIds, fetchGroups, fetchProfile } from "@/services/content";
@@ -11,13 +10,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { POST_MUSIC, POST_MUSIC_BY_ID } from "@/lib/postMusic";
 import { PostSoundtrack, PostPresentation } from "@/components/nuru/PostMedia";
 import { AppShell, Avatar } from "@/components/nuru/AppShell";
-
-const createSearchSchema = z.object({
-  group: z.string().uuid().optional(),
-});
+import { optionalUuid } from "@/lib/searchParams";
 
 export const Route = createFileRoute("/_authenticated/create")({
-  validateSearch: createSearchSchema,
+  validateSearch: (search: Record<string, unknown>): { group?: string | undefined } => ({
+    group: optionalUuid(search["group"]),
+  }),
   head: () => ({
     meta: [
       { title: "Create post — Nuru Faith" },

@@ -1,4 +1,3 @@
-import { z } from "zod";
 import { CoverImage } from "@/components/nuru/CoverImage";
 import { BibleReadAloud } from "@/components/nuru/BibleReadAloud";
 import { resolveMedia } from "@/lib/media";
@@ -62,14 +61,21 @@ import { CardSkeleton, EmptyState, PillTabs, PrimaryButton } from "@/components/
 import { Sheet } from "@/components/nuru/Sheet";
 import { SaveOffline } from "@/components/nuru/SaveOffline";
 import { passageText } from "@/lib/offlineReading";
+import { optionalString } from "@/lib/searchParams";
 
 const ALL_BOOKS: BibleBook[] = [...OLD_TESTAMENT, ...NEW_TESTAMENT];
 
 export const Route = createFileRoute("/_authenticated/bible")({
-  validateSearch: z.object({
-    reference: z.string().max(100).optional(),
-    translation: z.string().max(100).optional(),
-    verses: z.string().max(600).optional(),
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): {
+    reference?: string | undefined;
+    translation?: string | undefined;
+    verses?: string | undefined;
+  } => ({
+    reference: optionalString(search["reference"], 100),
+    translation: optionalString(search["translation"], 100),
+    verses: optionalString(search["verses"], 600),
   }),
   head: () => ({
     meta: [

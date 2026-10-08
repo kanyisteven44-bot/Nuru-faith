@@ -25,7 +25,6 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
-import { z } from "zod";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell, BoardHeader } from "@/components/nuru/AppShell";
@@ -36,13 +35,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
 import type { ThemePreference } from "@/lib/theme";
 import { fetchMyRoles } from "@/services/content";
-
-const settingsSearchSchema = z.object({
-  panel: z.enum(["profile"]).optional(),
-});
+import { optionalOneOf } from "@/lib/searchParams";
 
 export const Route = createFileRoute("/_authenticated/settings")({
-  validateSearch: settingsSearchSchema,
+  validateSearch: (search: Record<string, unknown>): { panel?: "profile" | undefined } => ({
+    panel: optionalOneOf(search["panel"], ["profile"]),
+  }),
   head: () => ({
     meta: [
       { title: "Settings — Nuru Faith" },

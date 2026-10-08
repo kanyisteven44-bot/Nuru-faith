@@ -348,6 +348,10 @@ export function Avatar({
       <img
         src={src}
         alt=""
+        // Large avatars lead a screen (profile, mentor); small ones sit in long lists.
+        loading={size === "lg" ? "eager" : "lazy"}
+        fetchPriority={size === "lg" ? "high" : "auto"}
+        decoding="async"
         className="h-full w-full object-cover"
         onError={() => setFailedUrl(url)}
       />

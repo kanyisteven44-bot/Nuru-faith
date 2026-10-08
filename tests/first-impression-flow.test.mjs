@@ -22,9 +22,11 @@ test("all protected routes keep incomplete profiles inside onboarding", () => {
   const route = read("src/routes/_authenticated/route.tsx");
 
   assert.match(route, /select\("onboarded"\)/);
-  assert.match(route, /needsOnboarding && location\.pathname !== "\/onboarding"/);
+  assert.match(route, /needsOnboarding === true && location\.pathname !== "\/onboarding"/);
   assert.match(route, /throw redirect\(\{ to: "\/onboarding" \}\)/);
-  assert.match(route, /!needsOnboarding && location\.pathname === "\/onboarding"/);
+  assert.match(route, /needsOnboarding === false && location\.pathname === "\/onboarding"/);
+  // Only a confirmed, completed onboarding is cached to skip the check.
+  assert.match(route, /if \(!needsOnboarding\) rememberOnboarded\(user\.id\)/);
 });
 
 test("onboarding only completes after profile interests and membership writes succeed", () => {

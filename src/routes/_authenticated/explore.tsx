@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Search, X } from "lucide-react";
-import { z } from "zod";
 import { KENYA_COUNTIES } from "@/lib/kenyaCounties";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -13,13 +12,15 @@ import {
 import { AppShell, ScreenHeader } from "@/components/nuru/AppShell";
 import { DiscoveryResults } from "@/components/nuru/DiscoveryResults";
 import { EmptyState } from "@/components/nuru/Primitives";
+import { optionalOneOf, optionalString } from "@/lib/searchParams";
 
-const schema = z.object({
-  q: z.string().max(120).catch(""),
-  kind: z.enum(["all", ...DISCOVERY_KINDS]).catch("all"),
-});
+const KIND_FILTERS = ["all", ...DISCOVERY_KINDS] as const;
+type ExploreSearch = { q: string; kind: (typeof KIND_FILTERS)[number] };
 export const Route = createFileRoute("/_authenticated/explore")({
-  validateSearch: (value) => schema.parse(value),
+  validateSearch: (value: Record<string, unknown>): ExploreSearch => ({
+    q: optionalString(value["q"], 120) ?? "",
+    kind: optionalOneOf(value["kind"], KIND_FILTERS) ?? "all",
+  }),
   head: () => ({
     meta: [
       { title: "Explore — Nuru Faith" },
@@ -33,7 +34,7 @@ export const Route = createFileRoute("/_authenticated/explore")({
 });
 function ExploreScreen() {
   const { userId } = useAuth();
-  const search: z.infer<typeof schema> = Route.useSearch();
+  const search: ExploreSearch = Route.useSearch();
   const navigate = Route.useNavigate();
   const [input, setInput] = useState(search.q);
   const [county, setCounty] = useState("all");

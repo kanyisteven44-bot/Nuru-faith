@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { z } from "zod";
 import { BookOpen, Share2, QrCode } from "lucide-react";
 import { useState } from "react";
 import { TRANSLATIONS, DEFAULT_TRANSLATION, OLD_TESTAMENT, NEW_TESTAMENT } from "@/lib/bible";
@@ -8,6 +7,7 @@ import { EBIBLE_TRANSLATIONS } from "@/lib/bibleCatalog";
 import { fetchChapterPassage } from "@/lib/bibleChapter";
 import { buildBibleShare, parseVerseRanges, verseRanges } from "@/lib/bibleSharing";
 import { NuruLockup } from "@/components/nuru/Logo";
+import { optionalString } from "@/lib/searchParams";
 import { PassageQr } from "@/components/nuru/PassageQr";
 import { useShareSheet } from "@/hooks/useShareSheet";
 import { BibleReadAloud } from "@/components/nuru/BibleReadAloud";
@@ -15,20 +15,18 @@ import { BibleReadAloud } from "@/components/nuru/BibleReadAloud";
 const books = [...OLD_TESTAMENT, ...NEW_TESTAMENT];
 export const Route = createFileRoute("/passage")({
   ssr: false,
-  validateSearch: z.object({
-    book: z
-      .string()
-      .max(40)
-      .refine((s) => books.some((b) => b.name === s))
-      .catch("John"),
-    chapter: z.coerce.number().int().min(1).max(150).catch(3),
-    translation: z
-      .string()
-      .max(100)
-      .refine((s) => TRANSLATIONS.some((t) => t.id === s))
-      .catch(DEFAULT_TRANSLATION),
-    verses: z.string().max(600).catch("16"),
-  }),
+  // Plain checks only: route options ship in the main bundle, so the Bible
+  // catalogue lookups (book and translation) happen in the component below.
+  validateSearch: (search: Record<string, unknown>) => {
+    const chapter = Number(search["chapter"]);
+    return {
+      book: optionalString(search["book"], 40) ?? "John",
+      chapter: Number.isInteger(chapter) && chapter >= 1 && chapter <= 150 ? chapter : 3,
+      // Unknown or missing translations fall back to the default in the component.
+      translation: optionalString(search["translation"], 100),
+      verses: optionalString(search["verses"], 600) ?? "16",
+    };
+  },
   head: () => ({
     meta: [
       { title: "Shared Scripture — Nuru Faith" },
@@ -38,7 +36,12 @@ export const Route = createFileRoute("/passage")({
   component: SharedPassage,
 });
 function SharedPassage() {
-  const search = Route.useSearch();
+  const raw = Route.useSearch();
+  const search = {
+    ...raw,
+    book: books.some((b) => b.name === raw.book) ? raw.book : "John",
+    translation: TRANSLATIONS.find((t) => t.id === raw.translation)?.id ?? DEFAULT_TRANSLATION,
+  };
   const [qrOpen, setQrOpen] = useState(false);
   const share = useShareSheet();
   const selected = parseVerseRanges(search.verses);

@@ -3,7 +3,6 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, ChevronRight, Phone, Plus, Search, Users, Video } from "lucide-react";
 import { toast } from "sonner";
-import { z } from "zod";
 import { createChatGroup } from "@/services/messaging";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchGroups, fetchMyGroupIds, joinGroup, leaveGroup } from "@/services/content";
@@ -21,13 +20,12 @@ import { GroupCallPanel } from "@/components/nuru/GroupCallPanel";
 import { fetchActiveGroupCall, startOrJoinGroupCall, type GroupCallKind, type GroupCallRoom } from "@/services/groupCalls";
 import { resolveMedia } from "@/lib/media";
 import { cn } from "@/lib/utils";
-
-const searchSchema = z.object({
-  group: z.string().uuid().optional(),
-});
+import { optionalUuid } from "@/lib/searchParams";
 
 export const Route = createFileRoute("/_authenticated/groups")({
-  validateSearch: searchSchema,
+  validateSearch: (search: Record<string, unknown>): { group?: string | undefined } => ({
+    group: optionalUuid(search["group"]),
+  }),
   head: () => ({
     meta: [
       { title: "Groups — Nuru Faith" },

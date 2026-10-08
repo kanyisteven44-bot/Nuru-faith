@@ -1,6 +1,10 @@
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
+/* Self-hosted fonts: no render-blocking request to a third-party origin, and
+   the same Inter / Source Serif 4 (with optical sizing) as before. */
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/source-serif-4/opsz.css";
 
 /*
  * NURU FAITH DESIGN SYSTEM
@@ -23,10 +27,10 @@
 
   /* Headings are bold sans; Scripture and reflection keep the editorial
      serif via `font-serif`. Matches the approved Home concept. */
-  --font-display: "Source Serif 4", Georgia, ui-serif, serif;
-  --font-serif: "Source Serif 4", Georgia, ui-serif, serif;
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-script: "Source Serif 4", Georgia, ui-serif, serif;
+  --font-display: "Source Serif 4 Variable", "Source Serif 4", Georgia, ui-serif, serif;
+  --font-serif: "Source Serif 4 Variable", "Source Serif 4", Georgia, ui-serif, serif;
+  --font-sans: "Inter Variable", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-script: "Source Serif 4 Variable", "Source Serif 4", Georgia, ui-serif, serif;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);

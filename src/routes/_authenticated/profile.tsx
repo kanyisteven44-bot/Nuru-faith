@@ -2,7 +2,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/compone
 import { PostMedia, PostPresentation } from "@/components/nuru/PostMedia";
 import { CoverImage } from "@/components/nuru/CoverImage";
 import { useRef, useState } from "react";
-import { profilePhotoExtension } from "@/lib/profilePhoto";
+import { profilePhotoExtension, shrinkProfilePhoto } from "@/lib/profilePhoto";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -30,9 +30,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import {
   fetchMyEventIds,
-  fetchMyGroupIds,
   fetchMyPosts,
   fetchMySavedPostRows,
+  fetchMySavedPosts,
   fetchProfile,
   fetchProfileCounts,
   updateProfile,
@@ -89,11 +89,6 @@ function ProfileScreen() {
     queryFn: () => fetchProfileCounts(userId!),
     enabled: !!userId,
   });
-  const myGroups = useQuery({
-    queryKey: ["my-group-ids", userId],
-    queryFn: () => fetchMyGroupIds(userId!),
-    enabled: !!userId,
-  });
   const myEvents = useQuery({
     queryKey: ["my-events", userId],
     queryFn: () => fetchMyEventIds(userId!),
@@ -125,12 +120,14 @@ function ProfileScreen() {
     queryFn: () => fetchAllHighlights(userId!),
     enabled: !!userId,
   });
-  const savedPostRows = useQuery({
-    queryKey: ["saved-post-rows-count", userId],
-    queryFn: () => fetchMySavedPostRows(userId!),
+  // Only the count is shown, so fetch saved ids (shared with Community)
+  // rather than every saved post's full row.
+  const savedPostIds = useQuery({
+    queryKey: ["saved-posts", userId],
+    queryFn: () => fetchMySavedPosts(userId!),
     enabled: !!userId,
   });
-  const savedPostCount = savedPostRows.data?.length;
+  const savedPostCount = savedPostIds.data?.length;
 
   const churchName = profile.data?.churches?.name ?? null;
   const place = profile.data?.country ?? null;
@@ -181,6 +178,8 @@ function ProfileScreen() {
     let uploaded = false;
     let saved = false;
     try {
+      profilePhotoExtension(file);
+      file = await shrinkProfilePhoto(file);
       const extension = profilePhotoExtension(file);
       path = `${userId}/${crypto.randomUUID()}.${extension}`;
       const { error } = await supabase.storage.from("avatars").upload(path, file, {

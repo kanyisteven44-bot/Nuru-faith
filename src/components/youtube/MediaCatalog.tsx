@@ -8,6 +8,7 @@ import {
   Pause,
   Play,
   Repeat2,
+  RefreshCw,
   Share2,
   SkipForward,
   Volume2,
@@ -30,6 +31,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useShareSheet } from "@/hooks/useShareSheet";
 import { toast } from "sonner";
 import { YouTubeSongActions } from "./YouTubeSongActions";
+import { nextMusicRefresh, rotateMusicPage } from "@/lib/musicDiscoveryOrder";
 
 export function MediaCatalog({
   mediaType,
@@ -51,6 +53,17 @@ export function MediaCatalog({
   onPlay?: (item: MediaItem) => void;
 }) {
   const [selected, setSelected] = useState<MediaItem | null>(null);
+  const [musicRefresh, setMusicRefresh] = useState<number | null>(null);
+  useEffect(() => {
+    if (mediaType !== "music") return;
+    let storage: Storage | null = null;
+    try {
+      storage = window.sessionStorage;
+    } catch {
+      /* Ordering still works without storage. */
+    }
+    setMusicRefresh(nextMusicRefresh(storage));
+  }, [mediaType]);
   const nextPageMarker = useRef<HTMLDivElement>(null);
   const catalog = useInfiniteQuery({
     queryKey: ["media-catalog", mediaType, query, language, playback, channelId, creatorName],
@@ -70,7 +83,11 @@ export function MediaCatalog({
   // Imports can shift offset pages between requests; render each saved item once.
   const items = Array.from(
     new Map(
-      catalog.data?.pages.flatMap((page) => page.items.map((item) => [item.id, item] as const)),
+      catalog.data?.pages.flatMap((page) =>
+        (mediaType === "music" ? rotateMusicPage(page.items, musicRefresh ?? 0) : page.items).map(
+          (item) => [item.id, item] as const,
+        ),
+      ),
     ).values(),
   );
   const total = Math.max(0, ...(catalog.data?.pages.map((page) => page.total) ?? []));
@@ -102,6 +119,32 @@ export function MediaCatalog({
       className="space-y-3 px-4 py-4"
       aria-label={mediaType === "music" ? "Song catalogue" : "Podcast catalogue"}
     >
+      {mediaType === "music" && (
+        <button
+          type="button"
+          className="ml-auto flex min-h-11 items-center gap-2 rounded-full border border-border bg-surface-1 px-4 text-sm font-medium"
+          disabled={catalog.isFetching || musicRefresh === null}
+          onClick={() => {
+            let storage: Storage | null = null;
+            try {
+              storage = window.sessionStorage;
+            } catch {
+              /* Storage is optional. */
+            }
+            const next = (musicRefresh ?? 0) + 1;
+            try {
+              storage?.setItem("nuru:music-order:v1", String(next));
+            } catch {
+              /* Storage is optional. */
+            }
+            setMusicRefresh(next);
+            void catalog.refetch();
+          }}
+        >
+          <RefreshCw className={`h-4 w-4 ${catalog.isFetching ? "animate-spin" : ""}`} />
+          Refresh music
+        </button>
+      )}
       {(!hideEmptyState || catalog.isPending || catalog.isError || items.length > 0) && (
         <div className="flex items-center justify-between gap-3">
           <h2 className="font-display text-lg font-semibold">
@@ -125,7 +168,9 @@ export function MediaCatalog({
           )}
         </div>
       )}
-      {catalog.isPending && <CardSkeleton count={3} height="h-20" />}
+      {(catalog.isPending || (mediaType === "music" && musicRefresh === null)) && (
+        <CardSkeleton count={3} height="h-20" />
+      )}
       {catalog.isError && (
         <div role="alert" className="nuru-card p-4">
           <p className="mb-3 text-sm">The catalogue could not load. Please try again.</p>
@@ -145,7 +190,7 @@ export function MediaCatalog({
         />
       )}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
-        {items.map((item) => (
+        {(mediaType === "music" && musicRefresh === null ? [] : items).map((item) => (
           <button
             key={item.id}
             type="button"

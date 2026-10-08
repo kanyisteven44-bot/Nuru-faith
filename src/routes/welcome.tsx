@@ -1,4 +1,5 @@
 import { CoverImage } from "@/components/nuru/CoverImage";
+import { NuruMark } from "@/components/nuru/Logo";
 import { resolveMedia } from "@/lib/media";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowRight, HandHeart, Sprout, Users } from "lucide-react";
@@ -39,16 +40,19 @@ function Welcome() {
       <div className="absolute inset-0 bg-gradient-to-b from-background via-background/45 to-background/25" />
 
       <div className="relative mx-auto flex min-h-dvh max-w-xl flex-col px-7 pb-10 pt-[max(1.5rem,env(safe-area-inset-top))]">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
+          <div className="inline-flex items-center gap-2.5">
+            <NuruMark className="h-10 w-10 rounded-xl" />
+            <span className="text-[12px] font-bold tracking-[0.12em] text-foreground">
+              NURU FAITH
+            </span>
+          </div>
           <Link
             to="/opening"
-            className="inline-flex min-h-11 items-center rounded-full px-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+            className="inline-flex min-h-11 items-center rounded-full border border-border/70 bg-surface/80 px-3 text-[12px] font-semibold text-secondary-foreground backdrop-blur-sm transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            Replay opening
+            Replay intro
           </Link>
-          <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            Nuru Faith
-          </span>
         </div>
 
         <div className="pt-10">
@@ -76,15 +80,22 @@ function Welcome() {
           ))}
         </ul>
 
-        <div className="mt-auto pt-12">
+        <div className="mt-auto space-y-3 pt-12">
           <button
             type="button"
             onClick={() => void navigate({ to: "/auth", search: { mode: "signup" } })}
-            className="flex min-h-13 w-full items-center justify-center gap-2 rounded-2xl bg-primary px-5 text-sm font-bold text-primary-foreground nuru-glow transition-transform active:scale-[0.99]"
+            className="flex min-h-13 w-full items-center justify-center gap-2 rounded-2xl bg-primary px-5 text-sm font-bold text-primary-foreground nuru-glow transition-transform hover:brightness-105 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             Continue
             <ArrowRight className="h-4.5 w-4.5" />
           </button>
+          <Link
+            to="/auth"
+            search={{ mode: "login" }}
+            className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-2xl text-sm font-semibold text-foreground underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            Already part of Nuru? <span className="text-primary">Sign in</span>
+          </Link>
         </div>
       </div>
     </div>

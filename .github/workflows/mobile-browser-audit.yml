@@ -1,0 +1,40 @@
+name: Nuru mobile browser audit
+
+on:
+  push:
+    branches:
+      - qa/public-browser-audit-20261008
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser-walkthrough:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install dependencies and Chromium
+        run: |
+          npm ci
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Browse live Nuru pages at phone and desktop widths
+        env:
+          NURU_QA_BASE: https://nurufaith.co.ke
+          NURU_QA_EMAIL: ${{ secrets.NURU_QA_EMAIL }}
+          NURU_QA_PASSWORD: ${{ secrets.NURU_QA_PASSWORD }}
+        run: node scripts/audit-live-mobile.mjs
+      - name: Preserve report and public page screenshots for review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuru-public-browser-audit
+          path: browser-qa
+          if-no-files-found: warn
+          retention-days: 1

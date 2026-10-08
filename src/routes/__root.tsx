@@ -179,7 +179,30 @@ function RootComponent() {
   // browser visits while leaving already-installed legacy PWAs on their origin.
   // Sensitive OAuth/password-reset callbacks must never switch origins.
   useEffect(() => {
-    const destination = canonicalBrowserDestination(window.location.href, isInstalledApp());
+    // People following an old emailed reset/confirmation link must be able to
+    // finish the whole authentication flow on that origin. Keep this tab on
+    // legacy for the rest of its session to avoid losing a fresh login after
+    // the callback navigates to Home.
+    let finishingOldAuth = false;
+    try {
+      const current = new URL(window.location.href);
+      const authPath = ["/auth-callback", "/reset-password", "/verify", "/confirm", "/auth/confirm"]
+        .includes(current.pathname);
+      const authQuery = ["code", "token", "token_hash", "access_token", "refresh_token", "state"]
+        .some((key) => current.searchParams.has(key));
+      const authHash = /(?:^|[&#])(?:access_token|refresh_token|code|token_hash)=/.test(current.hash);
+      if (isLegacyNuruHost(current.hostname) && (authPath || authQuery || authHash)) {
+        sessionStorage.setItem("nuru-legacy-auth-in-progress", "1");
+      }
+      finishingOldAuth = sessionStorage.getItem("nuru-legacy-auth-in-progress") === "1";
+    } catch {
+      // Private storage may be blocked: the stateless helper still protects
+      // the sensitive auth/callback URL itself.
+    }
+    const destination = canonicalBrowserDestination(
+      window.location.href,
+      isInstalledApp() || finishingOldAuth,
+    );
     if (destination) window.location.replace(destination);
   }, [pathname]);
 

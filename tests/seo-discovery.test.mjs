@@ -34,6 +34,7 @@ test("about page identifies the founder as publicly readable content and structu
   const source = read("src/routes/about.tsx");
   assert.ok(source.includes('name: "Stephen Kanyi"'));
   assert.ok(source.includes('id="founder"'));
-  assert.ok(source.includes("Founder of Nuru Faith"));
+  assert.ok(source.includes("Stephen Kanyi — Building Nuru Faith at 18"));
+  assert.ok(source.includes("at the age of 18"));
   assert.ok(source.includes('"@type": "Person"'));
 });

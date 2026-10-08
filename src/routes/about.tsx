@@ -5,25 +5,25 @@ import { NuruMark } from "@/components/nuru/Logo";
 export const Route = createFileRoute("/about")({
   head: () => ({
     meta: [
-      { title: "About Nuru Faith & Founder Stephen Kanyi | Christian App" },
+      { title: "Stephen Kanyi | Nuru Faith Founder at 18 | Kenya" },
       {
         name: "description",
         content:
-          "Learn about Nuru Faith, founded by Stephen Kanyi of Vortiqora Technologies. Explore Bible reading, Christian courses, prayer, worship and community.",
+          "Meet Stephen Kanyi, who began developing Nuru Faith at age 18 in Kenya through Vortiqora Technologies, combining faith, technology and community for young people.",
       },
       { name: "robots", content: "index, follow, max-image-preview:large" },
       { property: "og:title", content: "About Nuru Faith & Founder Stephen Kanyi | Christian App" },
       {
         property: "og:description",
         content:
-          "Read Scripture, learn, pray, discover gospel music and grow in Christian community with Nuru Faith.",
+          "Stephen Kanyi began developing Nuru Faith at age 18, with a vision to connect faith, learning, worship and community through technology.",
       },
       { property: "og:url", content: "https://nurufaith.co.ke/about" },
       { property: "og:image", content: "https://nurufaith.co.ke/photos/friends-outdoors.jpg" },
       { name: "twitter:title", content: "About Nuru Faith & Founder Stephen Kanyi | Christian App" },
       {
         name: "twitter:description",
-        content: "A digital home for Bible reading, Christian learning, prayer, worship and community.",
+        content: "Discover the journey of Stephen Kanyi, founder of Nuru Faith, developed at age 18 in Kenya.",
       },
     ],
     links: [{ rel: "canonical", href: "https://nurufaith.co.ke/about" }],
@@ -52,7 +52,7 @@ const SEO_STRUCTURED_DATA = {
       url: "https://nurufaith.co.ke/about#founder",
       jobTitle: "Founder",
       description:
-        "Stephen Kanyi is the founder of Vortiqora Technologies and Nuru Faith, a Christian faith and community platform developed in Kenya.",
+        "Stephen Kanyi is a Kenyan technology founder who began developing Nuru Faith at age 18 through Vortiqora Technologies, bringing faith, technology and community together for young people.",
       worksFor: { "@id": "https://nurufaith.co.ke/#organization" },
     },
     {
@@ -204,16 +204,29 @@ function AboutPage() {
         >
           <span className="text-xs font-bold uppercase tracking-[0.14em] text-primary">Meet the founder</span>
           <h2 id="founder-heading" className="mt-3 font-display text-2xl font-semibold">
-            Stephen Kanyi — Founder of Nuru Faith
+            Stephen Kanyi — Building Nuru Faith at 18
           </h2>
-          <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground sm:text-base">
-            Stephen Kanyi is a Kenyan technology founder building Nuru Faith through Vortiqora
-            Technologies. He is developing a digital platform that brings young people together
-            around Bible reading, Christian learning, prayer, worship and supportive community.
+          <p className="mt-3 text-sm font-semibold text-primary">
+            Kenyan founder · Faith-driven technology · Started building at age 18
           </p>
           <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground sm:text-base">
-            His vision for Nuru Faith is to make faith-centered learning and meaningful connection
-            more accessible to young people in Kenya, across Africa and beyond.
+            Stephen Kanyi began developing Nuru Faith at the age of 18, driven by a belief that
+            technology can help young people connect, learn and grow in their Christian faith.
+            Through Vortiqora Technologies, he is working to bring Scripture, devotionals,
+            courses, worship, mentorship and faith-centered conversations into one digital space.
+          </p>
+          <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground sm:text-base">
+            His journey began with a question: how can a new generation find genuine community
+            and practical spiritual guidance in a world shaped by social media? Nuru Faith is
+            his response — an ambitious project that connects software development with a
+            desire to serve people and address meaningful challenges.
+          </p>
+          <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground sm:text-base">
+            Starting a project of this scale while young takes initiative, curiosity and
+            persistence. Stephen is still building and learning, with a long-term vision to make
+            faith-centered learning and connection more accessible in Kenya, across Africa and
+            beyond. His story is about choosing to begin, continuing to improve, and building
+            toward an impact that will be measured by the people Nuru Faith genuinely helps.
           </p>
           <p className="mt-4 text-sm text-muted-foreground">
             Business inquiries:{" "}

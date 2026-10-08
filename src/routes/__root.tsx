@@ -15,6 +15,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { OfflineNotice } from "@/components/nuru/OfflineNotice";
 import { LegacyDomainNotice } from "@/components/nuru/LegacyDomainNotice";
+import { canonicalBrowserDestination, isInstalledApp, isLegacyNuruHost } from "@/lib/pwaMode";
 // The opening is not needed on authenticated screens; load its code only on the landing page.
 const SplashScreen = lazy(() =>
   import("@/components/nuru/SplashScreen").then((module) => ({ default: module.SplashScreen })),
@@ -174,7 +175,41 @@ function RootComponent() {
   const router = useRouter();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
 
+  // The official public experience lives only at .co.ke. Redirect old-domain
+  // browser visits while leaving already-installed legacy PWAs on their origin.
+  // Sensitive OAuth/password-reset callbacks must never switch origins.
   useEffect(() => {
+    // People following an old emailed reset/confirmation link must be able to
+    // finish the whole authentication flow on that origin. Keep this tab on
+    // legacy for the rest of its session to avoid losing a fresh login after
+    // the callback navigates to Home.
+    let finishingOldAuth = false;
+    try {
+      const current = new URL(window.location.href);
+      const authPath = ["/auth-callback", "/reset-password", "/verify", "/confirm", "/auth/confirm"]
+        .includes(current.pathname);
+      const authQuery = ["code", "token", "token_hash", "access_token", "refresh_token", "state"]
+        .some((key) => current.searchParams.has(key));
+      const authHash = /(?:^|[&#])(?:access_token|refresh_token|code|token_hash)=/.test(current.hash);
+      if (isLegacyNuruHost(current.hostname) && (authPath || authQuery || authHash)) {
+        sessionStorage.setItem("nuru-legacy-auth-in-progress", "1");
+      }
+      finishingOldAuth = sessionStorage.getItem("nuru-legacy-auth-in-progress") === "1";
+    } catch {
+      // Private storage may be blocked: the stateless helper still protects
+      // the sensitive auth/callback URL itself.
+    }
+    const destination = canonicalBrowserDestination(
+      window.location.href,
+      isInstalledApp() || finishingOldAuth,
+    );
+    if (destination) window.location.replace(destination);
+  }, [pathname]);
+
+  useEffect(() => {
+    // Browser visitors who are about to move to .co.ke do not need to install
+    // the deprecated origin's service worker. Existing standalone apps still do.
+    if (isLegacyNuruHost(window.location.hostname) && !isInstalledApp()) return;
     if (!("serviceWorker" in navigator)) return;
     const register = () => {
       void navigator.serviceWorker.register("/sw.js").catch((error) => {

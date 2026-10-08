@@ -58,5 +58,29 @@
         }
       ]
     }
+  ],
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "nurufaith.website"
+        }
+      ],
+      "destination": "https://nurufaith.co.ke/:path*",
+      "statusCode": 307
+    },
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.nurufaith.website"
+        }
+      ],
+      "destination": "https://nurufaith.co.ke/:path*",
+      "statusCode": 307
+    }
   ]
 }

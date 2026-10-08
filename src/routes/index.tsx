@@ -1,3 +1,4 @@
+import { WELCOME_IMAGE_SRCSET, WELCOME_IMAGE_SIZES } from "@/lib/welcomeImage";
 import { useEffect } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,7 +20,12 @@ export const Route = createFileRoute("/")({
       },
       { name: "robots", content: "noindex, follow" },
     ],
-    links: [{ rel: "canonical", href: "https://nurufaith.website/about" }],
+    links: [
+      { rel: "canonical", href: "https://nurufaith.website/about" },
+      // Start the small responsive Welcome photograph while the entry restores auth.
+      { rel: "preload", as: "image", href: "/photos/alpine-reflections.jpg",
+        imageSrcSet: WELCOME_IMAGE_SRCSET, imageSizes: WELCOME_IMAGE_SIZES, fetchPriority: "high" },
+    ],
   }),
   component: Splash,
 });

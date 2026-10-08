@@ -1,3 +1,4 @@
+import { WELCOME_IMAGE_SRCSET, WELCOME_IMAGE_SIZES } from "@/lib/welcomeImage";
 import { CoverImage } from "@/components/nuru/CoverImage";
 import { NuruMark } from "@/components/nuru/Logo";
 import { resolveMedia } from "@/lib/media";
@@ -36,6 +37,8 @@ function Welcome() {
         alt=""
         loading="eager"
         fetchPriority="high"
+        srcSet={WELCOME_IMAGE_SRCSET}
+        sizes={WELCOME_IMAGE_SIZES}
         width={1024}
         height={640}
         className="absolute inset-x-0 bottom-0 h-[55%] w-full object-cover opacity-100"

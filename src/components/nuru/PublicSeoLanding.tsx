@@ -1,4 +1,5 @@
 import { NuruMark } from "@/components/nuru/Logo";
+import { Link } from "@tanstack/react-router";
 import { PwaInstallGuide } from "@/components/nuru/PwaInstallGuide";
 
 type SeoFeature = {
@@ -69,7 +70,7 @@ export function PublicSeoLanding({
             "@type": "ListItem",
             position: 1,
             name: "Nuru Faith",
-            item: "https://nurufaith.co.ke/about",
+            item: "https://nurufaith.co.ke/",
           },
           {
             "@type": "ListItem",
@@ -91,7 +92,7 @@ export function PublicSeoLanding({
 
       <div className="mx-auto max-w-5xl px-5 py-8 sm:px-8 sm:py-12">
         <header className="flex items-center justify-between gap-4">
-          <a href="/about" className="flex items-center gap-3" aria-label="Nuru Faith home">
+          <Link to="/" className="flex items-center gap-3" aria-label="Nuru Faith home">
             <NuruMark className="h-11 w-11" />
             <span>
               <span className="block font-display text-xl font-bold">
@@ -99,17 +100,18 @@ export function PublicSeoLanding({
               </span>
               <span className="block text-xs text-muted-foreground">by Vortiqora Technologies</span>
             </span>
-          </a>
-          <a
-            href="/auth?mode=signup"
+          </Link>
+          <Link
+            to="/auth"
+            search={{ mode: "signup" }}
             className="rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground"
           >
             Join Nuru
-          </a>
+          </Link>
         </header>
 
         <nav className="mt-8 text-xs text-muted-foreground" aria-label="Breadcrumb">
-          <a href="/about" className="hover:text-foreground hover:underline">Nuru Faith</a>
+          <Link to="/" className="hover:text-foreground hover:underline">Nuru Faith</Link>
           <span aria-hidden="true"> / </span>
           <span>{eyebrow}</span>
         </nav>
@@ -125,18 +127,19 @@ export function PublicSeoLanding({
             {intro}
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
-            <a
-              href="/auth?mode=signup"
+            <Link
+              to="/auth"
+              search={{ mode: "signup" }}
               className="rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground"
             >
               Create a free account
-            </a>
-            <a
-              href="/about"
+            </Link>
+            <Link
+              to="/about"
               className="rounded-full border border-border bg-card px-6 py-3 text-sm font-semibold"
             >
               Explore Nuru Faith
-            </a>
+            </Link>
           </div>
         </section>
 
@@ -199,8 +202,8 @@ export function PublicSeoLanding({
         <footer className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-border py-6 text-xs text-muted-foreground">
           <span>© 2026 Vortiqora Technologies. Nuru Faith.</span>
           <div className="flex gap-4">
-            <a href="/privacy" className="hover:text-foreground">Privacy</a>
-            <a href="/terms" className="hover:text-foreground">Terms</a>
+            <Link to="/privacy" className="hover:text-foreground">Privacy</Link>
+            <Link to="/terms" className="hover:text-foreground">Terms</Link>
           </div>
         </footer>
       </div>

@@ -40,10 +40,8 @@ import { getPilotMetrics } from "@/lib/pilot.functions";
 import { getAdminFactSnapshot } from "@/lib/adminFacts.functions";
 import { AdminOperations } from "@/components/nuru/AdminOperations";
 import { AdminRoleManager } from "@/components/nuru/AdminRoleManager";
-import {
-  AdminCommandShell,
-  type AdminSectionId,
-} from "@/components/nuru/AdminCommandShell";
+import { AdminCommandShell, type AdminSectionId } from "@/components/nuru/AdminCommandShell";
+import { AdminOperationsHub } from "@/components/nuru/AdminOperationsHub";
 import { AdminDashboardOverview } from "@/components/nuru/AdminDashboardOverview";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -65,7 +63,9 @@ export function AdminV3Screen({ initialSection }: { initialSection: AdminSection
     void navigate({ to: "/admin", search: { section }, replace: true });
   }
 
-  useEffect(() => { setLocalSection(initialSection); }, [initialSection]);
+  useEffect(() => {
+    setLocalSection(initialSection);
+  }, [initialSection]);
 
   async function refreshAdminData() {
     setIsRefreshing(true);
@@ -95,18 +95,38 @@ export function AdminV3Screen({ initialSection }: { initialSection: AdminSection
   const isChurchAdmin = (roles.data ?? []).some((row) => row.role === "church_admin");
   const isAdmin = isSuper || isModerator || isChurchAdmin;
 
-  const churches = useQuery({ queryKey: ["churches"], queryFn: () => fetchChurches() });
-  const events = useQuery({ queryKey: ["events"], queryFn: fetchEvents });
-  const groups = useQuery({ queryKey: ["groups"], queryFn: () => fetchGroups() });
-  const mentors = useQuery({ queryKey: ["mentors"], queryFn: fetchMentors });
-  const serve = useQuery({ queryKey: ["serve"], queryFn: fetchServeOpportunities });
+  const churches = useQuery({
+    queryKey: ["churches"],
+    queryFn: () => fetchChurches(),
+    enabled: !!userId && isAdmin,
+  });
+  const events = useQuery({
+    queryKey: ["events"],
+    queryFn: fetchEvents,
+    enabled: !!userId && isAdmin,
+  });
+  const groups = useQuery({
+    queryKey: ["groups"],
+    queryFn: () => fetchGroups(),
+    enabled: !!userId && isAdmin,
+  });
+  const mentors = useQuery({
+    queryKey: ["mentors"],
+    queryFn: fetchMentors,
+    enabled: !!userId && isAdmin,
+  });
+  const serve = useQuery({
+    queryKey: ["serve"],
+    queryFn: fetchServeOpportunities,
+    enabled: !!userId && isAdmin,
+  });
   const moderation = useQuery({
     queryKey: ["moderation-queue", userId],
     queryFn: fetchModerationQueue,
     enabled: !!userId && isAdmin,
   });
   const pilot = useQuery({
-    queryKey: ["pilot-metrics"],
+    queryKey: ["pilot-metrics", userId],
     queryFn: () => getPilotMetrics(),
     enabled: !!userId && (isSuper || isModerator),
     staleTime: 30_000,
@@ -114,7 +134,7 @@ export function AdminV3Screen({ initialSection }: { initialSection: AdminSection
     refetchIntervalInBackground: false,
   });
   const facts = useQuery({
-    queryKey: ["admin-fact-snapshot"],
+    queryKey: ["admin-fact-snapshot", userId],
     queryFn: () => getAdminFactSnapshot(),
     enabled: !!userId && (isSuper || isModerator),
     staleTime: 15_000,
@@ -122,7 +142,7 @@ export function AdminV3Screen({ initialSection }: { initialSection: AdminSection
     refetchIntervalInBackground: false,
   });
   const reelCount = useQuery({
-    queryKey: ["admin-reel-count"],
+    queryKey: ["admin-reel-count", userId],
     enabled: !!userId && isAdmin,
     queryFn: async () => {
       const result = await supabase.from("reels").select("id", { count: "exact", head: true });
@@ -162,7 +182,19 @@ export function AdminV3Screen({ initialSection }: { initialSection: AdminSection
   }
 
   if (roles.isError) {
-    return <div className="mx-auto max-w-md p-6"><EmptyState title="Could not verify admin access" description="Retry loading your roles." action={<button type="button" onClick={() => void roles.refetch()}>Retry</button>} /></div>;
+    return (
+      <div className="mx-auto max-w-md p-6">
+        <EmptyState
+          title="Could not verify admin access"
+          description="Retry loading your roles."
+          action={
+            <button type="button" onClick={() => void roles.refetch()}>
+              Retry
+            </button>
+          }
+        />
+      </div>
+    );
   }
 
   if (!isAdmin) {
@@ -217,15 +249,7 @@ export function AdminV3Screen({ initialSection }: { initialSection: AdminSection
           : item.status === moderationFilter;
     if (!statusMatch) return false;
     if (!normalizedModerationSearch) return true;
-    return (
-      item.reason +
-      " " +
-      item.target +
-      " " +
-      (item.details ?? "") +
-      " " +
-      item.source
-    )
+    return (item.reason + " " + item.target + " " + (item.details ?? "") + " " + item.source)
       .toLowerCase()
       .includes(normalizedModerationSearch);
   });
@@ -263,8 +287,16 @@ export function AdminV3Screen({ initialSection }: { initialSection: AdminSection
       avatarUrl={profile.data?.avatar_url ?? null}
       roleLabel={roleLabel}
       attentionCount={attentionCount}
+      isSuperAdmin={isSuper}
     >
-      <div className="mb-4 flex items-center justify-end">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <button
+          type="button"
+          onClick={() => setActiveSection("operations")}
+          className="min-h-10 rounded-xl border border-cyan-400/20 bg-cyan-400/5 px-4 text-xs font-semibold text-cyan-200"
+        >
+          Open operations workspace
+        </button>
         <GhostButton
           type="button"
           onClick={() => void refreshAdminData()}
@@ -288,6 +320,19 @@ export function AdminV3Screen({ initialSection }: { initialSection: AdminSection
           facts={facts.data}
           factsLoading={facts.isLoading}
           factsError={facts.isError}
+          onNavigate={setActiveSection}
+        />
+      )}
+
+      {activeSection === "operations" && (
+        <AdminOperationsHub
+          isSuperAdmin={isSuper}
+          roleLabel={roleLabel}
+          churches={scopedChurches}
+          facts={facts.data}
+          factsError={facts.isError}
+          factsLoading={facts.isLoading}
+          healthChecks={healthChecks}
           onNavigate={setActiveSection}
         />
       )}
@@ -324,7 +369,10 @@ export function AdminV3Screen({ initialSection }: { initialSection: AdminSection
       )}
 
       {activeSection === "content" && (
-        <AdminPanel title="Content" subtitle="Courses, devotionals, Scripture series and learning resources.">
+        <AdminPanel
+          title="Content"
+          subtitle="Courses, devotionals, Scripture series and learning resources."
+        >
           <div className="grid gap-3 md:grid-cols-3">
             <AdminLinkCard
               to="/faith-courses"
@@ -358,11 +406,22 @@ export function AdminV3Screen({ initialSection }: { initialSection: AdminSection
       )}
 
       {activeSection === "reels" && (
-        <AdminPanel title="Reels" subtitle="Keep short-form faith content visible, safe and active.">
+        <AdminPanel
+          title="Reels"
+          subtitle="Keep short-form faith content visible, safe and active."
+        >
           <div className="grid gap-3 md:grid-cols-3">
-            <AdminMetric label="Reels in catalogue" value={reelCount.data ?? "—"} icon={Clapperboard} />
+            <AdminMetric
+              label="Reels in catalogue"
+              value={reelCount.data ?? "—"}
+              icon={Clapperboard}
+            />
             <AdminMetric label="Open reports" value={openReports.length} icon={Flag} />
-            <AdminMetric label="Active today" value={pilot.data?.active_today ?? "—"} icon={Activity} />
+            <AdminMetric
+              label="Active today"
+              value={pilot.data?.active_today ?? "—"}
+              icon={Activity}
+            />
           </div>
           <div className="mt-4 flex flex-wrap gap-3">
             <Link
@@ -408,9 +467,24 @@ export function AdminV3Screen({ initialSection }: { initialSection: AdminSection
               setPage={setCommunityPage}
             />
             <div className="space-y-3">
-              <AdminLinkCard to="/groups" title="Groups" detail="Open community groups and activity" icon={Users} />
-              <AdminLinkCard to="/events" title="Events" detail="See upcoming Nuru events" icon={CalendarDays} />
-              <AdminLinkCard to="/serve" title="Serve" detail="Open serving opportunities" icon={CheckCircle2} />
+              <AdminLinkCard
+                to="/groups"
+                title="Groups"
+                detail="Open community groups and activity"
+                icon={Users}
+              />
+              <AdminLinkCard
+                to="/events"
+                title="Events"
+                detail="See upcoming Nuru events"
+                icon={CalendarDays}
+              />
+              <AdminLinkCard
+                to="/serve"
+                title="Serve"
+                detail="Open serving opportunities"
+                icon={CheckCircle2}
+              />
             </div>
           </div>
         </AdminPanel>
@@ -425,7 +499,11 @@ export function AdminV3Screen({ initialSection }: { initialSection: AdminSection
               value={openReports.filter((item) => item.status === "reviewing").length}
               icon={Activity}
             />
-            <AdminMetric label="Total loaded" value={moderation.data?.length ?? 0} icon={BarChart3} />
+            <AdminMetric
+              label="Total loaded"
+              value={moderation.data?.length ?? 0}
+              icon={BarChart3}
+            />
           </div>
 
           <div className="mt-5 rounded-2xl border border-[#153b5c] bg-[#071727] p-4">
@@ -440,21 +518,23 @@ export function AdminV3Screen({ initialSection }: { initialSection: AdminSection
                 />
               </label>
               <div className="flex flex-wrap gap-2">
-                {(["active", "reviewing", "resolved", "dismissed", "all"] as const).map((filter) => (
-                  <button
-                    key={filter}
-                    type="button"
-                    onClick={() => setModerationFilter(filter)}
-                    className={[
-                      "min-h-10 rounded-xl border px-3 text-xs font-semibold capitalize",
-                      moderationFilter === filter
-                        ? "border-cyan-400/50 bg-cyan-500/10 text-cyan-100"
-                        : "border-[#173b59] bg-[#071727] text-slate-400",
-                    ].join(" ")}
-                  >
-                    {filter}
-                  </button>
-                ))}
+                {(["active", "reviewing", "resolved", "dismissed", "all"] as const).map(
+                  (filter) => (
+                    <button
+                      key={filter}
+                      type="button"
+                      onClick={() => setModerationFilter(filter)}
+                      className={[
+                        "min-h-10 rounded-xl border px-3 text-xs font-semibold capitalize",
+                        moderationFilter === filter
+                          ? "border-cyan-400/50 bg-cyan-500/10 text-cyan-100"
+                          : "border-[#173b59] bg-[#071727] text-slate-400",
+                      ].join(" ")}
+                    >
+                      {filter}
+                    </button>
+                  ),
+                )}
               </div>
             </div>
 
@@ -532,7 +612,10 @@ export function AdminV3Screen({ initialSection }: { initialSection: AdminSection
         <AdminPanel title="Roles" subtitle="Control who can operate Nuru administration.">
           {isSuper ? (
             <AdminRoleManager
-              churches={(churches.data ?? []).map((church) => ({ id: church.id, name: church.name }))}
+              churches={(churches.data ?? []).map((church) => ({
+                id: church.id,
+                name: church.name,
+              }))}
             />
           ) : (
             <ScopedNotice />
@@ -572,8 +655,8 @@ function ScopedNotice() {
         Role-scoped access
       </div>
       <p className="mt-2 text-xs leading-relaxed text-slate-400">
-        This workspace is limited to Super Admin or moderation staff. Your allowed church tools remain
-        available through the Community section.
+        This workspace is limited to Super Admin or moderation staff. Your allowed church tools
+        remain available through the Community section.
       </p>
     </div>
   );
@@ -668,7 +751,8 @@ function CommunityDirectory({
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold text-white">{church.name}</p>
                 <p className="mt-1 truncate text-[10px] text-slate-500">
-                  {[church.denomination, church.city].filter(Boolean).join(" · ") || "Church directory"}
+                  {[church.denomination, church.city].filter(Boolean).join(" · ") ||
+                    "Church directory"}
                 </p>
               </div>
               <span
@@ -726,7 +810,12 @@ function ModerationStatusBadge({ status }: { status: string }) {
         ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-300"
         : "border-[#31516a] bg-[#0a2033] text-slate-400";
   return (
-    <span className={["rounded-full border px-2.5 py-1 text-[10px] font-semibold capitalize", tone].join(" ")}>
+    <span
+      className={[
+        "rounded-full border px-2.5 py-1 text-[10px] font-semibold capitalize",
+        tone,
+      ].join(" ")}
+    >
       {status}
     </span>
   );

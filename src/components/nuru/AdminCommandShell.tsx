@@ -20,6 +20,7 @@ import { NuruMark } from "@/components/nuru/Logo";
 import { Avatar } from "@/components/nuru/AppShell";
 
 export type AdminSectionId =
+  | "operations"
   | "dashboard"
   | "users"
   | "churches"
@@ -54,6 +55,7 @@ export function AdminCommandShell({
   avatarUrl,
   roleLabel,
   attentionCount,
+  isSuperAdmin,
   children,
 }: {
   activeSection: AdminSectionId;
@@ -63,6 +65,7 @@ export function AdminCommandShell({
   avatarUrl: string | null;
   roleLabel: string;
   attentionCount: number;
+  isSuperAdmin: boolean;
   children: ReactNode;
 }) {
   const navigate = useNavigate();
@@ -87,6 +90,7 @@ export function AdminCommandShell({
 
   const menu: MenuItem[] = [
     { kind: "section", id: "dashboard", label: "Dashboard", icon: Home },
+    { kind: "section", id: "operations", label: "Operations", icon: UserCog },
     { kind: "section", id: "users", label: "Users", icon: Users },
     { kind: "section", id: "churches", label: "Churches", icon: Church },
     { kind: "section", id: "content", label: "Content", icon: BookOpenCheck },
@@ -99,16 +103,31 @@ export function AdminCommandShell({
     { kind: "link", to: "/settings", label: "Settings", icon: Settings },
   ];
 
+  const visibleMenu = menu.filter(
+    (item) => isSuperAdmin || item.kind !== "section" || !["roles", "users"].includes(item.id),
+  );
+
   function runSearch() {
     const q = search.trim().toLowerCase();
     if (!q) return;
+    if (
+      q.includes("operation") ||
+      q.includes("mentor") ||
+      q.includes("topic") ||
+      q.includes("health")
+    )
+      return onSectionChange("operations");
     if (q.includes("church")) return onSectionChange("churches");
-    if (q.includes("role") || q.includes("admin")) return onSectionChange("roles");
+    if (q.includes("role") || q.includes("admin"))
+      return onSectionChange(isSuperAdmin ? "roles" : "operations");
     if (q.includes("report") || q.includes("moder")) return onSectionChange("moderation");
-    if (q.includes("music") || q.includes("song") || q.includes("artist")) return onSectionChange("music");
+    if (q.includes("music") || q.includes("song") || q.includes("artist"))
+      return onSectionChange("music");
     if (q.includes("reel") || q.includes("video")) return onSectionChange("reels");
-    if (q.includes("content") || q.includes("course") || q.includes("devotion")) return onSectionChange("content");
-    if (q.includes("community") || q.includes("group") || q.includes("event")) return onSectionChange("community");
+    if (q.includes("content") || q.includes("course") || q.includes("devotion"))
+      return onSectionChange("content");
+    if (q.includes("community") || q.includes("group") || q.includes("event"))
+      return onSectionChange("community");
     if (q.includes("message") || q.includes("chat")) {
       void navigate({ to: "/messages" });
       return;
@@ -117,7 +136,7 @@ export function AdminCommandShell({
       void navigate({ to: "/settings" });
       return;
     }
-    onSectionChange("users");
+    onSectionChange(isSuperAdmin ? "users" : "operations");
   }
 
   return (
@@ -137,7 +156,7 @@ export function AdminCommandShell({
         </Link>
 
         <nav className="mt-5 flex-1 space-y-1" aria-label="Admin navigation">
-          {menu.map((item, index) => {
+          {visibleMenu.map((item, index) => {
             const active = item.kind === "section" && item.id === activeSection;
             const row = (
               <span
@@ -148,7 +167,9 @@ export function AdminCommandShell({
                     : "border-l-transparent text-slate-400 hover:bg-white/[0.035] hover:text-slate-100",
                 ].join(" ")}
               >
-                <item.icon className={["h-4 w-4", active ? "text-cyan-300" : "text-slate-500"].join(" ")} />
+                <item.icon
+                  className={["h-4 w-4", active ? "text-cyan-300" : "text-slate-500"].join(" ")}
+                />
                 <span className="flex-1">{item.label}</span>
                 {!!item.badge && item.badge > 0 && (
                   <span className="rounded-full bg-rose-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
@@ -161,8 +182,12 @@ export function AdminCommandShell({
               <button
                 key={item.label}
                 type="button"
+                aria-current={active ? "page" : undefined}
                 onClick={() => onSectionChange(item.id)}
-                className={["block w-full text-left", index === 8 ? "mt-4 border-t border-[#12314a] pt-4" : ""].join(" ")}
+                className={[
+                  "block w-full text-left",
+                  index === 8 ? "mt-4 border-t border-[#12314a] pt-4" : "",
+                ].join(" ")}
               >
                 {row}
               </button>
@@ -170,7 +195,9 @@ export function AdminCommandShell({
               <Link
                 key={item.label}
                 to={item.to}
-                className={["block", index === 8 ? "mt-4 border-t border-[#12314a] pt-4" : ""].join(" ")}
+                className={["block", index === 8 ? "mt-4 border-t border-[#12314a] pt-4" : ""].join(
+                  " ",
+                )}
               >
                 {row}
               </Link>
@@ -191,7 +218,7 @@ export function AdminCommandShell({
 
       <div className="min-w-0 flex-1">
         <header className="sticky top-0 z-40 border-b border-[#12314a] bg-[#03101d]/95 backdrop-blur-xl">
-          <div className="flex min-h-16 items-center gap-3 px-4 sm:px-5 lg:px-6">
+          <div className="flex min-h-16 flex-wrap items-center gap-3 px-4 py-3 sm:px-5 lg:px-6">
             <div className="min-w-0 shrink-0">
               <p className="font-display text-base font-semibold text-white">Nuru Faith Admin</p>
               <p className="hidden text-[10px] text-slate-500 sm:block">
@@ -200,7 +227,7 @@ export function AdminCommandShell({
             </div>
 
             <form
-              className="mx-auto hidden w-full max-w-xl md:block"
+              className="mx-auto w-full max-w-xl"
               onSubmit={(event) => {
                 event.preventDefault();
                 runSearch();
@@ -212,7 +239,8 @@ export function AdminCommandShell({
                   ref={searchRef}
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Search admin sections…"
+                  aria-label="Find an admin workspace"
+                  placeholder="Find a workspace…"
                   className="min-h-10 w-full rounded-xl border border-[#17364c] bg-[#071522] pl-10 pr-14 text-sm text-slate-100 outline-none placeholder:text-slate-600 focus:border-cyan-400/50"
                 />
                 <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded-md border border-[#234d6c] px-1.5 py-0.5 text-[9px] font-semibold text-slate-400">
@@ -241,7 +269,9 @@ export function AdminCommandShell({
                 className="h-8 w-8 border-cyan-400/20"
               />
               <span className="hidden text-left sm:block">
-                <span className="block max-w-32 truncate text-xs font-semibold text-white">{userName}</span>
+                <span className="block max-w-32 truncate text-xs font-semibold text-white">
+                  {userName}
+                </span>
                 <span className="flex items-center gap-1 text-[10px] text-emerald-300">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
                   {roleLabel}
@@ -252,7 +282,7 @@ export function AdminCommandShell({
 
           <div className="overflow-x-auto border-t border-[#0d2538] px-3 py-2 lg:hidden">
             <nav className="flex min-w-max gap-2" aria-label="Mobile admin navigation">
-              {menu
+              {visibleMenu
                 .filter((item) => item.kind === "section")
                 .map((item) => {
                   if (item.kind !== "section") return null;
@@ -261,6 +291,7 @@ export function AdminCommandShell({
                     <button
                       key={item.id}
                       type="button"
+                      aria-current={active ? "page" : undefined}
                       onClick={() => onSectionChange(item.id)}
                       className={[
                         "min-h-9 rounded-lg border px-3 text-xs font-medium",

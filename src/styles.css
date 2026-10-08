@@ -104,11 +104,12 @@
   --popover: #ffffff;
   --popover-foreground: #111827;
 
-  --primary: #3e7bd6;
+  /* Light-mode action blue meets AA against white text and pale badges. */
+  --primary: #3169bb;
   --primary-foreground: #ffffff;
   --forest-hi: #5490e2;
   --forest-lo: #2f63b4;
-  --leaf: #3e7bd6;
+  --leaf: #3169bb;
   --terra: #c2714a;
   --terra-hi: #d4835c;
   --terra-lo: #a85c38;
@@ -121,9 +122,9 @@
   --secondary: #eef2f7;
   --secondary-foreground: #4b5563;
   --ink-2: #4b5563;
-  --ink-3: #8a94a6;
+  --ink-3: #5a6474;
   --muted: #eef2f7;
-  --muted-foreground: #8a94a6;
+  --muted-foreground: #5a6474;
   --accent: #e8f0fb;
   --accent-foreground: #2f63b4;
 

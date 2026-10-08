@@ -36,6 +36,10 @@ import { fetchCallHistory } from "@/services/calls";
 import { callHistoryLabel, isMissedCall } from "@/lib/callHistory";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { ChatThemePicker } from "./ChatThemePicker";
+import { chatThemeStorageKey, findChatTheme } from "@/lib/chatThemes";
+import { VoiceMessagePlayer } from "./VoiceMessagePlayer";
+import { toast } from "sonner";
 import { FileText } from "lucide-react";
 import { CHAT_DOCUMENT_ACCEPT, chatAttachmentInfo } from "@/lib/chatAttachments";
 import { ChatAttachmentDownload } from "./ChatAttachmentDownload";
@@ -52,6 +56,24 @@ export function RichChatThread({
   fillHeight?: boolean;
 }) {
   const qc = useQueryClient();
+  const threadIdentity =
+    "user" in target
+      ? `direct:${target.user}`
+      : "group" in target
+        ? `group:${target.group}`
+        : `mentor:${target.mentor}:${target.requester}`;
+  const themeKey = chatThemeStorageKey(userId, threadIdentity);
+  const [themeChoice, setThemeChoice] = useState({ key: "", id: "classic" });
+  useEffect(() => {
+    let id = "classic";
+    try {
+      id = findChatTheme(window.localStorage.getItem(themeKey)).id;
+    } catch {
+      /* Device storage may be blocked. */
+    }
+    setThemeChoice({ key: themeKey, id });
+  }, [themeKey]);
+  const theme = findChatTheme(themeChoice.key === themeKey ? themeChoice.id : "classic");
   const key = ["chat-messages", userId, target];
   const messages = useQuery({
     queryKey: key,
@@ -513,15 +535,33 @@ export function RichChatThread({
         fillHeight ? "flex min-h-0 flex-1 flex-col" : "rounded-2xl border border-border",
       )}
     >
-      <p className="shrink-0 border-b border-border px-4 py-2 text-center text-[10px] text-muted-foreground">
-        Only conversation participants can read these messages.
-      </p>
+      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border bg-card px-3">
+        <p className="text-[10px] text-muted-foreground">
+          Only conversation participants can read these messages.
+        </p>
+        <ChatThemePicker
+          value={theme.id}
+          onChange={(id) => {
+            setThemeChoice({ key: themeKey, id });
+            try {
+              window.localStorage.setItem(themeKey, id);
+            } catch {
+              toast.info("Theme applied for now. Device storage is unavailable.");
+            }
+          }}
+        />
+      </div>
       <div
         className={cn(
           "space-y-3 overflow-y-auto overscroll-contain bg-surface/40 p-4",
           fillHeight ? "min-h-0 flex-1" : "min-h-64",
         )}
-        style={fillHeight ? undefined : { maxHeight }}
+        style={{
+          ...(fillHeight ? {} : { maxHeight }),
+          background: theme.background,
+          backgroundSize: theme.size,
+          backgroundPosition: theme.position,
+        }}
         role="log"
         aria-label="Conversation messages"
         aria-live="polite"
@@ -856,7 +896,11 @@ export function RichChatThread({
             <p className="text-xs font-semibold">
               Preview your voice note • {Math.ceil(voiceDraft.duration / 1000)}s
             </p>
-            <VoicePlayback src={voiceDraft.url} />
+            <VoiceMessagePlayer
+              src={voiceDraft.url}
+              durationMs={voiceDraft.duration}
+              mine={false}
+            />
             <div className="flex justify-end gap-3">
               <button
                 type="button"
@@ -969,53 +1013,27 @@ function VoiceNote({
     return <p className="min-w-44 py-2 text-xs opacity-75">Loading voice note…</p>;
   }
   if (!audio.data) {
-    return <p className="min-w-44 py-2 text-xs opacity-75">Voice note unavailable</p>;
+    return (
+      <button
+        type="button"
+        onClick={() => void audio.refetch()}
+        className="min-h-11 min-w-44 py-2 text-xs underline"
+      >
+        Voice note unavailable · Retry
+      </button>
+    );
   }
 
   return (
-    <div className="min-w-52">
-      <VoicePlayback src={audio.data} mine={mine} />
-      <ChatAttachmentDownload path={path} />
-      {durationMs ? (
-        <p className="mt-1 text-[10px] opacity-65">{Math.ceil(durationMs / 1000)} sec voice note</p>
-      ) : null}
-    </div>
-  );
-}
-
-function VoicePlayback({ src, mine = false }: { src: string; mine?: boolean }) {
-  const ref = useRef<HTMLAudioElement>(null);
-  const [speed, setSpeed] = useState(1);
-  return (
-    <div className="space-y-2">
-      <audio
-        ref={ref}
-        controls
-        preload="metadata"
-        src={src}
-        className={cn("h-10 w-full", mine ? "accent-white" : "accent-primary")}
-      />
-      <div className="flex justify-end gap-1" aria-label="Playback speed">
-        {[1, 1.5, 2].map((value) => (
-          <button
-            key={value}
-            type="button"
-            aria-label={`Play at ${value} times speed`}
-            aria-pressed={speed === value}
-            onClick={() => {
-              setSpeed(value);
-              if (ref.current) ref.current.playbackRate = value;
-            }}
-            className={cn(
-              "min-h-8 rounded-full px-3 text-[11px] font-semibold",
-              speed === value ? "bg-violet-500 text-white" : "bg-black/10",
-            )}
-          >
-            {value}×
-          </button>
-        ))}
-      </div>
-    </div>
+    <VoiceMessagePlayer
+      src={audio.data}
+      path={path}
+      durationMs={durationMs}
+      mine={mine}
+      onRetry={() => {
+        void audio.refetch();
+      }}
+    />
   );
 }
 

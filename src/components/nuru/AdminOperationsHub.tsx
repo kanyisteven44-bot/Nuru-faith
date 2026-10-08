@@ -13,6 +13,8 @@ import {
   ExternalLink,
   LockKeyhole,
   AlertTriangle,
+  Instagram,
+  RadioTower,
 } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 import type { AdminFactSnapshot } from "@/lib/adminFacts.functions";
@@ -113,10 +115,10 @@ export function AdminOperationsHub({
               Nuru command center
             </p>
             <h1 className="mt-3 font-display text-3xl font-semibold text-white">
-              Run your community with clarity.
+              Your platform. One clear view.
             </h1>
             <p className="mt-3 text-sm leading-6 text-slate-300">
-              People, content and safety in one workspace. Every action uses your existing{" "}
+              See what needs attention, review your community and manage safe actions in one place. Your{" "}
               {roleLabel.toLowerCase()} permissions.
             </p>
           </div>
@@ -219,6 +221,72 @@ export function AdminOperationsHub({
               </p>
             )}
           </section>
+          {isSuperAdmin && (
+            <section aria-label="Social channel supervision" className="overflow-hidden rounded-2xl border border-[#235474] bg-[#071827]">
+              <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/10 bg-gradient-to-r from-[#102b44] to-[#071827] p-5 sm:p-6">
+                <div className="flex items-start gap-3">
+                  <span className="rounded-xl border border-fuchsia-300/20 bg-fuchsia-400/10 p-3 text-fuchsia-200">
+                    <Instagram className="h-5 w-5" />
+                  </span>
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-300">Social studio</p>
+                    <h2 className="mt-1 text-lg font-semibold text-white">Vortiqora social channels</h2>
+                    <p className="mt-2 max-w-xl text-sm leading-6 text-slate-400">
+                      Instagram @vortiqoratech is managed through Metricool. Analytics are not
+                      synchronized into Nuru yet: numbers will only appear here after a secure
+                      server-side integration has been configured and validated.
+                    </p>
+                  </div>
+                </div>
+                <a href="https://app.metricool.com/brands/connections?blogId=7310939"
+                  target="_blank" rel="noopener noreferrer"
+                  className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-cyan-300/30 bg-cyan-300/10 px-4 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-300/20">
+                  Manage social accounts <ExternalLink className="h-4 w-4" />
+                </a>
+              </div>
+              <div className="grid gap-3 p-5 sm:grid-cols-3">
+                <div className="rounded-xl border border-white/10 bg-[#0a2031] p-4">
+                  <p className="text-xs text-slate-400">Instagram profile</p>
+                  <p className="mt-2 font-semibold text-white">@vortiqoratech</p>
+                  <p className="mt-2 text-xs text-amber-200">External connection · verify in Metricool</p>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-[#0a2031] p-4">
+                  <p className="text-xs text-slate-400">Live account insights</p>
+                  <p className="mt-2 font-semibold text-white">Awaiting API integration</p>
+                  <p className="mt-2 text-xs text-slate-400">No fabricated followers, reach or views</p>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-[#0a2031] p-4">
+                  <p className="text-xs text-slate-400">Other channels</p>
+                  <p className="mt-2 font-semibold text-white">Add through Metricool</p>
+                  <p className="mt-2 text-xs text-slate-400">Provider approval required</p>
+                </div>
+              </div>
+            </section>
+          )}
+          {isSuperAdmin && (
+            <section aria-label="Operator release checklist" className="rounded-2xl border border-[#1c3e58] bg-[#071727] p-5">
+              <div className="flex items-center gap-2">
+                <RadioTower className="h-5 w-5 text-cyan-300" />
+                <h2 className="text-lg font-semibold text-white">Security &amp; account operations</h2>
+              </div>
+              <p className="mt-2 text-sm leading-6 text-slate-400">
+                Administrator role changes already require MFA. Creating, suspending or deleting
+                full login accounts is a separate privileged workflow and is not active here.
+                Never test deletion on a real member account.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <button type="button" onClick={() => onNavigate("roles")}
+                  className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-cyan-400 px-4 text-sm font-bold text-[#041524] hover:bg-cyan-300">
+                  <ShieldCheck className="h-4 w-4" /> Review access controls
+                </button>
+                <a href="https://supabase.com/dashboard/project/qnqkcqywvqzfkickezxd/auth/users"
+                  target="_blank" rel="noopener noreferrer"
+                  className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[#315773] px-4 text-sm font-semibold text-cyan-100 hover:border-cyan-300/60">
+                  Account administration <ExternalLink className="h-4 w-4" />
+                </a>
+              </div>
+            </section>
+          )}
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {actions.map((action) => (
               <button

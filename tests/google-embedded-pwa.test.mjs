@@ -18,9 +18,10 @@ test("embedded Google sign-in validates each ID token using a fresh hashed nonce
   assert.match(source,/ux_mode: "popup"/);
 });
 
-test("installed official Nuru app uses same-window Google sign-in; legacy app and browsers retain OAuth fallback",()=>{
+test("installed Nuru apps use same-window Google sign-in; browser OAuth fallback remains",()=>{
   const auth=read("src/routes/auth.tsx");
-  assert.match(auth,/setUseEmbeddedGoogle\(isInstalledApp\(\) && window\.location\.hostname === "nurufaith\.co\.ke"\)/);
+  assert.match(auth,/setUseEmbeddedGoogle\(isInstalledApp\(\) && \(/);
+  assert.match(auth,/isLegacyNuruHost\(window\.location\.hostname\)/);
   assert.match(auth,/<GoogleEmbeddedSignIn/);
   assert.match(auth,/onSuccess=\{\(\) => void continueAfterSignIn\("\/home"\)\}/);
   assert.match(auth,/Use browser sign-in instead/);

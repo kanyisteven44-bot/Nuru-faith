@@ -1,3 +1,5 @@
+import { EBIBLE_TRANSLATIONS } from "./bibleCatalog";
+
 /**
  * Real Scripture text from the free bible-api.com service.
  * No API key, no server-side secret needed.
@@ -16,7 +18,7 @@ export type Passage = {
  * ever stops being served, `fetchPassage` falls back to `web` rather than
  * leaving the reader with an error.
  */
-export const TRANSLATIONS = [
+const API_TRANSLATIONS = [
   { id: "web", label: "World English Bible", short: "WEB" },
   { id: "kjv", label: "King James Version", short: "KJV" },
   { id: "asv", label: "American Standard Version", short: "ASV" },
@@ -27,9 +29,35 @@ export const TRANSLATIONS = [
   { id: "dra", label: "Douay-Rheims (1899)", short: "DRA" },
   { id: "oeb-cw", label: "Open English Bible (Commonwealth)", short: "OEB-CW" },
   { id: "oeb-us", label: "Open English Bible (US)", short: "OEB-US" },
+  { id: "cherokee", label: "Cherokee New Testament", short: "CHR" },
+  { id: "cuv", label: "Chinese Union Version", short: "CUV" },
+  { id: "bkr", label: "Czech Bible Kralická", short: "BKR" },
+  { id: "clementine", label: "Clementine Latin Vulgate", short: "VUL" },
+  { id: "almeida", label: "Portuguese João Ferreira de Almeida", short: "JFA" },
+  { id: "rccv", label: "Romanian Corrected Cornilescu", short: "RCCV" },
 ] as const;
 
-export type TranslationId = (typeof TRANSLATIONS)[number]["id"];
+export const TRANSLATIONS = [
+  ...API_TRANSLATIONS.map((t) => ({
+    ...t,
+    language:
+      t.id === "cherokee"
+        ? "Cherokee"
+        : t.id === "cuv"
+          ? "Chinese"
+          : t.id === "bkr"
+            ? "Czech"
+            : t.id === "clementine"
+              ? "Latin"
+              : t.id === "almeida"
+                ? "Portuguese"
+                : t.id === "rccv"
+                  ? "Romanian"
+                  : "English",
+  })),
+  ...EBIBLE_TRANSLATIONS,
+];
+export type TranslationId = string;
 
 export const DEFAULT_TRANSLATION: TranslationId = "web";
 

@@ -1,4 +1,5 @@
 import { DEFAULT_TRANSLATION, translationLabel } from "./bible";
+import { fetchOpenBibleChapter } from "./openBible.functions";
 
 export type ChapterPassage = {
   reference: string;
@@ -38,6 +39,17 @@ export async function fetchChapterPassage(
   const cached = cache.get(key);
   if (cached) return cached;
 
+  if (translation.startsWith("ebible:")) {
+    const match = ref.match(/^(.+?)\s+(\d+)$/);
+    if (!match) throw new Error("Choose a book and chapter.");
+    const passage = await fetchOpenBibleChapter({
+      data: { translation, book: match[1]!, chapter: Number(match[2]) },
+    });
+    if (cache.size >= 100) cache.delete(cache.keys().next().value!);
+    cache.set(key, passage);
+    return passage;
+  }
+
   const url = `https://bible-api.com/${encodeURIComponent(ref)}?translation=${encodeURIComponent(translation)}&single_chapter_book_matching=indifferent`;
   const response = await fetch(url, { signal: AbortSignal.timeout(15000) });
   if (!response.ok) throw new Error(`Couldn't load ${ref}`);
@@ -59,6 +71,7 @@ export async function fetchChapterPassage(
     })),
   };
 
+  if (cache.size >= 100) cache.delete(cache.keys().next().value!);
   cache.set(key, passage);
   return passage;
 }

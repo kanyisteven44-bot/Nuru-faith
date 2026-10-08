@@ -21,6 +21,7 @@ import { Route as ChristianCommunityAppRouteImport } from './routes/christian-co
 import { Route as DesignPreviewRouteImport } from './routes/design-preview'
 import { Route as GospelMusicAppRouteImport } from './routes/gospel-music-app'
 import { Route as OpeningRouteImport } from './routes/opening'
+import { Route as PassageRouteImport } from './routes/passage'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as TermsRouteImport } from './routes/terms'
@@ -120,6 +121,11 @@ const GospelMusicAppRoute = GospelMusicAppRouteImport.update({
 const OpeningRoute = OpeningRouteImport.update({
   id: '/opening',
   path: '/opening',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PassageRoute = PassageRouteImport.update({
+  id: '/passage',
+  path: '/passage',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -350,6 +356,7 @@ export interface FileRoutesByFullPath {
   '/design-preview': typeof DesignPreviewRoute
   '/gospel-music-app': typeof GospelMusicAppRoute
   '/opening': typeof OpeningRoute
+  '/passage': typeof PassageRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
@@ -404,6 +411,7 @@ export interface FileRoutesByTo {
   '/design-preview': typeof DesignPreviewRoute
   '/gospel-music-app': typeof GospelMusicAppRoute
   '/opening': typeof OpeningRoute
+  '/passage': typeof PassageRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
@@ -460,6 +468,7 @@ export interface FileRoutesById {
   '/design-preview': typeof DesignPreviewRoute
   '/gospel-music-app': typeof GospelMusicAppRoute
   '/opening': typeof OpeningRoute
+  '/passage': typeof PassageRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
@@ -516,6 +525,7 @@ export interface FileRouteTypes {
     | '/design-preview'
     | '/gospel-music-app'
     | '/opening'
+    | '/passage'
     | '/privacy'
     | '/reset-password'
     | '/terms'
@@ -570,6 +580,7 @@ export interface FileRouteTypes {
     | '/design-preview'
     | '/gospel-music-app'
     | '/opening'
+    | '/passage'
     | '/privacy'
     | '/reset-password'
     | '/terms'
@@ -625,6 +636,7 @@ export interface FileRouteTypes {
     | '/design-preview'
     | '/gospel-music-app'
     | '/opening'
+    | '/passage'
     | '/privacy'
     | '/reset-password'
     | '/terms'
@@ -681,6 +693,7 @@ export interface RootRouteChildren {
   DesignPreviewRoute: typeof DesignPreviewRoute
   GospelMusicAppRoute: typeof GospelMusicAppRoute
   OpeningRoute: typeof OpeningRoute
+  PassageRoute: typeof PassageRoute
   PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   TermsRoute: typeof TermsRoute
@@ -775,6 +788,13 @@ declare module '@tanstack/react-router' {
       path: '/opening'
       fullPath: '/opening'
       preLoaderRoute: typeof OpeningRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/passage': {
+      id: '/passage'
+      path: '/passage'
+      fullPath: '/passage'
+      preLoaderRoute: typeof PassageRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -1155,6 +1175,7 @@ const rootRouteChildren: RootRouteChildren = {
   DesignPreviewRoute: DesignPreviewRoute,
   GospelMusicAppRoute: GospelMusicAppRoute,
   OpeningRoute: OpeningRoute,
+  PassageRoute: PassageRoute,
   PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   TermsRoute: TermsRoute,

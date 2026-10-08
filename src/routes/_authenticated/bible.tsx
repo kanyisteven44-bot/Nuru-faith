@@ -17,6 +17,7 @@ import {
   BookOpen,
   Search,
   Share2,
+  QrCode,
   Sparkles,
   SquarePen,
   Trash2,
@@ -49,6 +50,10 @@ import {
   type HighlightColor,
   type SeriesRow,
 } from "@/services/series";
+import { PassageQr } from "@/components/nuru/PassageQr";
+import { EBIBLE_TRANSLATIONS } from "@/lib/bibleCatalog";
+import { buildBibleShare, parseVerseRanges, verseRanges } from "@/lib/bibleSharing";
+import type { SharePayload } from "@/lib/share";
 import { useShareSheet } from "@/hooks/useShareSheet";
 import { BOOK_ART, bookAbbr } from "@/lib/bookArt";
 import { AppShell, BrandBar } from "@/components/nuru/AppShell";
@@ -60,7 +65,11 @@ import { passageText } from "@/lib/offlineReading";
 const ALL_BOOKS: BibleBook[] = [...OLD_TESTAMENT, ...NEW_TESTAMENT];
 
 export const Route = createFileRoute("/_authenticated/bible")({
-  validateSearch: z.object({ reference: z.string().max(100).optional() }),
+  validateSearch: z.object({
+    reference: z.string().max(100).optional(),
+    translation: z.string().max(100).optional(),
+    verses: z.string().max(600).optional(),
+  }),
   head: () => ({
     meta: [
       { title: "Bible — Nuru Faith" },
@@ -108,6 +117,12 @@ function BibleScreen() {
         book={reader.book}
         chapter={reader.chapter}
         verse={reader.verse}
+        initialTranslation={search.translation}
+        initialVerses={
+          search.reference?.startsWith(`${reader.book.name} ${reader.chapter}:`)
+            ? search.verses
+            : undefined
+        }
         onBack={() => {
           setReader(null);
           void navigate({ search: {} });
@@ -535,30 +550,60 @@ function Reader({
   verse,
   onBack,
   onNavigate,
+  initialTranslation,
+  initialVerses,
 }: {
   book: BibleBook;
   chapter: number;
   verse?: number | undefined;
   onBack: () => void;
   onNavigate: (book: BibleBook, chapter: number) => void;
+  initialTranslation?: string | undefined;
+  initialVerses?: string | undefined;
 }) {
   const reference = `${book.name} ${chapter}`;
   const { userId } = useAuth();
   const qc = useQueryClient();
   const shareSheet = useShareSheet();
   const [bookSheetOpen, setBookSheetOpen] = useState(false);
-  const [translation, setTranslation] = useState<TranslationId>(DEFAULT_TRANSLATION);
+  const [translationSearch, setTranslationSearch] = useState("");
+  const [translation, setTranslation] = useState<TranslationId>(
+    TRANSLATIONS.some((t) => t.id === initialTranslation)
+      ? initialTranslation!
+      : DEFAULT_TRANSLATION,
+  );
+  const filteredTranslations = TRANSLATIONS.filter(
+    (t) =>
+      t.id === translation ||
+      `${t.label} ${t.language}`.toLowerCase().includes(translationSearch.toLowerCase().trim()),
+  );
+  const [selectedVerses, setSelectedVerses] = useState<number[]>(
+    parseVerseRanges(initialVerses ?? ""),
+  );
+  const [selecting, setSelecting] = useState(false);
+  const [qrPayload, setQrPayload] = useState<SharePayload | null>(null);
+  const edition = EBIBLE_TRANSLATIONS.find((t) => t.id === translation);
+  useEffect(() => {
+    setSelectedVerses(parseVerseRanges(initialVerses ?? ""));
+    setSelecting(false);
+    setQrPayload(null);
+  }, [reference, translation, initialVerses]);
   const [fontSize, setFontSize] = useState(17);
   useEffect(() => {
     try {
       const saved = localStorage.getItem("nuru-bible-translation");
-      if (TRANSLATIONS.some((t) => t.id === saved)) setTranslation(saved as TranslationId);
+      if (!initialTranslation && TRANSLATIONS.some((t) => t.id === saved))
+        setTranslation(saved as TranslationId);
       const size = Number(localStorage.getItem("nuru-bible-font-size"));
       if (size >= 15 && size <= 23) setFontSize(size);
     } catch {
       /* Reading remains available when browser storage is disabled. */
     }
-  }, []);
+  }, [initialTranslation]);
+  useEffect(() => {
+    if (initialTranslation && TRANSLATIONS.some((t) => t.id === initialTranslation))
+      setTranslation(initialTranslation);
+  }, [initialTranslation]);
   const unavailable = translation === "ylt" && OLD_TESTAMENT.some((b) => b.name === book.name);
   const [chapterSheetOpen, setChapterSheetOpen] = useState(false);
   const [colorPicker, setColorPicker] = useState<{ verse: number; text: string } | null>(null);
@@ -654,13 +699,36 @@ function Reader({
     }
   }
 
-  function share() {
-    const text = `${passage.data?.reference ?? reference} — Nuru Faith`;
-    void shareSheet.share({
-      title: text,
-      text,
-      url: `${window.location.origin}/bible`,
+  function share(asQr = false) {
+    if (!passage.data) {
+      toast.info("Wait for the chapter to load.");
+      return;
+    }
+    if (!selectedVerses.length) {
+      setSelecting(true);
+      toast.info("Select one or more verse numbers, then share.");
+      return;
+    }
+    const payload = buildBibleShare({
+      origin: window.location.origin,
+      book: book.name,
+      chapter,
+      translation,
+      translationLabel: passage.data.translation,
+      verses: passage.data.verses,
+      selected: selectedVerses,
+      attribution: edition
+        ? `${edition.credit || edition.label} · ${edition.license}\n${edition.sourceUrl}\n${edition.licenseUrl}`
+        : undefined,
     });
+    if (asQr) setQrPayload(payload);
+    else void shareSheet.share(payload);
+  }
+  function toggleVerse(number: number) {
+    setSelecting(true);
+    setSelectedVerses((current) =>
+      current.includes(number) ? current.filter((v) => v !== number) : [...current, number],
+    );
   }
 
   return (
@@ -678,13 +746,21 @@ function Reader({
           {passage.data?.reference ?? reference}
         </h1>
         <span className="shrink-0 rounded-lg border border-border-strong bg-surface-2 px-2.5 py-1 text-[11px] font-semibold text-secondary-foreground">
-          {translation.toUpperCase()}
+          {TRANSLATIONS.find((t) => t.id === translation)?.short ?? translation}
         </span>
       </header>
 
       <div className="mx-4 mb-3 flex flex-wrap items-center gap-3 rounded-xl border border-border-strong bg-surface-2 p-3">
         <label className="min-w-0 flex-1 text-xs text-secondary-foreground">
           Bible translation
+          <input
+            type="search"
+            aria-label="Find a Bible or language"
+            placeholder="Find a Bible or language"
+            value={translationSearch}
+            onChange={(e) => setTranslationSearch(e.target.value)}
+            className="mt-1 w-full rounded-lg border border-border bg-background px-2 py-2 text-sm text-foreground"
+          />
           <select
             aria-label="Bible translation"
             value={translation}
@@ -699,11 +775,20 @@ function Reader({
             }}
             className="mt-1 w-full rounded-lg border border-border bg-background px-2 py-2 text-sm text-foreground"
           >
-            {TRANSLATIONS.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.label}
-              </option>
-            ))}
+            {[...new Set(filteredTranslations.map((t) => t.language))]
+              .sort((a, b) => (a === "English" ? -1 : b === "English" ? 1 : a.localeCompare(b)))
+              .map((language) => (
+                <optgroup key={language} label={language}>
+                  {filteredTranslations
+                    .filter((t) => t.language === language)
+                    .map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.label}
+                        {"scope" in t && t.scope !== "See source coverage" ? ` · ${t.scope}` : ""}
+                      </option>
+                    ))}
+                </optgroup>
+              ))}
           </select>
         </label>
         <label className="text-xs text-secondary-foreground">
@@ -786,7 +871,17 @@ function Reader({
                 kind: "bible",
                 title: data.reference,
                 subtitle: data.translation,
-                sections: [{ title: data.reference, text: passageText(data.verses) }],
+                sections: [
+                  { title: data.reference, text: passageText(data.verses) },
+                  ...(edition
+                    ? [
+                        {
+                          title: "Translation credits and reuse terms",
+                          text: `${edition.credit || edition.label} · ${edition.license}\n${edition.sourceUrl}\n${edition.licenseUrl}`,
+                        },
+                      ]
+                    : []),
+                ],
               };
             }}
           />
@@ -802,6 +897,11 @@ function Reader({
                 const data = await fetchChapterPassage(`${book.name} ${number}`, translation);
                 sections.push({ title: data.reference, text: passageText(data.verses) });
               }
+              if (edition)
+                sections.push({
+                  title: "Translation credits and reuse terms",
+                  text: `${edition.credit || edition.label} · ${edition.license}\n${edition.sourceUrl}\n${edition.licenseUrl}`,
+                });
               return {
                 id: `bible-book:${translation}:${book.name}`,
                 kind: "bible",
@@ -816,13 +916,48 @@ function Reader({
         {passage.isError && (
           <EmptyState
             title="Couldn't load that passage"
-            description="Check your connection and try again."
+            description={
+              passage.error instanceof Error
+                ? passage.error.message
+                : "Check your connection and try again."
+            }
             action={<PrimaryButton onClick={() => void passage.refetch()}>Try again</PrimaryButton>}
           />
         )}
         {!unavailable && passage.data && (
           <div className="nuru-card p-5">
-            <BibleReadAloud key={`${reference}:${translation}`} verses={passage.data.verses} />
+            {TRANSLATIONS.find((t) => t.id === translation)?.language === "English" && (
+              <BibleReadAloud key={`${reference}:${translation}`} verses={passage.data.verses} />
+            )}
+            <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-border bg-surface-2 p-3">
+              <p className="flex-1 text-sm">
+                {selectedVerses.length
+                  ? `${selectedVerses.length} selected · ${verseRanges(selectedVerses)}`
+                  : "Tap verse numbers to select one or more verses."}
+              </p>
+              <button
+                type="button"
+                className="min-h-11 px-2 text-sm text-primary"
+                onClick={() => {
+                  setSelecting(true);
+                  setSelectedVerses(passage.data!.verses.map((v) => v.verse));
+                }}
+              >
+                Select all
+              </button>
+              {(selecting || selectedVerses.length > 0) && (
+                <button
+                  type="button"
+                  className="min-h-11 px-2 text-sm"
+                  onClick={() => {
+                    setSelectedVerses([]);
+                    setSelecting(false);
+                  }}
+                >
+                  Done
+                </button>
+              )}
+            </div>
             <ol className="space-y-3.5">
               {passage.data.verses.map((v) => {
                 const activeColor = highlightByVerse.get(v.verse);
@@ -836,12 +971,27 @@ function Reader({
                       v.verse === verse && "rounded-lg bg-primary/10 ring-2 ring-primary/40",
                     )}
                   >
-                    <span className="mt-0.5 shrink-0 text-[11px] font-bold text-terra-lt">
-                      {v.verse}
-                    </span>
+                    <button
+                      type="button"
+                      aria-label={`Select verse ${v.verse}`}
+                      aria-pressed={selectedVerses.includes(v.verse)}
+                      onClick={() => toggleVerse(v.verse)}
+                      className={cn(
+                        "flex min-h-11 min-w-11 shrink-0 items-start justify-center rounded-lg pt-2 text-sm font-bold",
+                        selectedVerses.includes(v.verse)
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-surface-2 text-primary",
+                      )}
+                    >
+                      {selectedVerses.includes(v.verse) ? <Check className="h-4 w-4" /> : v.verse}
+                    </button>
                     <button
                       type="button"
                       onClick={() => {
+                        if (selecting) {
+                          toggleVerse(v.verse);
+                          return;
+                        }
                         if (!userId) {
                           toast.error("Sign in to highlight verses");
                           return;
@@ -854,13 +1004,29 @@ function Reader({
                         swatch ? swatch.bgClass : "hover:bg-white/[0.05]",
                       )}
                     >
-                      {v.text}
+                      <span dir="auto">{v.text}</span>
                     </button>
                   </li>
                 );
               })}
             </ol>
-            <p className="pt-5 text-[11px] text-ink-3">{passage.data.translation}</p>
+            <p className="pt-5 text-xs text-muted-foreground">
+              {passage.data.translation}
+              {edition && (
+                <>
+                  {" "}
+                  · {edition.credit || edition.label} · {edition.license}. {edition.scope}.{" "}
+                  <a
+                    href={edition.sourceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline"
+                  >
+                    Source and reuse terms
+                  </a>
+                </>
+              )}
+            </p>
           </div>
         )}
       </div>
@@ -878,7 +1044,12 @@ function Reader({
             label="Notes"
             to={{ to: "/ai" as const, search: { contextType: "verse", contextLabel: reference } }}
           />
-          <ReaderAction icon={Share2} label="Share" onClick={share} />
+          <ReaderAction
+            icon={Share2}
+            label={selectedVerses.length ? `Share (${selectedVerses.length})` : "Share"}
+            onClick={() => share()}
+          />
+          <ReaderAction icon={QrCode} label="QR code" onClick={() => share(true)} />
         </div>
       </div>
 
@@ -965,6 +1136,13 @@ function Reader({
             )}
           </div>
         </Sheet>
+      )}
+      {qrPayload && (
+        <PassageQr
+          payload={qrPayload}
+          translation={passage.data?.translation ?? translation}
+          onClose={() => setQrPayload(null)}
+        />
       )}
       {shareSheet.node}
     </AppShell>

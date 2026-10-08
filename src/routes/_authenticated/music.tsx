@@ -1,6 +1,6 @@
 import { CoverImage } from "@/components/nuru/CoverImage";
 import { useEffect, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Music2, Play, Search, X } from "lucide-react";
 import { duration } from "@/lib/format";
@@ -25,8 +25,15 @@ import { MediaCatalog, MediaPlayback } from "@/components/youtube/MediaCatalog";
 import type { MediaItem } from "@/services/media";
 import { MusicDiscovery } from "@/components/youtube/MusicDiscovery";
 import { MediaActions } from "@/components/youtube/MediaActions";
+import { fetchYouTubeReelDetails } from "@/lib/youtubeReel.functions";
 
 export const Route = createFileRoute("/_authenticated/music")({
+  validateSearch: (value: Record<string, unknown>): { video?: string | undefined } => ({
+    video:
+      typeof value["video"] === "string" && /^[A-Za-z0-9_-]{11}$/.test(value["video"])
+        ? value["video"]
+        : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Music & media — Nuru Faith" },
@@ -56,6 +63,8 @@ type NowPlaying = { kind: "youtube-playlist"; id: string; title: string };
 
 function MusicScreen() {
   const { userId } = useAuth();
+  const navigate = useNavigate();
+  const { video: linkedVideoId } = Route.useSearch();
   const [tab, setTab] = useState<Tab>("Music");
   const [musicMode, setMusicMode] = useState<MusicMode>("Video");
   const [search, setSearch] = useState("");
@@ -64,6 +73,45 @@ function MusicScreen() {
   const [debounced, setDebounced] = useState("");
   const [nowPlaying, setNowPlaying] = useState<NowPlaying | null>(null);
   const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null);
+  const linkedVideo = useQuery({
+    queryKey: ["music-linked-youtube-video", linkedVideoId],
+    queryFn: () => fetchYouTubeReelDetails({ data: { videoId: linkedVideoId! } }),
+    enabled: !!linkedVideoId,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+
+  useEffect(() => {
+    const details = linkedVideo.data;
+    if (!linkedVideoId || !details?.video) return;
+    setTab("Music");
+    setMusicMode("Video");
+    setNowPlaying(null);
+    setSelectedMedia({
+      id: `youtube:${linkedVideoId}`,
+      source: "youtube",
+      external_id: linkedVideoId,
+      title: details.video.title,
+      description: details.video.description || null,
+      thumbnail_url: details.video.thumbnail,
+      media_type: "music",
+      category: "video",
+      creator_name: details.creator.name,
+      youtube_channel_id: details.creator.id,
+      church_id: null,
+      audio_url: null,
+      duration_seconds: null,
+      scripture_ref: null,
+      can_download: false,
+      is_featured: false,
+    });
+  }, [linkedVideo.data, linkedVideoId]);
+
+  const closeSelectedMedia = () => {
+    setSelectedMedia(null);
+    if (linkedVideoId) void navigate({ to: "/music", search: {}, replace: true });
+  };
+
   const playCatalog = (item: MediaItem) => {
     setNowPlaying(null);
     setSelectedMedia(item);
@@ -368,7 +416,7 @@ function MusicScreen() {
       {selectedMedia && (
         <MediaPlayback
           item={selectedMedia}
-          onClose={() => setSelectedMedia(null)}
+          onClose={closeSelectedMedia}
           onSelect={setSelectedMedia}
         />
       )}

@@ -83,21 +83,24 @@ Deno.serve(async (req) => {
     const userAgent =
       typeof subscription.userAgent === "string" ? subscription.userAgent.slice(0, 500) : null;
 
-    if (!endpoint.startsWith("https://") || p256dh.length < 20 || auth.length < 8) {
+    if (!endpoint.startsWith("https://") || endpoint.length > 2048 || p256dh.length < 20 || p256dh.length > 2048 || auth.length < 8 || auth.length > 2048) {
       return json({ error: "Invalid push subscription" }, 400);
     }
 
-    // A browser push endpoint belongs to one currently signed-in Nuru account.
-    // Remove any stale owner before registering it to the authenticated caller.
-    const { error: deleteError } = await admin
+    // Endpoint URLs identify a particular browser/device subscription. Never
+    // delete a row from another user's account, even when the caller knows
+    // that endpoint. A unique endpoint constraint also protects racing inserts.
+    const { data: current, error: lookupError } = await admin
       .from("web_push_subscriptions")
-      .delete()
-      .eq("endpoint", endpoint);
-    if (deleteError) return json({ error: "Could not rotate push subscription" }, 500);
+      .select("id,user_id")
+      .eq("endpoint", endpoint)
+      .maybeSingle();
+    if (lookupError) return json({ error: "Could not check push subscription" }, 500);
+    if (current && current.user_id !== user.id) {
+      return json({ error: "This device has a push subscription for another account. Remove it from that account before registering again." }, 409);
+    }
 
-    const { error: insertError } = await admin.from("web_push_subscriptions").insert({
-      user_id: user.id,
-      endpoint,
+    const values = {
       p256dh,
       auth,
       expiration_time: expirationTime,
@@ -105,8 +108,23 @@ Deno.serve(async (req) => {
       user_agent: userAgent,
       updated_at: new Date().toISOString(),
       last_seen_at: new Date().toISOString(),
-    });
-    if (insertError) return json({ error: "Could not save push subscription" }, 500);
+    };
+    const result = current
+      ? await admin
+          .from("web_push_subscriptions")
+          .update(values)
+          .eq("id", current.id)
+          .eq("user_id", user.id)
+      : await admin
+          .from("web_push_subscriptions")
+          .insert({ user_id: user.id, endpoint, ...values });
+    if (result.error) {
+      // Includes a possible uniqueness race: fail closed rather than
+      // overwriting a subscription that might belong to another account.
+      if (result.error.code === "23505")
+        return json({ error: "This device's push subscription is already registered." }, 409);
+      return json({ error: "Could not save push subscription" }, 500);
+    }
 
     const { error: preferenceError } = await admin
       .from("notification_preferences")

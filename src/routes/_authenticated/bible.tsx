@@ -54,6 +54,7 @@ import {
 import { PassageQr } from "@/components/nuru/PassageQr";
 import { EBIBLE_TRANSLATIONS } from "@/lib/bibleCatalog";
 import { buildBibleShare, parseVerseRanges, verseRanges } from "@/lib/bibleSharing";
+import { OFFICIAL_NURU_ORIGIN } from "@/lib/publicLinks";
 import type { SharePayload } from "@/lib/share";
 import { useShareSheet } from "@/hooks/useShareSheet";
 import { BOOK_ART, bookAbbr } from "@/lib/bookArt";
@@ -706,7 +707,7 @@ function Reader({
       return;
     }
     const payload = buildBibleShare({
-      origin: window.location.origin,
+      origin: OFFICIAL_NURU_ORIGIN,
       book: book.name,
       chapter,
       translation,

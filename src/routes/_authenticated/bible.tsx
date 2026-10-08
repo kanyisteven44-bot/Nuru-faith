@@ -60,6 +60,8 @@ import { BOOK_ART, bookAbbr } from "@/lib/bookArt";
 import { AppShell, BrandBar } from "@/components/nuru/AppShell";
 import { CardSkeleton, EmptyState, PillTabs, PrimaryButton } from "@/components/nuru/Primitives";
 import { Sheet } from "@/components/nuru/Sheet";
+import { SaveOffline } from "@/components/nuru/SaveOffline";
+import { passageText } from "@/lib/offlineReading";
 
 const ALL_BOOKS: BibleBook[] = [...OLD_TESTAMENT, ...NEW_TESTAMENT];
 
@@ -153,12 +155,6 @@ function BibleScreen() {
       <BrandBar />
 
       <div className="px-4">
-        <a
-          href="/offline.html"
-          className="inline-flex min-h-11 items-center text-sm text-primary underline"
-        >
-          Offline reading room
-        </a>
         {/* Serif title with the search control beside it, per the board. */}
         <div className="flex items-center justify-between gap-3">
           <h1 className="font-display text-[40px] leading-none">Bible</h1>
@@ -1047,6 +1043,67 @@ function Reader({
                   <option value={23}>Extra large</option>
                 </select>
               </label>
+
+              <details className="rounded-2xl border border-border/70 bg-surface p-4">
+                <summary className="cursor-pointer text-sm font-semibold text-foreground">
+                  Offline reading
+                </summary>
+                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                  Save Scripture while connected to read it later without mobile data.
+                  Your saved chapters stay on this device.
+                </p>
+                {passage.data && (
+                  <SaveOffline
+                    key={`chapter:${reference}:${translation}`}
+                    label="Save this chapter"
+                    showReaderLink={false}
+                    prepare={async () => ({
+                      id: `bible:${translation}:${reference}`,
+                      kind: "bible",
+                      title: passage.data!.reference,
+                      subtitle: passage.data!.translation,
+                      sections: [
+                        { title: passage.data!.reference, text: passageText(passage.data!.verses) },
+                        ...(edition
+                          ? [{
+                              title: "Translation credits and reuse terms",
+                              text: `${edition.credit || edition.label} · ${edition.license}\n${edition.sourceUrl}\n${edition.licenseUrl}`,
+                            }]
+                          : []),
+                      ],
+                    })}
+                  />
+                )}
+                {!unavailable && (
+                  <SaveOffline
+                    key={`book:${book.name}:${translation}`}
+                    label={`Save entire ${book.name}`}
+                    showReaderLink={false}
+                    prepare={async (report) => {
+                      const sections: { title: string; text: string }[] = [];
+                      for (let number = 1; number <= book.chapters; number++) {
+                        report(`Saving ${number} of ${book.chapters} chapters…`);
+                        const data = await fetchChapterPassage(`${book.name} ${number}`, translation);
+                        sections.push({ title: data.reference, text: passageText(data.verses) });
+                      }
+                      if (edition) sections.push({
+                        title: "Translation credits and reuse terms",
+                        text: `${edition.credit || edition.label} · ${edition.license}\n${edition.sourceUrl}\n${edition.licenseUrl}`,
+                      });
+                      return {
+                        id: `bible-book:${translation}:${book.name}`,
+                        kind: "bible",
+                        title: book.name,
+                        subtitle: TRANSLATIONS.find((t) => t.id === translation)?.label ?? translation,
+                        sections,
+                      };
+                    }}
+                  />
+                )}
+                <a href="/offline.html" className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-primary underline-offset-4 hover:underline">
+                  View saved readings <ArrowRight className="h-4 w-4" />
+                </a>
+              </details>
             </div>
           </Sheet>
         )}

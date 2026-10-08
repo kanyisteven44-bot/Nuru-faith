@@ -20,6 +20,7 @@ export function CoverImage({
     <img
       {...props}
       src={source}
+      srcSet={source === src ? props.srcSet : undefined}
       alt={alt}
       loading={loading}
       decoding={decoding}

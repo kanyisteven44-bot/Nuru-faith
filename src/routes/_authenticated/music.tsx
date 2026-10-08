@@ -16,7 +16,6 @@ import {
   PillTabs,
   SectionHeader,
 } from "@/components/nuru/Primitives";
-import { NURU_PHOTO_POOLS, useRotatingMedia } from "@/lib/rotatingMedia";
 import { YouTubeNotice } from "@/components/youtube/YouTubePlayer";
 import { InAppMediaPlayer as YouTubePlayer } from "@/components/youtube/InAppMediaPlayer";
 import { YouTubeSearchResults } from "@/components/youtube/YouTubeSearchResults";
@@ -116,7 +115,6 @@ function MusicScreen() {
     setNowPlaying(null);
     setSelectedMedia(item);
   };
-  const heroBg = useRotatingMedia(NURU_PHOTO_POOLS.music, "music-hero");
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(search), 450);
@@ -188,16 +186,18 @@ function MusicScreen() {
         }
       />
       <section
-        className="relative mx-4 mb-2 overflow-hidden rounded-3xl bg-slate-950 p-6 text-white sm:p-8"
+        className="relative mx-4 mb-2 min-h-[280px] overflow-hidden rounded-3xl bg-slate-950 p-6 text-white shadow-lg sm:min-h-[320px] sm:p-8"
         aria-label="Worship collection"
       >
         <CoverImage
-          src={heroBg}
+          src="/photos/worship-gathering.jpg"
           alt=""
-          className="absolute inset-0 h-full w-full opacity-45"
+          className="absolute inset-0 h-full w-full object-[60%_48%]"
           loading="eager"
+          fetchPriority="high"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/60 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/80 via-slate-950/45 to-slate-950/10" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent" />
         <div className="relative max-w-lg">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-200">
             Sound for your soul

@@ -2,12 +2,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { fetchCallHistory } from "./calls";
 import { callHistoryLabel } from "@/lib/callHistory";
 import type { Database } from "@/integrations/supabase/types";
+import { chatAttachmentInfo } from "@/lib/chatAttachments";
 
 type DirectRow = Database["public"]["Tables"]["direct_messages"]["Row"];
 type GroupRow = Database["public"]["Tables"]["group_chat_messages"]["Row"];
 type MentorRow = Database["public"]["Tables"]["mentor_chat_messages"]["Row"];
 
-export type MessageType = "text" | "voice" | "sticker" | "image" | "video" | "location";
+export type MessageType = "text" | "voice" | "sticker" | "image" | "video" | "file" | "location";
 
 export type ChatMessage = {
   id: string;
@@ -214,8 +215,14 @@ export async function removeChatMedia(path: string) {
 
 export async function createChatMediaSignedUrl(path: string) {
   const { data, error } = await supabase.storage.from("chat-media").createSignedUrl(path, 60 * 60);
-  if (error || !data?.signedUrl) throw new Error("Couldn't load this voice note.");
+  if (error || !data?.signedUrl) throw new Error("Couldn't load this attachment.");
   return data.signedUrl;
+}
+
+export async function downloadChatMedia(path: string) {
+  const { data, error } = await supabase.storage.from("chat-media").download(path);
+  if (error || !data) throw new Error("Couldn't download this attachment. Please retry.");
+  return data;
 }
 
 export async function markDirectMessagesDelivered(userId: string) {
@@ -354,18 +361,7 @@ export async function createChatGroup(name: string, description: string) {
 }
 
 export async function uploadChatFile(target: ChatTarget, senderId: string, file: File) {
-  const extensions: Record<string, string> = {
-    "image/jpeg": "jpg",
-    "image/png": "png",
-    "image/webp": "webp",
-    "image/gif": "gif",
-    "video/mp4": "mp4",
-    "video/webm": "webm",
-    "video/quicktime": "mov",
-  };
-  const ext = extensions[file.type];
-  if (!ext) throw new Error("Choose a JPG, PNG, WebP, GIF, MP4, WebM or MOV file.");
-  if (file.size > 50 * 1024 * 1024) throw new Error("Choose a file smaller than 50 MB.");
+  const { extension: ext, mime } = chatAttachmentInfo(file);
   if ("mentor" in target) throw new Error("Attachments are available in people and group chats.");
   const id = crypto.randomUUID();
   const path =
@@ -374,7 +370,7 @@ export async function uploadChatFile(target: ChatTarget, senderId: string, file:
       : `direct/${senderId}/${target.user}/${id}.${ext}`;
   const { error } = await supabase.storage
     .from("chat-media")
-    .upload(path, file, { contentType: file.type, upsert: false });
+    .upload(path, file, { contentType: mime, upsert: false });
   if (error) throw new Error("Couldn't upload this file. Please retry.");
   return path;
 }

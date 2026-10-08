@@ -1,6 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, CheckCheck, Phone, Mic, Send, Sticker, Square, Plus, ImagePlus, Video, MapPin, X } from "lucide-react";
+import {
+  Check,
+  CheckCheck,
+  Phone,
+  Mic,
+  Send,
+  Sticker,
+  Square,
+  Plus,
+  ImagePlus,
+  Video,
+  MapPin,
+  X,
+} from "lucide-react";
 import {
   CHAT_LIMIT,
   createChatMediaSignedUrl,
@@ -23,6 +36,9 @@ import { fetchCallHistory } from "@/services/calls";
 import { callHistoryLabel, isMissedCall } from "@/lib/callHistory";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { FileText } from "lucide-react";
+import { CHAT_DOCUMENT_ACCEPT, chatAttachmentInfo } from "@/lib/chatAttachments";
+import { ChatAttachmentDownload } from "./ChatAttachmentDownload";
 
 export function RichChatThread({
   target,
@@ -119,17 +135,12 @@ export function RichChatThread({
     try {
       const id = crypto.randomUUID();
       if (attachment) {
+        const info = chatAttachmentInfo(attachment.file);
         path = await uploadChatFile(target, userId, attachment.file);
-        await sendChatMessage(
-          target,
-          userId,
-          attachment.file.type.startsWith("image/") ? "Photo" : "Video",
-          id,
-          {
-            messageType: attachment.file.type.startsWith("image/") ? "image" : "video",
-            attachmentPath: path,
-          },
-        );
+        await sendChatMessage(target, userId, attachment.file.name, id, {
+          messageType: info.kind,
+          attachmentPath: path,
+        });
       } else if (location) {
         await sendChatMessage(target, userId, JSON.stringify(location), id, {
           messageType: "location",
@@ -620,9 +631,15 @@ export function RichChatThread({
                       fallback={message.body}
                     />
                   </div>
-                ) : (message.message_type === "image" || message.message_type === "video") &&
+                ) : (message.message_type === "image" ||
+                    message.message_type === "video" ||
+                    message.message_type === "file") &&
                   message.attachment_path ? (
-                  <ChatFile path={message.attachment_path} kind={message.message_type} />
+                  <ChatFile
+                    path={message.attachment_path}
+                    kind={message.message_type}
+                    filename={message.body}
+                  />
                 ) : message.message_type === "location" ? (
                   <LocationCard body={message.body} />
                 ) : message.message_type === "voice" && message.attachment_path ? (
@@ -644,17 +661,26 @@ export function RichChatThread({
                     })}
                   </time>
                   {receipt === "delivered" && (
-                    <span className="inline-flex items-center text-slate-300" aria-label="Delivered · recipient not online">
+                    <span
+                      className="inline-flex items-center text-slate-300"
+                      aria-label="Delivered · recipient not online"
+                    >
                       <Check className="h-3.5 w-3.5" strokeWidth={2.4} />
                     </span>
                   )}
                   {receipt === "online" && (
-                    <span className="inline-flex items-center text-slate-200" aria-label="Recipient online · not read">
+                    <span
+                      className="inline-flex items-center text-slate-200"
+                      aria-label="Recipient online · not read"
+                    >
                       <CheckCheck className="h-3.5 w-3.5" strokeWidth={2.4} />
                     </span>
                   )}
                   {receipt === "seen" && (
-                    <span className="inline-flex items-center text-amber-300" aria-label="Seen and read">
+                    <span
+                      className="inline-flex items-center text-amber-300"
+                      aria-label="Seen and read"
+                    >
                       <CheckCheck className="h-3.5 w-3.5" strokeWidth={2.6} />
                     </span>
                   )}
@@ -722,8 +748,10 @@ export function RichChatThread({
             const file = event.target.files?.[0];
             event.target.value = "";
             if (!file) return;
-            if (file.size > 50 * 1024 * 1024) {
-              setError("Choose a file smaller than 50 MB.");
+            try {
+              chatAttachmentInfo(file);
+            } catch (err) {
+              setError(err instanceof Error ? err.message : "Choose a supported file.");
               return;
             }
             setLocation(null);
@@ -732,7 +760,7 @@ export function RichChatThread({
           }}
         />
         {showAttachments && (
-          <div className="mb-3 grid grid-cols-3 gap-2 rounded-2xl border border-border p-3">
+          <div className="mb-3 grid grid-cols-4 gap-2 rounded-2xl border border-border p-3">
             <button
               type="button"
               onClick={() => {
@@ -761,6 +789,19 @@ export function RichChatThread({
             </button>
             <button
               type="button"
+              onClick={() => {
+                if (fileInput.current) {
+                  fileInput.current.accept = CHAT_DOCUMENT_ACCEPT;
+                  fileInput.current.click();
+                }
+              }}
+              className="flex min-h-20 flex-col items-center justify-center gap-2 rounded-xl bg-amber-500/10 text-sm"
+            >
+              <FileText className="h-6 w-6 text-amber-500" />
+              File
+            </button>
+            <button
+              type="button"
               onClick={chooseLocation}
               className="flex min-h-20 flex-col items-center justify-center gap-2 rounded-xl bg-emerald-500/10 text-sm"
             >
@@ -772,14 +813,19 @@ export function RichChatThread({
         {(attachment || location) && (
           <div className="mb-3 space-y-3 rounded-2xl border border-primary/30 p-3">
             {attachment &&
-              (attachment.file.type.startsWith("image/") ? (
+              (chatAttachmentInfo(attachment.file).kind === "image" ? (
                 <img
                   src={attachment.url}
                   alt="Photo preview"
                   className="max-h-52 rounded-xl object-contain"
                 />
-              ) : (
+              ) : chatAttachmentInfo(attachment.file).kind === "video" ? (
                 <video src={attachment.url} controls playsInline className="max-h-52 rounded-xl" />
+              ) : (
+                <p className="flex items-center gap-2 break-all text-sm">
+                  <FileText className="h-5 w-5 shrink-0" />
+                  {attachment.file.name}
+                </p>
               ))}
             {location && <LocationCard body={JSON.stringify(location)} />}
             <div className="flex justify-end gap-2">
@@ -929,6 +975,7 @@ function VoiceNote({
   return (
     <div className="min-w-52">
       <VoicePlayback src={audio.data} mine={mine} />
+      <ChatAttachmentDownload path={path} />
       {durationMs ? (
         <p className="mt-1 text-[10px] opacity-65">{Math.ceil(durationMs / 1000)} sec voice note</p>
       ) : null}
@@ -1000,12 +1047,31 @@ function LocationCard({ body }: { body: string }) {
     return <p className="text-sm">Location unavailable</p>;
   }
 }
-function ChatFile({ path, kind }: { path: string; kind: "image" | "video" }) {
+function ChatFile({
+  path,
+  kind,
+  filename,
+}: {
+  path: string;
+  kind: "image" | "video" | "file";
+  filename: string;
+}) {
   const media = useQuery({
     queryKey: ["chat-media-url", path],
     queryFn: () => createChatMediaSignedUrl(path),
     staleTime: 50 * 60 * 1000,
+    enabled: kind !== "file",
   });
+  if (kind === "file")
+    return (
+      <div className="min-w-44 max-w-72 rounded-xl bg-black/5 p-3">
+        <p className="flex items-center gap-2 break-all text-sm">
+          <FileText className="h-6 w-6 shrink-0" />
+          {filename}
+        </p>
+        <ChatAttachmentDownload path={path} filename={filename} />
+      </div>
+    );
   if (media.isPending)
     return <p className="text-xs">Loading {kind === "image" ? "photo" : "video"}…</p>;
   if (!media.data)
@@ -1014,22 +1080,27 @@ function ChatFile({ path, kind }: { path: string; kind: "image" | "video" }) {
         Retry attachment
       </button>
     );
-  return kind === "image" ? (
-    <a href={media.data} target="_blank" rel="noopener noreferrer">
-      <img
-        src={media.data}
-        alt="Shared photo"
-        loading="lazy"
-        className="max-h-80 w-full rounded-xl object-contain"
-      />
-    </a>
-  ) : (
-    <video
-      src={media.data}
-      controls
-      playsInline
-      preload="metadata"
-      className="max-h-80 w-full rounded-xl"
-    />
+  return (
+    <div>
+      {kind === "image" ? (
+        <a href={media.data} target="_blank" rel="noopener noreferrer">
+          <img
+            src={media.data}
+            alt="Shared photo"
+            loading="lazy"
+            className="max-h-80 w-full rounded-xl object-contain"
+          />
+        </a>
+      ) : (
+        <video
+          src={media.data}
+          controls
+          playsInline
+          preload="metadata"
+          className="max-h-80 w-full rounded-xl"
+        />
+      )}
+      <ChatAttachmentDownload path={path} filename={filename} />
+    </div>
   );
 }

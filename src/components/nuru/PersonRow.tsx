@@ -52,6 +52,10 @@ export function PersonRow({
         <img
           src={person.avatar_url || generatedAvatar(person.id, name)}
           alt=""
+          loading="lazy"
+          decoding="async"
+          width={44}
+          height={44}
           className="h-11 w-11 rounded-full object-cover"
         />
       </Link>

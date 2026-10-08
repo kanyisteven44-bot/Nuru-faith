@@ -1,4 +1,5 @@
 import { NuruMark } from "@/components/nuru/Logo";
+import { PwaInstallGuide } from "@/components/nuru/PwaInstallGuide";
 
 type SeoFeature = {
   title: string;
@@ -138,6 +139,8 @@ export function PublicSeoLanding({
             </a>
           </div>
         </section>
+
+        <PwaInstallGuide />
 
         <section aria-labelledby="features-heading">
           <h2 id="features-heading" className="font-display text-2xl font-semibold">

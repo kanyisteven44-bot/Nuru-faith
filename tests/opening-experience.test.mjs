@@ -44,9 +44,11 @@ test("installed app avoids a second opening and first paint never loads hidden p
   assert.match(splash, /navigator as Navigator/);
   assert.match(splash, /stage === "gone" \|\| stage === "pending"/);
   assert.match(splash, /src=\{index <= photoIndex \? src : undefined\}/);
-  assert.match(root, /pathname === "\/" && \([\s\S]*?<Suspense fallback=\{null\}>[\s\S]*?<SplashScreen initialOnly \/>[\s\S]*?<\/Suspense>/);
-  assert.match(root, /const SplashScreen = lazy\(/);
-  assert.doesNotMatch(root, /import \{ SplashScreen \} from/);
+  // The public homepage now renders immediately without a redundant
+  // heavyweight photo overlay that previously became the LCP element.
+  assert.doesNotMatch(root, /SplashScreen/);
+  const opening = readFileSync("src/routes/opening.tsx", "utf8");
+  assert.match(opening, /<SplashScreen key=\{attempt\} preview/);
   assert.match(index, /Preparing your home/);
   assert.match(index, /NuruGlyph/);
 });

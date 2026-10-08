@@ -30,7 +30,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import {
   fetchMyEventIds,
-  fetchMyGroupIds,
   fetchMyPosts,
   fetchMySavedPostRows,
   fetchProfile,
@@ -89,11 +88,6 @@ function ProfileScreen() {
     queryFn: () => fetchProfileCounts(userId!),
     enabled: !!userId,
   });
-  const myGroups = useQuery({
-    queryKey: ["my-group-ids", userId],
-    queryFn: () => fetchMyGroupIds(userId!),
-    enabled: !!userId,
-  });
   const myEvents = useQuery({
     queryKey: ["my-events", userId],
     queryFn: () => fetchMyEventIds(userId!),
@@ -109,12 +103,6 @@ function ProfileScreen() {
     queryFn: () => fetchMyReels(userId!),
     enabled: !!userId && tab === "Reels",
   });
-  const savedPosts = useQuery({
-    queryKey: ["saved-post-rows", userId],
-    queryFn: () => fetchMySavedPostRows(userId!),
-    enabled: !!userId && tab === "Saved",
-  });
-
   const savedScriptures = useQuery({
     queryKey: ["saved-scriptures", userId],
     queryFn: () => fetchSavedScriptures(userId!),
@@ -139,7 +127,7 @@ function ProfileScreen() {
   const level = Math.floor(streak / LEVEL_STEP) + 1;
   const intoLevel = streak % LEVEL_STEP;
 
-  const active = tab === "Posts" ? myPosts : tab === "Reels" ? myReels : savedPosts;
+  const active = tab === "Posts" ? myPosts : tab === "Reels" ? myReels : savedPostRows;
   const items = (active.data ?? []).map((row) => {
     const r = row as Record<string, unknown>;
     return {

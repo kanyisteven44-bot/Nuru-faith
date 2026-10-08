@@ -20,7 +20,8 @@ test("embedded Google sign-in validates each ID token using a fresh hashed nonce
 
 test("installed Nuru apps use same-window Google sign-in; browser OAuth fallback remains",()=>{
   const auth=read("src/routes/auth.tsx");
-  assert.match(auth,/setUseEmbeddedGoogle\(isInstalledApp\(\) && \(/);
+  assert.match(auth,/VITE_GOOGLE_EMBEDDED_ENABLED/);
+  assert.match(auth,/setUseEmbeddedGoogle\(import\.meta\.env\["VITE_GOOGLE_EMBEDDED_ENABLED"\] === "true" &&/);
   assert.match(auth,/isLegacyNuruHost\(window\.location\.hostname\)/);
   assert.match(auth,/<GoogleEmbeddedSignIn/);
   assert.match(auth,/onSuccess=\{\(\) => void continueAfterSignIn\("\/home"\)\}/);
@@ -36,6 +37,7 @@ test("CSP grants Google Identity Services narrowly without exposing sensitive AP
   const conf=JSON.parse(read("vercel.json"));
   const csp=conf.headers[0].headers.find(h=>h.key==="Content-Security-Policy").value;
   assert.match(csp,/script-src[^;]+https:\/\/accounts\.google\.com\/gsi\/client/);
+  assert.match(csp,/style-src[^;]+https:\/\/accounts\.google\.com\/gsi\/style/);
   assert.match(csp,/frame-src[^;]+https:\/\/accounts\.google\.com/);
   assert.match(csp,/connect-src[^;]+https:\/\/accounts\.google\.com/);
   assert.match(csp,/frame-ancestors 'none'/);

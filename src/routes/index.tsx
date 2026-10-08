@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import { NuruGlyph } from "@/components/nuru/Logo";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -52,5 +53,18 @@ function Splash() {
       clearTimeout(timer);
     };
   }, [navigate]);
-  return <div className="min-h-dvh bg-[#07111f]" aria-label="Opening Nuru Faith" />;
+  // Server-render a lightweight, accessible first frame: never leave a
+  // featureless dark screen while Supabase restores an existing session.
+  return (
+    <main
+      className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-[#07111f] px-6 text-center text-white"
+      aria-label="Opening Nuru Faith"
+    >
+      <NuruGlyph className="h-20 w-20" />
+      <p className="text-lg font-semibold tracking-[0.22em]">NURU FAITH</p>
+      <p role="status" className="text-sm text-white/70">
+        Preparing your home…
+      </p>
+    </main>
+  );
 }

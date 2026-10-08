@@ -74,9 +74,13 @@ function AuthPage() {
     // A Google OAuth redirect can strand an installed Android PWA inside a
     // Chrome Custom Tab with a URL/X, even after successful authentication.
     // Keep credential sign-in in the PWA itself on the official domain.
-    setUseEmbeddedGoogle(isInstalledApp() && (
-      window.location.hostname === "nurufaith.co.ke" || isLegacyNuruHost(window.location.hostname)
-    ));
+    // Google Cloud must authorize BOTH JavaScript origins before this mode
+    // can work. Keep the proven OAuth button by default until they are approved
+    // and the live Chrome installed-PWA test is green.
+    setUseEmbeddedGoogle(import.meta.env["VITE_GOOGLE_EMBEDDED_ENABLED"] === "true" &&
+      isInstalledApp() && (
+        window.location.hostname === "nurufaith.co.ke" || isLegacyNuruHost(window.location.hostname)
+      ));
   }, []);
 
   useEffect(() => {

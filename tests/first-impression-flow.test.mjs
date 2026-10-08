@@ -11,6 +11,8 @@ test("new visitors see the welcome experience before authentication", () => {
   assert.match(index, /data\.session \? "\/home" : "\/welcome"/);
   assert.match(index, /setTimeout\(\(\) => go\("\/welcome"\)/);
   assert.match(welcome, />\s*Continue\s*</);
+  assert.match(welcome, /search=\{\{ mode: "login" \}\}/);
+  assert.match(welcome, /Sign in/);
   assert.doesNotMatch(welcome, /Create my account/);
   assert.doesNotMatch(welcome, /I already have an account/);
   assert.doesNotMatch(welcome, /\[0, 1, 2\]/);
@@ -48,4 +50,15 @@ test("journey stage metadata never leaks into normal interest personalization", 
   assert.match(service, /const JOURNEY_PREFIX = "__journey:"/);
   assert.match(service, /filter\(\(interest\) => !interest\.startsWith\(JOURNEY_PREFIX\)\)/);
   assert.match(service, /saveOnboardingInterests/);
+});
+
+test("home quick access avoids duplicate navigation and uses responsive tappable tiles", () => {
+  const home = read("src/routes/_authenticated/home.tsx");
+  const nav = read("src/components/nuru/nav.ts");
+  assert.match(nav, /to: "\/bible", label: "Bible"/);
+  assert.doesNotMatch(home, /to: "\/bible", label: "Bible"/);
+  assert.match(home, /QUICK_ACCESS\.map/);
+  assert.match(home, /grid grid-cols-2 gap-2\.5/);
+  assert.match(home, /focus-visible:ring-2/);
+  assert.match(home, /active:scale-\[0\.98\]/);
 });

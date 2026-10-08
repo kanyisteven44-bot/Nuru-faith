@@ -15,7 +15,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { OfflineNotice } from "@/components/nuru/OfflineNotice";
 import { LegacyDomainNotice } from "@/components/nuru/LegacyDomainNotice";
-import { canonicalBrowserDestination, isInstalledApp, isLegacyNuruHost } from "@/lib/pwaMode";
+import { canonicalBrowserDestination, isInstalledApp, isLegacyNuruHost, LEGACY_CANONICAL_INIT_SCRIPT } from "@/lib/pwaMode";
 // The opening is not needed on authenticated screens; load its code only on the landing page.
 const SplashScreen = lazy(() =>
   import("@/components/nuru/SplashScreen").then((module) => ({ default: module.SplashScreen })),
@@ -160,6 +160,7 @@ function RootShell({ children }: { children: ReactNode }) {
         {/* Sets the theme class before anything paints, so there is never a
             flash of the wrong one. Must stay ahead of HeadContent. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: LEGACY_CANONICAL_INIT_SCRIPT }} />
         <HeadContent />
       </head>
       <body>

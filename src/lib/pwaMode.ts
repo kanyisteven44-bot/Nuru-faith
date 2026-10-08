@@ -63,3 +63,31 @@ export function canonicalBrowserDestination(href: string, installed: boolean): s
     return null;
   }
 }
+
+
+/** Before-hydration redirect: runs before auth route guards, so old links to
+ * /admin don't turn into a generic /auth and lose their intended destination.
+ * Still preserves the legacy installed PWA and sensitive OAuth/reset URLs.
+ */
+export const LEGACY_CANONICAL_INIT_SCRIPT = String.raw`(function () {
+  try {
+    var url = new URL(window.location.href);
+    if (url.hostname !== "nurufaith.website" && url.hostname !== "www.nurufaith.website") return;
+    if (window.matchMedia("(display-mode: standalone)").matches ||
+        window.matchMedia("(display-mode: fullscreen)").matches ||
+        navigator.standalone === true) return;
+    var path = url.pathname;
+    var sensitive = ["/auth-callback","/reset-password","/verify","/confirm","/auth/confirm"].includes(path) ||
+      ["code","token","token_hash","access_token","refresh_token","error","state"].some(function (key) { return url.searchParams.has(key); }) ||
+      /(?:^|[&#])(?:access_token|refresh_token|code|token_hash)=/.test(url.hash);
+    if (sensitive) {
+      try { sessionStorage.setItem("nuru-legacy-auth-in-progress", "1"); } catch (e) {}
+      return;
+    }
+    try { if (sessionStorage.getItem("nuru-legacy-auth-in-progress") === "1") return; } catch (e) {}
+    url.hostname = "nurufaith.co.ke";
+    url.protocol = "https:";
+    url.port = "";
+    window.location.replace(url.href);
+  } catch (e) { /* best-effort: client router fallback will still run */ }
+})();`;

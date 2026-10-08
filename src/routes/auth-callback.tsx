@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { NuruMark } from "@/components/nuru/Logo";
 import { YOUTUBE_CONNECT_KEY } from "@/services/youtubeRatings";
 import { getMfaRequirement } from "@/lib/accountSecurity";
+import { takeAfterLogin } from "@/lib/afterLogin";
 
 export const Route = createFileRoute("/auth-callback")({
   ssr: false,
@@ -75,7 +76,11 @@ function GoogleAuthCallback() {
             to: connection.returnTo === "/music" ? "/music" : "/reels",
             replace: true,
           });
-        } else void navigate({ to: "/home", replace: true });
+        } else {
+          const returnTo = takeAfterLogin(window.location.origin);
+          if (returnTo) window.location.replace(returnTo);
+          else void navigate({ to: "/home", replace: true });
+        }
       }
     }
 

@@ -2,6 +2,7 @@ import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { MessageAlerts } from "@/components/nuru/MessageAlerts";
 import { CallManager } from "@/components/nuru/CallManager";
 import { supabase } from "@/integrations/supabase/client";
+import { rememberAfterLogin } from "@/lib/afterLogin";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -21,7 +22,12 @@ export const Route = createFileRoute("/_authenticated")({
     // Protected data/server functions still validate the access token themselves.
     const { data, error } = await supabase.auth.getSession();
     const user = data.session?.user ?? null;
-    if (error || !user) throw redirect({ to: "/auth", search: { mode: "login" as const } });
+    if (error || !user) {
+      // Remember the exact original protected route, so after email or Google
+      // sign-in a deep link (including Admin) opens where the user intended.
+      if (typeof window !== "undefined") rememberAfterLogin(location.href, window.location.origin);
+      throw redirect({ to: "/auth", search: { mode: "login" as const } });
+    }
 
     // Keep first-time users inside one predictable setup flow no matter which
     // protected URL they open from a message, bookmark or shared link.

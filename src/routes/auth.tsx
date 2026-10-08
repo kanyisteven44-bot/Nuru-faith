@@ -9,6 +9,7 @@ import { NuruMark } from "@/components/nuru/Logo";
 import { newPasswordError } from "@/lib/accountSecurity";
 import { authAvailability } from "@/lib/authAvailability.functions";
 import { isInstalledApp, loginCallbackOrigin } from "@/lib/pwaMode";
+import { takeAfterLogin } from "@/lib/afterLogin";
 
 const searchSchema = z.object({
   mode: z.enum(["login", "signup", "forgot", "mfa", "mfa-setup"]).optional().default("login"),
@@ -85,13 +86,21 @@ function AuthPage() {
     if (mode === "mfa" || mode === "mfa-setup") return;
 
     void supabase.auth.getSession().then(({ data }) => {
-      if (data.session) void navigate({ to: "/home", replace: true });
+      if (data.session) {
+        const returnTo = takeAfterLogin(window.location.origin);
+        if (returnTo) window.location.replace(returnTo);
+        else void navigate({ to: "/home", replace: true });
+      }
     });
   }, [navigate, mode]);
 
   async function continueAfterSignIn(fallback: "/home" | "/onboarding") {
     // Temporary owner-requested bypass: keep normal Supabase authentication,
     // but do not force MFA enrollment/challenge while the factor flow is repaired.
+    if (fallback === "/home") {
+      const returnTo = takeAfterLogin(window.location.origin);
+      if (returnTo) { window.location.replace(returnTo); return; }
+    }
     void navigate({ to: fallback, replace: true });
   }
 
@@ -374,35 +383,30 @@ function AuthPage() {
               <span className="h-px flex-1 bg-border" />
             </div>
 
-            <div className="flex gap-1 rounded-xl border border-border bg-surface-2/70 p-1">
-              {(
-                [
-                  { value: "email", label: "Email", icon: Mail },
-                  { value: "phone", label: "Phone", icon: Phone },
-                ] as const
-              ).map((m) => (
-                <button
-                  key={m.value}
-                  type="button"
-                  disabled={
-                    busy || (m.value === "phone" && (!providers || providers.phone === false))
-                  }
-                  onClick={() => setMethod(m.value)}
-                  className={cn(
-                    "flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-[13px] font-semibold transition-colors",
-                    method === m.value
-                      ? "bg-surface text-foreground"
-                      : "text-muted-foreground hover:text-secondary-foreground",
-                  )}
-                >
-                  <m.icon className="h-4 w-4 text-leaf" /> {m.label}
-                </button>
-              ))}
-            </div>
-            {providers?.phone === false && (
-              <p className="mt-2 text-center text-xs text-muted-foreground">
-                SMS sign-in is not enabled yet.
-              </p>
+            {providers?.phone === true && (
+              <div className="flex gap-1 rounded-xl border border-border bg-surface-2/70 p-1">
+                {(
+                  [
+                    { value: "email", label: "Email", icon: Mail },
+                    { value: "phone", label: "Phone", icon: Phone },
+                  ] as const
+                ).map((m) => (
+                  <button
+                    key={m.value}
+                    type="button"
+                    disabled={busy}
+                    onClick={() => setMethod(m.value)}
+                    className={cn(
+                      "flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-[13px] font-semibold transition-colors",
+                      method === m.value
+                        ? "bg-surface text-foreground"
+                        : "text-muted-foreground hover:text-secondary-foreground",
+                    )}
+                  >
+                    <m.icon className="h-4 w-4 text-leaf" /> {m.label}
+                  </button>
+                ))}
+              </div>
             )}
             {authError && (
               <p

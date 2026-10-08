@@ -28,7 +28,7 @@ test("Vercel deploys browser security headers", () => {
 test("protected Nuru routes require a session without an MFA redirect loop", () => {
   const route = read("src/routes/_authenticated/route.tsx");
   assert.match(route, /supabase\.auth\.getSession/);
-  assert.match(route, /if \(error \|\| !user\) throw redirect/);
+  assert.match(route, /if \(error \|\| !user\) \{[\s\S]*?throw redirect/);
   assert.doesNotMatch(route, /getMfaRequirement/);
   assert.doesNotMatch(route, /mode: "mfa"/);
   assert.doesNotMatch(route, /mode: "mfa-setup"/);

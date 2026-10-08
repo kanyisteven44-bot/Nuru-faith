@@ -38,6 +38,7 @@ import {
 import { cn } from "@/lib/utils";
 import { resolveMedia } from "@/lib/media";
 import { useShareSheet } from "@/hooks/useShareSheet";
+import { publicNuruUrl } from "@/lib/publicLinks";
 import { AppShell } from "@/components/nuru/AppShell";
 import { ScriptureText } from "@/components/nuru/Scripture";
 import { DEFAULT_TRANSLATION, TRANSLATIONS, fetchPassage } from "@/lib/bible";
@@ -254,7 +255,7 @@ function SessionScreen() {
                   shareSheet.share({
                     title: session.title,
                     text: `${series.data!.title} · Session ${session.position}`,
-                    url: `${window.location.origin}/series/${slug}/${session.position}`,
+                    url: publicNuruUrl(`/series/${encodeURIComponent(slug)}/${session.position}`),
                   })
                 }
                 className="flex h-10 w-10 items-center justify-center rounded-full border border-border-strong bg-surface-2/80 backdrop-blur"

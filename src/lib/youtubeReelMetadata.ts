@@ -3,6 +3,7 @@ const snippet = z.object({
   title: z.string().default(""),
   description: z.string().default(""),
   channelId: z.string().optional(),
+  publishedAt: z.string().optional(),
   thumbnails: z.record(z.string(), z.object({ url: z.string() })).optional(),
 });
 export const response = z.object({

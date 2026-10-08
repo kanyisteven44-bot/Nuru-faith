@@ -42,6 +42,12 @@ export function AdminOperationsHub({
   onNavigate: (section: AdminSectionId) => void;
 }) {
   const [workspace, setWorkspace] = useState<Workspace>("overview");
+  const [problemsOnly, setProblemsOnly] = useState(false);
+  const failedChecks = healthChecks.filter((check) => check.error);
+  const failedImports = (facts?.imports ?? []).filter((job) => Boolean(job.lastError));
+  const incidentCount = failedChecks.length + failedImports.length + Number(factsError);
+  const stillChecking = factsLoading || healthChecks.some((check) => check.loading);
+
   const actions = [
     {
       section: "users" as const,
@@ -156,6 +162,63 @@ export function AdminOperationsHub({
 
       {workspace === "overview" ? (
         <>
+          <section aria-label="Live incident triage" className="rounded-2xl border border-[#1c3e58] bg-[#071727] p-5">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 className="flex items-center gap-2 text-lg font-semibold text-white">
+                  <AlertTriangle className="h-5 w-5 text-amber-300" /> Incident triage
+                </h2>
+                <p className="mt-2 text-sm text-slate-400">
+                  Checks existing admin data requests and media import failures. External provider alerts
+                  are not connected, and an empty list is not proof that no attack occurred.
+                </p>
+              </div>
+              <label className="flex items-center gap-2 text-sm text-slate-300">
+                <input type="checkbox" checked={problemsOnly} onChange={(event) => setProblemsOnly(event.target.checked)}
+                  className="h-4 w-4 accent-cyan-400" />
+                Problems only
+              </label>
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-xl border border-white/10 p-4">
+                <p className="text-xs text-slate-400">Reported failures</p>
+                <p className="mt-1 text-2xl font-semibold text-white">{incidentCount}</p>
+              </div>
+              <div className="rounded-xl border border-white/10 p-4">
+                <p className="text-xs text-slate-400">Current check</p>
+                <p className="mt-1 text-sm font-semibold text-cyan-200">{stillChecking ? "Checking…" : "Loaded"}</p>
+              </div>
+              <div className="rounded-xl border border-white/10 p-4">
+                <p className="text-xs text-slate-400">Security event feed</p>
+                <p className="mt-1 text-sm font-semibold text-amber-200">Not connected</p>
+              </div>
+            </div>
+            {incidentCount > 0 ? (
+              <ul role="status" className="mt-4 space-y-2">
+                {failedChecks.map((check) => (
+                  <li key={check.label} className="rounded-xl border border-rose-400/20 p-4">
+                    <p className="text-sm font-semibold text-rose-200">{check.label} request failed</p>
+                    <p className="mt-1 text-xs text-slate-400">
+                      Refresh the data and inspect the related service logs. This does not prove the entire service is offline.
+                    </p>
+                  </li>
+                ))}
+                {factsError && <li className="rounded-xl border border-rose-400/20 p-4 text-sm text-rose-200">
+                  Admin facts failed to load. Check server function logs and staff permissions.
+                </li>}
+                {failedImports.map((job) => (
+                  <li key={job.kind} className="rounded-xl border border-rose-400/20 p-4">
+                    <p className="text-sm font-semibold text-rose-200">{job.kind} import error</p>
+                    <p className="mt-1 break-words text-xs text-slate-300">{job.lastError}</p>
+                  </li>
+                ))}
+              </ul>
+            ) : !problemsOnly && (
+              <p role="status" className="mt-4 text-sm text-slate-300">
+                {stillChecking ? "Waiting for current data checks…" : "No errors reported by the checked admin data requests."}
+              </p>
+            )}
+          </section>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {actions.map((action) => (
               <button

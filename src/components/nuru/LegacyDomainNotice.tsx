@@ -1,3 +1,4 @@
+import { useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
 const LEGACY_HOSTS = new Set(["nurufaith.website", "www.nurufaith.website"]);
@@ -11,18 +12,17 @@ const NEW_ORIGIN = "https://nurufaith.co.ke";
 export function LegacyDomainNotice() {
   const [onLegacyHost, setOnLegacyHost] = useState(false);
   const [dismissed, setDismissed] = useState(false);
-  const [isAdminPath, setIsAdminPath] = useState(false);
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
 
   useEffect(() => {
     // Client-only hostname detection avoids different SSR markup for two
     // Vercel domains serving the same built app.
     setOnLegacyHost(LEGACY_HOSTS.has(window.location.hostname.toLowerCase()));
-    setIsAdminPath(window.location.pathname === "/admin");
   }, []);
 
   if (!onLegacyHost || dismissed) return null;
 
-  const destination = isAdminPath
+  const destination = pathname === "/admin"
     ? `${NEW_ORIGIN}/admin?section=dashboard`
     : `${NEW_ORIGIN}/welcome`;
 

@@ -8,7 +8,12 @@ test("new visitors see the welcome experience before authentication", () => {
   const index = read("src/routes/index.tsx");
   const welcome = read("src/routes/welcome.tsx");
 
-  assert.match(index, /data\.session \? "\/home" : "\/welcome"/);
+  // The public browser homepage must remain readable for Google and guests.
+  // Installed standalone PWAs keep the existing welcome/auth launch flow.
+  assert.match(index, /if \(data\.session\) go\("\/home"\)/);
+  assert.match(index, /else if \(installed\) go\("\/welcome"\)/);
+  assert.match(index, /<PublicSeoLanding/);
+  assert.match(index, /display-mode: standalone/);
   assert.match(index, /setTimeout\(\(\) => go\("\/welcome"\)/);
   assert.match(welcome, />\s*Continue\s*</);
   assert.match(welcome, /search=\{\{ mode: "login" \}\}/);

@@ -19,7 +19,7 @@ import {
   UsersRound,
 } from "lucide-react";
 
-const YOUTUBE_WRITE_ENABLED = import.meta.env.VITE_YOUTUBE_WRITE_ENABLED === "true";
+const YOUTUBE_WRITE_ENABLED = import.meta.env["VITE_YOUTUBE_WRITE_ENABLED"] === "true";
 
 export function YouTubeReelSheet({
   videoId,

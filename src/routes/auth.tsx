@@ -9,6 +9,7 @@ import { NuruMark } from "@/components/nuru/Logo";
 import { newPasswordError } from "@/lib/accountSecurity";
 import { authAvailability } from "@/lib/authAvailability.functions";
 import { isInstalledApp, loginCallbackOrigin } from "@/lib/pwaMode";
+import { takeAfterLogin } from "@/lib/afterLogin";
 
 const searchSchema = z.object({
   mode: z.enum(["login", "signup", "forgot", "mfa", "mfa-setup"]).optional().default("login"),
@@ -85,13 +86,21 @@ function AuthPage() {
     if (mode === "mfa" || mode === "mfa-setup") return;
 
     void supabase.auth.getSession().then(({ data }) => {
-      if (data.session) void navigate({ to: "/home", replace: true });
+      if (data.session) {
+        const returnTo = takeAfterLogin(window.location.origin);
+        if (returnTo) window.location.replace(returnTo);
+        else void navigate({ to: "/home", replace: true });
+      }
     });
   }, [navigate, mode]);
 
   async function continueAfterSignIn(fallback: "/home" | "/onboarding") {
     // Temporary owner-requested bypass: keep normal Supabase authentication,
     // but do not force MFA enrollment/challenge while the factor flow is repaired.
+    if (fallback === "/home") {
+      const returnTo = takeAfterLogin(window.location.origin);
+      if (returnTo) { window.location.replace(returnTo); return; }
+    }
     void navigate({ to: fallback, replace: true });
   }
 

@@ -7,6 +7,7 @@ import { TRANSLATIONS, DEFAULT_TRANSLATION, OLD_TESTAMENT, NEW_TESTAMENT } from 
 import { EBIBLE_TRANSLATIONS } from "@/lib/bibleCatalog";
 import { fetchChapterPassage } from "@/lib/bibleChapter";
 import { buildBibleShare, parseVerseRanges, verseRanges } from "@/lib/bibleSharing";
+import { OFFICIAL_NURU_ORIGIN } from "@/lib/publicLinks";
 import { NuruLockup } from "@/components/nuru/Logo";
 import { PassageQr } from "@/components/nuru/PassageQr";
 import { useShareSheet } from "@/hooks/useShareSheet";
@@ -56,7 +57,7 @@ function SharedPassage() {
   const payload =
     rows.length && !missing && typeof window !== "undefined"
       ? buildBibleShare({
-          origin: window.location.origin,
+          origin: OFFICIAL_NURU_ORIGIN,
           book: search.book,
           chapter: search.chapter,
           translation: search.translation,

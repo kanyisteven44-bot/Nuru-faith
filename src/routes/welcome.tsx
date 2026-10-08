@@ -16,7 +16,7 @@ export const Route = createFileRoute("/welcome")({
       },
       { name: "robots", content: "index, follow" },
     ],
-    links: [{ rel: "canonical", href: "https://nurufaith.website/welcome" }],
+    links: [{ rel: "canonical", href: "https://nurufaith.co.ke/welcome" }],
   }),
   component: Welcome,
 });

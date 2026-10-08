@@ -1,4 +1,9 @@
+# Public information is intended to be discoverable.
+# Private authenticated screens carry separate noindex tags.
+User-agent: OAI-SearchBot
+Allow: /
+
 User-agent: *
 Allow: /
 
-Sitemap: https://nurufaith.website/sitemap.xml
+Sitemap: https://nurufaith.co.ke/sitemap.xml

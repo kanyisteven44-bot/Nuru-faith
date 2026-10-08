@@ -5,28 +5,28 @@ import { NuruMark } from "@/components/nuru/Logo";
 export const Route = createFileRoute("/about")({
   head: () => ({
     meta: [
-      { title: "Nuru Faith | Christian Bible, Prayer & Community App" },
+      { title: "About Nuru Faith & Founder Stephen Kanyi | Christian App" },
       {
         name: "description",
         content:
-          "Read the Bible, grow through Christian courses and devotions, discover gospel music, pray, find mentorship and join meaningful faith community with Nuru Faith.",
+          "Learn about Nuru Faith, founded by Stephen Kanyi of Vortiqora Technologies. Explore Bible reading, Christian courses, prayer, worship and community.",
       },
       { name: "robots", content: "index, follow, max-image-preview:large" },
-      { property: "og:title", content: "Nuru Faith | Christian Bible, Prayer & Community App" },
+      { property: "og:title", content: "About Nuru Faith & Founder Stephen Kanyi | Christian App" },
       {
         property: "og:description",
         content:
           "Read Scripture, learn, pray, discover gospel music and grow in Christian community with Nuru Faith.",
       },
-      { property: "og:url", content: "https://nurufaith.website/about" },
-      { property: "og:image", content: "https://nurufaith.website/photos/friends-outdoors.jpg" },
-      { name: "twitter:title", content: "Nuru Faith | Christian Bible, Prayer & Community App" },
+      { property: "og:url", content: "https://nurufaith.co.ke/about" },
+      { property: "og:image", content: "https://nurufaith.co.ke/photos/friends-outdoors.jpg" },
+      { name: "twitter:title", content: "About Nuru Faith & Founder Stephen Kanyi | Christian App" },
       {
         name: "twitter:description",
         content: "A digital home for Bible reading, Christian learning, prayer, worship and community.",
       },
     ],
-    links: [{ rel: "canonical", href: "https://nurufaith.website/about" }],
+    links: [{ rel: "canonical", href: "https://nurufaith.co.ke/about" }],
   }),
   component: AboutPage,
 });
@@ -36,31 +36,42 @@ const SEO_STRUCTURED_DATA = {
   "@graph": [
     {
       "@type": "Organization",
-      "@id": "https://nurufaith.website/#organization",
+      "@id": "https://nurufaith.co.ke/#organization",
       name: "Vortiqora Technologies",
-      url: "https://nurufaith.website/about",
+      founder: { "@id": "https://nurufaith.co.ke/about#stephen-kanyi" },
+      url: "https://nurufaith.co.ke/about",
       logo: {
         "@type": "ImageObject",
-        url: "https://nurufaith.website/icons/icon-512.png",
+        url: "https://nurufaith.co.ke/icons/icon-512.png",
       },
     },
     {
+      "@type": "Person",
+      "@id": "https://nurufaith.co.ke/about#stephen-kanyi",
+      name: "Stephen Kanyi",
+      url: "https://nurufaith.co.ke/about#founder",
+      jobTitle: "Founder",
+      description:
+        "Stephen Kanyi is the founder of Vortiqora Technologies and Nuru Faith, a Christian faith and community platform developed in Kenya.",
+      worksFor: { "@id": "https://nurufaith.co.ke/#organization" },
+    },
+    {
       "@type": "WebSite",
-      "@id": "https://nurufaith.website/#website",
-      url: "https://nurufaith.website",
+      "@id": "https://nurufaith.co.ke/#website",
+      url: "https://nurufaith.co.ke",
       name: "Nuru Faith",
       inLanguage: "en",
-      publisher: { "@id": "https://nurufaith.website/#organization" },
+      publisher: { "@id": "https://nurufaith.co.ke/#organization" },
     },
     {
       "@type": "WebApplication",
       name: "Nuru Faith",
-      url: "https://nurufaith.website/about",
+      url: "https://nurufaith.co.ke/about",
       applicationCategory: "LifestyleApplication",
       operatingSystem: "Web",
       description:
         "A Christian faith and community app for Bible reading, courses, devotions, prayer, gospel media, mentorship and meaningful community.",
-      publisher: { "@id": "https://nurufaith.website/#organization" },
+      publisher: { "@id": "https://nurufaith.co.ke/#organization" },
     },
   ],
 };
@@ -185,6 +196,33 @@ function AboutPage() {
           </div>
         </section>
 
+
+        <section
+          id="founder"
+          aria-labelledby="founder-heading"
+          className="mt-10 rounded-[28px] border border-primary/20 bg-primary/5 p-6 sm:p-8"
+        >
+          <span className="text-xs font-bold uppercase tracking-[0.14em] text-primary">Meet the founder</span>
+          <h2 id="founder-heading" className="mt-3 font-display text-2xl font-semibold">
+            Stephen Kanyi — Founder of Nuru Faith
+          </h2>
+          <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground sm:text-base">
+            Stephen Kanyi is a Kenyan technology founder building Nuru Faith through Vortiqora
+            Technologies. He is developing a digital platform that brings young people together
+            around Bible reading, Christian learning, prayer, worship and supportive community.
+          </p>
+          <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground sm:text-base">
+            His vision for Nuru Faith is to make faith-centered learning and meaningful connection
+            more accessible to young people in Kenya, across Africa and beyond.
+          </p>
+          <p className="mt-4 text-sm text-muted-foreground">
+            Business inquiries:{" "}
+            <a href="mailto:vortiqoratech@gmail.com" className="font-semibold text-primary hover:underline">
+              vortiqoratech@gmail.com
+            </a>
+          </p>
+        </section>
+
         <section className="mt-10 rounded-[28px] border border-border bg-card p-6 sm:p-8">
           <h2 className="font-display text-2xl font-semibold">Built with privacy in mind</h2>
           <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground">
@@ -206,6 +244,7 @@ function AboutPage() {
         <footer className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-border py-6 text-xs text-muted-foreground">
           <span>© 2026 Vortiqora Technologies. Nuru Faith.</span>
           <div className="flex gap-4">
+            <a href="/about#founder" className="hover:text-foreground">Founder</a>
             <Link to="/privacy" className="hover:text-foreground">Privacy</Link>
             <Link to="/terms" className="hover:text-foreground">Terms</Link>
           </div>

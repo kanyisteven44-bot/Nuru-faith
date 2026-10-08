@@ -52,13 +52,13 @@ export function PublicSeoLanding({
         url: canonical,
         name: title,
         description,
-        isPartOf: { "@id": "https://nurufaith.website/#website" },
+        isPartOf: { "@id": "https://nurufaith.co.ke/#website" },
         about: {
           "@type": "SoftwareApplication",
           name: "Nuru Faith",
           applicationCategory: "LifestyleApplication",
           operatingSystem: "Web",
-          url: "https://nurufaith.website/about",
+          url: "https://nurufaith.co.ke/about",
         },
       },
       {
@@ -68,7 +68,7 @@ export function PublicSeoLanding({
             "@type": "ListItem",
             position: 1,
             name: "Nuru Faith",
-            item: "https://nurufaith.website/about",
+            item: "https://nurufaith.co.ke/about",
           },
           {
             "@type": "ListItem",

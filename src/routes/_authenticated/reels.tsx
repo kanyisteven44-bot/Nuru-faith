@@ -767,7 +767,7 @@ function ReelsScreen() {
                   onDoubleLike={() => {
                     if (reel.external_id) {
                       window.dispatchEvent(
-                        new CustomEvent("nuru:youtube-like", { detail: reel.external_id }),
+                        new CustomEvent("nuru:external-like", { detail: reel.external_id }),
                       );
                     } else if (!likeSet.includes(reel.id)) {
                       requireAuth(() => likeMutation.mutate({ reelId: reel.id, liked: false }));

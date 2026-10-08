@@ -19,6 +19,8 @@ import {
   UsersRound,
 } from "lucide-react";
 
+const YOUTUBE_WRITE_ENABLED = import.meta.env["VITE_YOUTUBE_WRITE_ENABLED"] === "true";
+
 export function YouTubeReelSheet({
   videoId,
   section,
@@ -225,7 +227,7 @@ export function YouTubeReelSheet({
                 </button>
               )}
 
-              {first && (
+              {first && YOUTUBE_WRITE_ENABLED && (
                 <form
                   onSubmit={(event) => {
                     event.preventDefault();
@@ -270,7 +272,37 @@ export function YouTubeReelSheet({
                 </form>
               )}
 
-              {needsConnection && (
+              {first && !YOUTUBE_WRITE_ENABLED && (
+                <section className="rounded-[24px] border border-primary/20 bg-primary/5 p-4">
+                  <p className="text-sm font-semibold">YouTube actions are temporarily handled outside Nuru</p>
+                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                    Google is still reviewing Nuru's permission to publish likes and comments to YouTube.
+                    You can like and comment inside Nuru now, or open the original video to interact on YouTube.
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {onNuruComments && (
+                      <button
+                        type="button"
+                        onClick={onNuruComments}
+                        className="min-h-10 rounded-full bg-primary px-4 text-xs font-semibold text-primary-foreground"
+                      >
+                        Use Nuru comments
+                      </button>
+                    )}
+                    <a
+                      href={`https://www.youtube.com/watch?v=${videoId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-border bg-card px-4 text-xs font-semibold"
+                    >
+                      Open on YouTube
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  </div>
+                </section>
+              )}
+
+              {needsConnection && YOUTUBE_WRITE_ENABLED && (
                 <div className="rounded-2xl border border-border bg-surface p-4">
                   <p className="text-sm font-medium">Connect your video account to comment</p>
                   <p className="mt-1 text-xs leading-5 text-muted-foreground">

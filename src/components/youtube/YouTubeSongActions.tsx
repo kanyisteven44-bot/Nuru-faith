@@ -1,17 +1,15 @@
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ExternalLink, Heart, MessageCircle, UserRound } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Heart, MessageCircle, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import {
   fetchExternalReelState,
   toggleExternalReelLike,
 } from "@/services/externalReelInteractions";
-import { fetchYouTubeReelDetails } from "@/lib/youtubeReel.functions";
 import { ExternalVideoCommentsSheet } from "@/components/nuru/ExternalVideoCommentsSheet";
 import { YouTubeReelSheet } from "@/components/nuru/reels/YouTubeReelSheet";
-import { compactNumber } from "@/lib/format";
 
 type ExternalState = Awaited<ReturnType<typeof fetchExternalReelState>>;
 
@@ -23,9 +21,10 @@ export function YouTubeSongActions({
   onPanelOpen: () => void;
 }) {
   const { userId } = useAuth();
-  const qc = useQueryClient();
   const navigate = useNavigate();
-  const [comments, setComments] = useState<"nuru" | "youtube" | null>(null);
+  const qc = useQueryClient();
+  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [commentSource, setCommentSource] = useState<"nuru" | "youtube">("nuru");
 
   const stateKey = ["external-reel-state", userId, videoId] as const;
   const state = useQuery({
@@ -33,13 +32,6 @@ export function YouTubeSongActions({
     queryFn: () => fetchExternalReelState(userId!, videoId),
     enabled: !!userId,
     staleTime: 30_000,
-  });
-
-  const details = useQuery({
-    queryKey: ["youtube-reel-details", videoId],
-    queryFn: () => fetchYouTubeReelDetails({ data: { videoId } }),
-    staleTime: 5 * 60 * 1000,
-    retry: false,
   });
 
   const like = useMutation({
@@ -66,107 +58,100 @@ export function YouTubeSongActions({
       });
       return { previous };
     },
-    onError: (error, _liked, context) => {
+    onSuccess: (_nextLiked, currentlyLiked) => {
+      toast.success(currentlyLiked ? "Nuru like removed" : "Liked on Nuru");
+    },
+    onError: (error, _currentlyLiked, context) => {
       if (context?.previous) qc.setQueryData(stateKey, context.previous);
-      toast.error(error instanceof Error ? error.message : "Couldn't save that like");
+      toast.error(error instanceof Error ? error.message : "Couldn't update your like");
     },
     onSettled: async () => {
       await qc.invalidateQueries({ queryKey: stateKey });
     },
   });
 
-  function openComments(source: "nuru" | "youtube") {
+  const liked = !!state.data?.liked;
+  const likeCount = state.data?.likeCount ?? 0;
+  const commentCount = state.data?.commentCount ?? 0;
+
+  function openComments() {
     onPanelOpen();
-    setComments(source);
+    setCommentSource("nuru");
+    setCommentsOpen(true);
+  }
+
+  function openCreator() {
+    onPanelOpen();
+    void navigate({
+      to: "/creator/$videoId",
+      params: { videoId },
+      search: { from: "music" },
+    });
   }
 
   return (
     <>
-      <div className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-3" aria-label="Video actions">
+      <div className="mt-5 flex items-center justify-center gap-5" aria-label="Video actions">
         <button
           type="button"
           className="flex min-h-11 items-center gap-2 text-sm"
           disabled={like.isPending}
-          aria-pressed={!!state.data?.liked}
-          aria-label={state.data?.liked ? "Unlike on Nuru" : "Like on Nuru"}
+          aria-pressed={liked}
+          aria-label={liked ? "Remove Nuru like" : "Like on Nuru"}
           onClick={() => {
             if (!userId) {
-              toast.error("Sign in to like videos");
+              toast.error("Sign in to like this video");
               return;
             }
-            if (!like.isPending) like.mutate(!!state.data?.liked);
+            if (!like.isPending) like.mutate(liked);
           }}
         >
-          <Heart
-            className={`h-5 w-5 ${state.data?.liked ? "fill-current text-rose-500" : ""}`}
-          />
-          {state.data?.likeCount ? compactNumber(state.data.likeCount) : "Like"}
+          <Heart className={liked ? "h-5 w-5 fill-rose-500 text-rose-500" : "h-5 w-5"} />
+          {likeCount > 0 ? likeCount.toLocaleString() : "Like"}
         </button>
 
         <button
           type="button"
           className="flex min-h-11 items-center gap-2 text-sm"
-          onClick={() => openComments("nuru")}
+          onClick={openComments}
           aria-label="Nuru comments"
         >
           <MessageCircle className="h-5 w-5" />
-          {state.data?.commentCount ? compactNumber(state.data.commentCount) : "Comments"}
+          {commentCount > 0 ? commentCount.toLocaleString() : "Comments"}
         </button>
 
         <button
           type="button"
           className="flex min-h-11 items-center gap-2 text-sm"
-          onClick={() => {
-            onPanelOpen();
-            void navigate({
-              to: "/creator/$videoId",
-              params: { videoId },
-              search: { from: "music" },
-            });
-          }}
+          onClick={openCreator}
+          aria-label="Open creator profile"
         >
           <UserRound className="h-5 w-5" />
           Creator
         </button>
-
-        <a
-          href={`https://www.youtube.com/watch?v=${videoId}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex min-h-11 items-center gap-2 text-sm text-muted-foreground"
-        >
-          <ExternalLink className="h-4.5 w-4.5" />
-          YouTube
-        </a>
       </div>
 
-      <p className="mt-2 text-center text-[10px] leading-4 text-muted-foreground">
-        Likes and comments here are saved in Nuru. Open YouTube for source-platform interactions.
+      <p className="mt-2 text-center text-[11px] text-[#7A8597]">
+        Likes and comments work inside Nuru while YouTube account actions await Google verification.
       </p>
 
-      {comments === "nuru" && (
+      {commentsOpen && commentSource === "nuru" && (
         <ExternalVideoCommentsSheet
           externalId={videoId}
           userId={userId}
-          onOpenSourceComments={() => setComments("youtube")}
-          onClose={() => setComments(null)}
+          onOpenSourceComments={() => setCommentSource("youtube")}
+          onClose={() => setCommentsOpen(false)}
         />
       )}
 
-      {comments === "youtube" && (
+      {commentsOpen && commentSource === "youtube" && (
         <YouTubeReelSheet
           videoId={videoId}
           section="comments"
           returnTo="/music"
-          onNuruComments={() => setComments("nuru")}
-          onClose={() => setComments(null)}
+          onNuruComments={() => setCommentSource("nuru")}
+          onClose={() => setCommentsOpen(false)}
         />
-      )}
-
-      {details.data?.stats.likes != null && (
-        <span className="sr-only">
-          YouTube reports {Number(details.data.stats.likes).toLocaleString()} source-platform likes.
-        </span>
       )}
     </>
   );

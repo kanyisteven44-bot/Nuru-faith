@@ -2,8 +2,13 @@ name: Nuru mobile browser audit
 
 on:
   push:
-    branches:
-      - qa/public-browser-audit-20261008
+    branches: [main]
+    paths:
+      - "src/**"
+      - "public/**"
+      - ".github/workflows/mobile-browser-audit.yml"
+  schedule:
+    - cron: "23 3 * * 1"
   workflow_dispatch:
 
 permissions:
@@ -38,3 +43,4 @@ jobs:
           path: browser-qa
           if-no-files-found: warn
           retention-days: 1
+          overwrite: true

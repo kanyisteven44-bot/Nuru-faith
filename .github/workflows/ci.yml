@@ -36,3 +36,21 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  installed-google:
+    if: github.event_name == 'pull_request' && github.head_ref == 'qa/google-installed-pwa-signin-20261008'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Prepare headless Chrome
+        run: |
+          npm ci
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Inspect installed-Nuru Google button on live official and legacy hosts
+        run: node scripts/audit-google-pwa-button.mjs

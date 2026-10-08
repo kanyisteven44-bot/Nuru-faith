@@ -43,12 +43,19 @@ import { ReelPane } from "@/components/nuru/reels/ReelPane";
 import { ReelComments } from "@/components/nuru/reels/ReelComments";
 import { ReelMoreMenu, ReelWhySheet } from "@/components/nuru/reels/ReelMoreMenu";
 import { ReadSheet, ReportSheet } from "@/components/nuru/reels/ReelSheets";
+import { fetchYouTubeReelDetails } from "@/lib/youtubeReel.functions";
 
 export const Route = createFileRoute("/_authenticated/reels")({
-  validateSearch: (value: Record<string, unknown>): { reel?: string | undefined } => ({
+  validateSearch: (
+    value: Record<string, unknown>,
+  ): { reel?: string | undefined; youtube?: string | undefined } => ({
     reel:
       typeof value["reel"] === "string" && /^[0-9a-f-]{36}$/i.test(value["reel"])
         ? value["reel"]
+        : undefined,
+    youtube:
+      typeof value["youtube"] === "string" && /^[A-Za-z0-9_-]{11}$/.test(value["youtube"])
+        ? value["youtube"]
         : undefined,
   }),
   head: () => ({
@@ -95,12 +102,51 @@ function dataSaverOn() {
 function ReelsScreen() {
   const { userId, loading: authLoading } = useAuth();
   const shareSheet = useShareSheet();
-  const { reel: linkedId } = Route.useSearch();
+  const { reel: linkedId, youtube: linkedYoutubeId } = Route.useSearch();
+  const linkedTargetId = linkedId ?? (linkedYoutubeId ? `yt:${linkedYoutubeId}` : null);
   const linkedReel = useQuery({
     queryKey: ["linked-reel", userId, linkedId],
     queryFn: () => fetchReelById(linkedId!),
     enabled: !!userId && !!linkedId,
   });
+  const linkedYouTube = useQuery({
+    queryKey: ["linked-youtube-reel", linkedYoutubeId],
+    queryFn: () => fetchYouTubeReelDetails({ data: { videoId: linkedYoutubeId! } }),
+    enabled: !!linkedYoutubeId,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+  const linkedYouTubeReel = useMemo<Reel | null>(() => {
+    if (!linkedYoutubeId || !linkedYouTube.data?.video) return null;
+    const details = linkedYouTube.data;
+    return {
+      id: `yt:${linkedYoutubeId}`,
+      author_id: null,
+      creator_name: details.creator.name,
+      creator_handle: details.creator.name.replace(/\s+/g, "").toLowerCase(),
+      creator_avatar_url: details.creator.avatar,
+      caption: details.video.title,
+      hashtags: null,
+      video_url: null,
+      poster_url: details.video.thumbnail,
+      audio_title: "Original audio",
+      scripture_ref: null,
+      topic: null,
+      is_bible_teaching: false,
+      church_id: null,
+      series_id: null,
+      like_count: 0,
+      comment_count: 0,
+      view_count: details.stats.views ? Number(details.stats.views) : 0,
+      created_at: details.video.publishedAt || new Date().toISOString(),
+      source_type: "youtube",
+      rights_status: "external_embed",
+      external_id: linkedYoutubeId,
+      external_url: `https://www.youtube.com/watch?v=${linkedYoutubeId}`,
+      title: details.video.title,
+      churches: null,
+    };
+  }, [linkedYoutubeId, linkedYouTube.data]);
   const qc = useQueryClient();
   const navigate = useNavigate();
 
@@ -108,11 +154,11 @@ function ReelsScreen() {
   const [muted, setMuted] = useState(true);
   const [dataSaver, setDataSaver] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [retainedId, setRetainedId] = useState<string | null>(linkedId ?? null);
+  const [retainedId, setRetainedId] = useState<string | null>(linkedTargetId);
   const [advanceAfter, setAdvanceAfter] = useState<string | null>(null);
   // A shared reel link should open straight into the full-screen player;
   // otherwise Reels opens on the browsable grid.
-  const [view, setView] = useState<"grid" | "feed">(linkedId ? "feed" : "grid");
+  const [view, setView] = useState<"grid" | "feed">(linkedTargetId ? "feed" : "grid");
   const [youtubeVisibleCount, setYoutubeVisibleCount] = useState(YOUTUBE_BATCH_SIZE);
   const [watchedExternalIds, setWatchedExternalIds] = useState<Set<string>>(new Set());
   const [hiddenIds, setHiddenIds] = useState<string[]>([]);
@@ -290,6 +336,10 @@ function ReelsScreen() {
       out.push(linkedReel.data);
       seen.add(linkedReel.data.id);
     }
+    if (feed === "For You" && linkedYouTubeReel && !seen.has(linkedYouTubeReel.id)) {
+      out.push(linkedYouTubeReel);
+      seen.add(linkedYouTubeReel.id);
+    }
     for (const page of reels.data?.pages ?? []) {
       for (const r of page.items) {
         if (seen.has(r.id) || hidden.has(r.id)) continue;
@@ -313,6 +363,7 @@ function ReelsScreen() {
     hiddenIds,
     feed,
     linkedReel.data,
+    linkedYouTubeReel,
     youtubeReels,
     watchedExternalIds,
     retainedId,
@@ -366,9 +417,9 @@ function ReelsScreen() {
   useEffect(() => {
     scrollerRef.current?.scrollTo({ top: 0 });
     setActiveIndex(0);
-    setRetainedId(linkedId ?? null);
+    setRetainedId(linkedTargetId);
     setAdvanceAfter(null);
-    setView(linkedId ? "feed" : "grid");
+    setView(linkedTargetId ? "feed" : "grid");
     setYoutubeVisibleCount(YOUTUBE_BATCH_SIZE);
     // Only react to the person switching feeds, not to linkedId itself.
     // eslint-disable-next-line react-hooks/exhaustive-deps

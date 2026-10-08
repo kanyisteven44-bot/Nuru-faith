@@ -140,6 +140,10 @@ function HomeScreen() {
             >
               <CoverImage
                 src={resolveMedia(HERO_PHOTO)}
+                srcSet="/photos/mountain-lake-v1-640.webp 640w, /photos/mountain-lake-v1-1024.webp 1024w, /photos/mountain-lake-v1-1600.webp 1600w"
+                sizes="(min-width: 1024px) 60vw, 100vw"
+                loading="eager"
+                fetchPriority="high"
                 alt=""
                 className="absolute inset-0 h-full w-full object-cover"
               />

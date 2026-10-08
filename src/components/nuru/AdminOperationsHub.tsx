@@ -10,6 +10,9 @@ import {
   BookOpen,
   Church,
   Bot,
+  ExternalLink,
+  LockKeyhole,
+  AlertTriangle,
 } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 import type { AdminFactSnapshot } from "@/lib/adminFacts.functions";
@@ -172,6 +175,59 @@ export function AdminOperationsHub({
               </button>
             ))}
           </div>
+          {isSuperAdmin && (
+            <section aria-label="Security and integration supervision" className="space-y-4">
+              <div className="rounded-2xl border border-amber-400/25 bg-[#10202e] p-5">
+                <h2 className="flex items-center gap-2 text-lg font-semibold text-white">
+                  <AlertTriangle className="h-5 w-5 text-amber-300" /> Security watch
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-slate-300">
+                  Review access changes, suspicious sign-ins, authentication failures and software vulnerabilities.
+                  This panel does not claim to detect attackers: verified alerts require audit logs, firewall
+                  events and connected monitoring. Never identify an account owner as an attacker from an IP address alone.
+                </p>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <button type="button" onClick={() => onNavigate("roles")}
+                    className="rounded-xl border border-[#34536a] bg-[#081827] p-4 text-left text-sm text-cyan-200 hover:border-cyan-400">
+                    <LockKeyhole className="mb-2 h-5 w-5" /> Review admin access and roles
+                  </button>
+                  <button type="button" onClick={() => onNavigate("moderation")}
+                    className="rounded-xl border border-[#34536a] bg-[#081827] p-4 text-left text-sm text-cyan-200 hover:border-cyan-400">
+                    <Flag className="mb-2 h-5 w-5" /> Review reported abuse
+                  </button>
+                </div>
+                <p className="mt-3 text-xs text-amber-200">
+                  Account creation and deletion must stay behind verified identity, MFA, confirmation and an audit trail.
+                  Social platform accounts cannot be created or deleted here without each provider's authorization.
+                </p>
+              </div>
+              <div className="rounded-2xl border border-[#1c3e58] bg-[#071727] p-5">
+                <h2 className="text-lg font-semibold text-white">Provider consoles &amp; incidents</h2>
+                <p className="mt-2 text-sm text-slate-400">
+                  Direct links to the actual provider dashboards. These are not live integrations:
+                  log in to each provider to see current events. No green status is shown without an API check.
+                </p>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  {[
+                    {name:"GitHub",description:"Failed workflows, code security and access",href:"https://github.com/kanyisteven44-bot/Nuru-faith/actions"},
+                    {name:"Vercel",description:"Deployments, errors and runtime logs",href:"https://vercel.com/vortiqora/nuru-faith"},
+                    {name:"Supabase",description:"Authentication, policies and database logs",href:"https://supabase.com/dashboard/project/qnqkcqywvqzfkickezxd"},
+                    {name:"Truehost",description:"Domain, DNS, hosting and support",href:"https://truehost.co.ke/cloud/clientarea.php"},
+                    {name:"Social accounts",description:"Connect accounts through official provider authorization",href:"https://www.facebook.com/business/tools/meta-business-suite"},
+                  ].map((provider) => (
+                    <a key={provider.name} href={provider.href} target="_blank" rel="noopener noreferrer"
+                      className="group rounded-xl border border-[#23435b] bg-[#081827] p-4 transition hover:border-cyan-400/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300">
+                      <span className="flex items-center justify-between font-semibold text-white">
+                        {provider.name}<ExternalLink className="h-4 w-4 text-cyan-300" />
+                      </span>
+                      <span className="mt-2 block text-xs leading-5 text-slate-400">{provider.description}</span>
+                      <span className="mt-2 block text-[11px] text-amber-200">Open provider · status not connected</span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </section>
+          )}
           <div className="grid gap-4 xl:grid-cols-2">
             <div className="rounded-2xl border border-[#1c3e58] bg-[#071727] p-5">
               <h2 className="flex items-center gap-2 font-semibold">

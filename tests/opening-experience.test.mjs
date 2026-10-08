@@ -48,3 +48,9 @@ test("installed app avoids a second opening and first paint never loads hidden p
   assert.match(index, /Preparing your home/);
   assert.match(index, /NuruGlyph/);
 });
+
+test("intro has a working dismiss action without extending its opening timeout", () => {
+  assert.match(splash, /onClick=\{finish\}/);
+  assert.match(splash, />\s*Continue <ArrowRight/);
+  assert.match(splash, /const MAX_MS = 1800/);
+});

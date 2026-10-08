@@ -11,8 +11,10 @@ test("legacy Nuru installations receive a manual migration prompt without forced
   assert.match(notice, /www\.nurufaith\.website/);
   assert.match(notice, /window\.location\.hostname/);
   assert.match(notice, /https:\/\/nurufaith\.co\.ke/);
-  assert.match(notice, /onClick=\{\(\) => setDismissed\(true\)\}/);
+  assert.match(notice, /onClick=\{dismiss\}/);
   assert.match(notice, /href=\{destination\}/);
+  assert.match(notice, /installed \? \(/);
+  assert.match(notice, /navigator\.clipboard\.writeText\(destination\)/);
   assert.match(notice, /downloaded\/offline data may not transfer automatically/);
   assert.ok(!/window\.location\.(replace|assign)\(/.test(notice));
   assert.match(root, /<LegacyDomainNotice\s*\/>/);

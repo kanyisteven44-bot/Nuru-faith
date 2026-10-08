@@ -49,7 +49,7 @@ export function SplashScreen({
   const [photoIndex, setPhotoIndex] = useState(0);
   const exited = useRef(false);
   const minElapsed = useRef(false);
-  const exitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const completed = useRef(false);
   const completionRef = useRef(onComplete);
   completionRef.current = onComplete;
 
@@ -57,10 +57,13 @@ export function SplashScreen({
     if (exited.current) return;
     exited.current = true;
     setStage("exiting");
-    exitTimer.current = setTimeout(() => {
-      setStage("gone");
-      completionRef.current?.();
-    }, EXIT_MS);
+  }, []);
+  const finish = useCallback(() => {
+    if (completed.current) return;
+    completed.current = true;
+    exited.current = true;
+    setStage("gone");
+    completionRef.current?.();
   }, []);
 
   useEffect(() => {
@@ -74,22 +77,21 @@ export function SplashScreen({
       return;
     }
 
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     setStage("playing");
+  }, [preview, initialOnly]);
 
-    let photoTimer: number | null = null;
+  useEffect(() => {
+    if (stage !== "playing") return;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reducedMotion) {
       setPhotoIndex(0);
-    } else {
-      photoTimer = window.setInterval(() => {
-        setPhotoIndex((current) => (current + 1) % OPENING_PHOTOS.length);
-      }, 900);
+      return;
     }
-
-    return () => {
-      if (photoTimer !== null) window.clearInterval(photoTimer);
-    };
-  }, [preview, initialOnly]);
+    const photoTimer = window.setInterval(() => {
+      setPhotoIndex((current) => (current + 1) % OPENING_PHOTOS.length);
+    }, 900);
+    return () => window.clearInterval(photoTimer);
+  }, [stage]);
 
   useEffect(() => {
     if (stage !== "playing") return;
@@ -116,12 +118,31 @@ export function SplashScreen({
     if (!preview && stage === "playing" && minElapsed.current && !loading) exit();
   }, [loading, preview, stage, exit]);
 
-  useEffect(
-    () => () => {
-      if (exitTimer.current) clearTimeout(exitTimer.current);
-    },
-    [],
-  );
+  useEffect(() => {
+    if (stage !== "exiting") return;
+    const timer = setTimeout(finish, EXIT_MS);
+    return () => clearTimeout(timer);
+  }, [stage, finish]);
+
+  useEffect(() => {
+    if (preview || stage === "gone") return;
+    // Mobile browsers suspend timers in the background. Never restore an
+    // opening overlay over a screen the person was already using.
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") finish();
+    };
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) finish();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("pagehide", finish);
+    window.addEventListener("pageshow", onPageShow);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("pagehide", finish);
+      window.removeEventListener("pageshow", onPageShow);
+    };
+  }, [preview, stage, finish]);
 
   if (stage === "gone") return null;
 
@@ -132,7 +153,7 @@ export function SplashScreen({
       className={cn(
         "nuru-opening fixed inset-0 z-[999] overflow-hidden text-white",
         stage === "pending" && "invisible",
-        stage === "exiting" && "nuru-open-exit",
+        stage === "exiting" && "nuru-open-exit pointer-events-none",
       )}
     >
       <div className="absolute inset-0" aria-hidden="true">

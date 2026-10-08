@@ -17,6 +17,7 @@ import { SplashScreen } from "@/components/nuru/SplashScreen";
 import { supabase } from "@/integrations/supabase/client";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
 import { ThemeProvider } from "@/hooks/useTheme";
+import { createAuthRefreshHandler } from "@/lib/authRefresh";
 
 // Read directly (not through the `supabase` proxy, which throws if unset) so a
 // missing env var can never break page rendering — this link is a pure
@@ -172,13 +173,18 @@ function RootComponent() {
   }, []);
 
   useEffect(() => {
-    const { data } = supabase.auth.onAuthStateChange((event) => {
-      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
-      router.invalidate();
-      if (event === "SIGNED_OUT") queryClient.clear();
+    const refresh = createAuthRefreshHandler((accountChanged) => {
+      if (accountChanged) queryClient.clear();
       else void queryClient.invalidateQueries();
+      void router.invalidate();
     });
-    return () => data.subscription.unsubscribe();
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      refresh.handle(event, session?.user.id ?? null);
+    });
+    return () => {
+      refresh.dispose();
+      data.subscription.unsubscribe();
+    };
   }, [router, queryClient]);
 
   return (

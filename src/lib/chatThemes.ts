@@ -5,6 +5,10 @@ export type ChatTheme = {
   background: string;
   size?: string;
   position?: string;
+  sentBackground?: string;
+  sentColor?: string;
+  receivedBackground?: string;
+  receivedColor?: string;
 };
 function motif(ink: string, design: string): string {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><g fill="none" stroke="${ink}" stroke-width="1.15" stroke-opacity="0.25">${design}</g></svg>`;
@@ -28,6 +32,18 @@ const palettes = [
   ["mint", "Mint", "#e6f9f0", "#b9e3d2", "#4c927c"],
   ["midnight", "Midnight", "#182740", "#253f60", "#577da0"],
 ] as const;
+const bubbleColours: Record<string, string> = {
+  ocean: "#245b94",
+  sage: "#365c42",
+  rose: "#963a61",
+  lavender: "#68469b",
+  sand: "#745329",
+  sky: "#256679",
+  peach: "#914726",
+  pearl: "#435572",
+  mint: "#28664f",
+  midnight: "#315f91",
+};
 export const CHAT_THEMES: ChatTheme[] = [
   { id: "classic", name: "Nuru classic", category: "Classic", background: "var(--background)" },
 ];
@@ -79,7 +95,15 @@ for (const [id, name, light, middle, ink] of palettes) {
     "Deep",
   ];
   variants.forEach((v, i) =>
-    CHAT_THEMES.push({ ...v, id: `${id}-${i}`, name: `${name} · ${labels[i]}` }),
+    CHAT_THEMES.push({
+      ...v,
+      id: `${id}-${i}`,
+      name: `${name} · ${labels[i]}`,
+      sentBackground: bubbleColours[id] ?? "#245b94",
+      sentColor: "#ffffff",
+      receivedBackground: id === "midnight" ? "#1e3049" : "#ffffff",
+      receivedColor: id === "midnight" ? "#f1f5f9" : "#182638",
+    }),
   );
 }
 const photos = [
@@ -101,6 +125,10 @@ for (const [id, name] of photos)
     background: `linear-gradient(#f8fafc66,#f8fafc66), url("/photos/${id}.jpg")`,
     size: "cover",
     position: "center",
+    sentBackground: "#245b94",
+    sentColor: "#ffffff",
+    receivedBackground: "#ffffff",
+    receivedColor: "#182638",
   });
 export function findChatTheme(id?: string | null): ChatTheme {
   return CHAT_THEMES.find((t) => t.id === id) ?? CHAT_THEMES[0]!;
@@ -110,16 +138,16 @@ export function chatThemeStorageKey(userId: string, thread: string): string {
 }
 
 export const FEATURED_CHAT_THEMES = [
-  "sage-4",
-  "rose-1",
+  "midnight-0",
   "ocean-0",
-  "lavender-6",
+  "lavender-1",
+  "rose-1",
+  "mint-0",
+  "photo-mountain-lake",
+  "sage-4",
   "sand-5",
   "peach-3",
   "midnight-6",
-  "mint-4",
-  "pearl-5",
-  "photo-mountain-lake",
   "photo-forest-walk",
   "photo-worship-gathering",
 ];
@@ -131,5 +159,31 @@ export function customPhotoTheme(url: string): ChatTheme {
     background: `linear-gradient(#f8fafc55,#f8fafc55), url("${url}")`,
     size: "cover",
     position: "center",
+    sentBackground: "#245b94",
+    sentColor: "#ffffff",
+    receivedBackground: "#ffffff",
+    receivedColor: "#182638",
+  };
+}
+
+export function chatBubbleStyle(theme: ChatTheme, sent: boolean) {
+  return sent
+    ? {
+        background: theme.sentBackground ?? "var(--primary)",
+        color: theme.sentColor ?? "var(--primary-foreground)",
+      }
+    : {
+        background: theme.receivedBackground ?? "var(--card)",
+        color: theme.receivedColor ?? "var(--secondary-foreground)",
+      };
+}
+
+export function chatWallpaperStyle(theme: ChatTheme) {
+  const hasImage = /gradient\(|url\(/.test(theme.background);
+  return {
+    backgroundImage: hasImage ? theme.background : "none",
+    backgroundColor: hasImage ? "transparent" : theme.background,
+    backgroundSize: theme.size ?? "auto",
+    backgroundPosition: theme.position ?? "center",
   };
 }

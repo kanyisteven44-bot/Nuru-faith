@@ -5,7 +5,8 @@ import {
   findChatTheme,
   customPhotoTheme,
   FEATURED_CHAT_THEMES,
-  type ChatTheme,
+  chatBubbleStyle,
+  chatWallpaperStyle,
 } from "@/lib/chatThemes";
 import { validateChatWallpaper } from "@/lib/chatWallpaperStorage";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -53,11 +54,7 @@ export function ChatThemePicker({
   const customSrc = pendingSrc || photoSrc;
   const preview =
     draft === "custom" && customSrc ? customPhotoTheme(customSrc) : findChatTheme(draft);
-  const style = (theme: ChatTheme) => ({
-    background: theme.background,
-    backgroundSize: theme.size,
-    backgroundPosition: theme.position,
-  });
+  const style = chatWallpaperStyle;
   const choices = customSrc ? [customPhotoTheme(customSrc), ...CHAT_THEMES] : CHAT_THEMES;
   const options = choices.filter(
     (t) =>
@@ -67,6 +64,12 @@ export function ChatThemePicker({
           : t.category === category)) &&
       t.name.toLowerCase().includes(query.toLowerCase()),
   );
+  if (category === "Featured")
+    options.sort(
+      (a, b) =>
+        (a.id === "custom" ? -1 : FEATURED_CHAT_THEMES.indexOf(a.id)) -
+        (b.id === "custom" ? -1 : FEATURED_CHAT_THEMES.indexOf(b.id)),
+    );
   return (
     <>
       {!hideTrigger && (
@@ -89,19 +92,26 @@ export function ChatThemePicker({
         }}
       >
         <DialogContent className="flex h-[90dvh] max-w-xl flex-col gap-3 overflow-hidden rounded-3xl p-4 sm:p-5">
-          <DialogTitle>Chat backgrounds</DialogTitle>
+          <DialogTitle>Chat themes</DialogTitle>
           <DialogDescription>
-            100 backgrounds, or your own photo. Saved for this chat on this device.
+            Matching backgrounds and message colours, or your own photo. Only you see this theme, on
+            this device.
           </DialogDescription>
           <div
             className="shrink-0 space-y-2 rounded-2xl border border-white/40 p-4 shadow-inner"
             style={style(preview)}
             aria-label={`Preview: ${preview.name}`}
           >
-            <div className="w-fit rounded-2xl rounded-bl-md bg-white px-3 py-2 text-sm text-slate-800 shadow-sm">
+            <div
+              style={chatBubbleStyle(preview, false)}
+              className="w-fit rounded-2xl rounded-bl-md px-3 py-2 text-sm shadow-sm"
+            >
               Hope your day is going well ✨
             </div>
-            <div className="ml-auto mt-2 w-fit rounded-2xl rounded-br-md bg-[#397cd5] px-3 py-2 text-sm text-white shadow-sm">
+            <div
+              style={chatBubbleStyle(preview, true)}
+              className="ml-auto mt-2 w-fit rounded-2xl rounded-br-md px-3 py-2 text-sm shadow-sm"
+            >
               Thank you! You too.
             </div>
           </div>
@@ -174,17 +184,19 @@ export function ChatThemePicker({
                 >
                   <span
                     aria-hidden="true"
-                    className="absolute left-2 top-4 h-3 w-10 rounded-lg bg-white/80 shadow-sm"
+                    style={chatBubbleStyle(t, false)}
+                    className="absolute left-2 top-4 h-4 w-10 rounded-lg shadow-sm"
                   />
                   <span
                     aria-hidden="true"
-                    className="absolute right-2 top-10 h-3 w-12 rounded-lg bg-[#397cd5]/85 shadow-sm"
+                    style={chatBubbleStyle(t, true)}
+                    className="absolute right-2 top-10 h-4 w-12 rounded-lg shadow-sm"
                   />
                   {draft === t.id && (
                     <Check className="absolute right-1 top-1 h-6 w-6 rounded-full bg-primary p-1 text-white" />
                   )}
                 </span>
-                <span className="mt-1 block text-[11px] leading-tight">{t.name}</span>
+                <span className="mt-1 block text-xs leading-snug">{t.name}</span>
               </button>
             ))}
             {!options.length && <p className="col-span-3 py-5 text-sm">No backgrounds found.</p>}

@@ -37,7 +37,13 @@ import { callHistoryLabel, isMissedCall } from "@/lib/callHistory";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { ChatThemePicker } from "./ChatThemePicker";
-import { chatThemeStorageKey, findChatTheme, customPhotoTheme } from "@/lib/chatThemes";
+import {
+  chatThemeStorageKey,
+  findChatTheme,
+  customPhotoTheme,
+  chatBubbleStyle,
+  chatWallpaperStyle,
+} from "@/lib/chatThemes";
 import { VoiceMessagePlayer } from "./VoiceMessagePlayer";
 import { toast } from "sonner";
 import { loadChatWallpaper, saveChatWallpaper } from "@/lib/chatWallpaperStorage";
@@ -600,9 +606,7 @@ export function RichChatThread({
         )}
         style={{
           ...(fillHeight ? {} : { maxHeight }),
-          background: theme.background,
-          backgroundSize: theme.size,
-          backgroundPosition: theme.position,
+          ...chatWallpaperStyle(theme),
         }}
         role="log"
         aria-label="Conversation messages"
@@ -694,6 +698,7 @@ export function RichChatThread({
           return (
             <div key={message.id} className={cn("flex", mine ? "justify-end" : "justify-start")}>
               <div
+                style={chatBubbleStyle(theme, mine)}
                 className={cn(
                   "max-w-[86%] rounded-2xl px-3 py-2",
                   mine

@@ -7,7 +7,6 @@ import { useAuth } from "@/hooks/useAuth";
 import {
   DISCOVERY_KINDS,
   DISCOVERY_LABELS,
-  SUGGESTED_SEARCHES,
   normalizeSearch,
   type DiscoveryKind,
 } from "@/lib/content-policy";
@@ -136,7 +135,7 @@ function ExploreScreen() {
             </button>
           ))}
         </div>
-        {search.kind === "churches" && (
+        {search.q && search.kind === "churches" && (
           <label className="block text-sm font-medium">
             County in Kenya
             <select
@@ -154,23 +153,7 @@ function ExploreScreen() {
             </select>
           </label>
         )}
-        {!search.q && (
-          <div>
-            <p className="mb-2 text-xs text-muted-foreground">Suggested searches</p>
-            <div className="flex flex-wrap gap-2">
-              {SUGGESTED_SEARCHES.map((q) => (
-                <button
-                  className="min-h-11 rounded-lg border border-border bg-surface-2 px-3 text-xs"
-                  key={q}
-                  onClick={() => remember(q)}
-                >
-                  {q}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-        {recent.length > 0 && (
+        {!search.q && recent.length > 0 && (
           <div>
             <div className="flex items-center justify-between">
               <p className="text-xs text-muted-foreground">Recent searches on this device</p>
@@ -202,31 +185,29 @@ function ExploreScreen() {
           </div>
         )}
       </div>
-      <div aria-live="polite">
-        {(search.kind === "all" ? DISCOVERY_KINDS : [search.kind]).map((kind) => (
-          <DiscoveryResults
-            key={kind}
-            kind={kind}
-            query={search.q}
-            county={kind === "churches" ? county : "all"}
-            userId={userId}
-            hideWhenEmpty={search.kind === "all"}
-            onEmptyChange={emptyHandlers[kind]}
-          />
-        ))}
-        {nothingMatched && (
-          <div className="px-4 pb-5">
-            <EmptyState
-              title={search.q ? `Nothing found for "${search.q}"` : "Nothing to show yet"}
-              description={
-                search.q
-                  ? "Try another word or topic, or pick a category above."
-                  : "Approved content will appear here as churches and the Nuru team add it."
-              }
+      {search.q && (
+        <div aria-live="polite">
+          {(search.kind === "all" ? DISCOVERY_KINDS : [search.kind]).map((kind) => (
+            <DiscoveryResults
+              key={kind}
+              kind={kind}
+              query={search.q}
+              county={kind === "churches" ? county : "all"}
+              userId={userId}
+              hideWhenEmpty={search.kind === "all"}
+              onEmptyChange={emptyHandlers[kind]}
             />
-          </div>
-        )}
-      </div>
+          ))}
+          {nothingMatched && (
+            <div className="px-4 pb-5">
+              <EmptyState
+                title={`Nothing found for "${search.q}"`}
+                description="Try another word or topic, or pick a category above."
+              />
+            </div>
+          )}
+        </div>
+      )}
     </AppShell>
   );
 }

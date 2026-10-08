@@ -50,7 +50,7 @@ jobs:
       - name: Install Chromium and dependencies
         run: |
           npm ci
-          npm install --no-save playwright@1.55.0
+          npm install --no-save playwright@1.55.0 lighthouse@12
           npx playwright install --with-deps chromium
       - name: Exercise live public Nuru in mobile and desktop browsers
         env:
@@ -58,6 +58,14 @@ jobs:
           NURU_QA_EMAIL: ${{ secrets.NURU_QA_EMAIL }}
           NURU_QA_PASSWORD: ${{ secrets.NURU_QA_PASSWORD }}
         run: node scripts/audit-live-mobile.mjs
+      - name: Measure Lighthouse mobile performance on live Nuru
+        if: always()
+        continue-on-error: true
+        run: |
+          mkdir -p browser-qa
+          export CHROME_PATH="$(node -e "console.log(require('playwright').chromium.executablePath())")"
+          npx lighthouse https://nurufaith.co.ke/ --chrome-flags="--headless=new --no-sandbox --disable-dev-shm-usage" --only-categories=performance,accessibility,best-practices,seo --output=json --output-path=browser-qa/lighthouse-mobile.json --quiet
+          node -e "const a=require('./browser-qa/lighthouse-mobile.json');console.log('LIGHTHOUSE '+JSON.stringify({categories:Object.fromEntries(Object.entries(a.categories).map(([k,v])=>[k,v.score])),audits:Object.fromEntries(['first-contentful-paint','largest-contentful-paint','total-blocking-time','cumulative-layout-shift','speed-index'].map(k=>[k,a.audits[k]?.displayValue]))}))"
       - uses: actions/upload-artifact@v4
         if: always()
         with:

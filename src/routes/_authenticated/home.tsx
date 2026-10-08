@@ -46,7 +46,6 @@ const HERO_PHOTO = "asset:mountain-dawn";
 
 /** The quick-access tiles the board puts under Quick Access. Every one is a real route. */
 const QUICK_ACCESS: { to: string; label: string; icon: LucideIcon }[] = [
-  { to: "/bible", label: "Bible", icon: BookOpen },
   { to: "/prayer", label: "Pray", icon: HandHeart },
   { to: "/music", label: "Music", icon: Music2 },
   { to: "/reels", label: "Reels", icon: Clapperboard },
@@ -145,7 +144,7 @@ function HomeScreen() {
                 className="absolute inset-0 h-full w-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-black/20" />
-              <div className="relative flex min-h-[420px] flex-col justify-end p-6 lg:min-h-[480px] lg:p-8">
+              <div className="relative flex min-h-[360px] flex-col justify-end p-6 sm:min-h-[410px] lg:min-h-[440px] lg:p-8">
                 <h1 className="mb-8 font-display text-[36px] leading-tight font-semibold text-white lg:text-[44px]">
                   A Brighter You.
                 </h1>
@@ -215,21 +214,27 @@ function HomeScreen() {
 
           <div className="grid gap-5 lg:content-start">
             {/* Quick Access */}
-            <section>
-              <h2 className="px-1 pb-2.5 text-[11px] font-semibold tracking-[0.14em] text-ink-3 uppercase">
+            <section aria-labelledby="home-quick-access-heading">
+              <h2
+                id="home-quick-access-heading"
+                className="px-1 pb-3 text-[11px] font-semibold tracking-[0.14em] text-ink-3 uppercase"
+              >
                 Quick access
               </h2>
-              <ul className="grid grid-cols-3 gap-2.5">
+              <ul className="grid grid-cols-2 gap-2.5">
                 {QUICK_ACCESS.map(({ to, label, icon: Icon }) => (
-                  <li key={label}>
+                  <li key={to} className="min-w-0">
                     <Link
                       to={to}
-                      className="nuru-soft-control flex flex-col items-center gap-2 rounded-2xl border border-border bg-card px-1 py-3.5 transition-colors hover:border-border-strong hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                      aria-label={`Open ${label}`}
+                      className="nuru-soft-control group flex min-h-[76px] min-w-0 items-center gap-2.5 rounded-2xl border border-border bg-card px-3 py-3 text-left shadow-sm transition-[transform,background-color,border-color] duration-150 hover:border-primary/35 hover:bg-surface-2 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                     >
-                      <span className="nuru-soft-inset flex h-11 w-11 items-center justify-center rounded-full bg-accent text-primary">
-                        <Icon className="h-5 w-5" strokeWidth={1.9} />
+                      <span className="nuru-soft-inset flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-accent text-primary transition-colors group-hover:bg-primary/15">
+                        <Icon aria-hidden="true" className="h-5 w-5" strokeWidth={1.9} />
                       </span>
-                      <span className="text-[12.5px] font-semibold">{label}</span>
+                      <span className="min-w-0 break-words text-[12.5px] font-semibold leading-tight text-foreground sm:text-sm">
+                        {label}
+                      </span>
                     </Link>
                   </li>
                 ))}

@@ -17,9 +17,9 @@ export const Route = createFileRoute("/books/")({
         property: "og:description",
         content: "Explore Christian books and faith-centered reading for spiritual growth.",
       },
-      { property: "og:url", content: "https://nurufaith.website/books/" },
+      { property: "og:url", content: "https://nurufaith.co.ke/books/" },
     ],
-    links: [{ rel: "canonical", href: "https://nurufaith.website/books/" }],
+    links: [{ rel: "canonical", href: "https://nurufaith.co.ke/books/" }],
   }),
   component: BooksScreen,
 });

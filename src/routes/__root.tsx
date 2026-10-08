@@ -110,10 +110,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:site_name", content: "Nuru Faith" },
       { property: "og:type", content: "website" },
       { property: "og:locale", content: "en_KE" },
-      { property: "og:image", content: "https://nurufaith.website/photos/friends-outdoors.jpg" },
+      { property: "og:image", content: "https://nurufaith.co.ke/photos/friends-outdoors.jpg" },
       { property: "og:image:alt", content: "Nuru Faith — Christian faith, learning and community" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:image", content: "https://nurufaith.website/photos/friends-outdoors.jpg" },
+      { name: "twitter:image", content: "https://nurufaith.co.ke/photos/friends-outdoors.jpg" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },

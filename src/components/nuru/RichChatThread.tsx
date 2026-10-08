@@ -37,9 +37,10 @@ import { callHistoryLabel, isMissedCall } from "@/lib/callHistory";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { ChatThemePicker } from "./ChatThemePicker";
-import { chatThemeStorageKey, findChatTheme } from "@/lib/chatThemes";
+import { chatThemeStorageKey, findChatTheme, customPhotoTheme } from "@/lib/chatThemes";
 import { VoiceMessagePlayer } from "./VoiceMessagePlayer";
 import { toast } from "sonner";
+import { loadChatWallpaper, saveChatWallpaper } from "@/lib/chatWallpaperStorage";
 import { FileText } from "lucide-react";
 import { CHAT_DOCUMENT_ACCEPT, chatAttachmentInfo } from "@/lib/chatAttachments";
 import { ChatAttachmentDownload } from "./ChatAttachmentDownload";
@@ -69,16 +70,43 @@ export function RichChatThread({
         : `mentor:${target.mentor}:${target.requester}`;
   const themeKey = chatThemeStorageKey(userId, threadIdentity);
   const [themeChoice, setThemeChoice] = useState({ key: "", id: "classic" });
+  const [wallpaper, setWallpaper] = useState({ key: "", url: "" });
+  const wallpaperVersion = useRef(0);
+  useEffect(() => {
+    let active = true;
+    const version = ++wallpaperVersion.current;
+    void loadChatWallpaper(themeKey)
+      .then((blob) => {
+        if (active && version === wallpaperVersion.current)
+          setWallpaper({ key: themeKey, url: blob ? URL.createObjectURL(blob) : "" });
+      })
+      .catch(() => {
+        /* Preset themes still work when photo storage is unavailable. */
+      });
+    return () => {
+      active = false;
+    };
+  }, [themeKey]);
+  useEffect(
+    () => () => {
+      if (wallpaper.url) URL.revokeObjectURL(wallpaper.url);
+    },
+    [wallpaper.url],
+  );
   useEffect(() => {
     let id = "classic";
     try {
-      id = findChatTheme(window.localStorage.getItem(themeKey)).id;
+      const saved = window.localStorage.getItem(themeKey);
+      id = saved === "custom" ? "custom" : findChatTheme(saved).id;
     } catch {
       /* Device storage may be blocked. */
     }
     setThemeChoice({ key: themeKey, id });
   }, [themeKey]);
-  const theme = findChatTheme(themeChoice.key === themeKey ? themeChoice.id : "classic");
+  const chosenTheme = themeChoice.key === themeKey ? themeChoice.id : "classic";
+  const photoSrc = wallpaper.key === themeKey ? wallpaper.url : "";
+  const theme =
+    chosenTheme === "custom" && photoSrc ? customPhotoTheme(photoSrc) : findChatTheme(chosenTheme);
   const key = ["chat-messages", userId, target];
   const messages = useQuery({
     queryKey: key,
@@ -548,8 +576,14 @@ export function RichChatThread({
           open={themePickerOpen}
           onOpenChange={onThemePickerOpenChange}
           hideTrigger={!!onThemePickerOpenChange}
-          value={theme.id}
-          onChange={(id) => {
+          value={chosenTheme}
+          photoSrc={photoSrc}
+          onChange={async (id, photo) => {
+            if (photo) {
+              ++wallpaperVersion.current;
+              await saveChatWallpaper(themeKey, photo);
+              setWallpaper({ key: themeKey, url: URL.createObjectURL(photo) });
+            }
             setThemeChoice({ key: themeKey, id });
             try {
               window.localStorage.setItem(themeKey, id);

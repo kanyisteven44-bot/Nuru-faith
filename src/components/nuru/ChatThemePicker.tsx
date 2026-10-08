@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
-import { Check, Palette, Search } from "lucide-react";
-import { CHAT_THEMES, findChatTheme, type ChatTheme } from "@/lib/chatThemes";
+import { Check, Palette, Search, ImagePlus, Loader2 } from "lucide-react";
+import {
+  CHAT_THEMES,
+  findChatTheme,
+  customPhotoTheme,
+  FEATURED_CHAT_THEMES,
+  type ChatTheme,
+} from "@/lib/chatThemes";
+import { validateChatWallpaper } from "@/lib/chatWallpaperStorage";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 export function ChatThemePicker({
@@ -9,9 +16,11 @@ export function ChatThemePicker({
   open: controlledOpen,
   onOpenChange,
   hideTrigger = false,
+  photoSrc = "",
 }: {
   value: string;
-  onChange: (id: string) => void;
+  onChange: (id: string, photo?: File) => void | Promise<void>;
+  photoSrc?: string;
   open?: boolean | undefined;
   onOpenChange?: ((open: boolean) => void) | undefined;
   hideTrigger?: boolean;
@@ -21,19 +30,41 @@ export function ChatThemePicker({
   const setOpen = onOpenChange ?? setLocalOpen;
   const [draft, setDraft] = useState(value);
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState("All");
+  const [category, setCategory] = useState("Featured");
+  const [pendingPhoto, setPendingPhoto] = useState<File | null>(null);
+  const [pendingSrc, setPendingSrc] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
   useEffect(() => {
-    if (open) setDraft(value);
+    if (open) {
+      setDraft(value);
+      setError("");
+    } else setPendingPhoto(null);
   }, [open, value]);
-  const preview = findChatTheme(draft);
+  useEffect(() => {
+    if (!pendingPhoto) {
+      setPendingSrc("");
+      return;
+    }
+    const url = URL.createObjectURL(pendingPhoto);
+    setPendingSrc(url);
+    return () => URL.revokeObjectURL(url);
+  }, [pendingPhoto]);
+  const customSrc = pendingSrc || photoSrc;
+  const preview =
+    draft === "custom" && customSrc ? customPhotoTheme(customSrc) : findChatTheme(draft);
   const style = (theme: ChatTheme) => ({
     background: theme.background,
     backgroundSize: theme.size,
     backgroundPosition: theme.position,
   });
-  const options = CHAT_THEMES.filter(
+  const choices = customSrc ? [customPhotoTheme(customSrc), ...CHAT_THEMES] : CHAT_THEMES;
+  const options = choices.filter(
     (t) =>
-      (category === "All" || t.category === category) &&
+      (category === "All" ||
+        (category === "Featured"
+          ? FEATURED_CHAT_THEMES.includes(t.id) || t.id === "custom"
+          : t.category === category)) &&
       t.name.toLowerCase().includes(query.toLowerCase()),
   );
   return (
@@ -51,14 +82,19 @@ export function ChatThemePicker({
           <Palette className="h-4 w-4" /> Theme
         </button>
       )}
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="flex max-h-[90dvh] max-w-xl flex-col gap-3 overflow-hidden rounded-3xl p-5">
+      <Dialog
+        open={open}
+        onOpenChange={(next) => {
+          if (!saving) setOpen(next);
+        }}
+      >
+        <DialogContent className="flex h-[90dvh] max-w-xl flex-col gap-3 overflow-hidden rounded-3xl p-4 sm:p-5">
           <DialogTitle>Chat backgrounds</DialogTitle>
           <DialogDescription>
-            100 backgrounds. Your choice is saved for this chat on this device.
+            100 backgrounds, or your own photo. Saved for this chat on this device.
           </DialogDescription>
           <div
-            className="shrink-0 rounded-2xl p-4"
+            className="shrink-0 space-y-2 rounded-2xl border border-white/40 p-4 shadow-inner"
             style={style(preview)}
             aria-label={`Preview: ${preview.name}`}
           >
@@ -69,6 +105,28 @@ export function ChatThemePicker({
               Thank you! You too.
             </div>
           </div>
+          <label className="flex min-h-11 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-primary/40 bg-primary/5 px-3 text-sm font-semibold text-primary">
+            <ImagePlus className="h-5 w-5" /> Upload your photo
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              className="sr-only"
+              disabled={saving}
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.target.value = "";
+                if (!file) return;
+                try {
+                  validateChatWallpaper(file);
+                  setPendingPhoto(file);
+                  setDraft("custom");
+                  setError("");
+                } catch (err) {
+                  setError(err instanceof Error ? err.message : "Choose a photo.");
+                }
+              }}
+            />
+          </label>
           <label className="flex shrink-0 items-center gap-2 rounded-xl border border-border px-3">
             <Search className="h-4 w-4" />
             <input
@@ -83,17 +141,19 @@ export function ChatThemePicker({
             className="flex shrink-0 gap-2 overflow-x-auto pb-1"
             aria-label="Background categories"
           >
-            {["All", "Gradients", "Patterns", "Colours", "Photos", "Classic"].map((c) => (
-              <button
-                key={c}
-                type="button"
-                aria-pressed={category === c}
-                onClick={() => setCategory(c)}
-                className={`min-h-10 shrink-0 rounded-full px-3 text-xs ${category === c ? "bg-primary text-primary-foreground" : "bg-surface-2"}`}
-              >
-                {c}
-              </button>
-            ))}
+            {["Featured", "All", "Gradients", "Patterns", "Colours", "Photos", "Classic"].map(
+              (c) => (
+                <button
+                  key={c}
+                  type="button"
+                  aria-pressed={category === c}
+                  onClick={() => setCategory(c)}
+                  className={`min-h-10 shrink-0 rounded-full px-3 text-xs ${category === c ? "bg-primary text-primary-foreground" : "bg-surface-2"}`}
+                >
+                  {c}
+                </button>
+              ),
+            )}
           </div>
           <div
             className="grid min-h-0 flex-1 grid-cols-3 gap-3 overflow-y-auto p-1 sm:grid-cols-4"
@@ -103,14 +163,23 @@ export function ChatThemePicker({
               <button
                 type="button"
                 key={t.id}
+                disabled={saving}
                 aria-pressed={draft === t.id}
                 onClick={() => setDraft(t.id)}
                 className="rounded-xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
                 <span
                   style={style(t)}
-                  className={`relative block h-20 rounded-xl border-2 ${draft === t.id ? "border-primary" : "border-border"}`}
+                  className={`relative block h-28 overflow-hidden rounded-xl border-2 ${draft === t.id ? "border-primary" : "border-border"}`}
                 >
+                  <span
+                    aria-hidden="true"
+                    className="absolute left-2 top-4 h-3 w-10 rounded-lg bg-white/80 shadow-sm"
+                  />
+                  <span
+                    aria-hidden="true"
+                    className="absolute right-2 top-10 h-3 w-12 rounded-lg bg-[#397cd5]/85 shadow-sm"
+                  />
                   {draft === t.id && (
                     <Check className="absolute right-1 top-1 h-6 w-6 rounded-full bg-primary p-1 text-white" />
                   )}
@@ -120,10 +189,16 @@ export function ChatThemePicker({
             ))}
             {!options.length && <p className="col-span-3 py-5 text-sm">No backgrounds found.</p>}
           </div>
+          {error && (
+            <p role="alert" className="shrink-0 text-xs text-rose-600">
+              {error}
+            </p>
+          )}
           <div className="flex shrink-0 items-center justify-between gap-2 border-t border-border pt-3">
             <button
               type="button"
               onClick={() => setDraft("classic")}
+              disabled={saving}
               className="min-h-11 px-2 text-sm"
             >
               Reset
@@ -132,19 +207,38 @@ export function ChatThemePicker({
               <button
                 type="button"
                 onClick={() => setOpen(false)}
+                disabled={saving}
                 className="min-h-11 rounded-full border border-border px-4 text-sm"
               >
                 Cancel
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  onChange(draft);
-                  setOpen(false);
+                disabled={saving || (draft === "custom" && !customSrc)}
+                onClick={async () => {
+                  setSaving(true);
+                  setError("");
+                  try {
+                    await onChange(
+                      draft,
+                      draft === "custom" ? (pendingPhoto ?? undefined) : undefined,
+                    );
+                    setOpen(false);
+                  } catch (err) {
+                    setError(err instanceof Error ? err.message : "Couldn't apply the background.");
+                  } finally {
+                    setSaving(false);
+                  }
                 }}
                 className="min-h-11 rounded-full bg-primary px-4 text-sm text-primary-foreground"
               >
-                Apply theme
+                {saving ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" /> Saving…
+                  </span>
+                ) : (
+                  "Apply theme"
+                )}
               </button>
             </div>
           </div>

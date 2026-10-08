@@ -117,8 +117,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       // Nearly every screen calls Supabase (data + media) as soon as it mounts;
       // starting the connection while the JS bundle is still loading shaves
       // real latency off the first request instead of starting it cold.
@@ -128,10 +126,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
             { rel: "dns-prefetch", href: SUPABASE_URL },
           ]
         : []),
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap",
-      },
       { rel: "icon", type: "image/png", href: "/favicon.png?v=cross2" },
       { rel: "apple-touch-icon", href: "/icons/icon-192.png?v=cross2" },
       { rel: "manifest", href: "/manifest.webmanifest" },

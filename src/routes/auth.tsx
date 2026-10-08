@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { NuruMark } from "@/components/nuru/Logo";
 import { newPasswordError } from "@/lib/accountSecurity";
 import { authAvailability } from "@/lib/authAvailability.functions";
+import { isInstalledApp, loginCallbackOrigin } from "@/lib/pwaMode";
 
 const searchSchema = z.object({
   mode: z.enum(["login", "signup", "forgot", "mfa", "mfa-setup"]).optional().default("login"),
@@ -40,8 +41,10 @@ type Method = "email" | "phone";
 
 function publicAppOrigin() {
   const configured = import.meta.env["VITE_PUBLIC_APP_URL"]?.trim().replace(/\/$/, "");
-  if (configured && /^https:\/\//.test(configured)) return configured;
-  return window.location.origin;
+  const official = configured && /^https:\/\//.test(configured)
+    ? configured
+    : "https://nurufaith.co.ke";
+  return loginCallbackOrigin(window.location.origin, window.location.hostname, isInstalledApp(), official);
 }
 
 function AuthPage() {

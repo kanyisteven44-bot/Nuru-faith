@@ -31,6 +31,10 @@ export function Sheet({
   const start = useRef<number | null>(null);
 
   function onPointerDown(e: React.PointerEvent) {
+    // Capturing a close button's pointer retargets its click to the header.
+    // Only header/handle gestures should start dragging the sheet.
+    if (e.target instanceof Element && e.target.closest("button, input, select, textarea, a"))
+      return;
     start.current = e.clientY;
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   }

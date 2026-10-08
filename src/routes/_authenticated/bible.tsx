@@ -20,6 +20,7 @@ import {
   QrCode,
   Sparkles,
   SquarePen,
+  SlidersHorizontal,
   Trash2,
   X,
 } from "lucide-react";
@@ -59,8 +60,6 @@ import { BOOK_ART, bookAbbr } from "@/lib/bookArt";
 import { AppShell, BrandBar } from "@/components/nuru/AppShell";
 import { CardSkeleton, EmptyState, PillTabs, PrimaryButton } from "@/components/nuru/Primitives";
 import { Sheet } from "@/components/nuru/Sheet";
-import { SaveOffline } from "@/components/nuru/SaveOffline";
-import { passageText } from "@/lib/offlineReading";
 
 const ALL_BOOKS: BibleBook[] = [...OLD_TESTAMENT, ...NEW_TESTAMENT];
 
@@ -566,6 +565,7 @@ function Reader({
   const qc = useQueryClient();
   const shareSheet = useShareSheet();
   const [bookSheetOpen, setBookSheetOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [translationSearch, setTranslationSearch] = useState("");
   const [translation, setTranslation] = useState<TranslationId>(
     TRANSLATIONS.some((t) => t.id === initialTranslation)
@@ -732,419 +732,422 @@ function Reader({
   }
 
   return (
-    <AppShell>
-      <header className="sticky top-0 z-30 flex items-center gap-3 bg-background/90 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-xl">
-        <button
-          type="button"
-          onClick={onBack}
-          aria-label="Back"
-          className="-ml-1 rounded-full p-1.5 text-secondary-foreground"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <h1 className="min-w-0 flex-1 truncate font-display text-[22px] font-semibold tracking-tight">
-          {passage.data?.reference ?? reference}
-        </h1>
-        <span className="shrink-0 rounded-lg border border-border-strong bg-surface-2 px-2.5 py-1 text-[11px] font-semibold text-secondary-foreground">
-          {TRANSLATIONS.find((t) => t.id === translation)?.short ?? translation}
-        </span>
-      </header>
-
-      <div className="mx-4 mb-3 flex flex-wrap items-center gap-3 rounded-xl border border-border-strong bg-surface-2 p-3">
-        <label className="min-w-0 flex-1 text-xs text-secondary-foreground">
-          Bible translation
-          <input
-            type="search"
-            aria-label="Find a Bible or language"
-            placeholder="Find a Bible or language"
-            value={translationSearch}
-            onChange={(e) => setTranslationSearch(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-border bg-background px-2 py-2 text-sm text-foreground"
-          />
-          <select
-            aria-label="Bible translation"
-            value={translation}
-            onChange={(e) => {
-              const next = e.target.value as TranslationId;
-              setTranslation(next);
-              try {
-                localStorage.setItem("nuru-bible-translation", next);
-              } catch {
-                /* Optional preference. */
-              }
-            }}
-            className="mt-1 w-full rounded-lg border border-border bg-background px-2 py-2 text-sm text-foreground"
+    <AppShell hideNav>
+      <div className="mx-auto w-full max-w-2xl">
+        <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-border/60 bg-background/95 px-5 py-4 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-xl">
+          <button
+            type="button"
+            onClick={onBack}
+            aria-label="Back"
+            className="-ml-2 flex min-h-11 min-w-11 items-center justify-center rounded-full text-secondary-foreground hover:bg-surface-2"
           >
-            {[...new Set(filteredTranslations.map((t) => t.language))]
-              .sort((a, b) => (a === "English" ? -1 : b === "English" ? 1 : a.localeCompare(b)))
-              .map((language) => (
-                <optgroup key={language} label={language}>
-                  {filteredTranslations
-                    .filter((t) => t.language === language)
-                    .map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.label}
-                        {"scope" in t && t.scope !== "See source coverage" ? ` · ${t.scope}` : ""}
-                      </option>
-                    ))}
-                </optgroup>
-              ))}
-          </select>
-        </label>
-        <label className="text-xs text-secondary-foreground">
-          Text size
-          <select
-            aria-label="Bible text size"
-            value={fontSize}
-            onChange={(e) => {
-              const size = Number(e.target.value);
-              setFontSize(size);
-              try {
-                localStorage.setItem("nuru-bible-font-size", String(size));
-              } catch {
-                /* Optional preference. */
-              }
-            }}
-            className="mt-1 block rounded-lg border border-border bg-background px-2 py-2 text-sm text-foreground"
-          >
-            <option value={15}>Small</option>
-            <option value={17}>Standard</option>
-            <option value={20}>Large</option>
-            <option value={23}>Extra large</option>
-          </select>
-        </label>
-      </div>
-      {unavailable && (
-        <div className="px-4">
-          <EmptyState
-            title="New Testament only"
-            description="Young’s Literal Translation is available here for the New Testament. Choose another translation to read this book."
-          />
-        </div>
-      )}
-      <div className="flex items-center justify-center gap-2 px-4 pb-1 pt-1">
-        <button
-          type="button"
-          onClick={goPrev}
-          disabled={!canGoPrev}
-          aria-label="Previous chapter"
-          className="rounded-full p-2 text-secondary-foreground disabled:opacity-30"
-        >
-          <ChevronLeft className="h-5 w-5" />
-        </button>
-        <button
-          type="button"
-          onClick={() => setBookSheetOpen(true)}
-          className="flex items-center gap-1 rounded-full border border-border-strong bg-surface-2 px-3 py-1.5 text-xs font-semibold"
-        >
-          {book.name}
-          <ChevronDown className="h-3.5 w-3.5" />
-        </button>
-        <button
-          type="button"
-          onClick={() => setChapterSheetOpen(true)}
-          className="flex items-center gap-1 rounded-full border border-border-strong bg-surface-2 px-3 py-1.5 text-xs font-semibold"
-        >
-          {chapter}
-          <ChevronDown className="h-3.5 w-3.5" />
-        </button>
-        <button
-          type="button"
-          onClick={goNext}
-          disabled={!canGoNext}
-          aria-label="Next chapter"
-          className="rounded-full p-2 text-secondary-foreground disabled:opacity-30"
-        >
-          <ChevronRight className="h-5 w-5" />
-        </button>
-      </div>
-
-      <div className="px-4 pb-28 pt-2">
-        {passage.data && (
-          <SaveOffline
-            key={`${reference}:${translation}`}
-            label="Save chapter for offline"
-            prepare={async () => {
-              const data = passage.data!;
-              return {
-                id: `bible:${translation}:${reference}`,
-                kind: "bible",
-                title: data.reference,
-                subtitle: data.translation,
-                sections: [
-                  { title: data.reference, text: passageText(data.verses) },
-                  ...(edition
-                    ? [
-                        {
-                          title: "Translation credits and reuse terms",
-                          text: `${edition.credit || edition.label} · ${edition.license}\n${edition.sourceUrl}\n${edition.licenseUrl}`,
-                        },
-                      ]
-                    : []),
-                ],
-              };
-            }}
-          />
-        )}
-        {!unavailable && (
-          <SaveOffline
-            key={`book:${book.name}:${translation}`}
-            label={`Download ${book.name} for offline`}
-            prepare={async (report) => {
-              const sections = [];
-              for (let number = 1; number <= book.chapters; number++) {
-                report(`Downloading ${number} of ${book.chapters} chapters…`);
-                const data = await fetchChapterPassage(`${book.name} ${number}`, translation);
-                sections.push({ title: data.reference, text: passageText(data.verses) });
-              }
-              if (edition)
-                sections.push({
-                  title: "Translation credits and reuse terms",
-                  text: `${edition.credit || edition.label} · ${edition.license}\n${edition.sourceUrl}\n${edition.licenseUrl}`,
-                });
-              return {
-                id: `bible-book:${translation}:${book.name}`,
-                kind: "bible",
-                title: book.name,
-                subtitle: TRANSLATIONS.find((t) => t.id === translation)?.label ?? translation,
-                sections,
-              };
-            }}
-          />
-        )}
-        {passage.isLoading && <CardSkeleton count={4} height="h-6" />}
-        {passage.isError && (
-          <EmptyState
-            title="Couldn't load that passage"
-            description={
-              passage.error instanceof Error
-                ? passage.error.message
-                : "Check your connection and try again."
-            }
-            action={<PrimaryButton onClick={() => void passage.refetch()}>Try again</PrimaryButton>}
-          />
-        )}
-        {!unavailable && passage.data && (
-          <div className="nuru-card p-5">
-            {TRANSLATIONS.find((t) => t.id === translation)?.language === "English" && (
-              <BibleReadAloud key={`${reference}:${translation}`} verses={passage.data.verses} />
-            )}
-            <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-border bg-surface-2 p-3">
-              <p className="flex-1 text-sm">
-                {selectedVerses.length
-                  ? `${selectedVerses.length} selected · ${verseRanges(selectedVerses)}`
-                  : "Tap verse numbers to select one or more verses."}
-              </p>
-              <button
-                type="button"
-                className="min-h-11 px-2 text-sm text-primary"
-                onClick={() => {
-                  setSelecting(true);
-                  setSelectedVerses(passage.data!.verses.map((v) => v.verse));
-                }}
-              >
-                Select all
-              </button>
-              {(selecting || selectedVerses.length > 0) && (
-                <button
-                  type="button"
-                  className="min-h-11 px-2 text-sm"
-                  onClick={() => {
-                    setSelectedVerses([]);
-                    setSelecting(false);
-                  }}
-                >
-                  Done
-                </button>
-              )}
-            </div>
-            <ol className="space-y-3.5">
-              {passage.data.verses.map((v) => {
-                const activeColor = highlightByVerse.get(v.verse);
-                const swatch = HIGHLIGHT_COLORS.find((c) => c.key === activeColor);
-                return (
-                  <li
-                    key={`${v.chapter}:${v.verse}`}
-                    ref={v.verse === verse ? targetVerse : undefined}
-                    className={cn(
-                      "flex gap-2.5 scroll-mt-24",
-                      v.verse === verse && "rounded-lg bg-primary/10 ring-2 ring-primary/40",
-                    )}
-                  >
-                    <button
-                      type="button"
-                      aria-label={`Select verse ${v.verse}`}
-                      aria-pressed={selectedVerses.includes(v.verse)}
-                      onClick={() => toggleVerse(v.verse)}
-                      className={cn(
-                        "flex min-h-11 min-w-11 shrink-0 items-start justify-center rounded-lg pt-2 text-sm font-bold",
-                        selectedVerses.includes(v.verse)
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-surface-2 text-primary",
-                      )}
-                    >
-                      {selectedVerses.includes(v.verse) ? <Check className="h-4 w-4" /> : v.verse}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (selecting) {
-                          toggleVerse(v.verse);
-                          return;
-                        }
-                        if (!userId) {
-                          toast.error("Sign in to highlight verses");
-                          return;
-                        }
-                        setColorPicker({ verse: v.verse, text: v.text });
-                      }}
-                      style={{ fontSize }}
-                      className={cn(
-                        "flex-1 rounded px-1 text-left font-serif leading-relaxed transition-colors",
-                        swatch ? swatch.bgClass : "hover:bg-white/[0.05]",
-                      )}
-                    >
-                      <span dir="auto">{v.text}</span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ol>
-            <p className="pt-5 text-xs text-muted-foreground">
-              {passage.data.translation}
-              {edition && (
-                <>
-                  {" "}
-                  · {edition.credit || edition.label} · {edition.license}. {edition.scope}.{" "}
-                  <a
-                    href={edition.sourceUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline"
-                  >
-                    Source and reuse terms
-                  </a>
-                </>
-              )}
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <div className="min-w-0 flex-1">
+            <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              The Holy Bible
             </p>
+            <h1 className="truncate font-display text-[26px] font-semibold leading-tight tracking-tight">
+              {reference}
+            </h1>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSettingsOpen(true)}
+            aria-label="Reading settings"
+            className="flex min-h-11 shrink-0 items-center gap-2 rounded-full border border-border bg-surface px-3 text-xs font-semibold text-foreground"
+          >
+            <span className="max-w-20 truncate">
+              {TRANSLATIONS.find((t) => t.id === translation)?.short ?? translation}
+            </span>
+            <SlidersHorizontal className="h-4 w-4 text-primary" />
+          </button>
+        </header>
+
+        {unavailable && (
+          <div className="px-4">
+            <EmptyState
+              title="New Testament only"
+              description="Young’s Literal Translation is available here for the New Testament. Choose another translation to read this book."
+            />
           </div>
         )}
-      </div>
-
-      <div className="fixed inset-x-0 bottom-20 z-30 mx-auto max-w-xl px-4">
-        <div className="flex items-center justify-around nuru-card border border-border py-2 backdrop-blur-xl">
-          <ReaderAction
-            icon={Highlighter}
-            label="Highlight"
-            onClick={() => toast("Tap any verse to pick a highlight colour")}
-          />
-          <ReaderAction icon={Bookmark} label="Bookmark" onClick={() => void bookmark()} />
-          <ReaderAction
-            icon={SquarePen}
-            label="Notes"
-            to={{ to: "/ai" as const, search: { contextType: "verse", contextLabel: reference } }}
-          />
-          <ReaderAction
-            icon={Share2}
-            label={selectedVerses.length ? `Share (${selectedVerses.length})` : "Share"}
-            onClick={() => share()}
-          />
-          <ReaderAction icon={QrCode} label="QR code" onClick={() => share(true)} />
+        <div className="mx-5 my-4 flex items-center justify-between gap-2 rounded-2xl border border-border bg-surface px-2 py-1">
+          <button
+            type="button"
+            onClick={goPrev}
+            disabled={!canGoPrev}
+            aria-label="Previous chapter"
+            className="flex min-h-11 min-w-11 items-center justify-center rounded-full text-secondary-foreground hover:bg-surface-2 disabled:opacity-30"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setBookSheetOpen(true)}
+            className="flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-xl px-2 text-sm font-semibold hover:bg-surface-2"
+          >
+            <span className="truncate">{book.name}</span>
+            <ChevronDown className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setChapterSheetOpen(true)}
+            className="flex min-h-11 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl px-2 text-sm font-semibold hover:bg-surface-2"
+          >
+            Chapter {chapter}
+            <ChevronDown className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={goNext}
+            disabled={!canGoNext}
+            aria-label="Next chapter"
+            className="flex min-h-11 min-w-11 items-center justify-center rounded-full text-secondary-foreground hover:bg-surface-2 disabled:opacity-30"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
         </div>
-      </div>
 
-      {bookSheetOpen && (
-        <Sheet title="Choose a book" onClose={() => setBookSheetOpen(false)} label="Choose a book">
-          <div className="px-4 pb-4">
-            <h3 className="nuru-eyebrow mb-2">Old Testament</h3>
-            <Testament
-              books={OLD_TESTAMENT}
-              onOpen={(b) => {
-                onNavigate(b, 1);
-                setBookSheetOpen(false);
+        <div className="px-5 pb-[calc(7rem+env(safe-area-inset-bottom))]">
+          {passage.isLoading && <CardSkeleton count={4} height="h-6" />}
+          {passage.isError && (
+            <EmptyState
+              title="Couldn't load that passage"
+              description={
+                passage.error instanceof Error
+                  ? passage.error.message
+                  : "Check your connection and try again."
+              }
+              action={
+                <PrimaryButton onClick={() => void passage.refetch()}>Try again</PrimaryButton>
+              }
+            />
+          )}
+          {!unavailable && passage.data && (
+            <article className="rounded-3xl border border-border/70 bg-surface px-4 py-4 sm:px-8 sm:py-6">
+              {TRANSLATIONS.find((t) => t.id === translation)?.language === "English" && (
+                <BibleReadAloud
+                  compact
+                  key={`${reference}:${translation}`}
+                  verses={passage.data.verses}
+                />
+              )}
+              {selecting || selectedVerses.length > 0 ? (
+                <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-border bg-surface-2 p-3">
+                  <p className="min-w-0 flex-1 break-words text-sm">
+                    {selectedVerses.length
+                      ? `${selectedVerses.length} selected · ${verseRanges(selectedVerses)}`
+                      : "Tap verse numbers to select one or more verses."}
+                  </p>
+                  <button
+                    type="button"
+                    className="min-h-11 px-2 text-sm text-primary"
+                    onClick={() => {
+                      setSelecting(true);
+                      setSelectedVerses(passage.data!.verses.map((v) => v.verse));
+                    }}
+                  >
+                    Select all
+                  </button>
+                  {(selecting || selectedVerses.length > 0) && (
+                    <button
+                      type="button"
+                      className="min-h-11 px-2 text-sm"
+                      onClick={() => {
+                        setSelectedVerses([]);
+                        setSelecting(false);
+                      }}
+                    >
+                      Done
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <p className="mb-5 text-[11px] text-muted-foreground">
+                  Tap a verse number to select and share.
+                </p>
+              )}
+              <ol className="space-y-5">
+                {passage.data.verses.map((v) => {
+                  const activeColor = highlightByVerse.get(v.verse);
+                  const swatch = HIGHLIGHT_COLORS.find((c) => c.key === activeColor);
+                  return (
+                    <li
+                      key={`${v.chapter}:${v.verse}`}
+                      ref={v.verse === verse ? targetVerse : undefined}
+                      className={cn(
+                        "flex gap-1.5 scroll-mt-24 rounded-xl py-1 transition-colors",
+                        selectedVerses.includes(v.verse) && "bg-primary/5",
+                        v.verse === verse && "rounded-lg bg-primary/10 ring-2 ring-primary/40",
+                      )}
+                    >
+                      <button
+                        type="button"
+                        aria-label={`Select verse ${v.verse}`}
+                        aria-pressed={selectedVerses.includes(v.verse)}
+                        onClick={() => toggleVerse(v.verse)}
+                        className={cn(
+                          "flex h-11 w-11 shrink-0 self-start items-center justify-center rounded-full text-xs font-semibold transition-colors",
+                          selectedVerses.includes(v.verse)
+                            ? "bg-primary text-primary-foreground"
+                            : "text-primary hover:bg-primary/10",
+                        )}
+                      >
+                        {selectedVerses.includes(v.verse) ? <Check className="h-4 w-4" /> : v.verse}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (selecting) {
+                            toggleVerse(v.verse);
+                            return;
+                          }
+                          if (!userId) {
+                            toast.error("Sign in to highlight verses");
+                            return;
+                          }
+                          setColorPicker({ verse: v.verse, text: v.text });
+                        }}
+                        style={{ fontSize }}
+                        className={cn(
+                          "min-w-0 flex-1 rounded px-1 text-left font-serif leading-[1.95] transition-colors",
+                          swatch ? swatch.bgClass : "hover:bg-white/[0.05]",
+                        )}
+                      >
+                        <span dir="auto">{v.text}</span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ol>
+              <details className="mt-8 border-t border-border pt-4 text-xs leading-relaxed text-muted-foreground">
+                <summary className="cursor-pointer font-medium">
+                  {passage.data.translation} · Edition details
+                </summary>
+                <p className="pt-3">
+                  {passage.data.translation}
+                  {edition && (
+                    <>
+                      {" "}
+                      · {edition.credit || edition.label} · {edition.license}. {edition.scope}.{" "}
+                      <a
+                        href={edition.sourceUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline"
+                      >
+                        Source and reuse terms
+                      </a>
+                    </>
+                  )}
+                </p>
+              </details>
+            </article>
+          )}
+        </div>
+
+        <div className="fixed inset-x-0 bottom-0 z-30 mx-auto max-w-2xl bg-gradient-to-t from-background via-background/95 to-transparent px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-5">
+          <div className="flex items-center justify-around rounded-2xl border border-border bg-surface/95 p-1.5 shadow-lg backdrop-blur-xl">
+            <ReaderAction
+              icon={Highlighter}
+              label="Highlight"
+              onClick={() => {
+                setSelecting(false);
+                setSelectedVerses([]);
+                toast("Tap any verse to pick a highlight colour");
               }}
             />
-            <h3 className="nuru-eyebrow mb-2">New Testament</h3>
-            <Testament
-              books={NEW_TESTAMENT}
-              onOpen={(b) => {
-                onNavigate(b, 1);
-                setBookSheetOpen(false);
-              }}
+            <ReaderAction icon={Bookmark} label="Bookmark" onClick={() => void bookmark()} />
+            <ReaderAction
+              icon={SquarePen}
+              label="Notes"
+              to={{ to: "/ai" as const, search: { contextType: "verse", contextLabel: reference } }}
             />
+            <ReaderAction
+              icon={Share2}
+              active={selectedVerses.length > 0}
+              label={selectedVerses.length ? `Share (${selectedVerses.length})` : "Share"}
+              onClick={() => share()}
+            />
+            <ReaderAction icon={QrCode} label="QR code" onClick={() => share(true)} />
           </div>
-        </Sheet>
-      )}
+        </div>
 
-      {chapterSheetOpen && (
-        <Sheet
-          title={`${book.name} — choose a chapter`}
-          onClose={() => setChapterSheetOpen(false)}
-          label="Choose a chapter"
-        >
-          <div className="grid grid-cols-5 gap-2 px-4 pb-4">
-            {Array.from({ length: book.chapters }, (_, i) => i + 1).map((c) => (
-              <ChapterTile
-                key={c}
-                label={c}
-                active={c === chapter}
-                onClick={() => {
-                  onNavigate(book, c);
-                  setChapterSheetOpen(false);
+        {settingsOpen && (
+          <Sheet
+            title="Reading settings"
+            label="Reading settings"
+            onClose={() => setSettingsOpen(false)}
+          >
+            <div className="space-y-6 px-5 pb-6">
+              <div className="text-sm text-secondary-foreground">
+                <p className="mb-2 font-semibold">Bible translation</p>
+                <input
+                  type="search"
+                  aria-label="Find a Bible or language"
+                  placeholder="Find a Bible or language"
+                  value={translationSearch}
+                  onChange={(e) => setTranslationSearch(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-3 text-sm text-foreground"
+                />
+                <select
+                  aria-label="Bible translation"
+                  value={translation}
+                  onChange={(e) => {
+                    const next = e.target.value as TranslationId;
+                    setTranslation(next);
+                    try {
+                      localStorage.setItem("nuru-bible-translation", next);
+                    } catch {
+                      /* Optional preference. */
+                    }
+                  }}
+                  className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-3 text-sm text-foreground"
+                >
+                  {[...new Set(filteredTranslations.map((t) => t.language))]
+                    .sort((a, b) =>
+                      a === "English" ? -1 : b === "English" ? 1 : a.localeCompare(b),
+                    )
+                    .map((language) => (
+                      <optgroup key={language} label={language}>
+                        {filteredTranslations
+                          .filter((t) => t.language === language)
+                          .map((t) => (
+                            <option key={t.id} value={t.id}>
+                              {t.label}
+                              {"scope" in t && t.scope !== "See source coverage"
+                                ? ` · ${t.scope}`
+                                : ""}
+                            </option>
+                          ))}
+                      </optgroup>
+                    ))}
+                </select>
+              </div>
+              <label className="block text-sm font-semibold text-secondary-foreground">
+                Text size
+                <select
+                  aria-label="Bible text size"
+                  value={fontSize}
+                  onChange={(e) => {
+                    const size = Number(e.target.value);
+                    setFontSize(size);
+                    try {
+                      localStorage.setItem("nuru-bible-font-size", String(size));
+                    } catch {
+                      /* Optional preference. */
+                    }
+                  }}
+                  className="mt-1 block rounded-lg border border-border bg-background px-3 py-3 text-sm text-foreground"
+                >
+                  <option value={15}>Small</option>
+                  <option value={17}>Standard</option>
+                  <option value={20}>Large</option>
+                  <option value={23}>Extra large</option>
+                </select>
+              </label>
+            </div>
+          </Sheet>
+        )}
+
+        {bookSheetOpen && (
+          <Sheet
+            title="Choose a book"
+            onClose={() => setBookSheetOpen(false)}
+            label="Choose a book"
+          >
+            <div className="px-4 pb-4">
+              <h3 className="nuru-eyebrow mb-2">Old Testament</h3>
+              <Testament
+                books={OLD_TESTAMENT}
+                onOpen={(b) => {
+                  onNavigate(b, 1);
+                  setBookSheetOpen(false);
                 }}
               />
-            ))}
-          </div>
-        </Sheet>
-      )}
+              <h3 className="nuru-eyebrow mb-2">New Testament</h3>
+              <Testament
+                books={NEW_TESTAMENT}
+                onOpen={(b) => {
+                  onNavigate(b, 1);
+                  setBookSheetOpen(false);
+                }}
+              />
+            </div>
+          </Sheet>
+        )}
 
-      {colorPicker && (
-        <Sheet
-          title={`Highlight verse ${colorPicker.verse}`}
-          onClose={() => setColorPicker(null)}
-          label="Choose a highlight colour"
-        >
-          <div className="space-y-4 px-4 pb-6">
-            <p className="line-clamp-2 font-serif text-sm text-secondary-foreground">
-              {colorPicker.text}
-            </p>
-            <div className="flex items-center justify-center gap-3">
-              {HIGHLIGHT_COLORS.map((c) => (
-                <button
-                  key={c.key}
-                  type="button"
-                  onClick={() => void pickColor(c.key)}
-                  aria-label={c.label}
-                  className="flex h-11 w-11 items-center justify-center rounded-full ring-2 ring-transparent transition-transform active:scale-95"
-                  style={{ backgroundColor: c.swatch }}
-                >
-                  {highlightByVerse.get(colorPicker.verse) === c.key && (
-                    <Check className="h-5 w-5 text-black/70" strokeWidth={2.5} />
-                  )}
-                </button>
+        {chapterSheetOpen && (
+          <Sheet
+            title={`${book.name} — choose a chapter`}
+            onClose={() => setChapterSheetOpen(false)}
+            label="Choose a chapter"
+          >
+            <div className="grid grid-cols-5 gap-2 px-4 pb-4">
+              {Array.from({ length: book.chapters }, (_, i) => i + 1).map((c) => (
+                <ChapterTile
+                  key={c}
+                  label={c}
+                  active={c === chapter}
+                  onClick={() => {
+                    onNavigate(book, c);
+                    setChapterSheetOpen(false);
+                  }}
+                />
               ))}
             </div>
-            {highlightByVerse.has(colorPicker.verse) && (
-              <button
-                type="button"
-                onClick={() => void clearHighlight()}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-border-strong py-2.5 text-sm font-semibold text-destructive"
-              >
-                <X className="h-4 w-4" />
-                Remove highlight
-              </button>
-            )}
-          </div>
-        </Sheet>
-      )}
-      {qrPayload && (
-        <PassageQr
-          payload={qrPayload}
-          translation={passage.data?.translation ?? translation}
-          onClose={() => setQrPayload(null)}
-        />
-      )}
-      {shareSheet.node}
+          </Sheet>
+        )}
+
+        {colorPicker && (
+          <Sheet
+            title={`Highlight verse ${colorPicker.verse}`}
+            onClose={() => setColorPicker(null)}
+            label="Choose a highlight colour"
+          >
+            <div className="space-y-4 px-4 pb-6">
+              <p className="line-clamp-2 font-serif text-sm text-secondary-foreground">
+                {colorPicker.text}
+              </p>
+              <div className="flex items-center justify-center gap-3">
+                {HIGHLIGHT_COLORS.map((c) => (
+                  <button
+                    key={c.key}
+                    type="button"
+                    onClick={() => void pickColor(c.key)}
+                    aria-label={c.label}
+                    className="flex h-11 w-11 items-center justify-center rounded-full ring-2 ring-transparent transition-transform active:scale-95"
+                    style={{ backgroundColor: c.swatch }}
+                  >
+                    {highlightByVerse.get(colorPicker.verse) === c.key && (
+                      <Check className="h-5 w-5 text-black/70" strokeWidth={2.5} />
+                    )}
+                  </button>
+                ))}
+              </div>
+              {highlightByVerse.has(colorPicker.verse) && (
+                <button
+                  type="button"
+                  onClick={() => void clearHighlight()}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-border-strong py-2.5 text-sm font-semibold text-destructive"
+                >
+                  <X className="h-4 w-4" />
+                  Remove highlight
+                </button>
+              )}
+            </div>
+          </Sheet>
+        )}
+        {qrPayload && (
+          <PassageQr
+            payload={qrPayload}
+            translation={passage.data?.translation ?? translation}
+            onClose={() => setQrPayload(null)}
+          />
+        )}
+        {shareSheet.node}
+      </div>
     </AppShell>
   );
 }
@@ -1152,11 +1155,13 @@ function Reader({
 function ReaderAction({
   icon: Icon,
   label,
+  active = false,
   onClick,
   to,
 }: {
   icon: typeof Bookmark;
   label: string;
+  active?: boolean;
   onClick?: () => void;
   to?: { to: "/ai"; search: { contextType: string; contextLabel: string } };
 }) {
@@ -1166,8 +1171,11 @@ function ReaderAction({
       <span className="text-[10px] font-medium">{label}</span>
     </>
   );
-  const cls =
-    "flex flex-1 flex-col items-center gap-1 text-ink-3 transition-colors hover:text-foreground";
+  const cls = cn(
+    "flex min-h-14 flex-1 flex-col items-center justify-center gap-1 rounded-xl text-secondary-foreground transition-colors hover:bg-surface-2 hover:text-foreground",
+    active &&
+      "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground",
+  );
   if (to)
     return (
       <Link to={to.to} search={to.search} className={cls}>

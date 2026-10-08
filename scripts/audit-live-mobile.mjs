@@ -125,8 +125,14 @@ for (const viewport of viewports) {
     try {
       await tab.goto("https://nurufaith.website/admin?section=dashboard", { waitUntil: "domcontentloaded", timeout: 45000 });
       await tab.waitForURL(u => u.hostname === "nurufaith.co.ke", { timeout: 15000 });
-      if (new URL(tab.url()).pathname !== "/admin") throw Error("Admin deep link lost");
-      console.log("PASS old browser admin link canonical migration");
+      // A logged-out visitor must be shown Nuru sign-in. The intended admin
+      // page is restored AFTER login, not rendered without authentication.
+      await tab.waitForFunction(() =>
+        location.pathname === "/auth" &&
+        sessionStorage.getItem("nuru-return-after-login") === "/admin?section=dashboard",
+        { timeout: 15000 },
+      );
+      console.log("PASS old admin URL kept across canonical redirect and login gate");
     } catch(e) {
       failures++;
       console.log("FAIL old browser admin link canonical migration", String(e.message).split("\n")[0]);

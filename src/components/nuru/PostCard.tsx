@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { generatedAvatar } from "@/lib/avatar";
 import { compactNumber, initials, timeAgo } from "@/lib/format";
 import { useShareSheet } from "@/hooks/useShareSheet";
+import { publicNuruUrl } from "@/lib/publicLinks";
 import {
   addComment,
   fetchComments,
@@ -143,7 +144,7 @@ export function PostCard({
             void shareSheet.share({
               title: "Nuru Faith",
               text: post.body ?? undefined,
-              url: `${window.location.origin}/community`,
+              url: publicNuruUrl("/community"),
             })
           }
         >

@@ -5,6 +5,7 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useShareSheet } from "@/hooks/useShareSheet";
+import { canonicalShareUrl, publicNuruUrl } from "@/lib/publicLinks";
 import {
   fetchInterests,
   fetchMyChurchIds,
@@ -619,13 +620,13 @@ function ReelsScreen() {
   }
 
   function share(reel: Reel) {
-    const url = reel.external_url ?? `${window.location.origin}/reels?reel=${reel.id}`;
+    const url = reel.external_url ? canonicalShareUrl(reel.external_url) : publicNuruUrl(`/reels?reel=${encodeURIComponent(reel.id)}`);
     const text = reel.caption ? reel.caption.slice(0, 120) : "A short teaching on Nuru Faith";
     void shareSheet.share({ title: "Nuru Faith", text, url });
   }
 
   async function copyLink(reel: Reel) {
-    const url = reel.external_url ?? `${window.location.origin}/reels?reel=${reel.id}`;
+    const url = reel.external_url ? canonicalShareUrl(reel.external_url) : publicNuruUrl(`/reels?reel=${encodeURIComponent(reel.id)}`);
     await navigator.clipboard.writeText(url);
     toast.success("Link copied");
   }

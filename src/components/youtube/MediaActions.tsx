@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { Bookmark, MessageCircle, Share2, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useShareSheet } from "@/hooks/useShareSheet";
+import { canonicalShareUrl } from "@/lib/publicLinks";
 
 /**
  * The one interaction row used by every piece of content in Nuru Faith:
@@ -47,7 +48,7 @@ export function MediaActions({
         onClick={() =>
           void shareSheet.share({
             title,
-            url: shareUrl ?? (typeof window !== "undefined" ? window.location.href : ""),
+            url: canonicalShareUrl(shareUrl ?? (typeof window !== "undefined" ? window.location.href : "")),
           })
         }
         className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-border px-3 text-xs font-medium text-secondary-foreground"

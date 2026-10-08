@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Heart, MessageCircle, UserRound } from "lucide-react";
 import { toast } from "sonner";
+import { VideoSourceStats } from "./VideoSourceStats";
 import { useAuth } from "@/hooks/useAuth";
 import {
   fetchExternalReelState,
@@ -107,7 +108,8 @@ export function YouTubeSongActions({
           }}
         >
           <Heart className={liked ? "h-5 w-5 fill-rose-500 text-rose-500" : "h-5 w-5"} />
-          {likeCount > 0 ? likeCount.toLocaleString() : "Like"}
+          {likeCount > 0 ? likeCount.toLocaleString() : "Like"}{" "}
+          <span className="text-[10px] text-muted-foreground">in Nuru</span>
         </button>
 
         <button
@@ -131,9 +133,7 @@ export function YouTubeSongActions({
         </button>
       </div>
 
-      <p className="mt-2 text-center text-[11px] text-[#7A8597]">
-        Likes and comments work inside Nuru while YouTube account actions await Google verification.
-      </p>
+      <VideoSourceStats videoId={videoId} enabled={!!userId} />
 
       {commentsOpen && commentSource === "nuru" && (
         <ExternalVideoCommentsSheet

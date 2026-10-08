@@ -11,9 +11,15 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthCallbackRouteImport } from './routes/auth-callback'
+import { Route as BibleAppForYoungPeopleRouteImport } from './routes/bible-app-for-young-people'
+import { Route as ChristianAppRouteImport } from './routes/christian-app'
+import { Route as ChristianAppKenyaRouteImport } from './routes/christian-app-kenya'
+import { Route as ChristianCommunityAppRouteImport } from './routes/christian-community-app'
 import { Route as DesignPreviewRouteImport } from './routes/design-preview'
+import { Route as GospelMusicAppRouteImport } from './routes/gospel-music-app'
 import { Route as OpeningRouteImport } from './routes/opening'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
@@ -21,6 +27,7 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as YoutubeAccountRouteImport } from './routes/youtube-account'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedAdminDesignOptionsRouteImport } from './routes/_authenticated/admin-design-options'
 import { Route as AuthenticatedAiRouteImport } from './routes/_authenticated/ai'
 import { Route as AuthenticatedBibleRouteImport } from './routes/_authenticated/bible'
 import { Route as AuthenticatedChurchRouteImport } from './routes/_authenticated/church'
@@ -47,6 +54,7 @@ import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticat
 import { Route as BooksIndexRouteImport } from './routes/books.index'
 import { Route as BooksBookIdRouteImport } from './routes/books.$bookId'
 import { Route as FaithCoursesIndexRouteImport } from './routes/faith-courses.index'
+import { Route as AuthenticatedCreatorVideoIdRouteImport } from './routes/_authenticated/creator.$videoId'
 import { Route as AuthenticatedFaithCoursesSlugRouteImport } from './routes/_authenticated/faith-courses.$slug'
 import { Route as AuthenticatedMentorsIndexRouteImport } from './routes/_authenticated/mentors.index'
 import { Route as AuthenticatedMentorsIdRouteImport } from './routes/_authenticated/mentors.$id'
@@ -64,6 +72,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -74,9 +87,34 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
   path: '/auth-callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BibleAppForYoungPeopleRoute = BibleAppForYoungPeopleRouteImport.update({
+  id: '/bible-app-for-young-people',
+  path: '/bible-app-for-young-people',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChristianAppRoute = ChristianAppRouteImport.update({
+  id: '/christian-app',
+  path: '/christian-app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChristianAppKenyaRoute = ChristianAppKenyaRouteImport.update({
+  id: '/christian-app-kenya',
+  path: '/christian-app-kenya',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChristianCommunityAppRoute = ChristianCommunityAppRouteImport.update({
+  id: '/christian-community-app',
+  path: '/christian-community-app',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DesignPreviewRoute = DesignPreviewRouteImport.update({
   id: '/design-preview',
   path: '/design-preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GospelMusicAppRoute = GospelMusicAppRouteImport.update({
+  id: '/gospel-music-app',
+  path: '/gospel-music-app',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OpeningRoute = OpeningRouteImport.update({
@@ -114,6 +152,12 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAdminDesignOptionsRoute =
+  AuthenticatedAdminDesignOptionsRouteImport.update({
+    id: '/admin-design-options',
+    path: '/admin-design-options',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAiRoute = AuthenticatedAiRouteImport.update({
   id: '/ai',
   path: '/ai',
@@ -246,6 +290,12 @@ const FaithCoursesIndexRoute = FaithCoursesIndexRouteImport.update({
   path: '/faith-courses/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedCreatorVideoIdRoute =
+  AuthenticatedCreatorVideoIdRouteImport.update({
+    id: '/creator/$videoId',
+    path: '/creator/$videoId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedFaithCoursesSlugRoute =
   AuthenticatedFaithCoursesSlugRouteImport.update({
     id: '/faith-courses/$slug',
@@ -290,9 +340,15 @@ const AuthenticatedSeriesSlugPositionRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
   '/auth-callback': typeof AuthCallbackRoute
+  '/bible-app-for-young-people': typeof BibleAppForYoungPeopleRoute
+  '/christian-app': typeof ChristianAppRoute
+  '/christian-app-kenya': typeof ChristianAppKenyaRoute
+  '/christian-community-app': typeof ChristianCommunityAppRoute
   '/design-preview': typeof DesignPreviewRoute
+  '/gospel-music-app': typeof GospelMusicAppRoute
   '/opening': typeof OpeningRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -300,6 +356,7 @@ export interface FileRoutesByFullPath {
   '/welcome': typeof WelcomeRoute
   '/youtube-account': typeof YoutubeAccountRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/admin-design-options': typeof AuthenticatedAdminDesignOptionsRoute
   '/ai': typeof AuthenticatedAiRoute
   '/bible': typeof AuthenticatedBibleRoute
   '/church': typeof AuthenticatedChurchRoute
@@ -326,6 +383,7 @@ export interface FileRoutesByFullPath {
   '/books/$bookId': typeof BooksBookIdRoute
   '/books/': typeof BooksIndexRoute
   '/faith-courses/': typeof FaithCoursesIndexRoute
+  '/creator/$videoId': typeof AuthenticatedCreatorVideoIdRoute
   '/faith-courses/$slug': typeof AuthenticatedFaithCoursesSlugRoute
   '/mentors/$id': typeof AuthenticatedMentorsIdRoute
   '/mentors/': typeof AuthenticatedMentorsIndexRoute
@@ -336,9 +394,15 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
   '/auth-callback': typeof AuthCallbackRoute
+  '/bible-app-for-young-people': typeof BibleAppForYoungPeopleRoute
+  '/christian-app': typeof ChristianAppRoute
+  '/christian-app-kenya': typeof ChristianAppKenyaRoute
+  '/christian-community-app': typeof ChristianCommunityAppRoute
   '/design-preview': typeof DesignPreviewRoute
+  '/gospel-music-app': typeof GospelMusicAppRoute
   '/opening': typeof OpeningRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -346,6 +410,7 @@ export interface FileRoutesByTo {
   '/welcome': typeof WelcomeRoute
   '/youtube-account': typeof YoutubeAccountRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/admin-design-options': typeof AuthenticatedAdminDesignOptionsRoute
   '/ai': typeof AuthenticatedAiRoute
   '/bible': typeof AuthenticatedBibleRoute
   '/church': typeof AuthenticatedChurchRoute
@@ -372,6 +437,7 @@ export interface FileRoutesByTo {
   '/books/$bookId': typeof BooksBookIdRoute
   '/books': typeof BooksIndexRoute
   '/faith-courses': typeof FaithCoursesIndexRoute
+  '/creator/$videoId': typeof AuthenticatedCreatorVideoIdRoute
   '/faith-courses/$slug': typeof AuthenticatedFaithCoursesSlugRoute
   '/mentors/$id': typeof AuthenticatedMentorsIdRoute
   '/mentors': typeof AuthenticatedMentorsIndexRoute
@@ -384,9 +450,15 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
   '/auth-callback': typeof AuthCallbackRoute
+  '/bible-app-for-young-people': typeof BibleAppForYoungPeopleRoute
+  '/christian-app': typeof ChristianAppRoute
+  '/christian-app-kenya': typeof ChristianAppKenyaRoute
+  '/christian-community-app': typeof ChristianCommunityAppRoute
   '/design-preview': typeof DesignPreviewRoute
+  '/gospel-music-app': typeof GospelMusicAppRoute
   '/opening': typeof OpeningRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -394,6 +466,7 @@ export interface FileRoutesById {
   '/welcome': typeof WelcomeRoute
   '/youtube-account': typeof YoutubeAccountRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/_authenticated/admin-design-options': typeof AuthenticatedAdminDesignOptionsRoute
   '/_authenticated/ai': typeof AuthenticatedAiRoute
   '/_authenticated/bible': typeof AuthenticatedBibleRoute
   '/_authenticated/church': typeof AuthenticatedChurchRoute
@@ -420,6 +493,7 @@ export interface FileRoutesById {
   '/books/$bookId': typeof BooksBookIdRoute
   '/books/': typeof BooksIndexRoute
   '/faith-courses/': typeof FaithCoursesIndexRoute
+  '/_authenticated/creator/$videoId': typeof AuthenticatedCreatorVideoIdRoute
   '/_authenticated/faith-courses/$slug': typeof AuthenticatedFaithCoursesSlugRoute
   '/_authenticated/mentors/$id': typeof AuthenticatedMentorsIdRoute
   '/_authenticated/mentors/': typeof AuthenticatedMentorsIndexRoute
@@ -432,9 +506,15 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/about'
     | '/auth'
     | '/auth-callback'
+    | '/bible-app-for-young-people'
+    | '/christian-app'
+    | '/christian-app-kenya'
+    | '/christian-community-app'
     | '/design-preview'
+    | '/gospel-music-app'
     | '/opening'
     | '/privacy'
     | '/reset-password'
@@ -442,6 +522,7 @@ export interface FileRouteTypes {
     | '/welcome'
     | '/youtube-account'
     | '/admin'
+    | '/admin-design-options'
     | '/ai'
     | '/bible'
     | '/church'
@@ -468,6 +549,7 @@ export interface FileRouteTypes {
     | '/books/$bookId'
     | '/books/'
     | '/faith-courses/'
+    | '/creator/$videoId'
     | '/faith-courses/$slug'
     | '/mentors/$id'
     | '/mentors/'
@@ -478,9 +560,15 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/about'
     | '/auth'
     | '/auth-callback'
+    | '/bible-app-for-young-people'
+    | '/christian-app'
+    | '/christian-app-kenya'
+    | '/christian-community-app'
     | '/design-preview'
+    | '/gospel-music-app'
     | '/opening'
     | '/privacy'
     | '/reset-password'
@@ -488,6 +576,7 @@ export interface FileRouteTypes {
     | '/welcome'
     | '/youtube-account'
     | '/admin'
+    | '/admin-design-options'
     | '/ai'
     | '/bible'
     | '/church'
@@ -514,6 +603,7 @@ export interface FileRouteTypes {
     | '/books/$bookId'
     | '/books'
     | '/faith-courses'
+    | '/creator/$videoId'
     | '/faith-courses/$slug'
     | '/mentors/$id'
     | '/mentors'
@@ -525,9 +615,15 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/about'
     | '/auth'
     | '/auth-callback'
+    | '/bible-app-for-young-people'
+    | '/christian-app'
+    | '/christian-app-kenya'
+    | '/christian-community-app'
     | '/design-preview'
+    | '/gospel-music-app'
     | '/opening'
     | '/privacy'
     | '/reset-password'
@@ -535,6 +631,7 @@ export interface FileRouteTypes {
     | '/welcome'
     | '/youtube-account'
     | '/_authenticated/admin'
+    | '/_authenticated/admin-design-options'
     | '/_authenticated/ai'
     | '/_authenticated/bible'
     | '/_authenticated/church'
@@ -561,6 +658,7 @@ export interface FileRouteTypes {
     | '/books/$bookId'
     | '/books/'
     | '/faith-courses/'
+    | '/_authenticated/creator/$videoId'
     | '/_authenticated/faith-courses/$slug'
     | '/_authenticated/mentors/$id'
     | '/_authenticated/mentors/'
@@ -573,9 +671,15 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AboutRoute: typeof AboutRoute
   AuthRoute: typeof AuthRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
+  BibleAppForYoungPeopleRoute: typeof BibleAppForYoungPeopleRoute
+  ChristianAppRoute: typeof ChristianAppRoute
+  ChristianAppKenyaRoute: typeof ChristianAppKenyaRoute
+  ChristianCommunityAppRoute: typeof ChristianCommunityAppRoute
   DesignPreviewRoute: typeof DesignPreviewRoute
+  GospelMusicAppRoute: typeof GospelMusicAppRoute
   OpeningRoute: typeof OpeningRoute
   PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -603,6 +707,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -617,11 +728,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/bible-app-for-young-people': {
+      id: '/bible-app-for-young-people'
+      path: '/bible-app-for-young-people'
+      fullPath: '/bible-app-for-young-people'
+      preLoaderRoute: typeof BibleAppForYoungPeopleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/christian-app': {
+      id: '/christian-app'
+      path: '/christian-app'
+      fullPath: '/christian-app'
+      preLoaderRoute: typeof ChristianAppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/christian-app-kenya': {
+      id: '/christian-app-kenya'
+      path: '/christian-app-kenya'
+      fullPath: '/christian-app-kenya'
+      preLoaderRoute: typeof ChristianAppKenyaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/christian-community-app': {
+      id: '/christian-community-app'
+      path: '/christian-community-app'
+      fullPath: '/christian-community-app'
+      preLoaderRoute: typeof ChristianCommunityAppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/design-preview': {
       id: '/design-preview'
       path: '/design-preview'
       fullPath: '/design-preview'
       preLoaderRoute: typeof DesignPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/gospel-music-app': {
+      id: '/gospel-music-app'
+      path: '/gospel-music-app'
+      fullPath: '/gospel-music-app'
+      preLoaderRoute: typeof GospelMusicAppRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/opening': {
@@ -671,6 +817,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin-design-options': {
+      id: '/_authenticated/admin-design-options'
+      path: '/admin-design-options'
+      fullPath: '/admin-design-options'
+      preLoaderRoute: typeof AuthenticatedAdminDesignOptionsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/ai': {
@@ -855,6 +1008,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FaithCoursesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/creator/$videoId': {
+      id: '/_authenticated/creator/$videoId'
+      path: '/creator/$videoId'
+      fullPath: '/creator/$videoId'
+      preLoaderRoute: typeof AuthenticatedCreatorVideoIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/faith-courses/$slug': {
       id: '/_authenticated/faith-courses/$slug'
       path: '/faith-courses/$slug'
@@ -909,6 +1069,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedAdminDesignOptionsRoute: typeof AuthenticatedAdminDesignOptionsRoute
   AuthenticatedAiRoute: typeof AuthenticatedAiRoute
   AuthenticatedBibleRoute: typeof AuthenticatedBibleRoute
   AuthenticatedChurchRoute: typeof AuthenticatedChurchRoute
@@ -932,6 +1093,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReelsRoute: typeof AuthenticatedReelsRoute
   AuthenticatedServeRoute: typeof AuthenticatedServeRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedCreatorVideoIdRoute: typeof AuthenticatedCreatorVideoIdRoute
   AuthenticatedFaithCoursesSlugRoute: typeof AuthenticatedFaithCoursesSlugRoute
   AuthenticatedMentorsIdRoute: typeof AuthenticatedMentorsIdRoute
   AuthenticatedMentorsIndexRoute: typeof AuthenticatedMentorsIndexRoute
@@ -943,6 +1105,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedAdminDesignOptionsRoute: AuthenticatedAdminDesignOptionsRoute,
   AuthenticatedAiRoute: AuthenticatedAiRoute,
   AuthenticatedBibleRoute: AuthenticatedBibleRoute,
   AuthenticatedChurchRoute: AuthenticatedChurchRoute,
@@ -966,6 +1129,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedReelsRoute: AuthenticatedReelsRoute,
   AuthenticatedServeRoute: AuthenticatedServeRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedCreatorVideoIdRoute: AuthenticatedCreatorVideoIdRoute,
   AuthenticatedFaithCoursesSlugRoute: AuthenticatedFaithCoursesSlugRoute,
   AuthenticatedMentorsIdRoute: AuthenticatedMentorsIdRoute,
   AuthenticatedMentorsIndexRoute: AuthenticatedMentorsIndexRoute,
@@ -981,9 +1145,15 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AboutRoute: AboutRoute,
   AuthRoute: AuthRoute,
   AuthCallbackRoute: AuthCallbackRoute,
+  BibleAppForYoungPeopleRoute: BibleAppForYoungPeopleRoute,
+  ChristianAppRoute: ChristianAppRoute,
+  ChristianAppKenyaRoute: ChristianAppKenyaRoute,
+  ChristianCommunityAppRoute: ChristianCommunityAppRoute,
   DesignPreviewRoute: DesignPreviewRoute,
+  GospelMusicAppRoute: GospelMusicAppRoute,
   OpeningRoute: OpeningRoute,
   PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,

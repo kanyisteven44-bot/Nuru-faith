@@ -1,6 +1,9 @@
 import { createClient } from "npm:@supabase/supabase-js@2.117.2";
 
 const origins = new Set([
+  "https://nurufaith.co.ke",
+  "https://www.nurufaith.co.ke",
+  "https://nurufaith.website", // legacy installed PWA origin
   "https://nuru-faith-vortiqora.vercel.app",
   "https://nuru-faith-git-main-vortiqora.vercel.app",
 ]);
@@ -8,7 +11,7 @@ Deno.serve(async (request) => {
   const origin = request.headers.get("origin") || "";
   const headers = {
     "Content-Type": "application/json",
-    "Access-Control-Allow-Origin": origins.has(origin) ? origin : "https://nuru-faith-vortiqora.vercel.app",
+    ...(origins.has(origin) ? { "Access-Control-Allow-Origin": origin } : {}),
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Vary": "Origin",

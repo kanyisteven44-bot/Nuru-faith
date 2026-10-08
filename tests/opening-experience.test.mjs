@@ -44,7 +44,9 @@ test("installed app avoids a second opening and first paint never loads hidden p
   assert.match(splash, /navigator as Navigator/);
   assert.match(splash, /stage === "gone" \|\| stage === "pending"/);
   assert.match(splash, /src=\{index <= photoIndex \? src : undefined\}/);
-  assert.match(root, /pathname === "\/" && <SplashScreen initialOnly \/>/);
+  assert.match(root, /pathname === "\/" && \([\s\S]*?<Suspense fallback=\{null\}>[\s\S]*?<SplashScreen initialOnly \/>[\s\S]*?<\/Suspense>/);
+  assert.match(root, /const SplashScreen = lazy\(/);
+  assert.doesNotMatch(root, /import \{ SplashScreen \} from/);
   assert.match(index, /Preparing your home/);
   assert.match(index, /NuruGlyph/);
 });

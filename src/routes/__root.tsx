@@ -8,13 +8,16 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { OfflineNotice } from "@/components/nuru/OfflineNotice";
-import { SplashScreen } from "@/components/nuru/SplashScreen";
+// The opening is not needed on authenticated screens; load its code only on the landing page.
+const SplashScreen = lazy(() =>
+  import("@/components/nuru/SplashScreen").then((module) => ({ default: module.SplashScreen })),
+);
 import { supabase } from "@/integrations/supabase/client";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
 import { ThemeProvider } from "@/hooks/useTheme";
@@ -195,7 +198,11 @@ function RootComponent() {
         <Outlet />
         <Toaster position="top-center" />
         <OfflineNotice />
-        {pathname === "/" && <SplashScreen initialOnly />}
+        {pathname === "/" && (
+          <Suspense fallback={null}>
+            <SplashScreen initialOnly />
+          </Suspense>
+        )}
       </ThemeProvider>
     </QueryClientProvider>
   );

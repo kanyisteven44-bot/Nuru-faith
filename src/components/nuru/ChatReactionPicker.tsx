@@ -101,9 +101,16 @@ export function ChatReactionPicker({
       className="mb-3 overflow-hidden rounded-2xl border border-border bg-surface-2 shadow-lg"
     >
       <header className="flex items-center justify-between px-3 pt-2">
-        <h3 className="text-sm font-semibold">
-          {kind === "emoji" ? "Emojis" : "Nuru sticker packs"}
-        </h3>
+        <div>
+          <h3 className="text-sm font-semibold">
+            {kind === "emoji" ? "Emojis" : "Nuru sticker packs"}
+          </h3>
+          {kind === "sticker" && (
+            <p className="mt-0.5 text-[10px] text-muted-foreground">
+              {STICKERS.length.toLocaleString()} stickers · {STICKER_PACKS.length} packs
+            </p>
+          )}
+        </div>
         <button
           type="button"
           onClick={onClose}
@@ -121,7 +128,7 @@ export function ChatReactionPicker({
           placeholder={
             kind === "emoji"
               ? "Search emojis: love, laugh, pray…"
-              : "Search stickers: birthday, amen, hug…"
+              : "Search stickers: birthday, church, music, family…"
           }
           aria-label={kind === "emoji" ? "Search emojis" : "Search stickers"}
           className="min-h-10 min-w-0 flex-1 bg-transparent text-sm outline-none"

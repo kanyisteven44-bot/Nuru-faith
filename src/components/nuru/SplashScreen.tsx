@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { NuruGlyph } from "@/components/nuru/Logo";
 import { cn } from "@/lib/utils";
+import { ArrowRight } from "lucide-react";
 
 const SESSION_KEY = "nuru-opening-v5-shown";
 const HOLD_MS = 650;
@@ -194,7 +195,17 @@ export function SplashScreen({
           <p className="mt-2 font-sans text-[11px] font-semibold uppercase tracking-[0.48em] text-cyan-100/90 sm:text-sm">
             Faith
           </p>
+          <p className="mt-4 text-[11px] font-medium tracking-[0.18em] text-white/75">
+            FAITH · COMMUNITY · PURPOSE
+          </p>
         </div>
+        <button
+          type="button"
+          onClick={finish}
+          className="mt-7 inline-flex min-h-11 items-center gap-2 rounded-full border border-white/30 bg-white/15 px-6 text-sm font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200"
+        >
+          Continue <ArrowRight aria-hidden="true" className="h-4 w-4" />
+        </button>
       </div>
 
       <div className="nuru-opening-loader absolute inset-x-0 bottom-[max(1.5rem,env(safe-area-inset-bottom))] z-20 mx-auto w-[min(78vw,18rem)] text-center">

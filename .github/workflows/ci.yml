@@ -36,3 +36,32 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  browser-public:
+    if: github.event_name == 'pull_request' && github.head_ref == 'qa/public-browser-audit-20261008'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install Chromium and dependencies
+        run: |
+          npm ci
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Exercise live public Nuru in mobile and desktop browsers
+        env:
+          NURU_QA_BASE: https://nurufaith.co.ke
+          NURU_QA_EMAIL: ${{ secrets.NURU_QA_EMAIL }}
+          NURU_QA_PASSWORD: ${{ secrets.NURU_QA_PASSWORD }}
+        run: node scripts/audit-live-mobile.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nuru-browser-audit
+          path: browser-qa/
+          if-no-files-found: warn
+          retention-days: 1

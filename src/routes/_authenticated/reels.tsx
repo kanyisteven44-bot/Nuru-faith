@@ -38,7 +38,6 @@ import { AppShell } from "@/components/nuru/AppShell";
 import { CardSkeleton } from "@/components/nuru/Primitives";
 import { ReelFeedTabs } from "@/components/nuru/reels/ReelFeedTabs";
 import { ReelGrid } from "@/components/nuru/reels/ReelGrid";
-import { YouTubeReelSheet } from "@/components/nuru/reels/YouTubeReelSheet";
 import { ReelPane } from "@/components/nuru/reels/ReelPane";
 import { ReelComments } from "@/components/nuru/reels/ReelComments";
 import { ReelMoreMenu, ReelWhySheet } from "@/components/nuru/reels/ReelMoreMenu";
@@ -162,7 +161,6 @@ function ReelsScreen() {
   const [youtubeVisibleCount, setYoutubeVisibleCount] = useState(YOUTUBE_BATCH_SIZE);
   const [watchedExternalIds, setWatchedExternalIds] = useState<Set<string>>(new Set());
   const [hiddenIds, setHiddenIds] = useState<string[]>([]);
-  const [channelFor, setChannelFor] = useState<Reel | null>(null);
   const [commentsFor, setCommentsFor] = useState<Reel | null>(null);
   const [readFor, setReadFor] = useState<Reel | null>(null);
   const [reportFor, setReportFor] = useState<Reel | null>(null);
@@ -756,7 +754,7 @@ function ReelsScreen() {
                   saved={saveSet.includes(reel.id)}
                   isFollowing={!!reel.author_id && followingIds.includes(reel.author_id)}
                   isMine={!!userId && reel.author_id === userId}
-                  commentsOpen={commentsFor?.id === reel.id || !!channelFor}
+                  commentsOpen={commentsFor?.id === reel.id}
                   onActive={onActive}
                   onView={onView}
                   onEnded={() => advanceReel(reel)}
@@ -796,7 +794,11 @@ function ReelsScreen() {
                   onMore={() => setMoreFor(reel)}
                   onProfile={() => {
                     if (reel.source_type === "youtube" && reel.external_id) {
-                      setChannelFor(reel);
+                      void navigate({
+                        to: "/creator/$videoId",
+                        params: { videoId: reel.external_id },
+                        search: { from: "reels" },
+                      });
                     } else if (reel.author_id) {
                       void navigate({
                         to: "/discovery/$kind/$id",
@@ -872,13 +874,6 @@ function ReelsScreen() {
         )}
       </div>
 
-      {channelFor?.external_id && (
-        <YouTubeReelSheet
-          videoId={channelFor.external_id}
-          section="channel"
-          onClose={() => setChannelFor(null)}
-        />
-      )}
       {commentsFor && (
         <ReelComments
           reelId={commentsFor.id}

@@ -5,7 +5,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowRight, HandHeart, Sprout, Users } from "lucide-react";
 
 export const Route = createFileRoute("/welcome")({
-  ssr: false,
+  ssr: true,
   head: () => ({
     meta: [
       { title: "Welcome — Nuru Faith" },
@@ -13,8 +13,9 @@ export const Route = createFileRoute("/welcome")({
         name: "description",
         content: "A safe, Christ-centered community for young people. Connect, grow and serve.",
       },
-      { name: "robots", content: "noindex, follow" },
+      { name: "robots", content: "index, follow" },
     ],
+    links: [{ rel: "canonical", href: "https://nurufaith.website/welcome" }],
   }),
   component: Welcome,
 });
@@ -33,6 +34,8 @@ function Welcome() {
       <CoverImage
         src={resolveMedia("asset:quiet-night")}
         alt=""
+        loading="eager"
+        fetchPriority="high"
         width={1024}
         height={640}
         className="absolute inset-x-0 bottom-0 h-[55%] w-full object-cover opacity-100"

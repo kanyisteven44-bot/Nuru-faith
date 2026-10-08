@@ -67,9 +67,17 @@ export function SplashScreen({
   }, []);
 
   useEffect(() => {
+    // Android and iOS already display the Nuru icon while starting an
+    // installed PWA. Playing a second opening after that looks like a hang.
+    // Keep the full animated opening available at /opening for previews.
+    const installed =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      window.matchMedia("(display-mode: fullscreen)").matches ||
+      (navigator as Navigator & { standalone?: boolean }).standalone === true;
     if (
       !preview &&
-      (window.location.pathname === "/opening" ||
+      (installed ||
+        window.location.pathname === "/opening" ||
         (initialOnly && window.location.pathname !== "/") ||
         alreadyShown())
     ) {
@@ -144,7 +152,10 @@ export function SplashScreen({
     };
   }, [preview, stage, finish]);
 
-  if (stage === "gone") return null;
+  // Do not render the three photo <img> nodes during SSR or while deciding
+  // whether an opening is needed. They otherwise compete with application JS
+  // on cold mobile starts even when the overlay is invisible.
+  if (stage === "gone" || stage === "pending") return null;
 
   return (
     <div
@@ -152,7 +163,6 @@ export function SplashScreen({
       data-testid="nuru-splash"
       className={cn(
         "nuru-opening fixed inset-0 z-[999] overflow-hidden text-white",
-        stage === "pending" && "invisible",
         stage === "exiting" && "nuru-open-exit pointer-events-none",
       )}
     >
@@ -160,7 +170,7 @@ export function SplashScreen({
         {OPENING_PHOTOS.map((src, index) => (
           <img
             key={src}
-            src={src}
+            src={index <= photoIndex ? src : undefined}
             alt=""
             decoding="async"
             fetchPriority={index === 0 ? "high" : "auto"}

@@ -8,8 +8,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { NuruMark } from "@/components/nuru/Logo";
 import { newPasswordError } from "@/lib/accountSecurity";
 import { authAvailability } from "@/lib/authAvailability.functions";
-import { isInstalledApp, loginCallbackOrigin } from "@/lib/pwaMode";
+import { isInstalledApp, isLegacyNuruHost, loginCallbackOrigin } from "@/lib/pwaMode";
 import { takeAfterLogin } from "@/lib/afterLogin";
+import { GoogleEmbeddedSignIn } from "@/components/nuru/GoogleEmbeddedSignIn";
 
 const searchSchema = z.object({
   mode: z.enum(["login", "signup", "forgot", "mfa", "mfa-setup"]).optional().default("login"),
@@ -61,12 +62,22 @@ function AuthPage() {
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [useEmbeddedGoogle, setUseEmbeddedGoogle] = useState(false);
   const [sent, setSent] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [providers, setProviders] = useState<{
     google: boolean | null;
     phone: boolean | null;
   } | null>(null);
+
+  useEffect(() => {
+    // A Google OAuth redirect can strand an installed Android PWA inside a
+    // Chrome Custom Tab with a URL/X, even after successful authentication.
+    // Keep credential sign-in in the PWA itself on the official domain.
+    setUseEmbeddedGoogle(isInstalledApp() && (
+      window.location.hostname === "nurufaith.co.ke" || isLegacyNuruHost(window.location.hostname)
+    ));
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -361,14 +372,34 @@ function AuthPage() {
           </form>
         ) : (
           <>
-            <button
-              type="button"
-              disabled={busy || !providers || providers.google === false}
-              onClick={() => void google()}
-              className="mt-6 flex min-h-12 w-full items-center justify-center gap-3 rounded-xl bg-white text-sm font-semibold text-slate-900 transition-opacity hover:opacity-95 disabled:opacity-60"
-            >
-              <GoogleGlyph /> Continue with Google
-            </button>
+            {useEmbeddedGoogle && providers?.google !== false ? (
+              <>
+                <GoogleEmbeddedSignIn
+                  onSuccess={() => void continueAfterSignIn("/home")}
+                  onError={(message) => {
+                    setAuthError(message);
+                    toast.error(message);
+                  }}
+                />
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void google()}
+                  className="mt-2 block w-full min-h-11 text-center text-xs text-muted-foreground underline-offset-4 hover:underline"
+                >
+                  Use browser sign-in instead
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                disabled={busy || !providers || providers.google === false}
+                onClick={() => void google()}
+                className="mt-6 flex min-h-12 w-full items-center justify-center gap-3 rounded-xl bg-white text-sm font-semibold text-slate-900 transition-opacity hover:opacity-95 disabled:opacity-60"
+              >
+                <GoogleGlyph /> Continue with Google
+              </button>
+            )}
             {providers?.google === false && (
               <p role="status" className="mt-2 text-center text-xs text-muted-foreground">
                 Google sign-in is not enabled yet. Use email and password to continue.

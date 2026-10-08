@@ -5,9 +5,11 @@ import { saveOfflineReading, type OfflineReading } from "@/lib/offlineReading";
 export function SaveOffline({
   prepare,
   label = "Save for offline",
+  showReaderLink = true,
 }: {
   prepare: (report: (message: string) => void) => Promise<Omit<OfflineReading, "savedAt">>;
   label?: string;
+  showReaderLink?: boolean;
 }) {
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -50,9 +52,11 @@ export function SaveOffline({
         {saved ? <Check className="h-4 w-4" /> : <Download className="h-4 w-4" />}
         {busy ? detail : saved ? "Saved offline" : label}
       </button>
-      <a href="/offline.html" className="inline-flex min-h-11 items-center text-primary underline">
-        Offline reading room
-      </a>
+      {showReaderLink && (
+        <a href="/offline.html" className="inline-flex min-h-11 items-center text-primary underline">
+          Offline reading room
+        </a>
+      )}
     </div>
   );
 }

@@ -4,22 +4,14 @@ import { readFileSync } from "node:fs";
 
 const config = JSON.parse(readFileSync(new URL("../vercel.json", import.meta.url), "utf8"));
 
-test("old Nuru hosts redirect their paths to the verified .co.ke app", () => {
+test("legacy installed PWAs retain same-origin resources and routes", () => {
+  // Do not redirect the entire old host at the CDN: an installed
+  // nurufaith.website PWA depends on its own manifest, service worker,
+  // cache and auth storage. Cross-origin 307 redirects broke those installs.
   const redirects = config.redirects ?? [];
-  for (const legacyHost of ["nurufaith.website", "www.nurufaith.website"]) {
-    const matching = redirects.filter((redirect) =>
-      redirect.has?.some((condition) =>
-        condition.type === "host" && condition.value === legacyHost
-      )
-    );
-    assert.equal(matching.length, 1, `expected exactly one redirect for ${legacyHost}`);
-    assert.equal(matching[0].source, "/:path*");
-    assert.equal(matching[0].destination, "https://nurufaith.co.ke/:path*");
-    assert.equal(matching[0].statusCode, 307);
+  for (const host of ["nurufaith.website", "www.nurufaith.website"]) {
+    assert.ok(!redirects.some((redirect) =>
+      redirect.has?.some((rule) => rule.type === "host" && rule.value === host)
+    ), `Unexpected blanket redirect for installed PWA origin: ${host}`);
   }
-  assert.ok(!redirects.some((redirect) =>
-    redirect.has?.some((condition) =>
-      condition.type === "host" && condition.value === "nurufaith.co.ke"
-    )
-  ), "canonical host must never redirect back into itself");
 });

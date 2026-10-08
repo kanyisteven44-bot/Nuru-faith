@@ -1,6 +1,7 @@
 import { WELCOME_IMAGE_SRCSET, WELCOME_IMAGE_SIZES } from "@/lib/welcomeImage";
 import { CoverImage } from "@/components/nuru/CoverImage";
 import { NuruMark } from "@/components/nuru/Logo";
+import { PwaInstallGuide } from "@/components/nuru/PwaInstallGuide";
 import { resolveMedia } from "@/lib/media";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowRight, HandHeart, Sprout, Users } from "lucide-react";
@@ -102,6 +103,7 @@ function Welcome() {
           >
             Already part of Nuru? <span className="text-primary">Sign in</span>
           </Link>
+          <PwaInstallGuide />
         </div>
       </div>
     </div>

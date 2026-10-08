@@ -36,3 +36,15 @@ test("opening only shows once per browser tab unless explicitly previewed", () =
   assert.match(splash, /sessionStorage\.setItem\(SESSION_KEY, "1"\)/);
   assert.match(splash, /preview/);
 });
+
+test("installed app avoids a second opening and first paint never loads hidden photo assets", () => {
+  const root = readFileSync("src/routes/__root.tsx", "utf8");
+  const index = readFileSync("src/routes/index.tsx", "utf8");
+  assert.match(splash, /display-mode: standalone/);
+  assert.match(splash, /navigator as Navigator/);
+  assert.match(splash, /stage === "gone" \|\| stage === "pending"/);
+  assert.match(splash, /src=\{index <= photoIndex \? src : undefined\}/);
+  assert.match(root, /pathname === "\/" && <SplashScreen initialOnly \/>/);
+  assert.match(index, /Preparing your home/);
+  assert.match(index, /NuruGlyph/);
+});

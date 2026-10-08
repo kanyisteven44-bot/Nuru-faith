@@ -383,35 +383,30 @@ function AuthPage() {
               <span className="h-px flex-1 bg-border" />
             </div>
 
-            <div className="flex gap-1 rounded-xl border border-border bg-surface-2/70 p-1">
-              {(
-                [
-                  { value: "email", label: "Email", icon: Mail },
-                  { value: "phone", label: "Phone", icon: Phone },
-                ] as const
-              ).map((m) => (
-                <button
-                  key={m.value}
-                  type="button"
-                  disabled={
-                    busy || (m.value === "phone" && (!providers || providers.phone === false))
-                  }
-                  onClick={() => setMethod(m.value)}
-                  className={cn(
-                    "flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-[13px] font-semibold transition-colors",
-                    method === m.value
-                      ? "bg-surface text-foreground"
-                      : "text-muted-foreground hover:text-secondary-foreground",
-                  )}
-                >
-                  <m.icon className="h-4 w-4 text-leaf" /> {m.label}
-                </button>
-              ))}
-            </div>
-            {providers?.phone === false && (
-              <p className="mt-2 text-center text-xs text-muted-foreground">
-                SMS sign-in is not enabled yet.
-              </p>
+            {providers?.phone === true && (
+              <div className="flex gap-1 rounded-xl border border-border bg-surface-2/70 p-1">
+                {(
+                  [
+                    { value: "email", label: "Email", icon: Mail },
+                    { value: "phone", label: "Phone", icon: Phone },
+                  ] as const
+                ).map((m) => (
+                  <button
+                    key={m.value}
+                    type="button"
+                    disabled={busy}
+                    onClick={() => setMethod(m.value)}
+                    className={cn(
+                      "flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-[13px] font-semibold transition-colors",
+                      method === m.value
+                        ? "bg-surface text-foreground"
+                        : "text-muted-foreground hover:text-secondary-foreground",
+                    )}
+                  >
+                    <m.icon className="h-4 w-4 text-leaf" /> {m.label}
+                  </button>
+                ))}
+              </div>
             )}
             {authError && (
               <p

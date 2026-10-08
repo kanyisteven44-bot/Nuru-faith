@@ -29,6 +29,13 @@ import { resolveMedia } from "@/lib/media";
 import { cn } from "@/lib/utils";
 import { z } from "zod";
 import { toast } from "sonner";
+import { MoreVertical, Palette } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 
 const searchSchema = z.object({
   user: z.string().uuid().optional(),
@@ -53,6 +60,7 @@ function MessagesScreen() {
   const [tab, setTab] = useState<InboxTab>("All");
   const [groupCallRoom, setGroupCallRoom] = useState<GroupCallRoom | null>(null);
   const [startingGroupCall, setStartingGroupCall] = useState(false);
+  const [themePickerOpen, setThemePickerOpen] = useState(false);
   const { activeCall, startCall: beginCall } = useCallManager();
 
   const mentors = useQuery({ queryKey: ["mentors"], queryFn: fetchMentors });
@@ -162,115 +170,140 @@ function MessagesScreen() {
     return (
       <>
         <AppShell flush hideNav>
-        <div className="mx-auto flex h-full w-full max-w-3xl flex-col overflow-hidden bg-background lg:rounded-3xl lg:border lg:border-border">
-          <header className="flex shrink-0 items-center gap-3 border-b border-border bg-card px-3 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
-            <Link
-              to="/messages"
-              search={{}}
-              aria-label="Back to all messages"
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full hover:bg-surface-2"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
-            {search.user && directProfile ? (
+          <div className="mx-auto flex h-full w-full max-w-3xl flex-col overflow-hidden bg-background lg:rounded-3xl lg:border lg:border-border">
+            <header className="flex shrink-0 items-center gap-3 border-b border-border bg-card px-3 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
               <Link
-                to="/discovery/$kind/$id"
-                params={{ kind: "profile", id: search.user }}
-                className="flex min-w-0 flex-1 items-center gap-3"
-                aria-label={`View ${title}'s profile`}
+                to="/messages"
+                search={{}}
+                aria-label="Back to all messages"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full hover:bg-surface-2"
               >
-                <Avatar url={directProfile.avatar_url} name={title} seed={search.user} size="md" />
-                <span className="min-w-0">
-                  <span className="block truncate text-sm font-bold">{title}</span>
-                  <span className="block truncate text-xs text-muted-foreground">
-                    {directProfile.username ? `@${directProfile.username}` : "View profile"}
-                  </span>
-                </span>
+                <ArrowLeft className="h-5 w-5" />
               </Link>
-            ) : (
-              <h1 className="min-w-0 flex-1 truncate text-base font-bold">{title}</h1>
-            )}
-            {search.user && directProfile && (
-              <div className="flex shrink-0 gap-1">
-                <button
-                  type="button"
-                  onClick={() => startCall("audio")}
-                  aria-label="Start audio call"
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary transition hover:bg-primary/15"
+              {search.user && directProfile ? (
+                <Link
+                  to="/discovery/$kind/$id"
+                  params={{ kind: "profile", id: search.user }}
+                  className="flex min-w-0 flex-1 items-center gap-3"
+                  aria-label={`View ${title}'s profile`}
                 >
-                  <Phone className="h-5 w-5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => startCall("video")}
-                  aria-label="Start video call"
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary transition hover:bg-primary/15"
-                >
-                  <Video className="h-5 w-5" />
-                </button>
-              </div>
-            )}
-            {group &&
-              (activeGroupCall.data ? (
-                <button
-                  type="button"
-                  onClick={() => void openGroupCall(activeGroupCall.data!.kind)}
-                  disabled={startingGroupCall}
-                  aria-label={`Join active group ${activeGroupCall.data.kind} call`}
-                  className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground disabled:opacity-50"
-                >
-                  {activeGroupCall.data.kind === "video" ? (
-                    <Video className="h-5 w-5" />
-                  ) : (
-                    <Phone className="h-5 w-5" />
-                  )}
-                  <span className="absolute right-0 top-0 h-2.5 w-2.5 rounded-full bg-emerald-400 ring-2 ring-card" />
-                </button>
+                  <Avatar
+                    url={directProfile.avatar_url}
+                    name={title}
+                    seed={search.user}
+                    size="md"
+                  />
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-bold">{title}</span>
+                    <span className="block truncate text-xs text-muted-foreground">
+                      {directProfile.username ? `@${directProfile.username}` : "View profile"}
+                    </span>
+                  </span>
+                </Link>
               ) : (
+                <h1 className="min-w-0 flex-1 truncate text-base font-bold">{title}</h1>
+              )}
+              {search.user && directProfile && (
                 <div className="flex shrink-0 gap-1">
                   <button
                     type="button"
-                    onClick={() => void openGroupCall("audio")}
-                    disabled={startingGroupCall}
-                    aria-label="Start group audio call"
-                    className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary transition hover:bg-primary/15 disabled:opacity-50"
+                    onClick={() => startCall("audio")}
+                    aria-label="Start audio call"
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary transition hover:bg-primary/15"
                   >
                     <Phone className="h-5 w-5" />
                   </button>
                   <button
                     type="button"
-                    onClick={() => void openGroupCall("video")}
-                    disabled={startingGroupCall}
-                    aria-label="Start group video call"
-                    className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground transition hover:brightness-105 disabled:opacity-50"
+                    onClick={() => startCall("video")}
+                    aria-label="Start video call"
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary transition hover:bg-primary/15"
                   >
                     <Video className="h-5 w-5" />
                   </button>
                 </div>
-              ))}
-          </header>
-          <div className="flex min-h-0 flex-1 flex-col">
-            <ThreadView
-              target={target}
-              userId={userId}
-              groupCover={group?.cover_url ?? null}
-              groupName={group?.name}
-              loading={loading || profiles.isLoading}
-              failed={failed || profiles.isError}
-            />
+              )}
+              {group &&
+                (activeGroupCall.data ? (
+                  <button
+                    type="button"
+                    onClick={() => void openGroupCall(activeGroupCall.data!.kind)}
+                    disabled={startingGroupCall}
+                    aria-label={`Join active group ${activeGroupCall.data.kind} call`}
+                    className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground disabled:opacity-50"
+                  >
+                    {activeGroupCall.data.kind === "video" ? (
+                      <Video className="h-5 w-5" />
+                    ) : (
+                      <Phone className="h-5 w-5" />
+                    )}
+                    <span className="absolute right-0 top-0 h-2.5 w-2.5 rounded-full bg-emerald-400 ring-2 ring-card" />
+                  </button>
+                ) : (
+                  <div className="flex shrink-0 gap-1">
+                    <button
+                      type="button"
+                      onClick={() => void openGroupCall("audio")}
+                      disabled={startingGroupCall}
+                      aria-label="Start group audio call"
+                      className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary transition hover:bg-primary/15 disabled:opacity-50"
+                    >
+                      <Phone className="h-5 w-5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void openGroupCall("video")}
+                      disabled={startingGroupCall}
+                      aria-label="Start group video call"
+                      className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground transition hover:brightness-105 disabled:opacity-50"
+                    >
+                      <Video className="h-5 w-5" />
+                    </button>
+                  </div>
+                ))}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label="Chat settings"
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-primary hover:bg-primary/10"
+                  >
+                    <MoreVertical className="h-5 w-5" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onSelect={() => window.setTimeout(() => setThemePickerOpen(true), 0)}
+                  >
+                    <Palette className="mr-2 h-4 w-4" /> Chat background
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </header>
+            <div className="flex min-h-0 flex-1 flex-col">
+              <ThreadView
+                target={target}
+                userId={userId}
+                groupCover={group?.cover_url ?? null}
+                groupName={group?.name}
+                loading={loading || profiles.isLoading}
+                failed={failed || profiles.isError}
+                themePickerOpen={themePickerOpen}
+                onThemePickerOpenChange={setThemePickerOpen}
+              />
+            </div>
           </div>
-        </div>
         </AppShell>
         {groupCallRoom && userId && group && (
-        <GroupCallPanel
-          room={groupCallRoom}
-          groupName={group.name}
-          userId={userId}
-          onClose={() => {
-            setGroupCallRoom(null);
-            void activeGroupCall.refetch();
-          }}
-        />
+          <GroupCallPanel
+            room={groupCallRoom}
+            groupName={group.name}
+            userId={userId}
+            onClose={() => {
+              setGroupCallRoom(null);
+              void activeGroupCall.refetch();
+            }}
+          />
         )}
       </>
     );
@@ -390,6 +423,8 @@ function ThreadView({
   groupName,
   loading,
   failed,
+  themePickerOpen,
+  onThemePickerOpenChange,
 }: {
   target: ChatTarget | undefined;
   userId: string | null;
@@ -397,6 +432,8 @@ function ThreadView({
   groupName: string | undefined;
   loading: boolean;
   failed: boolean;
+  themePickerOpen?: boolean | undefined;
+  onThemePickerOpenChange?: ((open: boolean) => void) | undefined;
 }) {
   const groupId = target && "group" in target ? target.group : null;
   const [groupCallRoom, setGroupCallRoom] = useState<GroupCallRoom | null>(null);
@@ -454,11 +491,16 @@ function ThreadView({
                 <span className="block text-xs text-white/75">Open group activity</span>
               </span>
             </Link>
-
           </>
         )}
 
-        <RichChatThread target={target} userId={userId} fillHeight />
+        <RichChatThread
+          target={target}
+          userId={userId}
+          fillHeight
+          themePickerOpen={themePickerOpen}
+          onThemePickerOpenChange={onThemePickerOpenChange}
+        />
       </div>
       {groupCallRoom && groupId && (
         <GroupCallPanel

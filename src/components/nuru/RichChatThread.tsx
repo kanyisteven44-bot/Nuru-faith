@@ -43,17 +43,22 @@ import { toast } from "sonner";
 import { FileText } from "lucide-react";
 import { CHAT_DOCUMENT_ACCEPT, chatAttachmentInfo } from "@/lib/chatAttachments";
 import { ChatAttachmentDownload } from "./ChatAttachmentDownload";
+import { ChatPhotoViewer } from "./ChatPhotoViewer";
 
 export function RichChatThread({
   target,
   userId,
   maxHeight = "58dvh",
   fillHeight = false,
+  themePickerOpen,
+  onThemePickerOpenChange,
 }: {
   target: ChatTarget;
   userId: string;
   maxHeight?: string;
   fillHeight?: boolean;
+  themePickerOpen?: boolean | undefined;
+  onThemePickerOpenChange?: ((open: boolean) => void) | undefined;
 }) {
   const qc = useQueryClient();
   const threadIdentity =
@@ -535,11 +540,14 @@ export function RichChatThread({
         fillHeight ? "flex min-h-0 flex-1 flex-col" : "rounded-2xl border border-border",
       )}
     >
-      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border bg-card px-3">
+      <div className="flex shrink-0 items-center justify-center gap-2 border-b border-border bg-card px-3 py-2">
         <p className="text-[10px] text-muted-foreground">
           Only conversation participants can read these messages.
         </p>
         <ChatThemePicker
+          open={themePickerOpen}
+          onOpenChange={onThemePickerOpenChange}
+          hideTrigger={!!onThemePickerOpenChange}
           value={theme.id}
           onChange={(id) => {
             setThemeChoice({ key: themeKey, id });
@@ -1027,7 +1035,6 @@ function VoiceNote({
   return (
     <VoiceMessagePlayer
       src={audio.data}
-      path={path}
       durationMs={durationMs}
       mine={mine}
       onRetry={() => {
@@ -1101,14 +1108,7 @@ function ChatFile({
   return (
     <div>
       {kind === "image" ? (
-        <a href={media.data} target="_blank" rel="noopener noreferrer">
-          <img
-            src={media.data}
-            alt="Shared photo"
-            loading="lazy"
-            className="max-h-80 w-full rounded-xl object-contain"
-          />
-        </a>
+        <ChatPhotoViewer src={media.data} path={path} filename={filename} />
       ) : (
         <video
           src={media.data}
@@ -1118,7 +1118,7 @@ function ChatFile({
           className="max-h-80 w-full rounded-xl"
         />
       )}
-      <ChatAttachmentDownload path={path} filename={filename} />
+      {kind !== "image" && <ChatAttachmentDownload path={path} filename={filename} />}
     </div>
   );
 }

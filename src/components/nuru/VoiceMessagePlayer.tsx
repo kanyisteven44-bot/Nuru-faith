@@ -1,17 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { Pause, Play, Mic, Loader2 } from "lucide-react";
 import { voiceSeconds, voiceTime } from "@/lib/voicePlayback";
-import { ChatAttachmentDownload } from "./ChatAttachmentDownload";
 
 export function VoiceMessagePlayer({
   src,
-  path,
   durationMs,
   mine,
   onRetry,
 }: {
   src: string;
-  path?: string;
   durationMs?: number | null;
   mine: boolean;
   onRetry?: () => void;
@@ -136,7 +133,6 @@ export function VoiceMessagePlayer({
         >
           {speed}×
         </button>
-        {path && <ChatAttachmentDownload path={path} />}
       </div>
       {error && (
         <p role="alert" className="mt-2 text-xs">

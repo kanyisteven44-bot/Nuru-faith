@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Check, Palette, Search } from "lucide-react";
 import { CHAT_THEMES, findChatTheme, type ChatTheme } from "@/lib/chatThemes";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -6,14 +6,25 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/compone
 export function ChatThemePicker({
   value,
   onChange,
+  open: controlledOpen,
+  onOpenChange,
+  hideTrigger = false,
 }: {
   value: string;
   onChange: (id: string) => void;
+  open?: boolean | undefined;
+  onOpenChange?: ((open: boolean) => void) | undefined;
+  hideTrigger?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [localOpen, setLocalOpen] = useState(false);
+  const open = controlledOpen ?? localOpen;
+  const setOpen = onOpenChange ?? setLocalOpen;
   const [draft, setDraft] = useState(value);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("All");
+  useEffect(() => {
+    if (open) setDraft(value);
+  }, [open, value]);
   const preview = findChatTheme(draft);
   const style = (theme: ChatTheme) => ({
     background: theme.background,
@@ -27,17 +38,19 @@ export function ChatThemePicker({
   );
   return (
     <>
-      <button
-        type="button"
-        onClick={() => {
-          setDraft(value);
-          setOpen(true);
-        }}
-        aria-label="Choose chat background"
-        className="flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-semibold text-primary hover:bg-primary/10"
-      >
-        <Palette className="h-4 w-4" /> Theme
-      </button>
+      {!hideTrigger && (
+        <button
+          type="button"
+          onClick={() => {
+            setDraft(value);
+            setOpen(true);
+          }}
+          aria-label="Choose chat background"
+          className="flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-semibold text-primary hover:bg-primary/10"
+        >
+          <Palette className="h-4 w-4" /> Theme
+        </button>
+      )}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="flex max-h-[90dvh] max-w-xl flex-col gap-3 overflow-hidden rounded-3xl p-5">
           <DialogTitle>Chat backgrounds</DialogTitle>

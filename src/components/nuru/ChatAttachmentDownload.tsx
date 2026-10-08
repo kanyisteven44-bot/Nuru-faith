@@ -3,7 +3,15 @@ import { Download, Loader2 } from "lucide-react";
 import { downloadChatMedia } from "@/services/messaging";
 import { chatDownloadName } from "@/lib/chatAttachments";
 
-export function ChatAttachmentDownload({ path, filename }: { path: string; filename?: string }) {
+export function ChatAttachmentDownload({
+  path,
+  filename,
+  label = "Download",
+}: {
+  path: string;
+  filename?: string;
+  label?: string;
+}) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   async function download() {
@@ -32,11 +40,11 @@ export function ChatAttachmentDownload({ path, filename }: { path: string; filen
         type="button"
         disabled={busy}
         onClick={() => void download()}
-        aria-label={`Download ${filename || "attachment"}`}
+        aria-label={`${label} ${filename || "attachment"}`}
         className="flex min-h-11 items-center gap-2 rounded-full bg-black/10 px-3 text-xs font-semibold disabled:opacity-60"
       >
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-        {busy ? "Downloading…" : "Download"}
+        {busy ? "Saving…" : label}
       </button>
       {error && (
         <p role="alert" className="mt-1 max-w-64 text-xs">

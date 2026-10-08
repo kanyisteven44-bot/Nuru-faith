@@ -15,6 +15,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { OfflineNotice } from "@/components/nuru/OfflineNotice";
 import { LegacyDomainNotice } from "@/components/nuru/LegacyDomainNotice";
+import { canonicalBrowserDestination, isInstalledApp, isLegacyNuruHost } from "@/lib/pwaMode";
 // The opening is not needed on authenticated screens; load its code only on the landing page.
 const SplashScreen = lazy(() =>
   import("@/components/nuru/SplashScreen").then((module) => ({ default: module.SplashScreen })),
@@ -174,7 +175,18 @@ function RootComponent() {
   const router = useRouter();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
 
+  // The official public experience lives only at .co.ke. Redirect old-domain
+  // browser visits while leaving already-installed legacy PWAs on their origin.
+  // Sensitive OAuth/password-reset callbacks must never switch origins.
   useEffect(() => {
+    const destination = canonicalBrowserDestination(window.location.href, isInstalledApp());
+    if (destination) window.location.replace(destination);
+  }, [pathname]);
+
+  useEffect(() => {
+    // Browser visitors who are about to move to .co.ke do not need to install
+    // the deprecated origin's service worker. Existing standalone apps still do.
+    if (isLegacyNuruHost(window.location.hostname) && !isInstalledApp()) return;
     if (!("serviceWorker" in navigator)) return;
     const register = () => {
       void navigator.serviceWorker.register("/sw.js").catch((error) => {

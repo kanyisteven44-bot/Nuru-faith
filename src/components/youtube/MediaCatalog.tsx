@@ -29,6 +29,7 @@ import { duration } from "@/lib/format";
 import { InAppMediaPlayer as YouTubePlayer } from "./InAppMediaPlayer";
 import { useAuth } from "@/hooks/useAuth";
 import { useShareSheet } from "@/hooks/useShareSheet";
+import { canonicalShareUrl } from "@/lib/publicLinks";
 import { toast } from "sonner";
 import { YouTubeSongActions } from "./YouTubeSongActions";
 import { nextMusicRefresh, rotateMusicPage } from "@/lib/musicDiscoveryOrder";
@@ -470,7 +471,7 @@ export function MediaPlayback({
     const url = video
       ? `https://www.youtube.com/watch?v=${video}`
       : typeof window !== "undefined"
-        ? window.location.href
+        ? canonicalShareUrl(window.location.href)
         : "";
     void shareSheet.share({
       title: item.title,

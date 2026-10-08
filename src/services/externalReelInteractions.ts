@@ -6,6 +6,8 @@ export type ExternalReelComment = {
   user_id: string;
   content: string;
   created_at: string;
+  author_name?: string | null;
+  avatar_url?: string | null;
 };
 
 export async function fetchExternalReelState(userId: string, externalReelId: string) {
@@ -103,7 +105,19 @@ export async function fetchExternalReelComments(externalReelId: string) {
     .eq("external_reel_id", externalReelId)
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
-  return (data ?? []) as ExternalReelComment[];
+  const rows = (data ?? []) as ExternalReelComment[];
+  const ids = [...new Set(rows.map((row) => row.user_id))];
+  if (!ids.length) return rows;
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id,full_name,username,avatar_url")
+    .in("id", ids);
+  const authors = new Map((profiles ?? []).map((profile) => [profile.id, profile]));
+  return rows.map((row) => ({
+    ...row,
+    author_name: authors.get(row.user_id)?.full_name || authors.get(row.user_id)?.username || null,
+    avatar_url: authors.get(row.user_id)?.avatar_url ?? null,
+  }));
 }
 
 export async function addExternalReelComment(

@@ -109,7 +109,7 @@ export function ReelActions({
         icon={<Heart className={cn("h-6 w-6", liked && "fill-destructive text-destructive")} />}
       />
       <RailButton
-        aria={`Open ${commentCount} comments`}
+        aria={youtubeStats ? "Open comments" : `Open ${commentCount} comments`}
         onClick={onComments}
         label={
           youtubeStats

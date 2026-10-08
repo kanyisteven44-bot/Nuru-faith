@@ -28,6 +28,7 @@ import {
 } from "@/services/reels";
 import { addPrayerJournalEntry } from "@/services/ai";
 import { youtubeReelsInfiniteQuery } from "@/services/youtubeService";
+import { isPresentableReel, diversifyReels } from "@/lib/reelPresentation";
 import { reelContentKey, unseenReelQueue, nextReelId } from "@/lib/reelQueue";
 import {
   currentLocalDay,
@@ -160,6 +161,7 @@ function ReelsScreen() {
   const [view, setView] = useState<"grid" | "feed">(linkedTargetId ? "feed" : "grid");
   const [youtubeVisibleCount, setYoutubeVisibleCount] = useState(YOUTUBE_BATCH_SIZE);
   const [watchedExternalIds, setWatchedExternalIds] = useState<Set<string>>(new Set());
+  const [watchOwner, setWatchOwner] = useState<string | null | undefined>(undefined);
   const [hiddenIds, setHiddenIds] = useState<string[]>([]);
   const [commentsFor, setCommentsFor] = useState<Reel | null>(null);
   const [readFor, setReadFor] = useState<Reel | null>(null);
@@ -177,7 +179,10 @@ function ReelsScreen() {
 
   useEffect(() => {
     let day = currentLocalDay();
-    const refresh = () => setWatchedExternalIds(readWatchedExternalReelIds(userId));
+    const refresh = () => {
+      setWatchedExternalIds(readWatchedExternalReelIds(userId));
+      setWatchOwner(userId);
+    };
     const rollover = window.setInterval(() => {
       if (currentLocalDay() !== day) {
         day = currentLocalDay();
@@ -261,7 +266,7 @@ function ReelsScreen() {
     [youtubeFallback.data],
   );
   const loadedYoutubeIds = useMemo(
-    () => [...new Set(loadedYoutubeVideos.map((video) => video.youtubeVideoId))].slice(-240),
+    () => [...new Set(loadedYoutubeVideos.map((video) => video.youtubeVideoId))],
     [loadedYoutubeVideos],
   );
   const persistedExternalViews = useQuery({
@@ -354,7 +359,12 @@ function ReelsScreen() {
         out.push(r);
       }
     }
-    return unseenReelQueue(out, watchedExternalIds, retainedId);
+    const unseen = unseenReelQueue(
+      out.filter(isPresentableReel),
+      watchedExternalIds,
+      view === "feed" ? retainedId : null,
+    );
+    return view === "grid" && feed === "For You" ? diversifyReels(unseen) : unseen;
   }, [
     reels.data,
     feedback.data,
@@ -365,6 +375,7 @@ function ReelsScreen() {
     youtubeReels,
     watchedExternalIds,
     retainedId,
+    view,
   ]);
 
   /* auto-load the next DB/YouTube page only as the viewer approaches the end */
@@ -464,7 +475,8 @@ function ReelsScreen() {
       setWatchedExternalIds((previous) => new Set([...previous, key]));
       if (!alreadyWatched && userId && /^[0-9a-f-]{36}$/i.test(reel.id)) {
         void recordReelView(userId, reel.id, 2, false).catch(() => undefined);
-      } else if (!alreadyWatched && userId && reel.source_type === "youtube" && reel.external_id) {
+      }
+      if (!alreadyWatched && userId && reel.source_type === "youtube" && reel.external_id) {
         void recordExternalReelView(userId, {
           externalId: reel.external_id,
           title: reel.title ?? reel.caption ?? "YouTube Reel",
@@ -625,6 +637,7 @@ function ReelsScreen() {
 
     if (reel.external_id) {
       rememberWatchedExternalReel(userId, reel.external_id);
+      setWatchedExternalIds((current) => new Set([...current, reel.external_id!]));
       return;
     }
     if (userId) void addReelFeedback(userId, reel.id).catch(() => undefined);
@@ -652,6 +665,7 @@ function ReelsScreen() {
   const saveSet = saves.data ?? [];
   const initialLoading =
     authLoading ||
+    watchOwner !== userId ||
     reels.isLoading ||
     linkedReel.isLoading ||
     (feed === "For You" && items.length === 0 && youtubeFallback.isLoading);
@@ -667,7 +681,10 @@ function ReelsScreen() {
               {view === "feed" && (
                 <button
                   type="button"
-                  onClick={() => setView("grid")}
+                  onClick={() => {
+                    setRetainedId(null);
+                    setView("grid");
+                  }}
                   aria-label="Back to Reels grid"
                   className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/80 bg-[#F3F6FB] shadow-[5px_5px_12px_rgba(171,181,197,0.28),-5px_-5px_12px_rgba(255,255,255,0.95)]"
                 >
@@ -706,8 +723,12 @@ function ReelsScreen() {
           />
         )}
 
-        {items.length > 0 && view === "grid" && (
+        {!initialLoading && items.length > 0 && view === "grid" && (
           <div ref={scrollerRef} className="no-scrollbar h-full overflow-y-auto pt-28">
+            <div className="mx-auto flex max-w-6xl items-center justify-between px-4 pb-2 pt-3">
+              <h2 className="text-sm font-semibold text-[#182033]">Discover reels</h2>
+              <span className="text-[11px] text-[#7A8597]">Fresh for you</span>
+            </div>
             <ReelGrid items={items} onOpen={openReel} />
             <div ref={sentinelRef} aria-hidden="true" className="h-1" />
             {reels.isFetchingNextPage && (
@@ -718,7 +739,7 @@ function ReelsScreen() {
           </div>
         )}
 
-        {items.length > 0 && view === "feed" && (
+        {!initialLoading && items.length > 0 && view === "feed" && (
           <div
             ref={scrollerRef}
             onScroll={(event) => {

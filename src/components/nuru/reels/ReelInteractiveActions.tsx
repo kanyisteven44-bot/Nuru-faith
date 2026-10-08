@@ -11,7 +11,6 @@ import {
 } from "@/services/externalReelInteractions";
 import { fetchYouTubeReelDetails } from "@/lib/youtubeReel.functions";
 import { ExternalVideoCommentsSheet } from "@/components/nuru/ExternalVideoCommentsSheet";
-import { YouTubeReelSheet } from "./YouTubeReelSheet";
 import { ReelActions } from "./ReelActions";
 
 type ExternalReelState = Awaited<ReturnType<typeof fetchExternalReelState>>;
@@ -47,7 +46,6 @@ export function ReelInteractiveActions({
   const qc = useQueryClient();
   const shareSheet = useShareSheet();
   const [commentsOpen, setCommentsOpen] = useState(false);
-  const [commentSource, setCommentSource] = useState<"youtube" | "nuru">("nuru");
   const isExternal = reel.source_type === "youtube" && !!reel.external_id;
   const externalId = reel.external_id ?? "";
 
@@ -156,6 +154,9 @@ export function ReelInteractiveActions({
     <>
       <ReelActions
         horizontal={horizontal}
+        youtubeStats={
+          isExternal ? (details.data?.stats ?? { likes: null, comments: null }) : undefined
+        }
         avatarUrl={details.data?.creator.avatar ?? reel.creator_avatar_url}
         creatorName={reel.creator_name}
         likeCount={isExternal ? (state.data?.likeCount ?? 0) : reel.like_count}
@@ -170,7 +171,6 @@ export function ReelInteractiveActions({
         }}
         onComments={() => {
           if (!isExternal) return onComments();
-          setCommentSource("nuru");
           setCommentsOpen(true);
           onCommentsVisibilityChange?.(true);
         }}
@@ -186,23 +186,10 @@ export function ReelInteractiveActions({
         onMore={onMore}
       />
 
-      {isExternal && commentsOpen && commentSource === "nuru" && (
+      {isExternal && commentsOpen && (
         <ExternalVideoCommentsSheet
           externalId={externalId}
           userId={userId}
-          onOpenSourceComments={() => setCommentSource("youtube")}
-          onClose={() => {
-            setCommentsOpen(false);
-            onCommentsVisibilityChange?.(false);
-          }}
-        />
-      )}
-
-      {isExternal && commentsOpen && commentSource === "youtube" && (
-        <YouTubeReelSheet
-          videoId={externalId}
-          section="comments"
-          onNuruComments={() => setCommentSource("nuru")}
           onClose={() => {
             setCommentsOpen(false);
             onCommentsVisibilityChange?.(false);

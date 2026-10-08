@@ -1,3 +1,5 @@
+import { fetchWatchedVideoIds } from "@/lib/reelWatchData";
+import { isPresentableReel } from "@/lib/reelPresentation";
 import { supabase } from "@/integrations/supabase/client";
 
 export const REEL_TOPICS = [
@@ -146,7 +148,20 @@ export async function fetchReelPage(params: {
         candidates.map((reel) => reel.id),
       )
     : new Set<string>();
-  const rows = candidates.filter((reel) => !viewedIds.has(reel.id));
+  const externalViewed = userId
+    ? await fetchViewedExternalReelIds(
+        userId,
+        candidates
+          .filter((reel) => reel.source_type === "youtube" && reel.external_id)
+          .map((reel) => reel.external_id!),
+      )
+    : new Set<string>();
+  const rows = candidates.filter(
+    (reel) =>
+      isPresentableReel(reel) &&
+      !viewedIds.has(reel.id) &&
+      !(reel.source_type === "youtube" && reel.external_id && externalViewed.has(reel.external_id)),
+  );
 
   const score = (r: Reel) => {
     if (feed !== "For You") return 0;
@@ -305,21 +320,7 @@ export async function fetchViewedExternalReelIds(
   userId: string,
   externalIds: string[],
 ): Promise<Set<string>> {
-  if (externalIds.length === 0) return new Set();
-
-  const { data, error } = await supabase
-    .from("media_history")
-    .select("external_id")
-    .eq("user_id", userId)
-    .eq("source", "youtube_reel")
-    .in("external_id", externalIds);
-  if (error) throw new Error(error.message);
-
-  return new Set(
-    (data ?? [])
-      .map((row) => row.external_id)
-      .filter((id): id is string => typeof id === "string" && id.length > 0),
-  );
+  return fetchWatchedVideoIds(supabase, userId, externalIds);
 }
 
 export async function recordExternalReelView(

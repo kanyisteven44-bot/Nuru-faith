@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { YouTubeSearchResult, YouTubeVideo } from "./youtube.functions";
+import { fetchWatchedVideoIds } from "./reelWatchData";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const YOUTUBE_API = "https://www.googleapis.com/youtube/v3";
@@ -408,13 +409,23 @@ export const youtubeReelsFeed = createServerFn({ method: "GET" })
   .validator(feedInput)
   .middleware([requireSupabaseAuth])
   .handler(async ({ data, context }): Promise<YouTubeSearchResult> => {
+    // Shared catalogue pages are cached, but watched filtering is always user-scoped.
+    async function unseen(videos: YouTubeVideo[]): Promise<YouTubeVideo[]> {
+      if (!videos.length) return [];
+      const watched = await fetchWatchedVideoIds(
+        context.supabase,
+        context.userId,
+        videos.map((video) => video.youtubeVideoId),
+      );
+      return videos.filter((video) => !watched.has(video.youtubeVideoId));
+    }
     const key = process.env["YOUTUBE_API_KEY"];
     if (!key) {
       const videos = await fetchRssFallback(
         FALLBACK_APPROVED_CHANNELS.map((channel) => ({ ...channel })),
       );
       return {
-        videos,
+        videos: await unseen(videos),
         playlists: [],
         channels: [],
         nextPageToken: null,
@@ -486,7 +497,7 @@ export const youtubeReelsFeed = createServerFn({ method: "GET" })
       );
 
       return {
-        videos,
+        videos: await unseen(videos),
         playlists: [],
         channels: [],
         nextPageToken: hasMore ? encodeCursor(cursor) : null,
@@ -502,7 +513,7 @@ export const youtubeReelsFeed = createServerFn({ method: "GET" })
         FALLBACK_APPROVED_CHANNELS.map((channel) => ({ ...channel })),
       );
       return {
-        videos,
+        videos: await unseen(videos),
         playlists: [],
         channels: [],
         nextPageToken: null,

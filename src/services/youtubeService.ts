@@ -46,7 +46,7 @@ export function youtubeReelsInfiniteQuery(userId: string | null) {
   return infiniteQueryOptions({
     // Including the user id makes a failed pre-auth request impossible to
     // poison the signed-in feed cache after session restoration.
-    queryKey: ["youtube", "reels-pool-v8-paged-15k", userId],
+    queryKey: ["youtube", "reels-pool-v9-unseen", userId],
     initialPageParam: null as string | null,
     queryFn: ({ pageParam }) => youtubeReelsFeed({ data: { cursor: pageParam } }),
     getNextPageParam: (lastPage) => lastPage.nextPageToken ?? undefined,

@@ -12,7 +12,8 @@ export async function fetchExternalReelState(userId: string, externalReelId: str
   const [
     { data: likes, error: likeError },
     { data: saves, error: saveError },
-    { count, error: countError },
+    { count: commentCount, error: countError },
+    { count: likeCount, error: likeCountError },
   ] = await Promise.all([
     supabase
       .from("external_reel_likes")
@@ -30,16 +31,22 @@ export async function fetchExternalReelState(userId: string, externalReelId: str
       .from("external_reel_comments")
       .select("id", { count: "exact", head: true })
       .eq("external_reel_id", externalReelId),
+    supabase
+      .from("external_reel_likes")
+      .select("external_reel_id", { count: "exact", head: true })
+      .eq("external_reel_id", externalReelId),
   ]);
 
   if (likeError) throw new Error(likeError.message);
   if (saveError) throw new Error(saveError.message);
   if (countError) throw new Error(countError.message);
+  if (likeCountError) throw new Error(likeCountError.message);
 
   return {
     liked: !!likes,
     saved: !!saves,
-    commentCount: count ?? 0,
+    commentCount: commentCount ?? 0,
+    likeCount: likeCount ?? 0,
   };
 }
 

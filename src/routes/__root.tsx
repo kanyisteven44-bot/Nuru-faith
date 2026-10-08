@@ -14,6 +14,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { OfflineNotice } from "@/components/nuru/OfflineNotice";
+import { LegacyDomainNotice } from "@/components/nuru/LegacyDomainNotice";
 // The opening is not needed on authenticated screens; load its code only on the landing page.
 const SplashScreen = lazy(() =>
   import("@/components/nuru/SplashScreen").then((module) => ({ default: module.SplashScreen })),
@@ -204,6 +205,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <Outlet />
+        <LegacyDomainNotice />
         <Toaster position="top-center" />
         <OfflineNotice />
         {pathname === "/" && (

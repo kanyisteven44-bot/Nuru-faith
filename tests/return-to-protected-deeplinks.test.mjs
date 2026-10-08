@@ -60,3 +60,9 @@ test("email, Google, and session-restoration routes consume protected return des
   assert.match(read("src/routes/__root.tsx"),/LEGACY_CANONICAL_INIT_SCRIPT/);
   assert.match(read("src/routes/__root.tsx"),/dangerouslySetInnerHTML=\{\{ __html: LEGACY_CANONICAL_INIT_SCRIPT \}\}/);
 });
+
+test("unavailable SMS sign-in does not appear as a broken option",()=>{
+  const auth=read("src/routes/auth.tsx");
+  assert.match(auth,/providers\?\.phone === true && \(/);
+  assert.doesNotMatch(auth,/SMS sign-in is not enabled yet/);
+});

@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { NuruMark } from "@/components/nuru/Logo";
 import { newPasswordError } from "@/lib/accountSecurity";
 import { authAvailability } from "@/lib/authAvailability.functions";
-import { isInstalledApp, loginCallbackOrigin } from "@/lib/pwaMode";
+import { isInstalledApp, isLegacyNuruHost, loginCallbackOrigin } from "@/lib/pwaMode";
 import { takeAfterLogin } from "@/lib/afterLogin";
 import { GoogleEmbeddedSignIn } from "@/components/nuru/GoogleEmbeddedSignIn";
 
@@ -74,7 +74,9 @@ function AuthPage() {
     // A Google OAuth redirect can strand an installed Android PWA inside a
     // Chrome Custom Tab with a URL/X, even after successful authentication.
     // Keep credential sign-in in the PWA itself on the official domain.
-    setUseEmbeddedGoogle(isInstalledApp() && window.location.hostname === "nurufaith.co.ke");
+    setUseEmbeddedGoogle(isInstalledApp() && (
+      window.location.hostname === "nurufaith.co.ke" || isLegacyNuruHost(window.location.hostname)
+    ));
   }, []);
 
   useEffect(() => {

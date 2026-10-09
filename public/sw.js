@@ -1,4 +1,19 @@
 const CACHE_NAME = "nuru-static-v7-offline-reading";
+
+// Never navigate a notification tap to another origin, including protocol-
+// relative URLs or backslash variants that URL parsing could reinterpret.
+function notificationPath(raw) {
+  if (typeof raw !== "string" || !raw.startsWith("/") || raw.startsWith("//") || raw.includes("\\")) {
+    return "/notifications";
+  }
+  try {
+    const url = new URL(raw, self.location.origin);
+    if (url.origin !== self.location.origin) return "/notifications";
+    return url.pathname + url.search + url.hash;
+  } catch {
+    return "/notifications";
+  }
+}
 const PRECACHE = [
   "/offline.html",
   "/offline-reader.js",
@@ -103,14 +118,14 @@ self.addEventListener("push", (event) => {
   } catch {
     payload = { body: event.data ? event.data.text() : "" };
   }
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) payload = {};
 
   const title = typeof payload.title === "string" ? payload.title : "Nuru Faith";
   const body = typeof payload.body === "string" ? payload.body : "";
   const id = typeof payload.id === "string" ? payload.id : "";
   const category = typeof payload.category === "string" ? payload.category : "system";
   const priority = typeof payload.priority === "string" ? payload.priority : "normal";
-  const rawUrl = typeof payload.url === "string" ? payload.url : "/notifications";
-  const url = rawUrl.startsWith("/") ? rawUrl : "/notifications";
+  const url = notificationPath(payload.url);
   const isCall = category === "call";
 
   const options = {
@@ -138,16 +153,38 @@ self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   if (event.action === "dismiss") return;
 
-  const target = event.notification?.data?.url || "/notifications";
-  event.waitUntil(
-    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
-      for (const client of clients) {
-        if ("focus" in client) {
-          void client.navigate(target);
-          return client.focus();
-        }
+  const target = notificationPath(event.notification?.data?.url);
+  event.waitUntil((async () => {
+    const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    const fullUrl = new URL(target, self.location.origin).href;
+
+    // Reuse a live installed-app window whenever possible. Prefer a window
+    // that is already on the exact destination, and otherwise WAIT for
+    // navigation to finish before focusing the window.
+    const alreadyThere = windows.find((client) => client.url === fullUrl);
+    if (alreadyThere && "focus" in alreadyThere) {
+      try {
+        await alreadyThere.focus();
+        return;
+      } catch {
+        // The window may have closed; fall through to another client.
       }
-      return self.clients.openWindow(target);
-    }),
-  );
+    }
+
+    for (const client of windows) {
+      if (!("navigate" in client) || !("focus" in client)) continue;
+      try {
+        const navigated = await client.navigate(target);
+        if (navigated && "focus" in navigated) {
+          await navigated.focus();
+          return;
+        }
+      } catch {
+        // A stale browser tab should never swallow the incoming-call tap.
+      }
+    }
+
+    const opened = await self.clients.openWindow(target);
+    if (opened && "focus" in opened) await opened.focus();
+  })());
 });

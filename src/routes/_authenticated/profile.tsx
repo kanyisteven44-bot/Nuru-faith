@@ -549,23 +549,29 @@ function ProfileScreen() {
                       </span>
                     </button>
                     {tab === "Posts" && (
-                      <button
-                        type="button"
-                        onClick={() => setPostToDelete({ id: item.id, title: item.title })}
-                        aria-label={`Delete post: ${item.title || "Untitled post"}`}
-                        className="absolute left-2 top-2 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/65 text-white backdrop-blur transition-colors hover:bg-red-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-                      >
-                        <Trash2 className="h-4 w-4" aria-hidden="true" />
-                      </button>
-                    )}
-                    {tab === "Posts" && (
-                      <Link
-                        to="/create" search={{ from: "profile" }}
-                        aria-label="Create another post"
-                        className="absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-black/55 text-white backdrop-blur"
-                      >
-                        <Plus className="h-3.5 w-3.5" />
-                      </Link>
+                      <div className="absolute right-2 top-2 z-10">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              type="button"
+                              aria-label={`Options for post: ${item.title || "Untitled post"}`}
+                              className="flex h-9 w-9 items-center justify-center rounded-full border border-white/25 bg-black/65 text-white backdrop-blur-sm transition-colors hover:bg-black/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                            >
+                              <MoreHorizontal className="h-5 w-5" aria-hidden="true" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" sideOffset={5}>
+                            <DropdownMenuItem
+                              aria-label={`Delete post: ${item.title || "Untitled post"}`}
+                              onSelect={() => setPostToDelete({ id: item.id, title: item.title })}
+                              className="min-h-10 gap-2 text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" aria-hidden="true" />
+                              Delete post
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     )}
                   </li>
                 ))}
@@ -573,39 +579,40 @@ function ProfileScreen() {
             )}
           </section>
           )}
-          {/* Saved content — real counts only; there is no Downloads feature
-              in the app, so the board's Downloads row is left out. */}
-          <div className="mt-6 mb-3 flex items-center justify-between gap-2">
-            <h2 className="font-display text-[21px] leading-none">Saved content</h2>
-          </div>
-          <div className="grid grid-cols-3 gap-2.5">
-            <SavedTile
-              icon={BookMarked}
-              label="Bible verses"
-              count={savedScriptures.data?.length}
-              to="/bible"
-            />
-            <SavedTile
-              icon={Highlighter}
-              label="Highlights"
-              count={highlights.data?.length}
-              to="/bible"
-            />
-            <SavedTile icon={Bookmark} label="Saved posts" count={savedPostCount} to="/community" />
-          </div>
-
-          <Link to="/events" className="nuru-card mt-3 flex items-center gap-3 p-3">
-            <span className="nuru-disc nuru-disc-terra h-9 w-9">
-              <CalendarDays className="h-4 w-4" strokeWidth={1.9} />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-[13px] font-bold">Events</span>
-              <span className="block text-[11px] text-ink-3">
-                {myEvents.data ? `${myEvents.data.length} booked` : "— booked"}
-              </span>
-            </span>
-            <ChevronRight className="h-4 w-4 shrink-0 text-ink-3" strokeWidth={2} />
-          </Link>
+          {/* Keep saved tools with the Saved tab rather than extending every
+              profile visit into a second dashboard below the post grid. */}
+          {tab === "Saved" && (
+            <section className="pt-5" aria-label="Saved content shortcuts">
+              <h2 className="mb-3 font-display text-xl font-semibold">Your saved library</h2>
+              <div className="grid grid-cols-3 gap-2.5">
+                <SavedTile
+                  icon={BookMarked}
+                  label="Bible verses"
+                  count={savedScriptures.data?.length}
+                  to="/bible"
+                />
+                <SavedTile
+                  icon={Highlighter}
+                  label="Highlights"
+                  count={highlights.data?.length}
+                  to="/bible"
+                />
+                <SavedTile icon={Bookmark} label="Saved posts" count={savedPostCount} to="/community" />
+              </div>
+              <Link to="/events" className="mt-3 flex min-h-16 items-center gap-3 rounded-2xl border border-border bg-surface-2/50 p-3 transition-colors hover:bg-surface-2">
+                <span className="nuru-disc nuru-disc-terra h-9 w-9">
+                  <CalendarDays className="h-4 w-4" strokeWidth={1.9} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[13px] font-bold">Events</span>
+                  <span className="block text-[11px] text-ink-3">
+                    {myEvents.data ? `${myEvents.data.length} booked` : "— booked"}
+                  </span>
+                </span>
+                <ChevronRight className="h-4 w-4 shrink-0 text-ink-3" strokeWidth={2} />
+              </Link>
+            </section>
+          )}
 
         </div>
       )}

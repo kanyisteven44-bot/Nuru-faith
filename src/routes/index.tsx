@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { SplashScreen } from "@/components/nuru/SplashScreen";
 import { NuruGlyph } from "@/components/nuru/Logo";
 import { Link } from "@tanstack/react-router";
-import { OPENING_IMAGE_PRELOAD } from "@/lib/openingImage";
+import { OPENING_IMAGE_PRELOAD, OPENING_IMAGE_SRC, OPENING_IMAGE_SRCSET, OPENING_IMAGE_SIZES } from "@/lib/openingImage";
 
 const PUBLIC_SITE = "https://nurufaith.co.ke/";
 
@@ -64,7 +64,22 @@ function EntryPage() {
         className="relative isolate flex min-h-dvh flex-col items-center justify-center overflow-hidden bg-[#06152a] px-6 text-center text-white"
         aria-label="Welcome to Nuru Faith"
       >
-        <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_35%,rgba(51,133,207,0.32),transparent_60%),linear-gradient(180deg,#071b34_0%,#041020_100%)]" />
+        {/* Paint the intro's base photo from server HTML, before auth/hydration.
+            The animated overlay reuses this resource when it becomes active. */}
+        <img
+          src={OPENING_IMAGE_SRC}
+          srcSet={OPENING_IMAGE_SRCSET}
+          sizes={OPENING_IMAGE_SIZES}
+          alt=""
+          aria-hidden="true"
+          width={1600}
+          height={1067}
+          loading="eager"
+          fetchPriority="high"
+          decoding="async"
+          className="nuru-opening-photo nuru-opening-photo-base pointer-events-none"
+        />
+        <div aria-hidden="true" className="nuru-opening-photo-overlay pointer-events-none" />
         <div className="relative z-10 flex flex-col items-center">
           <span className="flex h-24 w-24 items-center justify-center rounded-[24px] border border-white/15 bg-white/[.06] shadow-[0_0_60px_rgba(72,191,255,.17)]">
             <NuruGlyph className="h-16 w-16" />

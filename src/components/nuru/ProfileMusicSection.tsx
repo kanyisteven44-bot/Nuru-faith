@@ -27,29 +27,50 @@ export function ProfileMusicFeature({
   const [playing, setPlaying] = useState<MediaItem | null>(null);
   const featured = songs.data?.[0]?.item;
   return (
-    <section className="relative mt-3.5 overflow-hidden rounded-2xl border border-sky-500/25 bg-[linear-gradient(115deg,#0A2440,#12365B_58%,#0C233B)] p-3.5 text-white shadow-[0_10px_24px_rgba(3,14,31,0.15)]" aria-label="Profile song">
-      <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-sky-200">
-        <Music2 className="h-4 w-4" /> My profile soundtrack
-      </div>
+    <section
+      className="mt-3 flex min-h-[64px] items-center gap-3 rounded-2xl border border-sky-500/25 bg-[linear-gradient(105deg,#0A233D,#103153)] px-3 py-2 text-white shadow-[0_6px_18px_rgba(3,14,31,0.12)]"
+      aria-label="Profile song"
+    >
       {featured ? (
-        <div className="mt-2.5 flex items-center gap-3">
-          <MusicArtwork item={featured} className="h-14 w-14 shrink-0 rounded-xl" />
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-[14px] font-bold">{featured.title}</p>
-            <p className="mt-1 truncate text-xs text-blue-100/80">{featured.creator_name || "Gospel music"}</p>
-            <button type="button" onClick={onBrowse} className="mt-1.5 text-xs font-semibold text-sky-200 underline underline-offset-2">
-              Manage my songs
-            </button>
-          </div>
-          <button type="button" onClick={() => setPlaying(featured)} aria-label={`Play ${featured.title}`}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-sky-400 text-[#092444] shadow-[0_4px_16px_rgba(56,189,248,0.2)] transition-transform hover:scale-105">
-            <Play className="h-5 w-5 fill-current" />
+        <>
+          <button
+            type="button"
+            onClick={onBrowse}
+            aria-label="Manage my profile soundtrack"
+            className="flex min-h-11 min-w-0 flex-1 items-center gap-2.5 rounded-xl text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-300"
+          >
+            <MusicArtwork item={featured} className="h-10 w-10 shrink-0 rounded-xl" />
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-[10px] font-bold uppercase tracking-[0.12em] text-sky-200">My profile soundtrack</span>
+              <span className="mt-0.5 block truncate text-[13px] font-semibold">{featured.title}</span>
+              <span className="block truncate text-[11px] text-blue-100/75">{featured.creator_name || "Gospel music"} · Manage</span>
+            </span>
           </button>
-        </div>
+          <button
+            type="button"
+            onClick={() => setPlaying(featured)}
+            aria-label={"Play " + featured.title}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-400 text-[#092444] transition-colors hover:bg-sky-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-300"
+          >
+            <Play className="h-[18px] w-[18px] fill-current" aria-hidden="true" />
+          </button>
+        </>
       ) : (
-        <button type="button" onClick={onBrowse} className="mt-2.5 flex min-h-12 w-full items-center gap-3 rounded-xl border border-sky-200/15 bg-white/[0.06] px-3 py-2 text-left transition-colors hover:bg-white/10">
-          <span className="min-w-0 flex-1 text-[13px] leading-snug text-sky-50">Add your favourite worship song</span>
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-sky-400/45 bg-sky-400/15">
+        <button
+          type="button"
+          onClick={onBrowse}
+          className="flex min-h-11 w-full items-center gap-2.5 rounded-xl text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-300"
+        >
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-400/15 text-sky-200">
+            <Music2 className="h-[19px] w-[19px]" aria-hidden="true" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[10px] font-bold uppercase tracking-[0.12em] text-sky-200">My profile soundtrack</span>
+            <span className="mt-0.5 block truncate text-[12px] text-blue-100/85">
+              {songs.isLoading ? "Loading songs…" : songs.isError ? "Browse worship songs" : "Add a worship song"}
+            </span>
+          </span>
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-sky-300/25 bg-sky-400/15 text-sky-100">
             <Plus className="h-[18px] w-[18px]" aria-hidden="true" />
           </span>
         </button>

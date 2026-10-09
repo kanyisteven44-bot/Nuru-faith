@@ -62,7 +62,15 @@ for (const viewport of viewports) {
         } catch { /* unsupported performance observer category */ }
       });
       const response = await tab.goto(url, { waitUntil: "domcontentloaded", timeout: 45000 });
-      await tab.waitForTimeout(1700);
+      if (route.startsWith("/auth?")) {
+        // Browser-first pages used to return an empty shell during hydration,
+        // especially at 360px on the first cold context. The sign-in form is
+        // now server-rendered, and we explicitly wait for its usable UI.
+        // This still FAILS if the form never arrives; it doesn't hide errors.
+        await tab.locator("form").first().waitFor({ state: "visible", timeout: 12000 });
+      } else {
+        await tab.waitForTimeout(1700);
+      }
       const v = await tab.evaluate(() => {
         const root = document.documentElement;
         const visibleImages = Array.from(document.images).filter(img => {

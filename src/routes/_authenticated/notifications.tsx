@@ -14,7 +14,6 @@ import {
   MessageCircle,
   Phone,
   PhoneIncoming,
-  Smartphone,
   RefreshCw,
   Users,
 } from "lucide-react";

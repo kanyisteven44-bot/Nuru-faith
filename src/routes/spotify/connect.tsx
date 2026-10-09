@@ -2,7 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { startSpotifyConnect } from "@/lib/spotifyPkce";
 
-export const Route = createFileRoute("/spotify/connect" as never)({ component: SpotifyConnect });
+// The route tree is regenerated during Vite build; CI typecheck runs first.
+// @ts-expect-error new route is missing from committed generated route types until build
+export const Route = createFileRoute("/spotify/connect")({ component: SpotifyConnect });
 function SpotifyConnect() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);

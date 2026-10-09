@@ -17,7 +17,7 @@ import {
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import {
-  fetchChurches,
+  fetchChurchById,
   fetchEvents,
   fetchGroups,
   fetchMentors,
@@ -25,7 +25,7 @@ import {
   fetchProfile,
 } from "@/services/content";
 import { AppShell, Avatar, ScreenHeader } from "@/components/nuru/AppShell";
-import { CardSkeleton, EmptyState } from "@/components/nuru/Primitives";
+import { CardSkeleton, EmptyState, ErrorState } from "@/components/nuru/Primitives";
 
 export const Route = createFileRoute("/_authenticated/church")({
   head: () => ({
@@ -45,7 +45,12 @@ function ChurchScreen() {
     queryFn: () => fetchProfile(userId!),
     enabled: !!userId,
   });
-  const churches = useQuery({ queryKey: ["churches"], queryFn: () => fetchChurches() });
+  const churchId = profile.data?.church_id ?? null;
+  const churchQuery = useQuery({
+    queryKey: ["church", churchId],
+    queryFn: () => fetchChurchById(churchId!),
+    enabled: !!churchId,
+  });
   const groups = useQuery({ queryKey: ["groups"], queryFn: () => fetchGroups() });
   const events = useQuery({ queryKey: ["events"], queryFn: fetchEvents });
   const mentors = useQuery({ queryKey: ["mentors"], queryFn: fetchMentors });
@@ -55,8 +60,7 @@ function ChurchScreen() {
     enabled: !!userId,
   });
 
-  const churchId = profile.data?.church_id ?? null;
-  const church = (churches.data ?? []).find((c) => c.id === churchId) ?? null;
+  const church = churchQuery.data ?? null;
   const isAdmin = (roles.data ?? []).some(
     (r) => r.role === "super_admin" || (r.role === "church_admin" && r.church_id === churchId),
   );
@@ -70,12 +74,29 @@ function ChurchScreen() {
   const leaders = (mentors.data ?? []).filter((m) => m.church_id === churchId);
   const memberCount = churchGroups.reduce((n, g) => n + (g.member_count ?? 0), 0);
 
-  if (profile.isLoading || churches.isLoading) {
+  if (profile.isLoading || churchQuery.isLoading) {
     return (
       <AppShell>
         <ScreenHeader title="My Church" back />
         <div className="px-4 pt-4">
           <CardSkeleton count={3} height="h-20" />
+        </div>
+      </AppShell>
+    );
+  }
+
+  if (profile.isError || churchQuery.isError) {
+    return (
+      <AppShell>
+        <ScreenHeader title="My Church" back />
+        <div className="px-4 pt-4">
+          <ErrorState
+            message="Your church could not load. Please try again."
+            onRetry={() => {
+              if (profile.isError) void profile.refetch();
+              if (churchQuery.isError) void churchQuery.refetch();
+            }}
+          />
         </div>
       </AppShell>
     );

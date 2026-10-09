@@ -128,6 +128,16 @@ export const fetchChurches = async (search?: string) => {
   return rows;
 };
 
+export async function fetchChurchById(id: string) {
+  const { data, error } = await supabase
+    .from("churches")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
 export async function fetchChurchBySlug(slug: string) {
   const { data, error } = await supabase
     .from("churches")

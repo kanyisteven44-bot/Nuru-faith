@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { SplashScreen } from "@/components/nuru/SplashScreen";
 import { NuruGlyph } from "@/components/nuru/Logo";
 import { Link } from "@tanstack/react-router";
+import { OPENING_IMAGE_PRELOAD } from "@/lib/openingImage";
 
 const PUBLIC_SITE = "https://nurufaith.co.ke/";
 
@@ -26,7 +27,7 @@ export const Route = createFileRoute("/")({
       { property: "og:type", content: "website" },
     ],
     // Keep metadata crawlable while making the first visible paint branded.
-    links: [{ rel: "canonical", href: PUBLIC_SITE }],
+    links: [{ rel: "canonical", href: PUBLIC_SITE }, OPENING_IMAGE_PRELOAD],
   }),
   component: EntryPage,
 });

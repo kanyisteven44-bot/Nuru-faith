@@ -3,6 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { NuruGlyph } from "@/components/nuru/Logo";
 import { cn } from "@/lib/utils";
 import { ArrowRight } from "lucide-react";
+import { OPENING_IMAGE_SRC, OPENING_IMAGE_SRCSET, OPENING_IMAGE_SIZES } from "@/lib/openingImage";
 
 const SESSION_KEY = "nuru-opening-v5-shown";
 const HOLD_MS = 650;
@@ -10,7 +11,7 @@ const MAX_MS = 1800;
 const EXIT_MS = 320;
 
 const OPENING_PHOTOS = [
-  "/photos/friends-outdoors.jpg",
+  OPENING_IMAGE_SRC,
   "/photos/worship-gathering.jpg",
   "/photos/prayer-community.jpg",
 ] as const;
@@ -173,6 +174,8 @@ export function SplashScreen({
         {/* Keep photography visible while rotating layers load or transition. */}
         <img
           src={OPENING_PHOTOS[0]}
+          srcSet={OPENING_IMAGE_SRCSET}
+          sizes={OPENING_IMAGE_SIZES}
           alt=""
           decoding="async"
           fetchPriority="high"
@@ -182,6 +185,8 @@ export function SplashScreen({
           <img
             key={src}
             src={index <= photoIndex ? src : undefined}
+            srcSet={index === 0 ? OPENING_IMAGE_SRCSET : undefined}
+            sizes={index === 0 ? OPENING_IMAGE_SIZES : undefined}
             alt=""
             decoding="async"
             fetchPriority={index === 0 ? "high" : "auto"}

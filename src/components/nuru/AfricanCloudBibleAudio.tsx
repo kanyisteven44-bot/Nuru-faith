@@ -30,29 +30,40 @@ export function AfricanCloudBibleAudio({
   const [currentVerse, setCurrentVerse] = useState<number | null>(null);
   const [error, setError] = useState("");
   const audio = useRef<HTMLAudioElement | null>(null);
+  const audioBlobUrl = useRef<string | null>(null);
+  function releaseAudio() {
+    audio.current?.pause();
+    if (audio.current) {
+      audio.current.onended = null;
+      audio.current.onerror = null;
+      audio.current.removeAttribute("src");
+      audio.current.load();
+      audio.current = null;
+    }
+    if (audioBlobUrl.current) {
+      URL.revokeObjectURL(audioBlobUrl.current);
+      audioBlobUrl.current = null;
+    }
+  }
   const token = useRef(0);
   const parts = useMemo(() => verses.flatMap((v, i) =>
-    bibleSpeechChunks(v.text, 150).map((text) => ({ text, verse: v.verse ?? i + 1 })),
+    // 255 characters stays under the 280-character server limit while
+    // reducing speech requests on long Bible chapters.
+    bibleSpeechChunks(v.text, 255).map((text) => ({ text, verse: v.verse ?? i + 1 })),
   ), [verses]);
   const voice = choices.find((v) => v.voice === selectedVoice) ?? choices[0];
 
   // Do not keep playing another chapter or language when the screen changes.
   useEffect(() => () => {
     token.current++;
-    if (audio.current) {
-      audio.current.pause();
-      audio.current.src = "";
-      audio.current = null;
-    }
+    releaseAudio();
   }, [language, verses]);
 
   if (!isAfricanBibleLanguage(language) || choices.length === 0) return null;
 
   function stop() {
     token.current++;
-    audio.current?.pause();
-    if (audio.current) audio.current.src = "";
-    audio.current = null;
+    releaseAudio();
     setState("idle");
     setCurrentVerse(null);
   }
@@ -79,9 +90,21 @@ export function AfricanCloudBibleAudio({
           data: { text: segment.text, voice: voice!.voice },
         });
         if (token.current !== run) return;
-        const next = new Audio("data:" + result.mime + ";base64," + result.audioBase64);
+        // The site's Content-Security-Policy permits blob: audio, not
+        // data: audio. Use a temporary object URL and revoke it after each
+        // fragment to avoid retaining long chapters in memory.
+        releaseAudio();
+        const raw = atob(result.audioBase64);
+        const bytes = Uint8Array.from(raw, (character) => character.charCodeAt(0));
+        const blobUrl = URL.createObjectURL(new Blob([bytes], { type: result.mime }));
+        audioBlobUrl.current = blobUrl;
+        const next = new Audio(blobUrl);
         audio.current = next;
-        next.onended = () => { if (token.current === run) void playAt(i + 1); };
+        next.onended = () => {
+          if (token.current !== run) return;
+          releaseAudio();
+          void playAt(i + 1);
+        };
         next.onerror = () => {
           if (token.current !== run) return;
           stop();

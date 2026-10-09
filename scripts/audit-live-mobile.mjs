@@ -46,7 +46,14 @@ for (const viewport of viewports) {
     colorScheme: "dark",
   });
   const tab = await context.newPage();
-  tab.on("pageerror", e => errors.push({ device: viewport.label, route: new URL(tab.url()).pathname, kind: "pageerror", text: String(e.message).slice(0, 240) }));
+  tab.on("pageerror", e => {
+    const error = { device: viewport.label, route: new URL(tab.url()).pathname, kind: "pageerror",
+      text: String(e.message).replace(/https?:\/\/[^\s]+/g, url => {
+        try { return new URL(url).pathname; } catch { return "[resource]"; }
+      }).slice(0, 240) };
+    errors.push(error);
+    console.log("PUBLIC_PAGE_ERROR", JSON.stringify(error));
+  });
   tab.on("response", r => {
     if (r.status() >= 500 && r.url().startsWith(BASE))
       errors.push({ device: viewport.label, route: tab.url(), kind: "http5xx", status: r.status(), url: r.url().split("?")[0] });

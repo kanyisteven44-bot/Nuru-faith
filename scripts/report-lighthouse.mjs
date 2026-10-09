@@ -27,4 +27,6 @@ console.log("LH_RESOURCES " + JSON.stringify(network
   .filter(item => /Script|Stylesheet|Image|Font|Document/.test(item.resourceType))
   .sort((a, b) => b.transferSize - a.transferSize).slice(0, 15)
   .map(item => ({ path: pathOnly(item.url), type: item.resourceType, bytes: item.transferSize,
-    start: item.startTime, end: item.endTime, status: item.statusCode }))));
+    start: item.networkRequestTime ?? item.startTime,
+    end: item.networkEndTime ?? item.endTime,
+    priority: item.priority, status: item.statusCode }))));

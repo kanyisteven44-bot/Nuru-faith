@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { startSpotifyConnect } from "@/lib/spotifyPkce";
 
-export const Route = createFileRoute("/spotify/connect")({ component: SpotifyConnect });
+export const Route = createFileRoute("/spotify/connect" as never)({ component: SpotifyConnect });
 function SpotifyConnect() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);

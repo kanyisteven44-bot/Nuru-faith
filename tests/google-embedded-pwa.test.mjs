@@ -21,12 +21,13 @@ test("embedded Google sign-in validates each ID token using a fresh hashed nonce
 test("installed Nuru apps use same-window Google sign-in; browser OAuth fallback remains",()=>{
   const auth=read("src/routes/auth.tsx");
   assert.match(auth,/VITE_GOOGLE_EMBEDDED_ENABLED/);
-  assert.match(auth,/setUseEmbeddedGoogle\([\s\S]*?VITE_GOOGLE_EMBEDDED_ENABLED/);
-  assert.match(auth,/window\.location\.hostname === "nurufaith.co.ke"/);
+  assert.match(auth,/setUseEmbeddedGoogle\(shouldUseEmbeddedGoogleSignIn\(/);
+  assert.match(auth,/setting: import\.meta\.env\["VITE_GOOGLE_EMBEDDED_ENABLED"\]/);
+  assert.match(auth,/hostname: window\.location\.hostname/);
   assert.doesNotMatch(auth,/isLegacyNuruHost/);
   assert.match(auth,/<GoogleEmbeddedSignIn/);
   assert.match(auth,/onSuccess=\{\(\) => void continueAfterSignIn\("\/home"\)\}/);
-  assert.match(auth,/Use browser sign-in instead/);
+  assert.match(auth,/Use browser sign-in/);
   assert.match(auth,/supabase\.auth\.signInWithOAuth/);
   assert.match(auth,/window\.location\.assign\(data\.url\)/);
   const gsi=read("src/components/nuru/GoogleEmbeddedSignIn.tsx");

@@ -24,7 +24,7 @@ test("audio is cancelled and cleaned between segments, on stop, and unmount", ()
   const player = read("src/components/nuru/AfricanCloudBibleAudio.tsx");
   assert.match(player, /const audioBlobUrl = useRef<string \| null>\(null\)/);
   assert.match(player, /function releaseAudio\(\)/);
-  assert.match(player, /audio\.current\.pause\(\)/);
+  assert.match(player, /audio\.current\?\.pause\(\)/);
   assert.match(player, /releaseAudio\(\);\s*\}, \[language, verses\]\)/);
   assert.match(player, /function stop\(\) \{[\s\S]*?releaseAudio\(\)/);
   assert.match(player, /next\.onended = \(\) => \{[\s\S]*?releaseAudio\(\);/);

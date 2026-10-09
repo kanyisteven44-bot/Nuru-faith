@@ -14,7 +14,7 @@ export function AfricanCloudBibleAudio({
 }: {
   language: string;
   verses: { verse?: number; text: string }[];
-  startVerse?: number;
+  startVerse?: number | undefined;
 }) {
   const locale = bibleSpeechLocale(language);
   const choices = useMemo(() => cloudVoicesForBibleLocale(locale), [locale]);

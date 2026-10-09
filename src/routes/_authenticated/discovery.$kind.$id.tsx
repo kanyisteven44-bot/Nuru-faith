@@ -1,8 +1,10 @@
 import { CoverImage } from "@/components/nuru/CoverImage";
+import { PostPresentation } from "@/components/nuru/PostMedia";
+import { ProfileMusicSection } from "@/components/nuru/ProfileMusicSection";
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { BadgeCheck, Church, Clapperboard, FileText, MapPin, MessageCircle, UserPlus } from "lucide-react";
+import { BadgeCheck, Church, Clapperboard, FileText, Music2, MapPin, MessageCircle, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { DISCOVERY_KINDS, DISCOVERY_LABELS } from "@/lib/content-policy";
@@ -130,7 +132,7 @@ function ContentDetail({ kindParam, id }: { kindParam: string; id: string }) {
 function PublicProfileDetail({ id }: { id: string }) {
   const { userId } = useAuth();
   const qc = useQueryClient();
-  const [tab, setTab] = useState<"Reels" | "Posts">("Reels");
+  const [tab, setTab] = useState<"Reels" | "Posts" | "Music">("Posts");
 
   const profile = useQuery({
     queryKey: ["public-profile", id],
@@ -294,8 +296,8 @@ function PublicProfileDetail({ id }: { id: string }) {
         </section>
 
         <section className="mt-4">
-          <div className="grid grid-cols-2 border-b border-border" role="tablist" aria-label="Profile content">
-            {(["Reels", "Posts"] as const).map((item) => (
+          <div className="grid grid-cols-3 border-b border-border" role="tablist" aria-label="Profile content">
+            {(["Posts", "Reels", "Music"] as const).map((item) => (
               <button
                 key={item}
                 type="button"
@@ -309,7 +311,7 @@ function PublicProfileDetail({ id }: { id: string }) {
                     : "border-transparent text-muted-foreground",
                 )}
               >
-                {item === "Reels" ? <Clapperboard className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
+                {item === "Reels" ? <Clapperboard className="h-4 w-4" /> : item === "Music" ? <Music2 className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
                 {item}
               </button>
             ))}
@@ -357,6 +359,9 @@ function PublicProfileDetail({ id }: { id: string }) {
             </div>
           )}
 
+          {tab === "Music" && (
+            <div className="pt-4"><ProfileMusicSection memberId={id} editable={isSelf} /></div>
+          )}
           {tab === "Posts" && (
             <div className="space-y-2 pt-3">
               {posts.isLoading ? (
@@ -364,11 +369,12 @@ function PublicProfileDetail({ id }: { id: string }) {
               ) : (posts.data ?? []).length ? (
                 (posts.data ?? []).map((post) => (
                   <article key={post.id} className="overflow-hidden rounded-2xl border border-border bg-card">
-                    {post.media_url && (
-                      <CoverImage
-                        src={resolveMedia(post.media_url)}
-                        alt=""
-                        className="max-h-80 w-full object-cover"
+                    {(post.media_url || post.music_track_id) && (
+                      <PostPresentation
+                        url={post.media_url}
+                        kind={post.kind}
+                        musicId={post.music_track_id}
+                        start={post.music_start_seconds ?? 0}
                       />
                     )}
                     <div className="p-4">

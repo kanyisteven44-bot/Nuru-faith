@@ -14,6 +14,7 @@ import { AppShell, Avatar } from "@/components/nuru/AppShell";
 
 const createSearchSchema = z.object({
   group: z.string().uuid().optional(),
+  from: z.literal("profile").optional(),
 });
 
 export const Route = createFileRoute("/_authenticated/create")({
@@ -135,6 +136,8 @@ function CreateScreen() {
       toast.success(audience === "My Group" ? "Shared with your group" : "Posted");
       if (audience === "My Group" && mentorGroupId) {
         void navigate({ to: "/groups", search: { group: mentorGroupId } });
+      } else if (search.from === "profile") {
+        void navigate({ to: "/profile" });
       } else {
         void navigate({ to: "/community" });
       }
@@ -155,7 +158,9 @@ function CreateScreen() {
             void navigate(
               search.group
                 ? { to: "/groups", search: { group: search.group } }
-                : { to: "/community" },
+                : search.from === "profile"
+                  ? { to: "/profile" }
+                  : { to: "/community" },
             )
           }
           aria-label="Cancel"

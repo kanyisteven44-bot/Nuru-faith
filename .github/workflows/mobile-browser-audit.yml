@@ -45,7 +45,7 @@ jobs:
           mkdir -p browser-qa
           export CHROME_PATH="$(node -e "console.log(require('playwright').chromium.executablePath())")"
           npx lighthouse https://nurufaith.co.ke/ --chrome-flags="--headless=new --no-sandbox --disable-dev-shm-usage" --only-categories=performance,accessibility,best-practices,seo --output=json --output-path=browser-qa/lighthouse-mobile.json --quiet
-          node -e "const a=require('./browser-qa/lighthouse-mobile.json');console.log('LIGHTHOUSE '+JSON.stringify({categories:Object.fromEntries(Object.entries(a.categories).map(([k,v])=>[k,v.score])),audits:Object.fromEntries(['first-contentful-paint','largest-contentful-paint','total-blocking-time','cumulative-layout-shift','speed-index'].map(k=>[k,a.audits[k]?.displayValue]))}))"
+          node scripts/report-lighthouse.mjs
       - name: Preserve report and public page screenshots for review
         if: always()
         uses: actions/upload-artifact@v4

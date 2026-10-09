@@ -3,7 +3,7 @@ import { CoverImage } from "@/components/nuru/CoverImage";
 import { NuruMark } from "@/components/nuru/Logo";
 import { PwaInstallGuide } from "@/components/nuru/PwaInstallGuide";
 import { resolveMedia } from "@/lib/media";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, HandHeart, Sprout, Users } from "lucide-react";
 
 export const Route = createFileRoute("/welcome")({
@@ -35,8 +35,6 @@ const VALUES = [
 ] as const;
 
 function Welcome() {
-  const navigate = useNavigate();
-
   return (
     <div className="relative min-h-dvh overflow-hidden bg-background">
       <CoverImage
@@ -94,14 +92,14 @@ function Welcome() {
         </ul>
 
         <div className="mt-auto space-y-3 pt-12">
-          <button
-            type="button"
-            onClick={() => void navigate({ to: "/auth", search: { mode: "signup" } })}
+          <Link
+            to="/auth"
+            search={{ mode: "signup" }}
             className="flex min-h-13 w-full items-center justify-center gap-2 rounded-2xl bg-primary px-5 text-sm font-bold text-primary-foreground nuru-glow transition-transform hover:brightness-105 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             Continue
             <ArrowRight className="h-4.5 w-4.5" />
-          </button>
+          </Link>
           <Link
             to="/auth"
             search={{ mode: "login" }}

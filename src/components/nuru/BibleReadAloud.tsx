@@ -114,7 +114,7 @@ export function BibleReadAloud({
       const utterance = new SpeechSynthesisUtterance(chunk.text);
       // Never ask the OS to guess a language: that previously read African
       // passages in its default English voice on some Android devices.
-      utterance.voice = chosen;
+      utterance.voice = chosen!;
       if (chosen?.lang || locale) utterance.lang = chosen?.lang || locale || "";
       utterance.rate = rate;
       utterance.onend = () => next(i + 1);

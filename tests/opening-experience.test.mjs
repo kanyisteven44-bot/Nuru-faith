@@ -49,8 +49,8 @@ test("installed app avoids a second opening and first paint never loads hidden p
   assert.doesNotMatch(root, /SplashScreen/);
   const opening = readFileSync("src/routes/opening.tsx", "utf8");
   assert.match(opening, /<SplashScreen key=\{attempt\} preview/);
-  assert.match(index, /Preparing your home/);
-  assert.match(index, /NuruGlyph/);
+  assert.match(index, /<SplashScreen initialOnly onComplete=/);
+  assert.match(splash, /completionRef\.current\?\.\(\)/);
 });
 
 test("intro has a working dismiss action without extending its opening timeout", () => {

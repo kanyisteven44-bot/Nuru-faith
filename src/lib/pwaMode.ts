@@ -91,3 +91,33 @@ export const LEGACY_CANONICAL_INIT_SCRIPT = String.raw`(function () {
     window.location.replace(url.href);
   } catch (e) { /* best-effort: client router fallback will still run */ }
 })();`;
+
+
+/**
+ * Use Google's in-page identity button for the new installed Android PWA.
+ * It returns an ID token directly to Supabase without leaving Nuru's app
+ * scope for an external Chrome Custom Tab.
+ *
+ * Keep an explicit kill switch (VITE_GOOGLE_EMBEDDED_ENABLED=false) and
+ * use browser OAuth as a fallback if the browser/provider cannot support it.
+ * Never enable this automatically for old installed .website origins.
+ */
+export function shouldUseEmbeddedGoogleSignIn({
+  installed,
+  hostname,
+  clientId,
+  setting,
+}: {
+  installed: boolean;
+  hostname: string;
+  clientId?: string;
+  setting?: string;
+}): boolean {
+  return (
+    installed &&
+    hostname.toLowerCase() === "nurufaith.co.ke" &&
+    setting !== "false" &&
+    typeof clientId === "string" &&
+    /^[A-Za-z0-9_-]+\.apps\.googleusercontent\.com$/.test(clientId)
+  );
+}

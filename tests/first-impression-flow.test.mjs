@@ -10,7 +10,9 @@ test("new visitors see the welcome experience before authentication", () => {
 
   // Render crawlable content while the original photo intro transitions to welcome.
   assert.match(index, /setDestination\(data\.session \? "\/home" : "\/welcome"\)/);
-  assert.match(index, /<PublicSeoLanding/);
+  assert.match(index, /CONNECT · GROW · PURPOSE/);
+  assert.doesNotMatch(index, /<PublicSeoLanding/);
+  assert.match(index, /bg-\[#06152a\]/);
   assert.match(index, /<SplashScreen initialOnly onComplete=/);
   assert.match(index, /introComplete && destination/);
   assert.match(welcome, />\s*Continue\s*</);

@@ -168,7 +168,7 @@ function ProfileScreen() {
       setSelectedPost(null);
       setPostToDelete(null);
       // Refresh every place the deleted post or its counters may be cached.
-      await Promise.all([
+      await Promise.allSettled([
         qc.invalidateQueries({ queryKey: ["my-posts", userId] }),
         qc.invalidateQueries({ queryKey: ["profile-counts", userId] }),
         qc.invalidateQueries({ queryKey: ["posts"] }),

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Headphones, Pause, Play, Square, SkipForward } from "lucide-react";
+import { AfricanCloudBibleAudio } from "./AfricanCloudBibleAudio";
 import {
   bibleDeviceVoiceStatus,
   bibleMatchingVoices,
@@ -260,6 +261,7 @@ export function BibleReadAloud({
         </p>
       )}
       {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
+      <AfricanCloudBibleAudio language={language} verses={verses} startVerse={startVerse} />
     </section>
   );
 }

@@ -2103,6 +2103,39 @@ export type Database = {
           },
         ]
       }
+      profile_music: {
+        Row: {
+          user_id: string
+          item_id: string
+          created_at: string
+        }
+        Insert: {
+          user_id: string
+          item_id: string
+          created_at?: string
+        }
+        Update: {
+          user_id?: string
+          item_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_music_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_music_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "media_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null

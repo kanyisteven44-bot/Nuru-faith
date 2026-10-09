@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { NuruMark } from "@/components/nuru/Logo";
 import { newPasswordError } from "@/lib/accountSecurity";
 import { authAvailability } from "@/lib/authAvailability.functions";
-import { isInstalledApp, loginCallbackOrigin } from "@/lib/pwaMode";
+import { isInstalledApp, loginCallbackOrigin, shouldUseEmbeddedGoogleSignIn } from "@/lib/pwaMode";
 import { takeAfterLogin } from "@/lib/afterLogin";
 import { GoogleEmbeddedSignIn } from "@/components/nuru/GoogleEmbeddedSignIn";
 
@@ -71,18 +71,16 @@ function AuthPage() {
   } | null>(null);
 
   useEffect(() => {
-    // A Google OAuth redirect can strand an installed Android PWA inside a
-    // Chrome Custom Tab with a URL/X, even after successful authentication.
-    // Keep credential sign-in in the PWA itself on the official domain.
-    // This in-app Google credential mode is ONLY for the new official Nuru
-    // installed PWA, not the retiring .website origin. It must stay disabled
-    // until Google Cloud authorizes https://nurufaith.co.ke as a JavaScript
-    // origin and the actual Chrome installed-PWA smoke test succeeds.
-    setUseEmbeddedGoogle(
-      import.meta.env["VITE_GOOGLE_EMBEDDED_ENABLED"] === "true" &&
-      isInstalledApp() &&
-      window.location.hostname === "nurufaith.co.ke"
-    );
+    // On the official installed Nuru PWA, Google's Identity Services token
+    // returns directly here rather than opening a Chrome Custom Tab and
+    // leaving the user on /home with an X button in Chrome.
+    // Browser OAuth remains available if the in-app method cannot complete.
+    setUseEmbeddedGoogle(shouldUseEmbeddedGoogleSignIn({
+      installed: isInstalledApp(),
+      hostname: window.location.hostname,
+      clientId: import.meta.env["VITE_GOOGLE_CLIENT_ID"],
+      setting: import.meta.env["VITE_GOOGLE_EMBEDDED_ENABLED"],
+    }));
   }, []);
 
   useEffect(() => {
@@ -393,7 +391,7 @@ function AuthPage() {
                   onClick={() => void google()}
                   className="mt-2 block w-full min-h-11 text-center text-xs text-muted-foreground underline-offset-4 hover:underline"
                 >
-                  Use browser sign-in instead
+                  Google not working here? Use browser sign-in
                 </button>
               </>
             ) : (

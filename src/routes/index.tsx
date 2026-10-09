@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { NuruGlyph } from "@/components/nuru/Logo";
+import { SplashScreen } from "@/components/nuru/SplashScreen";
 import { PublicSeoLanding } from "@/components/nuru/PublicSeoLanding";
 
 const PUBLIC_SITE = "https://nurufaith.co.ke/";
@@ -31,7 +31,6 @@ export const Route = createFileRoute("/")({
   component: EntryPage,
 });
 
-const SPLASH_MS = 2200;
 
 const features = [
   {
@@ -62,48 +61,32 @@ const features = [
 
 function EntryPage() {
   const navigate = useNavigate();
-  const [standalone, setStandalone] = useState(false);
+  const [destination, setDestination] = useState<"/home" | "/welcome" | null>(null);
+  const [introComplete, setIntroComplete] = useState(false);
 
+  // Keep meaningful SSR content for visitors and search crawlers. On the
+  // client, the original Gen Z opening plays once per tab session and then
+  // enters the existing Connect / Grow / Serve welcome screen.
   useEffect(() => {
     let active = true;
-    let left = false;
-    const installed =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      window.matchMedia("(display-mode: fullscreen)").matches ||
-      (navigator as Navigator & { standalone?: boolean }).standalone === true;
-
-    // Standalone installations retain the familiar splash -> app launch flow.
-    // Search engines and logged-out browser visitors get a REAL public
-    // homepage, not a noindex loading screen or a client-only hidden section.
-    if (installed) setStandalone(true);
-
-    const go = (to: "/home" | "/welcome") => {
-      if (!active || left) return;
-      left = true;
-      void navigate({ to, replace: true });
-    };
-    const timer = installed ? window.setTimeout(() => go("/welcome"), SPLASH_MS) : null;
-
-    void supabase.auth
-      .getSession()
+    void supabase.auth.getSession()
       .then(({ data }) => {
-        if (timer !== null) clearTimeout(timer);
-        if (data.session) go("/home");
-        else if (installed) go("/welcome");
+        if (active) setDestination(data.session ? "/home" : "/welcome");
       })
       .catch(() => {
-        if (timer !== null) clearTimeout(timer);
-        if (installed) go("/welcome");
+        if (active) setDestination("/welcome");
       });
+    return () => { active = false; };
+  }, []);
 
-    return () => {
-      active = false;
-      if (timer !== null) clearTimeout(timer);
-    };
-  }, [navigate]);
+  useEffect(() => {
+    if (introComplete && destination) {
+      void navigate({ to: destination, replace: true });
+    }
+  }, [destination, introComplete, navigate]);
 
-  if (!standalone) {
-    return (
+  return (
+    <>
       <PublicSeoLanding
         eyebrow="Faith • Learning • Community"
         title="Nuru Faith — Connect. Grow. Live Your Faith."
@@ -142,35 +125,7 @@ function EntryPage() {
           { href: "/welcome", label: "Open Nuru Faith" },
         ]}
       />
-    );
-  }
-
-  return (
-    <main
-      className="relative isolate flex min-h-dvh flex-col items-center justify-center overflow-hidden bg-[#06152A] px-6 text-center text-white"
-      aria-label="Opening Nuru Faith"
-    >
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_32%,rgba(54,139,207,0.30),transparent_56%),linear-gradient(180deg,#071B34_0%,#040C19_100%)]"
-      />
-      <div aria-hidden="true" className="absolute top-[28%] h-44 w-56 rounded-full bg-cyan-400/10 blur-3xl" />
-      <div className="relative z-10 flex flex-col items-center">
-        <span className="flex h-28 w-28 items-center justify-center rounded-[30px] border border-white/15 bg-white/[0.05] shadow-[0_0_65px_rgba(72,191,255,0.18)]">
-          <NuruGlyph className="h-20 w-20" />
-        </span>
-        <span className="mt-6 text-[30px] font-bold tracking-[0.22em]">NURU</span>
-        <span className="mt-1 text-[12px] font-semibold tracking-[0.5em] text-cyan-100/90">FAITH</span>
-        <p role="status" className="mt-9 text-[13px] text-cyan-50/75">
-          Preparing your home…
-        </p>
-        <div className="mt-3 h-1 w-32 overflow-hidden rounded-full bg-white/15" aria-hidden="true">
-          <span className="block h-full w-1/2 animate-pulse rounded-full bg-[#55C8FF]" />
-        </div>
-      </div>
-      <p className="absolute inset-x-6 bottom-[max(1.75rem,env(safe-area-inset-bottom))] text-[11px] tracking-[0.12em] text-white/45">
-        FAITH · COMMUNITY · PURPOSE
-      </p>
-    </main>
+      <SplashScreen initialOnly onComplete={() => setIntroComplete(true)} />
+    </>
   );
 }

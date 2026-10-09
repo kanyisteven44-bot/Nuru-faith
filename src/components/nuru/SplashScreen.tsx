@@ -83,6 +83,8 @@ export function SplashScreen({
         alreadyShown())
     ) {
       setStage("gone");
+      // Let entry routing continue even when this splash was already shown.
+      completionRef.current?.();
       return;
     }
 

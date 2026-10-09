@@ -501,6 +501,7 @@ function ProfileScreen() {
               </ul>
             )}
           </section>
+          )}
           {/* Saved content — real counts only; there is no Downloads feature
               in the app, so the board's Downloads row is left out. */}
           <div className="mt-6 mb-3 flex items-center justify-between gap-2">
@@ -535,7 +536,6 @@ function ProfileScreen() {
             <ChevronRight className="h-4 w-4 shrink-0 text-ink-3" strokeWidth={2} />
           </Link>
 
-          )}
         </div>
       )}
 

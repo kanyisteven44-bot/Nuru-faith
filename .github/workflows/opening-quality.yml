@@ -1,0 +1,37 @@
+name: First-entry quality gates
+
+on:
+  pull_request:
+    paths:
+      - "src/routes/index.tsx"
+      - "src/routes/welcome.tsx"
+      - "src/components/nuru/SplashScreen.tsx"
+      - "src/lib/introFlow.ts"
+      - "src/styles.css"
+      - "tests/premium-intro-flow.test.mjs"
+      - ".github/workflows/opening-quality.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  opening-quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Regression tests
+        run: npm test
+      - name: Production-compatible Vercel build
+        run: VERCEL=1 npm run build

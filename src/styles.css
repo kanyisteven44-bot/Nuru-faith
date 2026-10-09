@@ -653,6 +653,11 @@ a {
   opacity: 1;
   transform: scale(1.015);
 }
+.nuru-opening-photo-base {
+  opacity: 1;
+  transform: scale(1.015);
+  transition: none;
+}
 .nuru-opening-photo-idle {
   opacity: 0;
   transform: scale(1.055);

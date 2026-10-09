@@ -170,6 +170,14 @@ export function SplashScreen({
       )}
     >
       <div className="absolute inset-0" aria-hidden="true">
+        {/* Keep photography visible while rotating layers load or transition. */}
+        <img
+          src={OPENING_PHOTOS[0]}
+          alt=""
+          decoding="async"
+          fetchPriority="high"
+          className="nuru-opening-photo nuru-opening-photo-base"
+        />
         {OPENING_PHOTOS.map((src, index) => (
           <img
             key={src}

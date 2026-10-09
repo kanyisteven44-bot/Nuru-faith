@@ -17,7 +17,13 @@ export const Route = createFileRoute("/welcome")({
       },
       { name: "robots", content: "index, follow" },
     ],
-    links: [{ rel: "canonical", href: "https://nurufaith.co.ke/welcome" }],
+    // Preload only on the page that actually paints this responsive hero.
+    links: [
+      { rel: "canonical", href: "https://nurufaith.co.ke/welcome" },
+      { rel: "preload", as: "image", href: "/photos/alpine-reflections-v1-1024.webp",
+        imageSrcSet: WELCOME_IMAGE_SRCSET, imageSizes: WELCOME_IMAGE_SIZES,
+        fetchPriority: "high" },
+    ],
   }),
   component: Welcome,
 });

@@ -14,6 +14,9 @@ import {
   ChevronRight,
   Church,
   Heart,
+  Music2,
+  Grid3X3,
+  Clapperboard,
   Highlighter,
   Loader2,
   MapPin,
@@ -41,6 +44,7 @@ import { fetchAllHighlights, fetchSavedScriptures } from "@/services/series";
 import { AppShell, Avatar, ScreenHeader } from "@/components/nuru/AppShell";
 import { PeopleSheet, type PeopleKind } from "@/components/nuru/PeopleSheet";
 import { CardSkeleton, EmptyState, ProgressBar } from "@/components/nuru/Primitives";
+import { ProfileMusicFeature, ProfileMusicSection } from "@/components/nuru/ProfileMusicSection";
 
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
@@ -55,7 +59,7 @@ export const Route = createFileRoute("/_authenticated/profile")({
 /** Faith-journey levels. Progress is driven by the profile's faith_streak. */
 const LEVEL_STEP = 250;
 
-const GRID_TABS = ["Posts", "Reels", "Saved"] as const;
+const GRID_TABS = ["Posts", "Reels", "Music", "Saved"] as const;
 type GridTab = (typeof GRID_TABS)[number];
 
 /** 1200 -> "1.2K", so a long count never pushes the stats row out of shape. */
@@ -128,7 +132,7 @@ function ProfileScreen() {
   const intoLevel = streak % LEVEL_STEP;
 
   const active = tab === "Posts" ? myPosts : tab === "Reels" ? myReels : savedPostRows;
-  const items = (active.data ?? []).map((row) => {
+  const items = (tab === "Music" ? [] : active.data ?? []).map((row) => {
     const r = row as Record<string, unknown>;
     return {
       id: String(r["id"]),
@@ -228,16 +232,21 @@ function ProfileScreen() {
           />
         </div>
       ) : (
-        <div className="px-4 pt-1">
-          {/* Identity — the board leads with the avatar and the serif name. */}
-          <section className="flex gap-4">
+        <div className="mx-auto max-w-3xl px-4 pt-1 pb-8">
+          <div className="relative h-36 overflow-hidden rounded-[26px] bg-[linear-gradient(135deg,#071A32,#103C64)] sm:h-44">
+            <CoverImage src="/photos/worship-gathering.jpg" alt="" className="absolute inset-0 h-full w-full object-cover opacity-70" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#07162B]/95 via-[#07162B]/60 to-[#07162B]/20" />
+            <span className="absolute left-5 top-5 rounded-full border border-white/30 bg-white/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.17em] text-white backdrop-blur">My Nuru space</span>
+            <span className="absolute bottom-4 right-5 text-xs font-semibold tracking-wide text-blue-100">Faith • Friends • Worship</span>
+          </div>
+          <section className="relative -mt-9 flex gap-4 px-2 sm:-mt-11">
             <span className="relative block h-[104px] w-[104px] shrink-0">
               <Avatar
                 url={profile.data?.avatar_url ?? null}
                 name={profile.data?.full_name ?? ""}
                 seed={userId}
                 size="lg"
-                className="h-[104px] w-[104px] text-3xl"
+                className="h-[104px] w-[104px] border-4 border-background text-3xl shadow-[0_10px_30px_rgba(2,12,30,0.4)]"
               />
               <button
                 type="button"
@@ -266,7 +275,7 @@ function ProfileScreen() {
             </span>
 
             <div className="min-w-0 flex-1 pt-1">
-              <h1 className="flex items-center gap-1.5 font-display text-[26px] leading-tight">
+              <h1 className="mt-9 flex items-center gap-1.5 font-display text-[26px] leading-tight sm:mt-10">
                 <span className="truncate">{profile.data?.full_name ?? "Nuru member"}</span>
                 {profile.data?.verified && (
                   <BadgeCheck className="h-5 w-5 shrink-0 text-leaf" aria-label="Verified" />
@@ -305,10 +314,23 @@ function ProfileScreen() {
             />
           </dl>
 
-          {/* My faith journey */}
-          <section className="nuru-card mt-5 p-4">
+          <div className="mt-4 grid grid-cols-2 gap-2.5">
+            <Link to="/create" search={{ from: "profile" }}
+              className="nuru-raise inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground">
+              <Plus className="h-4 w-4" /> Create post
+            </Link>
+            <Link to="/settings" search={{ panel: "profile" }}
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border-strong bg-surface-2 px-4 text-sm font-bold">
+              <Pencil className="h-4 w-4" /> Edit profile
+            </Link>
+          </div>
+          <ProfileMusicFeature memberId={userId!} onBrowse={() => setTab("Music")} />
+          <section className="nuru-card mt-4 p-4">
             <div className="flex items-start justify-between gap-3">
-              <h2 className="font-display text-[21px] leading-none">My faith journey</h2>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-primary">Journey badge</p>
+                <h2 className="mt-1 font-display text-[21px] leading-none">My faith journey</h2>
+              </div>
               <button
                 type="button"
                 onClick={() => {

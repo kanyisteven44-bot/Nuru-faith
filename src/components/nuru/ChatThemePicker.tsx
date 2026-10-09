@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { getRealChatPhotos } from "@/lib/chatPhotos.functions";
 import { Check, Palette, Search, ImagePlus, Loader2 } from "lucide-react";
 import {
   CHAT_THEMES,
@@ -7,6 +9,7 @@ import {
   FEATURED_CHAT_THEMES,
   chatBubbleStyle,
   chatWallpaperStyle,
+  realPhotoTheme,
 } from "@/lib/chatThemes";
 import { validateChatWallpaper } from "@/lib/chatWallpaperStorage";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -31,6 +34,7 @@ export function ChatThemePicker({
   const setOpen = onOpenChange ?? setLocalOpen;
   const [draft, setDraft] = useState(value);
   const [query, setQuery] = useState("");
+  const [visibleCount, setVisibleCount] = useState(36);
   const [category, setCategory] = useState("Featured");
   const [pendingPhoto, setPendingPhoto] = useState<File | null>(null);
   const [pendingSrc, setPendingSrc] = useState("");
@@ -51,18 +55,41 @@ export function ChatThemePicker({
     setPendingSrc(url);
     return () => URL.revokeObjectURL(url);
   }, [pendingPhoto]);
+  const realPhotos = useQuery({
+    queryKey: ["nuru-real-chat-photos"],
+    queryFn: () => getRealChatPhotos(),
+    enabled: open && (category === "Photos" || category === "Photo library" ||
+      category === "All" || draft.startsWith("real-photo-")),
+    staleTime: 24 * 60 * 60 * 1000,
+    gcTime: 7 * 24 * 60 * 60 * 1000,
+    retry: 1,
+  });
+  const featuredPhotos = (realPhotos.data ?? []).slice(0, 50).map((photo) =>
+    realPhotoTheme(photo.id, photo.author, photo.sourceUrl),
+  );
+  const backupPhotos = (realPhotos.data ?? []).slice(50, 250).map((photo) => ({
+    ...realPhotoTheme(photo.id, photo.author, photo.sourceUrl),
+    category: "Photo library" as const,
+  }));
   const customSrc = pendingSrc || photoSrc;
   const preview =
-    draft === "custom" && customSrc ? customPhotoTheme(customSrc) : findChatTheme(draft);
+    draft === "custom" && customSrc
+      ? customPhotoTheme(customSrc)
+      : [...featuredPhotos, ...backupPhotos].find((photo) => photo.id === draft) ?? findChatTheme(draft);
   const style = chatWallpaperStyle;
-  const choices = customSrc ? [customPhotoTheme(customSrc), ...CHAT_THEMES] : CHAT_THEMES;
+  const choices = [
+    ...(customSrc ? [customPhotoTheme(customSrc)] : []),
+    ...CHAT_THEMES,
+    ...featuredPhotos,
+    ...backupPhotos,
+  ];
   const options = choices.filter(
     (t) =>
       (category === "All" ||
         (category === "Featured"
           ? FEATURED_CHAT_THEMES.includes(t.id) || t.id === "custom"
           : t.category === category)) &&
-      t.name.toLowerCase().includes(query.toLowerCase()),
+      `${t.name} ${t.photoCredit ?? ""}`.toLowerCase().includes(query.toLowerCase()),
   );
   if (category === "Featured")
     options.sort(
@@ -70,6 +97,7 @@ export function ChatThemePicker({
         (a.id === "custom" ? -1 : FEATURED_CHAT_THEMES.indexOf(a.id)) -
         (b.id === "custom" ? -1 : FEATURED_CHAT_THEMES.indexOf(b.id)),
     );
+  const visibleOptions = options.slice(0, visibleCount);
   return (
     <>
       {!hideTrigger && (
@@ -142,7 +170,10 @@ export function ChatThemePicker({
             <input
               aria-label="Search backgrounds"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setVisibleCount(36);
+              }}
               placeholder="Search backgrounds…"
               className="min-h-11 min-w-0 flex-1 bg-transparent text-sm outline-none"
             />
@@ -151,25 +182,40 @@ export function ChatThemePicker({
             className="flex shrink-0 gap-2 overflow-x-auto pb-1"
             aria-label="Background categories"
           >
-            {["Featured", "All", "Gradients", "Patterns", "Colours", "Photos", "Classic"].map(
+            {["Featured", "Photos", "Photo library", "All", "Gradients", "Patterns", "Colours", "Classic"].map(
               (c) => (
                 <button
                   key={c}
                   type="button"
                   aria-pressed={category === c}
-                  onClick={() => setCategory(c)}
+                  onClick={() => {
+                    setCategory(c);
+                    setVisibleCount(36);
+                  }}
                   className={`min-h-10 shrink-0 rounded-full px-3 text-xs ${category === c ? "bg-primary text-primary-foreground" : "bg-surface-2"}`}
                 >
-                  {c}
+                  {c === "Photo library" ? "More photos" : c}
+                  {c === "Photos" && realPhotos.data ? ` · ${featuredPhotos.length + 9}` : ""}
+                  {c === "Photo library" && realPhotos.data ? ` · ${backupPhotos.length}` : ""}
                 </button>
               ),
             )}
           </div>
+          {(category === "Photos" || category === "Photo library") && (
+            <div className="flex shrink-0 items-center justify-between gap-2 text-[11px] text-muted-foreground">
+              <span>Real photos from Unsplash photographers · loaded on demand</span>
+              {realPhotos.isFetching && <span role="status">Loading photos…</span>}
+              {realPhotos.isError && (
+                <button type="button" onClick={() => void realPhotos.refetch()}
+                  className="min-h-9 shrink-0 font-semibold text-primary underline">Retry photos</button>
+              )}
+            </div>
+          )}
           <div
             className="grid min-h-0 flex-1 grid-cols-3 gap-3 overflow-y-auto p-1 sm:grid-cols-4"
             aria-label="Background choices"
           >
-            {options.map((t) => (
+            {visibleOptions.map((t) => (
               <button
                 type="button"
                 key={t.id}
@@ -179,9 +225,13 @@ export function ChatThemePicker({
                 className="rounded-xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
                 <span
-                  style={style(t)}
+                  style={t.imageUrl ? { backgroundColor: "#152b46" } : style(t)}
                   className={`relative block h-28 overflow-hidden rounded-xl border-2 ${draft === t.id ? "border-primary" : "border-border"}`}
                 >
+                  {t.imageUrl && (
+                    <img src={t.imageUrl} alt="" loading="lazy" decoding="async"
+                      className="absolute inset-0 h-full w-full object-cover" />
+                  )}
                   <span
                     aria-hidden="true"
                     style={chatBubbleStyle(t, false)}
@@ -196,11 +246,25 @@ export function ChatThemePicker({
                     <Check className="absolute right-1 top-1 h-6 w-6 rounded-full bg-primary p-1 text-white" />
                   )}
                 </span>
-                <span className="mt-1 block text-xs leading-snug">{t.name}</span>
+                <span className="mt-1 block truncate text-xs leading-snug" title={t.name}>{t.name}</span>
               </button>
             ))}
-            {!options.length && <p className="col-span-3 py-5 text-sm">No backgrounds found.</p>}
+            {!options.length && !realPhotos.isFetching && (
+              <p className="col-span-3 py-5 text-sm">No backgrounds found. Try another category or retry loading photos.</p>
+            )}
+            {options.length > visibleCount && (
+              <button type="button" onClick={() => setVisibleCount((count) => count + 36)}
+                className="col-span-3 min-h-11 rounded-xl border border-border bg-surface-2 text-xs font-semibold text-primary sm:col-span-4">
+                Show more backgrounds ({options.length - visibleCount} remaining)
+              </button>
+            )}
           </div>
+          {preview.photoSource && (
+            <a href={preview.photoSource} target="_blank" rel="noopener noreferrer"
+              className="shrink-0 truncate text-xs text-primary underline underline-offset-2">
+              Photo by {preview.photoCredit || "photographer"} on Unsplash · View original
+            </a>
+          )}
           {error && (
             <p role="alert" className="shrink-0 text-xs text-rose-600">
               {error}

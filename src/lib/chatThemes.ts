@@ -1,7 +1,7 @@
 export type ChatTheme = {
   id: string;
   name: string;
-  category: "Classic" | "Gradients" | "Patterns" | "Colours" | "Photos";
+  category: "Classic" | "Gradients" | "Patterns" | "Colours" | "Photos" | "Photo library";
   background: string;
   size?: string;
   position?: string;
@@ -9,6 +9,9 @@ export type ChatTheme = {
   sentColor?: string;
   receivedBackground?: string;
   receivedColor?: string;
+  imageUrl?: string;
+  photoCredit?: string;
+  photoSource?: string;
 };
 function motif(ink: string, design: string): string {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><g fill="none" stroke="${ink}" stroke-width="1.15" stroke-opacity="0.25">${design}</g></svg>`;
@@ -130,8 +133,34 @@ for (const [id, name] of photos)
     receivedBackground: "#ffffff",
     receivedColor: "#182638",
   });
+/**
+ * A selected real photograph resolves from its validated numeric ID even after
+ * refresh or app relaunch: a chat does not need to re-download all metadata.
+ */
+export function realPhotoTheme(id: string, author?: string, sourceUrl?: string): ChatTheme {
+  if (!/^\d{1,6}$/.test(id)) return CHAT_THEMES[0]!;
+  const url = `https://picsum.photos/id/${id}/640/960.webp`;
+  return {
+    id: `real-photo-${id}`,
+    name: author ? `Photo · ${author}` : `Photograph #${id}`,
+    category: "Photos",
+    background: `linear-gradient(#0a1e3520,#0a1e3520), url("${url}")`,
+    imageUrl: `https://picsum.photos/id/${id}/240/320.webp`,
+    ...(author ? { photoCredit: author } : {}),
+    ...(sourceUrl ? { photoSource: sourceUrl } : {}),
+    size: "cover",
+    position: "center",
+    sentBackground: "#245b94",
+    sentColor: "#ffffff",
+    receivedBackground: "#ffffff",
+    receivedColor: "#182638",
+  };
+}
 export function findChatTheme(id?: string | null): ChatTheme {
-  return CHAT_THEMES.find((t) => t.id === id) ?? CHAT_THEMES[0]!;
+  const existing = CHAT_THEMES.find((t) => t.id === id);
+  if (existing) return existing;
+  const match = id?.match(/^real-photo-(\d{1,6})$/);
+  return match ? realPhotoTheme(match[1]!) : CHAT_THEMES[0]!;
 }
 export function chatThemeStorageKey(userId: string, thread: string): string {
   return `nuru:chat-theme:v1:${userId}:${thread}`;

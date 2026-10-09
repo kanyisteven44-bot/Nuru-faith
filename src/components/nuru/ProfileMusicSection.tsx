@@ -1,9 +1,12 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Check, Headphones, Loader2, Music2, Play, Plus, Search, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { CoverImage } from "@/components/nuru/CoverImage";
-import { MediaPlayback } from "@/components/youtube/MediaCatalog";
+const ProfileMediaPlayback = lazy(async () => {
+  const module = await import("@/components/youtube/MediaCatalog");
+  return { default: module.MediaPlayback };
+});
 import { resolveMedia } from "@/lib/media";
 import { fetchMediaCatalog, type MediaItem } from "@/services/media";
 import { addProfileMusic, fetchProfileMusic, removeProfileMusic } from "@/services/profileMusic";
@@ -49,7 +52,11 @@ export function ProfileMusicFeature({
           <Plus className="h-5 w-5 shrink-0" />
         </button>
       )}
-      {playing && <MediaPlayback item={playing} onClose={() => setPlaying(null)} />}
+      {playing && (
+        <Suspense fallback={<div role="status" className="fixed inset-0 z-[90] flex items-center justify-center bg-background/95 text-sm font-semibold">Opening music player…</div>}>
+          <ProfileMediaPlayback item={playing} onClose={() => setPlaying(null)} />
+        </Suspense>
+      )}
     </section>
   );
 }
@@ -215,7 +222,11 @@ export function ProfileMusicSection({ memberId, editable }: { memberId: string; 
           )}
         </div>
       )}
-      {playing && <MediaPlayback item={playing} onClose={() => setPlaying(null)} />}
+      {playing && (
+        <Suspense fallback={<div role="status" className="fixed inset-0 z-[90] flex items-center justify-center bg-background/95 text-sm font-semibold">Opening music player…</div>}>
+          <ProfileMediaPlayback item={playing} onClose={() => setPlaying(null)} />
+        </Suspense>
+      )}
     </section>
   );
 }

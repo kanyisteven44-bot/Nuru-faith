@@ -122,13 +122,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: "/fonts/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2",
         crossOrigin: "anonymous",
       },
-      {
-        rel: "preload",
-        as: "font",
-        type: "font/woff2",
-        href: "/fonts/vEFI2_tTDB4M7-auWDN0ahZJW1gb8tc.woff2",
-        crossOrigin: "anonymous",
-      },
       // Nearly every screen calls Supabase (data + media) as soon as it mounts;
       // starting the connection while the JS bundle is still loading shaves
       // real latency off the first request instead of starting it cold.

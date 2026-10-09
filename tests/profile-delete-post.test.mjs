@@ -36,7 +36,7 @@ test("post media cleanup only targets member-owned uploaded media after deletion
   assert.ok(code);
   assert.ok(code.indexOf('.delete()') < code.indexOf('storage.from("post-media").remove'));
   assert.match(code, /folder === authorId/);
-  assert.match(code, /mediaUrl\.startsWith\("post:"\)/);
+  assert.match(code, /mediaUrl\?\.startsWith\("post:"\)/);
   assert.match(code, /mediaCleanupFailed/);
 });
 

@@ -7,8 +7,11 @@ on:
       - "src/**"
       - "public/**"
       - ".github/workflows/mobile-browser-audit.yml"
+      - "scripts/audit-live-mobile.mjs"
+      - "package.json"
+      - "package-lock.json"
   schedule:
-    - cron: "23 3 * * 1"
+    - cron: "23 3 * * *" # Daily at 06:23 East Africa Time
   workflow_dispatch:
 
 permissions:

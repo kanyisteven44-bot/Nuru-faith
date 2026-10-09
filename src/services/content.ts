@@ -226,6 +226,55 @@ export async function createPost(input: {
 }
 
 /**
+ * Permanently remove a post authored by the signed-in member.
+ *
+ * We restrict the DELETE to both the post ID and author ID; Supabase's
+ * `posts delete own` RLS policy independently enforces auth.uid() ownership.
+ * Returning the deleted row prevents a false success toast for a stale post
+ * or a post owned by someone else.
+ *
+ * Uploaded media uses a fresh userId/UUID path. Only attempt to remove a file
+ * in that exact folder/format, and only AFTER the database row was deleted.
+ * Failure to delete the file is reported separately; the post is still gone.
+ */
+export async function deleteOwnPost(
+  authorId: string,
+  postId: string,
+): Promise<{ mediaCleanupFailed: boolean }> {
+  const { data: deleted, error } = await supabase
+    .from("posts")
+    .delete()
+    .eq("id", postId)
+    .eq("author_id", authorId)
+    .select("id, media_url")
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!deleted) throw new Error("Post not found or you don't have permission to delete it.");
+
+  const mediaUrl = deleted.media_url;
+  if (!mediaUrl?.startsWith("post:")) return { mediaCleanupFailed: false };
+
+  const path = mediaUrl.slice("post:".length);
+  const [folder, filename, extra] = path.split("/");
+  // Never delete external URLs, other members' files, or unexpected paths.
+  const ownUpload =
+    !extra &&
+    folder === authorId &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|png|webp|gif|mp4|webm|mov)$/i.test(
+      filename ?? "",
+    );
+
+  if (!ownUpload) return { mediaCleanupFailed: false };
+  try {
+    const { error: mediaError } = await supabase.storage.from("post-media").remove([path]);
+    return { mediaCleanupFailed: !!mediaError };
+  } catch {
+    return { mediaCleanupFailed: true };
+  }
+}
+
+/**
  * The counts the profile header shows. Each is a head-only count, so the rows
  * themselves are never transferred.
  */

@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { SplashScreen } from "@/components/nuru/SplashScreen";
 import { NuruGlyph } from "@/components/nuru/Logo";
 import { Link } from "@tanstack/react-router";
+import { firstEntryDestination, introWasCompleted } from "@/lib/introFlow";
 
 const PUBLIC_SITE = "https://nurufaith.co.ke/";
 
@@ -36,26 +37,42 @@ function EntryPage() {
   const navigate = useNavigate();
   const [destination, setDestination] = useState<"/home" | "/welcome" | null>(null);
   const [introComplete, setIntroComplete] = useState(false);
+  const [hasSeenIntro, setHasSeenIntro] = useState(false);
 
   // Branded server-rendered entry prevents the old marketing page flashing
   // behind the Gen Z photo splash before JS hydration or during exit.
   useEffect(() => {
     let active = true;
+    setHasSeenIntro(introWasCompleted());
+    // A stalled session restoration must not trap people behind the opening.
+    // If auth arrives later, /auth re-checks the session before showing sign-in.
+    const watchdog = window.setTimeout(() => {
+      if (active) setDestination("/welcome");
+    }, 5000);
     void supabase.auth.getSession()
       .then(({ data }) => {
-        if (active) setDestination(data.session ? "/home" : "/welcome");
+        if (!active) return;
+        window.clearTimeout(watchdog);
+        setDestination(data.session ? "/home" : "/welcome");
       })
       .catch(() => {
-        if (active) setDestination("/welcome");
+        if (!active) return;
+        window.clearTimeout(watchdog);
+        setDestination("/welcome");
       });
-    return () => { active = false; };
+    return () => { active = false; window.clearTimeout(watchdog); };
   }, []);
 
   useEffect(() => {
     if (introComplete && destination) {
-      void navigate({ to: destination, replace: true });
+      const next = firstEntryDestination(destination === "/home", hasSeenIntro);
+      if (next === "/auth") {
+        void navigate({ to: "/auth", search: { mode: "login" }, replace: true });
+      } else {
+        void navigate({ to: next, replace: true });
+      }
     }
-  }, [destination, introComplete, navigate]);
+  }, [destination, hasSeenIntro, introComplete, navigate]);
 
   return (
     <>

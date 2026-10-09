@@ -276,6 +276,7 @@ function MusicScreen() {
 
       {tab === "Music" && musicMode === "Audio" && (
         <>
+          <p className="px-4 text-xs text-muted-foreground">Audio-only songs require approved playable recordings. Switch to Video for worship published on official channels.</p>
           <MediaCatalog mediaType="music" query={debounced} playback="audio" onPlay={playCatalog} />
           {!debounced.trim() && !!tracks.data?.length && (
             <NuruAudioSection
@@ -368,6 +369,18 @@ function MusicScreen() {
             </section>
           )}
 
+          {tab === "Sermons" && (
+            <div className="space-y-3">
+              <section className="px-4 pt-3">
+                <SectionHeader title="Discover sermons" />
+                <p className="text-xs text-muted-foreground">Watch teaching through official YouTube playback. Audio-only sermons require creator-approved recordings.</p>
+                <MediaCategoryRail title="Bible sermons" query="Christian Bible sermon preaching" onSelect={openVideo} showUnavailableNotice />
+                <MediaCategoryRail title="African preaching" query="African Christian sermon gospel preaching" onSelect={openVideo} />
+                <MediaCategoryRail title="Youth and faith" query="Christian youth sermon faith teaching" onSelect={openVideo} />
+              </section>
+              <MediaCatalog mediaType="podcast" query="sermon" onPlay={playCatalog} />
+            </div>
+          )}
           {tab === "Sermons" && (
             <section className="px-4 pt-3">
               <SectionHeader title="From your church" />

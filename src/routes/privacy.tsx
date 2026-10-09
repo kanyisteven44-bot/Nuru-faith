@@ -10,6 +10,7 @@ export const Route = createFileRoute("/privacy")({
         content: "How Nuru Faith handles account, profile, community and media information.",
       },
     ],
+    links: [{ rel: "canonical", href: "https://nurufaith.co.ke/privacy" }],
   }),
   component: PrivacyPage,
 });

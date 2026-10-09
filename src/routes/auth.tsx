@@ -16,8 +16,11 @@ const searchSchema = z.object({
   mode: z.enum(["login", "signup", "forgot", "mfa", "mfa-setup"]).optional().default("login"),
 });
 
+// Render the public sign-in form in the initial HTML. Client hydration still
+// owns all credential submission, OAuth and session redirects. This prevents
+// low-bandwidth phones from seeing a blank screen while JS downloads.
 export const Route = createFileRoute("/auth")({
-  ssr: false,
+  ssr: true,
   validateSearch: searchSchema,
   head: () => ({
     meta: [

@@ -125,19 +125,24 @@ function MusicScreen() {
   const profile = useQuery({
     queryKey: ["profile", userId],
     queryFn: () => fetchProfile(userId!),
-    enabled: !!userId,
+    enabled: !!userId && tab === "Sermons",
   });
   const churchId = profile.data?.church_id ?? null;
 
-  const tracks = useQuery({ queryKey: ["tracks"], queryFn: fetchTracks });
+  const tracks = useQuery({
+    queryKey: ["tracks"],
+    queryFn: fetchTracks,
+    enabled: tab === "Music" && musicMode === "Audio",
+  });
   const artists = useQuery({
     queryKey: ["media-sources", "artist", "with-songs"],
     queryFn: () => fetchMediaDirectory({ kind: "music", language: "all", page: 0 }),
+    enabled: tab === "Videos",
   });
   const churchMedia = useQuery({
     queryKey: ["media-items", "church", churchId],
     queryFn: () => fetchMediaItems({ churchId: churchId! }),
-    enabled: !!churchId,
+    enabled: !!churchId && tab === "Sermons",
   });
 
   const openVideo = (v: YouTubeVideo) => {

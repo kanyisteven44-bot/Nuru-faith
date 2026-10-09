@@ -888,3 +888,55 @@ a {
     box-shadow: none;
   }
 }
+
+
+/* Premium first-entry welcome: only the /welcome route uses these animations. */
+.nuru-intro-photo {
+  animation: nuru-intro-photo-in 950ms ease-out both;
+  filter: saturate(0.97) contrast(1.04);
+}
+.nuru-intro-reveal {
+  animation: nuru-intro-content-in 360ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.nuru-intro-halo {
+  box-shadow: 0 0 34px rgb(92 194 255 / 20%), inset 0 0 20px rgb(197 155 255 / 8%);
+  animation: nuru-intro-breathe 3.2s ease-in-out infinite alternate;
+}
+@keyframes nuru-intro-photo-in {
+  from { opacity: 0.75; transform: scale(1.045); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes nuru-intro-content-in {
+  from { opacity: 0.2; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes nuru-intro-breathe {
+  from { opacity: 0.62; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1.05); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nuru-intro-photo,
+  .nuru-intro-reveal,
+  .nuru-intro-halo {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
+.nuru-opening-aurora {
+  background:
+    radial-gradient(ellipse at 16% 33%, rgb(166 113 244 / 20%), transparent 40%),
+    radial-gradient(ellipse at 83% 56%, rgb(95 184 255 / 18%), transparent 40%),
+    radial-gradient(ellipse at 52% 78%, rgb(238 146 192 / 11%), transparent 52%);
+}
+.nuru-opening-ring {
+  box-shadow: 0 0 36px rgb(102 189 255 / 16%);
+  animation: nuru-opening-halo 1.6s ease-in-out infinite alternate;
+}
+@keyframes nuru-opening-halo {
+  from { opacity: 0.45; transform: scale(0.97); }
+  to { opacity: 0.95; transform: scale(1.045); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nuru-opening-ring { animation: none !important; transform: none !important; }
+}

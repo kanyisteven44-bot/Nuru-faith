@@ -1,0 +1,65 @@
+name: First-entry quality gates
+
+on:
+  pull_request:
+    paths:
+      - "src/routes/index.tsx"
+      - "src/routes/welcome.tsx"
+      - "src/components/nuru/SplashScreen.tsx"
+      - "src/lib/introFlow.ts"
+      - "src/styles.css"
+      - "tests/premium-intro-flow.test.mjs"
+      - "scripts/audit-intro-preview.mjs"
+      - ".github/workflows/opening-quality.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  opening-quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      # Keep evidence of inherited formatting debt; do not pretend it is clean.
+      - name: Repository lint baseline
+        continue-on-error: true
+        run: npm run lint
+      - name: Opening logic lint (semantic rules)
+        run: |
+          npx eslint src/routes/index.tsx src/routes/welcome.tsx src/components/nuru/SplashScreen.tsx src/lib/introFlow.ts --rule 'prettier/prettier: off'
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Regression tests
+        run: npm test
+      - name: Production-compatible Vercel build
+        run: VERCEL=1 npm run build
+
+  mobile-intro-preview:
+    if: github.event_name == 'pull_request'
+    needs: opening-quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install Chromium browser
+        run: |
+          npm ci
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Test interactive opening on 320–430px phones
+        env:
+          # Use Nuru's actual production provider rather than Netlify's flaky preview.
+          NURU_INTRO_URL: https://nuru-faith-git-feat-premium-first-entry-20261009-vortiqora.vercel.app
+        run: node scripts/audit-intro-preview.mjs

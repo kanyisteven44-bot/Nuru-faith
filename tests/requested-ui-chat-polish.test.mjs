@@ -23,7 +23,7 @@ const presenceMigration = readFileSync(
 );
 
 test("welcome has one Continue action instead of separate signup/login buttons", () => {
-  assert.match(welcome, />\s*Continue\s*</);
+  assert.match(welcome, /step === 0 \? "Continue" : "Get started"/);
   assert.doesNotMatch(welcome, /Create my account/);
   assert.doesNotMatch(welcome, /I already have an account/);
 });

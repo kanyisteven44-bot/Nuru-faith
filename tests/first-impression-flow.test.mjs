@@ -15,7 +15,7 @@ test("new visitors see the welcome experience before authentication", () => {
   assert.match(index, /bg-\[#06152a\]/);
   assert.match(index, /<SplashScreen initialOnly onComplete=/);
   assert.match(index, /introComplete && destination/);
-  assert.match(welcome, />\s*Continue\s*</);
+  assert.match(welcome, /step === 0 \? "Continue" : "Get started"/);
   assert.match(welcome, /search=\{\{ mode: "login" \}\}/);
   assert.match(welcome, /Sign in/);
   assert.doesNotMatch(welcome, /Create my account/);

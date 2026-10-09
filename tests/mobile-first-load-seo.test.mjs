@@ -22,8 +22,8 @@ test("home no longer downloads the unused Welcome landscape before first render"
   assert.doesNotMatch(home, /alpine-reflections\.jpg/);
   assert.doesNotMatch(home, /WELCOME_IMAGE_SRCSET/);
   assert.match(home, /canonical.*PUBLIC_SITE/);
-  assert.match(welcome, /imageSrcSet: WELCOME_IMAGE_SRCSET/);
-  assert.match(welcome, /imageSizes: WELCOME_IMAGE_SIZES/);
+  assert.match(welcome, /href: "\/photos\/friends-outdoors\.jpg"/);
+  assert.match(welcome, /src=\{step === 0 \? "\/photos\/friends-outdoors\.jpg"/);
   assert.match(welcome, /fetchPriority: "high"/);
 });
 

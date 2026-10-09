@@ -185,10 +185,13 @@ export function SplashScreen({
         ))}
       </div>
       <div aria-hidden="true" className="nuru-opening-photo-overlay" />
+      <div aria-hidden="true" className="nuru-opening-aurora absolute inset-0 pointer-events-none" />
 
       <div className="relative z-10 flex min-h-dvh flex-col items-center justify-center px-6 text-center">
-        <div className="nuru-opening-brandmark" aria-hidden="true">
-          <NuruGlyph className="h-full w-full" />
+        <div className="nuru-opening-brandmark relative" aria-hidden="true">
+          <span className="nuru-opening-ring absolute -inset-4 rounded-full border border-cyan-100/25" />
+          <span className="absolute -inset-2 rounded-full border border-fuchsia-200/15" />
+          <NuruGlyph className="relative h-full w-full" />
         </div>
         <div className="nuru-opening-wordmark mt-4">
           <h1 className="font-sans text-[clamp(2.15rem,10vw,4rem)] font-bold leading-none tracking-[0.2em] text-white">
@@ -198,8 +201,9 @@ export function SplashScreen({
             Faith
           </p>
           <p className="mt-4 text-[11px] font-medium tracking-[0.18em] text-white/75">
-            FAITH · COMMUNITY · PURPOSE
+            FAITH · COMMUNITY · GROWTH
           </p>
+          <p className="mt-3 text-xs font-semibold tracking-[0.08em] text-white/85">A brighter you.</p>
         </div>
         <button
           type="button"

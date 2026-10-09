@@ -425,33 +425,24 @@ function ProfileScreen() {
             <ChevronRight className="h-4 w-4 shrink-0 text-ink-3" strokeWidth={2} />
           </Link>
 
-          {/* Grid tabs */}
-          <div className="mt-6 flex gap-5 border-b border-border">
-            {GRID_TABS.map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => setTab(t)}
-                aria-current={tab === t ? "true" : undefined}
-                className={cn(
-                  "-mb-px border-b-2 pb-2.5 text-[14px] font-semibold transition-colors",
-                  tab === t ? "border-leaf text-leaf" : "border-transparent text-muted-foreground",
-                )}
-              >
-                {t}
-              </button>
-            ))}
-            <Link
-              to="/create"
-              aria-label="Create post"
-              className="ml-auto inline-flex min-h-9 items-center gap-1 rounded-full bg-primary/15 px-3 text-xs font-semibold text-primary"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              Post
-            </Link>
+          <div className="mt-6 grid grid-cols-4 border-b border-border" role="tablist" aria-label="Your profile content">
+            {GRID_TABS.map((t) => {
+              const Icon = t === "Posts" ? Grid3X3 : t === "Reels" ? Clapperboard : t === "Music" ? Music2 : Bookmark;
+              return (
+                <button key={t} type="button" role="tab" aria-selected={tab === t} onClick={() => setTab(t)}
+                  className={cn(
+                    "inline-flex min-h-12 items-center justify-center gap-1.5 border-b-2 px-1 text-xs font-bold transition-colors sm:text-sm",
+                    tab === t ? "border-primary text-primary" : "border-transparent text-muted-foreground",
+                  )}>
+                  <Icon className="h-4 w-4" /> {t}
+                </button>
+              );
+            })}
           </div>
-
-          <section className="pt-3">
+          {tab === "Music" ? (
+            <div className="pt-4" role="tabpanel"><ProfileMusicSection memberId={userId!} editable /></div>
+          ) : (
+          <section className="pt-3" role="tabpanel">
             {active.isLoading && <CardSkeleton count={2} height="h-28" />}
             {active.isError && (
               <EmptyState
@@ -474,7 +465,7 @@ function ProfileScreen() {
                 action={
                   tab === "Posts" ? (
                     <Link
-                      to="/create"
+                      to="/create" search={{ from: "profile" }}
                       className="inline-flex min-h-9 items-center gap-1 rounded-full bg-primary/15 px-3 text-xs font-semibold text-primary"
                     >
                       <Plus className="h-3.5 w-3.5" />
@@ -494,7 +485,7 @@ function ProfileScreen() {
                 {tab === "Posts" && (
                   <li>
                     <Link
-                      to="/create"
+                      to="/create" search={{ from: "profile" }}
                       className="flex aspect-[3/4] flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-primary/30 bg-primary/5 text-primary"
                     >
                       <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/15">
@@ -532,7 +523,7 @@ function ProfileScreen() {
                     </button>
                     {tab === "Posts" && (
                       <Link
-                        to="/create"
+                        to="/create" search={{ from: "profile" }}
                         aria-label="Create another post"
                         className="absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-black/55 text-white backdrop-blur"
                       >
@@ -544,6 +535,7 @@ function ProfileScreen() {
               </ul>
             )}
           </section>
+          )}
         </div>
       )}
 

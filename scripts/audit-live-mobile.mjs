@@ -103,7 +103,11 @@ for (const viewport of viewports) {
         const root = document.documentElement;
         const visibleImages = Array.from(document.images).filter(img => {
           const rect = img.getBoundingClientRect();
-          return rect.width > 2 && rect.height > 2 && rect.top < innerHeight && rect.bottom > 0;
+          const style = getComputedStyle(img);
+          return Boolean(img.currentSrc || img.getAttribute("src")) &&
+            style.display !== "none" && style.visibility !== "hidden" &&
+            Number(style.opacity) > 0 && rect.width > 2 && rect.height > 2 &&
+            rect.top < innerHeight && rect.bottom > 0;
         });
         return {
           title: document.title,

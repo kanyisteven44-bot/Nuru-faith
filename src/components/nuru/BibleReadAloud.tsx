@@ -1,182 +1,222 @@
-import { useEffect, useRef, useState } from "react";
-import { PrimaryButton, GhostButton } from "./Primitives";
-import { Headphones, Pause, Play, Square } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Headphones, Pause, Play, Square, SkipForward } from "lucide-react";
+import { bibleMatchingVoices, bibleSpeechChunks, bibleSpeechLocale } from "@/lib/bibleSpeech";
 
-/** Read short utterances in sequence so long chapters work on mobile voices. */
+type ReaderState = "idle" | "reading" | "paused";
+
+/**
+ * Reads the ACTUAL selected Bible passage, whatever its translation.
+ * Voices come from Android/Chrome/iOS. Do not silently force an English
+ * voice for non-English Scripture: show a device-voice warning instead.
+ */
 export function BibleReadAloud({
-  verses,
-  label = "chapter",
-  compact = false,
+  verses, label = "chapter", compact = false, language = "English", startVerse,
 }: {
-  verses: { text: string }[];
+  verses: { text: string; verse?: number }[];
   label?: string;
   compact?: boolean;
+  language?: string;
+  startVerse?: number | undefined;
 }) {
   const [supported, setSupported] = useState(false);
-  const [state, setState] = useState<"idle" | "reading" | "paused">("idle");
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [state, setState] = useState<ReaderState>("idle");
   const [rate, setRate] = useState(1);
+  const [voiceId, setVoiceId] = useState("auto");
   const [error, setError] = useState("");
-  const generation = useRef({ value: 0 });
+  const [position, setPosition] = useState<number | null>(null);
+  const generation = useRef(0);
   const current = useRef<SpeechSynthesisUtterance | null>(null);
+  const runIndex = useRef(0);
+
+  const chunks = useMemo(
+    () => verses.flatMap((verse, index) =>
+      bibleSpeechChunks(verse.text).map((text) => ({ text, verse: verse.verse ?? index + 1 })),
+    ),
+    [verses],
+  );
+  const matching = useMemo(() => bibleMatchingVoices(voices, language), [voices, language]);
+  const locale = bibleSpeechLocale(language);
+  const voiceKey = (voice: SpeechSynthesisVoice) =>
+    [voice.voiceURI, voice.lang, voice.name].join("|");
+  const chosen = voiceId === "auto" ? matching[0] : voices.find((v) => voiceKey(v) === voiceId);
+
   useEffect(() => {
-    setSupported("speechSynthesis" in window && "SpeechSynthesisUtterance" in window);
-    const token = generation.current;
+    const api = typeof window !== "undefined" ? window.speechSynthesis : null;
+    setSupported(!!api && "SpeechSynthesisUtterance" in window);
+    if (!api) return;
+    const syncVoices = () => setVoices(api.getVoices());
+    syncVoices();
+    api.addEventListener?.("voiceschanged", syncVoices);
     return () => {
-      token.value++;
-      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+      generation.current++;
+      api.cancel();
       current.current = null;
+      api.removeEventListener?.("voiceschanged", syncVoices);
     };
   }, []);
 
   function stop() {
-    generation.current.value++;
+    generation.current++;
     window.speechSynthesis.cancel();
     current.current = null;
+    runIndex.current = 0;
     setState("idle");
+    setPosition(null);
   }
 
-  function read() {
+  function startAt(index: number) {
+    if (!supported || !chunks.length) return;
     stop();
     setError("");
     setState("reading");
-    const run = generation.current.value;
-    const voice = window.speechSynthesis.getVoices().find((v) => v.lang.startsWith("en"));
-    function speak(index: number) {
-      if (run !== generation.current.value) return;
-      const verse = verses[index];
-      if (!verse) {
+    const token = generation.current;
+    const speech = window.speechSynthesis;
+
+    function next(i: number) {
+      if (token !== generation.current) return;
+      const chunk = chunks[i];
+      if (!chunk) {
         current.current = null;
+        setPosition(null);
         setState("idle");
         return;
       }
-      const utterance = new SpeechSynthesisUtterance(verse.text);
-      utterance.lang = "en";
+      runIndex.current = i;
+      setPosition(chunk.verse);
+      const utterance = new SpeechSynthesisUtterance(chunk.text);
+      if (chosen) utterance.voice = chosen;
+      if (chosen?.lang || locale) utterance.lang = chosen?.lang || locale || "";
       utterance.rate = rate;
-      if (voice) utterance.voice = voice;
-      utterance.onend = () => speak(index + 1);
-      utterance.onerror = () => {
-        if (run !== generation.current.value) return;
+      utterance.onend = () => next(i + 1);
+      utterance.onerror = (event) => {
+        if (token !== generation.current) return;
         stop();
         setError(
-          "Your device could not read aloud. Try again or check your device’s voice settings.",
+          event.error === "language-unavailable" || event.error === "voice-unavailable"
+            ? "No text-to-speech voice is available for " + language + ". Install a matching voice in your phone settings or choose another voice."
+            : "Could not play this Bible audio. Check your device's text-to-speech settings and try again.",
         );
       };
       current.current = utterance;
-      window.speechSynthesis.speak(utterance);
+      try {
+        speech.speak(utterance);
+      } catch {
+        if (token !== generation.current) return;
+        stop();
+        setError("Your browser could not start reading aloud. Check text-to-speech settings.");
+      }
     }
-    speak(0);
+    next(index);
+  }
+
+  function read() {
+    const start = startVerse && verses.some((v) => v.verse === startVerse)
+      ? Math.max(0, chunks.findIndex((chunk) => chunk.verse === startVerse))
+      : 0;
+    startAt(start);
   }
 
   function togglePause() {
     if (state === "reading") window.speechSynthesis.pause();
-    else window.speechSynthesis.resume();
-    setState(state === "paused" ? "reading" : "paused");
+    if (state === "paused") window.speechSynthesis.resume();
+    setState(state === "reading" ? "paused" : "reading");
   }
 
-  if (compact)
-    return (
-      <section aria-label={`Read ${label} aloud`} className="mb-5 border-b border-border pb-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            disabled={!supported || !verses.length}
-            onClick={state === "idle" ? read : togglePause}
-            className="flex min-h-11 items-center gap-2 rounded-full bg-primary/10 px-4 text-sm font-semibold text-primary disabled:opacity-40"
-          >
-            {state === "idle" ? (
-              <Headphones className="h-4 w-4" />
-            ) : state === "reading" ? (
-              <Pause className="h-4 w-4" />
-            ) : (
-              <Play className="h-4 w-4" />
-            )}
-            {state === "idle" ? "Read aloud" : state === "reading" ? "Pause" : "Resume"}
-          </button>
-          {state !== "idle" && (
-            <button
-              type="button"
-              aria-label="Stop reading"
-              onClick={stop}
-              className="flex min-h-11 min-w-11 items-center justify-center rounded-full text-secondary-foreground hover:bg-surface-2"
-            >
-              <Square className="h-4 w-4" />
-            </button>
-          )}
-          <label className="ml-auto text-xs text-muted-foreground">
-            <span className="sr-only">Reading speed</span>
-            <select
-              aria-label="Reading speed"
-              value={rate}
-              disabled={state !== "idle"}
-              onChange={(e) => setRate(Number(e.target.value))}
-              className="min-h-11 rounded-full bg-surface-2 px-3 text-sm text-foreground"
-            >
-              <option value={0.75}>0.75×</option>
-              <option value={1}>1×</option>
-              <option value={1.25}>1.25×</option>
-              <option value={1.5}>1.5×</option>
-            </select>
-          </label>
-        </div>
-        {!supported && (
-          <p role="status" className="mt-2 text-xs text-muted-foreground">
-            Read aloud is unavailable in this browser.
-          </p>
-        )}
-        {error && (
-          <p role="alert" className="mt-2 text-sm">
-            {error}
-          </p>
-        )}
-      </section>
-    );
+  function nextVerse() {
+    if (state === "idle") return;
+    const next = chunks.findIndex((chunk, index) =>
+      index > runIndex.current && chunk.verse !== chunks[runIndex.current]?.verse);
+    if (next >= 0) startAt(next);
+    else stop();
+  }
 
+  const control = "min-h-10 rounded-xl border border-border bg-surface-2 px-2.5 text-xs text-foreground focus-visible:outline-2 focus-visible:outline-primary disabled:opacity-50";
   return (
-    <section aria-label={`Read ${label} aloud`} className="nuru-card mb-3 space-y-2 p-3">
-      <label className="flex items-center gap-2 text-xs">
-        Reading speed
-        <select
-          aria-label="Reading speed"
-          value={rate}
-          disabled={state !== "idle"}
-          onChange={(e) => setRate(Number(e.target.value))}
-          className="rounded-lg border border-border bg-surface-2 px-2 py-1"
+    <section aria-label={"Read " + label + " with sound"}
+      className={compact
+        ? "mb-4 rounded-xl border border-primary/15 bg-primary/5 p-3"
+        : "nuru-card mb-4 space-y-2 p-3"}
+    >
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          disabled={!supported || !chunks.length}
+          onClick={state === "idle" ? read : togglePause}
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-3.5 text-[13px] font-semibold text-primary-foreground disabled:opacity-50"
         >
-          <option value={0.75}>0.75×</option>
-          <option value={1}>1×</option>
-          <option value={1.25}>1.25×</option>
-          <option value={1.5}>1.5×</option>
-        </select>
-      </label>
-      <div className="flex flex-wrap gap-2">
-        <PrimaryButton disabled={!supported || !verses.length} onClick={read}>
-          {state === "idle" ? "Read aloud" : "Restart reading"}
-        </PrimaryButton>
+          {state === "reading"
+            ? <Pause className="h-4 w-4" />
+            : state === "paused"
+              ? <Play className="h-4 w-4" />
+              : <Headphones className="h-4 w-4" />}
+          {state === "idle" ? "Read with sound" : state === "paused" ? "Resume" : "Pause"}
+        </button>
         {state !== "idle" && (
           <>
-            <GhostButton
-              onClick={() => {
-                if (state === "reading") window.speechSynthesis.pause();
-                else window.speechSynthesis.resume();
-                setState(state === "reading" ? "paused" : "reading");
-              }}
-            >
-              {state === "paused" ? "Resume" : "Pause"}
-            </GhostButton>
-            <GhostButton onClick={stop}>Stop</GhostButton>
+            <button type="button" onClick={nextVerse} aria-label="Skip to next verse"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-border text-foreground">
+              <SkipForward className="h-4 w-4" />
+            </button>
+            <button type="button" onClick={stop} aria-label="Stop reading"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-border text-foreground">
+              <Square className="h-4 w-4" />
+            </button>
           </>
         )}
+        <span className="min-w-0 text-[11px] text-muted-foreground" aria-live="polite">
+          {position ? "Verse " + position : language + " · " + (chunks.length ? "Full passage" : "No text")}
+        </span>
       </div>
-      <p className="text-xs text-muted-foreground" role="status">
-        {supported
-          ? `Reads this ${label} using your device’s English voice.`
-          : "Read aloud is unavailable in this browser."}
-      </p>
-      {error && (
-        <p role="alert" className="text-sm">
-          {error}
+      <div className="flex flex-wrap items-center gap-2">
+        <label className="flex min-w-0 flex-1 items-center gap-1.5 text-[11px] text-muted-foreground">
+          Voice
+          <select aria-label="Bible narration voice" disabled={state !== "idle" || !supported}
+            value={voiceId} onChange={(event) => setVoiceId(event.target.value)}
+            className={control + " min-w-0 flex-1"}>
+            <option value="auto">Auto ({language})</option>
+            {matching.map((voice) => (
+              <option key={voiceKey(voice)} value={voiceKey(voice)}>
+                {voice.name} ({voice.lang})
+              </option>
+            ))}
+            {voices.length > 0 && <optgroup label="Other voices (may mispronounce)">
+              {voices.filter((v) => !matching.includes(v)).map((voice) => (
+                <option key={voiceKey(voice)} value={voiceKey(voice)}>
+                  {voice.name} ({voice.lang})
+                </option>
+              ))}
+            </optgroup>}
+          </select>
+        </label>
+        <label className="flex shrink-0 items-center gap-1.5 text-[11px] text-muted-foreground">
+          Speed
+          <select aria-label="Bible reading speed" value={rate} disabled={state !== "idle"}
+            onChange={(event) => setRate(Number(event.target.value))} className={control}>
+            <option value={0.75}>0.75×</option>
+            <option value={1}>1×</option>
+            <option value={1.25}>1.25×</option>
+            <option value={1.5}>1.5×</option>
+          </select>
+        </label>
+      </div>
+      {!supported && (
+        <p role="status" className="text-xs text-muted-foreground">
+          Device speech is unavailable in this browser. Try Chrome on Android or your phone's text-to-speech settings.
         </p>
       )}
+      {supported && voices.length > 0 && matching.length === 0 && (
+        <p role="status" className="text-xs text-amber-500">
+          No {language} voice is installed. The default voice may mispronounce this Bible.
+          Install a matching text-to-speech voice in Android settings, or select another voice to try.
+        </p>
+      )}
+      {supported && voices.length === 0 && (
+        <p role="status" className="text-xs text-muted-foreground">
+          Waiting for device voices. You can try Read with sound, or enable text-to-speech voices in your phone settings.
+        </p>
+      )}
+      {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
     </section>
   );
 }

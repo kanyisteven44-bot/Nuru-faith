@@ -922,3 +922,21 @@ a {
     transform: none !important;
   }
 }
+
+.nuru-opening-aurora {
+  background:
+    radial-gradient(ellipse at 16% 33%, rgb(166 113 244 / 20%), transparent 40%),
+    radial-gradient(ellipse at 83% 56%, rgb(95 184 255 / 18%), transparent 40%),
+    radial-gradient(ellipse at 52% 78%, rgb(238 146 192 / 11%), transparent 52%);
+}
+.nuru-opening-ring {
+  box-shadow: 0 0 36px rgb(102 189 255 / 16%);
+  animation: nuru-opening-halo 1.6s ease-in-out infinite alternate;
+}
+@keyframes nuru-opening-halo {
+  from { opacity: 0.45; transform: scale(0.97); }
+  to { opacity: 0.95; transform: scale(1.045); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nuru-opening-ring { animation: none !important; transform: none !important; }
+}

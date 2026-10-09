@@ -47,8 +47,8 @@ export const synthesizeAfricanBibleAudio = createServerFn({ method: "POST" })
       "You have reached the short audio playback limit. Please try again in a few minutes.",
     );
 
-    const ssml = \`<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="\${voice.locale}"><voice name="\${voice.voice}">\${escapeSpeechXml(data.text)}</voice></speak>\`;
-    const res = await fetch(\`https://\${region}.tts.speech.microsoft.com/cognitiveservices/v1\`, {
+    const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${voice.locale}"><voice name="${voice.voice}">${escapeSpeechXml(data.text)}</voice></speak>`;
+    const res = await fetch(`https://${region}.tts.speech.microsoft.com/cognitiveservices/v1`, {
       method: "POST",
       headers: {
         "Ocp-Apim-Subscription-Key": process.env["AZURE_SPEECH_KEY"]!,

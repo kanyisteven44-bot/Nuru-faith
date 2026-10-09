@@ -168,7 +168,7 @@ function ProfileScreen() {
     requestAnimationFrame(() => {
       const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
       contentTabsRef.current?.scrollIntoView({
-        behavior: reducedMotion ? "instant" : "smooth",
+        behavior: reducedMotion ? "auto" : "smooth",
         block: "start",
       });
     });

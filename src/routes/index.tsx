@@ -1,4 +1,3 @@
-import { WELCOME_IMAGE_SRCSET, WELCOME_IMAGE_SIZES } from "@/lib/welcomeImage";
 import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,11 +24,9 @@ export const Route = createFileRoute("/")({
       { property: "og:url", content: PUBLIC_SITE },
       { property: "og:type", content: "website" },
     ],
-    links: [
-      { rel: "canonical", href: PUBLIC_SITE },
-      { rel: "preload", as: "image", href: "/photos/alpine-reflections.jpg",
-        imageSrcSet: WELCOME_IMAGE_SRCSET, imageSizes: WELCOME_IMAGE_SIZES, fetchPriority: "high" },
-    ],
+    // The public SEO landing never displays the Welcome landscape. Do not
+    // prefetch its large image here and compete with first-render CSS/fonts.
+    links: [{ rel: "canonical", href: PUBLIC_SITE }],
   }),
   component: EntryPage,
 });

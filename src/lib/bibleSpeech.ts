@@ -5,11 +5,15 @@
  */
 const LANGUAGE_CODES: Record<string, string> = {
   english: "en-US", "english british": "en-GB", "english american": "en-US",
-  swahili: "sw-KE", kiswahili: "sw-KE", "swahili kenya": "sw-KE",
+  swahili: "sw-KE", kiswahili: "sw-KE",
+  "swahili kenya": "sw-KE", "kiswahili kenya": "sw-KE",
+  "swahili tanzania": "sw-TZ", "kiswahili tanzania": "sw-TZ",
+  "swahili congo": "sw-CD", "swahili democratic republic of congo": "sw-CD",
+  "swahili uganda": "sw-UG",
   french: "fr-FR", german: "de-DE", spanish: "es-ES", portuguese: "pt-PT",
   "portuguese brazil": "pt-BR", "portuguese brazilian": "pt-BR",
   italian: "it-IT", dutch: "nl-NL", afrikaans: "af-ZA",
-  arabic: "ar-SA", "arabic standard": "ar-SA", "arabic sudanese creole": "ar-SD",
+  arabic: "ar-SA", "arabic standard": "ar-SA", "arabic sudanese creole": "pga-SS",
   hebrew: "he-IL", greek: "el-GR", latin: "la",
   "chinese": "zh-CN", "chinese mandarin": "zh-CN", "chinese traditional": "zh-TW",
   mandarin: "zh-CN", cantonese: "zh-HK",
@@ -32,8 +36,21 @@ const LANGUAGE_CODES: Record<string, string> = {
   somali: "so-SO", hausa: "ha-NG", yoruba: "yo-NG", igbo: "ig-NG",
   zulu: "zu-ZA", xhosa: "xh-ZA", sesotho: "st-ZA", setswana: "tn-ZA",
   "south sotho": "st-ZA", kinyarwanda: "rw-RW", kirundi: "rn-BI",
+  "northern sotho": "nso-ZA", sepedi: "nso-ZA", tsonga: "ts-ZA", xitsonga: "ts-ZA",
+  venda: "ve-ZA", tshivenda: "ve-ZA", ndebele: "nr-ZA", "southern ndebele": "nr-ZA",
+  shona: "sn-ZW", chitonga: "toi-ZM", tonga: "toi-ZM", bemba: "bem-ZM",
+  chichewa: "ny-MW", nyanja: "ny-MW", chewa: "ny-MW", 
+  malagasy: "mg-MG", wolof: "wo-SN", bambara: "bm-ML", fula: "ff-SN",
+  fulfulde: "ff-NG", twi: "tw-GH", akan: "ak-GH", ewe: "ee-GH",
+  lingala: "ln-CD", kikongo: "kg-CD", kongo: "kg-CD",
+  tshiluba: "lua-CD", luba: "lua-CD", "luba kasai": "lua-CD",
   luganda: "lg-UG", kikuyu: "ki-KE", gikuyu: "ki-KE",
-  luo: "luo-KE", dholuo: "luo-KE", kamba: "kam-KE",
+  luo: "luo-KE", dholuo: "luo-KE", kamba: "kam-KE", kikamba: "kam-KE",
+  luhya: "luy-KE", kiluhya: "luy-KE", kalenjin: "kln-KE",
+  maasai: "mas-KE", masai: "mas-KE",
+  turkana: "tuv-KE", pokot: "pko-KE", "taita": "dav-KE",
+  "meru": "mer-KE", kimeru: "mer-KE",
+  "swahili zaire": "sw-CD",
   armenian: "hy-AM", georgian: "ka-GE", azerbaijani: "az-AZ",
   mongolian: "mn-MN", kazakh: "kk-KZ", uzbek: "uz-UZ",
   pashto: "ps-AF", cherokee: "chr-US",
@@ -51,9 +68,12 @@ export function bibleSpeechLocale(language: string): string | null {
   const normalized = normalizeLanguage(language);
   if (!normalized) return null;
   if (LANGUAGE_CODES[normalized]) return LANGUAGE_CODES[normalized];
+  // Catalogs sometimes provide a BCP-47 language tag rather than a label.
+  if (/^[a-z]{2,3}(?:-[a-z]{2,4}){1,2}$/i.test(language))
+    return language.replaceAll("_", "-");
   // eBible also includes "Arabic, Standard", "Swahili: Kenya", and
   // regional/dialect labels. Prefer explicit codes before checking prefixes.
-  const candidate = normalized.split(/\s+(?:of|in)\s+|(?:,|:)/)[0] ?? normalized;
+  const candidate = normalized.split(/\s+(?:of|in)\s+/)[0] ?? normalized;
   if (LANGUAGE_CODES[candidate]) return LANGUAGE_CODES[candidate];
   const known = Object.entries(LANGUAGE_CODES)
     .filter(([name]) => normalized.startsWith(name + " "))
@@ -108,4 +128,34 @@ export function bibleSpeechChunks(text: string, limit = 160): string[] {
   }
   if (remaining) parts.push(remaining);
   return parts;
+}
+
+/** African-language labels we prioritise for Bible audio discovery.
+ * This is a language registry, NOT a claim of installed or cloud voices. */
+const AFRICAN_BIBLE_LOCALES = new Set([
+  "af", "am", "ar", "bm", "bem", "dav", "ee", "ff", "ha", "ig", "kam", "kg",
+  "ki", "kln", "lg", "ln", "lua", "luo", "luy", "mas", "mer", "mg", "nso",
+  "nr", "ny", "om", "pga", "pko", "rn", "rw", "sn", "so", "st", "sw",
+  "ti", "tn", "toi", "ts", "tuv", "tw", "ve", "wo", "xh", "yo", "zu",
+]);
+
+export function isAfricanBibleLanguage(language: string): boolean {
+  const locale = bibleSpeechLocale(language);
+  return !!locale && AFRICAN_BIBLE_LOCALES.has(locale.split("-")[0]!.toLowerCase());
+}
+
+/** A concrete installed voice is required for a confirmed reading.
+ * Chrome can occasionally load native voices asynchronously; we distinguish
+ * "checking" from "no matching voice" in the user interface. */
+export type BibleDeviceVoiceStatus = "ready" | "unavailable" | "checking";
+export function bibleDeviceVoiceStatus(
+  voices: readonly SpeechVoiceSummary[],
+  language: string,
+  voiceListReady: boolean,
+  selectedVoiceURI = "auto",
+): BibleDeviceVoiceStatus {
+  if (!voiceListReady) return "checking";
+  if (selectedVoiceURI !== "auto")
+    return voices.some((v) => v.voiceURI === selectedVoiceURI) ? "ready" : "unavailable";
+  return bibleMatchingVoices(voices, language).length ? "ready" : "unavailable";
 }

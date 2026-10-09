@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Headphones, Pause, Play, Square, SkipForward } from "lucide-react";
-import { bibleMatchingVoices, bibleSpeechChunks, bibleSpeechLocale } from "@/lib/bibleSpeech";
+import {
+  bibleDeviceVoiceStatus,
+  bibleMatchingVoices,
+  bibleSpeechChunks,
+  bibleSpeechLocale,
+  isAfricanBibleLanguage,
+} from "@/lib/bibleSpeech";
 
 type ReaderState = "idle" | "reading" | "paused";
 
@@ -20,6 +26,7 @@ export function BibleReadAloud({
 }) {
   const [supported, setSupported] = useState(false);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [voiceListReady, setVoiceListReady] = useState(false);
   const [state, setState] = useState<ReaderState>("idle");
   const [rate, setRate] = useState(1);
   const [voiceId, setVoiceId] = useState("auto");
@@ -40,18 +47,35 @@ export function BibleReadAloud({
   const voiceKey = (voice: SpeechSynthesisVoice) =>
     [voice.voiceURI, voice.lang, voice.name].join("|");
   const chosen = voiceId === "auto" ? matching[0] : voices.find((v) => voiceKey(v) === voiceId);
+  const voiceStatus = bibleDeviceVoiceStatus(
+    voices, language, voiceListReady,
+    voiceId === "auto" ? "auto" : chosen?.voiceURI ?? "not-selected",
+  );
+  const africanLanguage = isAfricanBibleLanguage(language);
+  const canPlay = supported && chunks.length > 0 && voiceStatus === "ready";
 
   useEffect(() => {
     const api = typeof window !== "undefined" ? window.speechSynthesis : null;
     setSupported(!!api && "SpeechSynthesisUtterance" in window);
     if (!api) return;
-    const syncVoices = () => setVoices(api.getVoices());
+    const syncVoices = () => {
+      const available = api.getVoices();
+      setVoices(available);
+      if (available.length > 0) setVoiceListReady(true);
+    };
     syncVoices();
     api.addEventListener?.("voiceschanged", syncVoices);
+    // Android Chrome sometimes populates voices asynchronously. Wait briefly,
+    // then show a useful "no voice" message instead of reading in English.
+    const timeout = window.setTimeout(() => {
+      syncVoices();
+      setVoiceListReady(true);
+    }, 1800);
     return () => {
       generation.current++;
       api.cancel();
       current.current = null;
+      window.clearTimeout(timeout);
       api.removeEventListener?.("voiceschanged", syncVoices);
     };
   }, []);
@@ -66,7 +90,10 @@ export function BibleReadAloud({
   }
 
   function startAt(index: number) {
-    if (!supported || !chunks.length) return;
+    if (!canPlay || !chosen) {
+      setError("A matching narration voice is not available. Select an installed voice below or install a voice for " + language + " in your phone settings.");
+      return;
+    }
     stop();
     setError("");
     setState("reading");
@@ -85,7 +112,9 @@ export function BibleReadAloud({
       runIndex.current = i;
       setPosition(chunk.verse);
       const utterance = new SpeechSynthesisUtterance(chunk.text);
-      if (chosen) utterance.voice = chosen;
+      // Never ask the OS to guess a language: that previously read African
+      // passages in its default English voice on some Android devices.
+      utterance.voice = chosen!;
       if (chosen?.lang || locale) utterance.lang = chosen?.lang || locale || "";
       utterance.rate = rate;
       utterance.onend = () => next(i + 1);
@@ -141,7 +170,7 @@ export function BibleReadAloud({
       <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
-          disabled={!supported || !chunks.length}
+          disabled={!canPlay}
           onClick={state === "idle" ? read : togglePause}
           className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-3.5 text-[13px] font-semibold text-primary-foreground disabled:opacity-50"
         >
@@ -165,7 +194,8 @@ export function BibleReadAloud({
           </>
         )}
         <span className="min-w-0 text-[11px] text-muted-foreground" aria-live="polite">
-          {position ? "Verse " + position : language + " · " + (chunks.length ? "Full passage" : "No text")}
+          {position ? "Verse " + position : language + " · " +
+            (voiceStatus === "ready" ? "Voice ready" : voiceStatus === "checking" ? "Checking voices" : "Voice needed")}
         </span>
       </div>
       <div className="flex flex-wrap items-center gap-2">
@@ -205,15 +235,28 @@ export function BibleReadAloud({
           Device speech is unavailable in this browser. Try Chrome on Android or your phone's text-to-speech settings.
         </p>
       )}
-      {supported && voices.length > 0 && matching.length === 0 && (
-        <p role="status" className="text-xs text-amber-500">
-          No {language} voice is installed. The default voice may mispronounce this Bible.
-          Install a matching text-to-speech voice in Android settings, or select another voice to try.
+      {supported && voiceStatus === "checking" && (
+        <p role="status" className="text-xs text-muted-foreground">
+          Checking the voices installed on your device…
         </p>
       )}
-      {supported && voices.length === 0 && (
-        <p role="status" className="text-xs text-muted-foreground">
-          Waiting for device voices. You can try Read with sound, or enable text-to-speech voices in your phone settings.
+      {supported && voiceStatus === "unavailable" && (
+        <div role="status" className="space-y-1 rounded-xl border border-amber-500/25 bg-amber-500/5 px-3 py-2 text-xs leading-relaxed text-amber-500">
+          <p className="font-semibold">No {language} voice is installed on this device.</p>
+          <p>
+            {africanLanguage ? "African-language Bible text is available, but a matching narration voice is needed. " : ""}
+            Open Android Settings → Text-to-speech output → Install voice data, if your phone supports this language.
+            Return to Nuru and reopen the chapter to check again.
+          </p>
+          {voices.length > 0 && (
+            <p>Other installed voices appear in the Voice menu. You can select one manually, but it may mispronounce Scripture.</p>
+          )}
+          <p>Availability varies by Android device and language. Nuru will not automatically substitute English narration.</p>
+        </div>
+      )}
+      {supported && voiceStatus === "ready" && africanLanguage && (
+        <p className="text-[11px] text-muted-foreground">
+          {chosen?.name || language} · African-language narration uses the voice installed on this device.
         </p>
       )}
       {error && <p role="alert" className="text-xs text-destructive">{error}</p>}

@@ -1,4 +1,4 @@
-const CACHE_NAME = "nuru-static-v7-offline-reading";
+const CACHE_NAME = "nuru-static-v8-cross2-icons";
 
 // Never navigate a notification tap to another origin, including protocol-
 // relative URLs or backslash variants that URL parsing could reinterpret.
@@ -19,10 +19,10 @@ const PRECACHE = [
   "/offline-reader.js",
   "/photos/mountain-lake.jpg",
   "/manifest.webmanifest",
-  "/favicon.png?v=arch1",
-  "/icons/icon-192.png?v=arch1",
-  "/icons/icon-512.png?v=arch1",
-  "/icons/maskable-512.png?v=arch1",
+  "/favicon.png?v=cross2",
+  "/icons/icon-192.png?v=cross2",
+  "/icons/icon-512.png?v=cross2",
+  "/icons/maskable-512.png?v=cross2",
 ];
 
 self.addEventListener("install", (event) => {
@@ -130,8 +130,8 @@ self.addEventListener("push", (event) => {
 
   const options = {
     body,
-    icon: "/icons/icon-192.png?v=arch1",
-    badge: "/icons/icon-192.png?v=arch1",
+    icon: "/icons/icon-192.png?v=cross2",
+    badge: "/icons/icon-192.png?v=cross2",
     tag: id ? `nuru-${id}` : undefined,
     data: { url, category },
     requireInteraction: isCall || priority === "critical",

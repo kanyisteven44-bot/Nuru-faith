@@ -60,7 +60,7 @@ test("private routes are still excluded from search indexing", () => {
 
 test("installed Nuru PWA continues to open the familiar app flow", () => {
   const homepage = read("src/routes/index.tsx");
-  assert.ok(homepage.includes('display-mode: standalone'));
-  assert.ok(homepage.includes('go("/home")'));
-  assert.ok(homepage.includes('go("/welcome")'));
+  assert.ok(homepage.includes('setDestination(data.session ? "/home" : "/welcome")'));
+  assert.ok(homepage.includes('<SplashScreen initialOnly'));
+  assert.ok(homepage.includes('introComplete && destination'));
 });

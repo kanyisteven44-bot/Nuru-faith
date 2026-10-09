@@ -2,7 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { finishSpotifyConnect } from "@/lib/spotifyPkce";
 
-export const Route = createFileRoute("/auth/spotify/callback" as never)({ component: SpotifyCallback });
+// The route tree is regenerated during Vite build; CI typecheck runs first.
+// @ts-expect-error new route is missing from committed generated route types until build
+export const Route = createFileRoute("/auth/spotify/callback")({ component: SpotifyCallback });
 function SpotifyCallback() {
   const [message, setMessage] = useState("Checking Spotify connection…");
   const [connected, setConnected] = useState(false);

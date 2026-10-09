@@ -29,6 +29,7 @@ import {
   Highlighter,
   Loader2,
   MapPin,
+  MoreHorizontal,
   Pencil,
   Plus,
   Settings,
@@ -55,6 +56,7 @@ import { fetchAllHighlights, fetchSavedScriptures } from "@/services/series";
 import { AppShell, Avatar, ScreenHeader } from "@/components/nuru/AppShell";
 import { PeopleSheet, type PeopleKind } from "@/components/nuru/PeopleSheet";
 import { CardSkeleton, EmptyState, ProgressBar } from "@/components/nuru/Primitives";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ProfileMusicFeature, ProfileMusicSection } from "@/components/nuru/ProfileMusicSection";
 
 export const Route = createFileRoute("/_authenticated/profile")({
@@ -89,6 +91,7 @@ function ProfileScreen() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const photoInput = useRef<HTMLInputElement>(null);
+  const contentTabsRef = useRef<HTMLDivElement>(null);
   const [tab, setTab] = useState<GridTab>("Posts");
   const [selectedPost, setSelectedPost] = useState<string | null>(null);
   const [postToDelete, setPostToDelete] = useState<{ id: string; title: string } | null>(null);
@@ -108,7 +111,7 @@ function ProfileScreen() {
   const myEvents = useQuery({
     queryKey: ["my-events", userId],
     queryFn: () => fetchMyEventIds(userId!),
-    enabled: !!userId,
+    enabled: !!userId && tab === "Saved",
   });
   const myPosts = useQuery({
     queryKey: ["my-posts", userId],
@@ -123,17 +126,17 @@ function ProfileScreen() {
   const savedScriptures = useQuery({
     queryKey: ["saved-scriptures", userId],
     queryFn: () => fetchSavedScriptures(userId!),
-    enabled: !!userId,
+    enabled: !!userId && tab === "Saved",
   });
   const highlights = useQuery({
     queryKey: ["all-highlights", userId],
     queryFn: () => fetchAllHighlights(userId!),
-    enabled: !!userId,
+    enabled: !!userId && tab === "Saved",
   });
   const savedPostRows = useQuery({
     queryKey: ["saved-post-rows-count", userId],
     queryFn: () => fetchMySavedPostRows(userId!),
-    enabled: !!userId,
+    enabled: !!userId && tab === "Saved",
   });
   const savedPostCount = savedPostRows.data?.length;
 
@@ -159,6 +162,17 @@ function ProfileScreen() {
   });
 
   const selectedItem = items.find((item) => item.id === selectedPost);
+
+  function openMusicTab() {
+    setTab("Music");
+    requestAnimationFrame(() => {
+      const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+      contentTabsRef.current?.scrollIntoView({
+        behavior: reducedMotion ? "auto" : "smooth",
+        block: "start",
+      });
+    });
+  }
 
   async function confirmDeletePost() {
     if (!userId || !postToDelete || deletingPost) return;
@@ -275,28 +289,28 @@ function ProfileScreen() {
           />
         </div>
       ) : (
-        <div className="mx-auto max-w-3xl px-4 pt-1 pb-8">
-          <div className="relative h-36 overflow-hidden rounded-[26px] bg-[linear-gradient(135deg,#071A32,#103C64)] sm:h-44">
-            <CoverImage src="/photos/worship-gathering.jpg" alt="" className="absolute inset-0 h-full w-full object-cover opacity-70" />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#07162B]/95 via-[#07162B]/60 to-[#07162B]/20" />
-            <span className="absolute left-5 top-5 rounded-full border border-white/30 bg-white/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.17em] text-white backdrop-blur">My Nuru space</span>
-            <span className="absolute bottom-4 right-5 text-xs font-semibold tracking-wide text-blue-100">Faith • Friends • Worship</span>
+        <div className="mx-auto max-w-3xl space-y-0 px-4 pt-1 pb-10">
+          <div className="relative h-32 overflow-hidden rounded-[24px] border border-primary/20 bg-[linear-gradient(135deg,#071A32,#103C64)] shadow-[0_12px_28px_rgba(1,13,34,0.2)] sm:h-44">
+            <CoverImage src="/photos/worship-gathering.jpg" alt="" className="absolute inset-0 h-full w-full object-cover opacity-80" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#07162B]/85 via-[#07162B]/40 to-[#07162B]/30" />
+            <span className="absolute left-4 top-4 rounded-full border border-sky-300/30 bg-[#0c2f55]/75 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-sky-50 backdrop-blur-sm">My Nuru space</span>
+            <span className="absolute bottom-3 right-4 text-[10px] font-semibold tracking-wide text-blue-100 sm:text-xs">Faith • Friends • Worship</span>
           </div>
-          <section className="relative -mt-9 flex gap-4 px-2 sm:-mt-11">
-            <span className="relative block h-[104px] w-[104px] shrink-0">
+          <section className="relative -mt-8 flex items-end gap-3 px-1.5 sm:-mt-11 sm:gap-4">
+            <span className="relative block h-[96px] w-[96px] shrink-0 sm:h-[112px] sm:w-[112px]">
               <Avatar
                 url={profile.data?.avatar_url ?? null}
                 name={profile.data?.full_name ?? ""}
                 seed={userId}
                 size="lg"
-                className="h-[104px] w-[104px] border-4 border-background text-3xl shadow-[0_10px_30px_rgba(2,12,30,0.4)]"
+                className="h-[96px] w-[96px] border-[3px] border-background text-3xl shadow-[0_10px_30px_rgba(2,12,30,0.4)] ring-1 ring-primary/25 sm:h-[112px] sm:w-[112px]"
               />
               <button
                 type="button"
                 onClick={() => photoInput.current?.click()}
                 disabled={uploading}
                 aria-label="Change your photo"
-                className="nuru-disc absolute right-0 bottom-0 h-8 w-8 ring-4 ring-[var(--background)]"
+                className="nuru-disc absolute right-0 bottom-0 h-9 w-9 ring-[3px] ring-[var(--background)]"
               >
                 {uploading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -317,14 +331,14 @@ function ProfileScreen() {
               />
             </span>
 
-            <div className="min-w-0 flex-1 pt-1">
-              <h1 className="mt-9 flex items-center gap-1.5 font-display text-[26px] leading-tight sm:mt-10">
+            <div className="min-w-0 flex-1 pb-1">
+              <h1 className="flex items-center gap-1.5 font-display text-[clamp(1.2rem,5vw,1.8rem)] font-semibold leading-tight">
                 <span className="truncate">{profile.data?.full_name ?? "Nuru member"}</span>
                 {profile.data?.verified && (
                   <BadgeCheck className="h-5 w-5 shrink-0 text-leaf" aria-label="Verified" />
                 )}
               </h1>
-              <p className="truncate text-[13px] text-ink-3">
+              <p className="mt-0.5 truncate text-[12px] text-ink-3 sm:text-[13px]">
                 @{profile.data?.username ?? "member"}
               </p>
               {churchName && (
@@ -343,7 +357,7 @@ function ProfileScreen() {
           </section>
 
           {/* Three-up counts, as the board has them. */}
-          <dl className="mt-5 grid grid-cols-3">
+          <dl className="mt-4 grid grid-cols-3 divide-x divide-border/70 rounded-2xl bg-surface-2/30 py-2.5">
             <Stat label="Posts" value={counts.data?.posts} />
             <Stat
               label="Followers"
@@ -357,18 +371,21 @@ function ProfileScreen() {
             />
           </dl>
 
-          <div className="mt-4 grid grid-cols-2 gap-2.5">
+          <div className="mt-3.5 grid grid-cols-2 gap-2.5">
             <Link to="/create" search={{ from: "profile" }}
-              className="nuru-raise inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground">
+              className="nuru-raise inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-3 text-[13px] font-bold text-primary-foreground shadow-[0_5px_18px_rgba(37,125,245,0.14)] sm:text-sm">
               <Plus className="h-4 w-4" /> Create post
             </Link>
             <Link to="/settings" search={{ panel: "profile" }}
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border-strong bg-surface-2 px-4 text-sm font-bold">
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border-strong bg-surface-2 px-3 text-[13px] font-bold sm:text-sm">
               <Pencil className="h-4 w-4" /> Edit profile
             </Link>
           </div>
-          <ProfileMusicFeature memberId={userId!} onBrowse={() => setTab("Music")} />
-          <section className="nuru-card mt-4 p-4">
+          <ProfileMusicFeature memberId={userId!} onBrowse={openMusicTab} />
+          <section className="relative mt-3.5 overflow-hidden rounded-2xl border border-primary/20 bg-surface shadow-[0_10px_28px_rgba(2,13,32,0.16)]">
+            <CoverImage src="/photos/mountain-lake.jpg" alt="" className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.19]" />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-background/95 via-background/85 to-background/60" />
+            <div className="relative p-4">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-primary">Journey badge</p>
@@ -401,7 +418,8 @@ function ProfileScreen() {
                 </span>
               </span>
             </div>
-            <ProgressBar value={(intoLevel / LEVEL_STEP) * 100} className="mt-2.5" />
+            <ProgressBar value={(intoLevel / LEVEL_STEP) * 100} className="mt-3" />
+            </div>
           </section>
 
           {editing && (
@@ -434,16 +452,16 @@ function ProfileScreen() {
             </section>
           )}
 
-          <div className="mt-6 grid grid-cols-4 border-b border-border" role="tablist" aria-label="Your profile content">
+          <div ref={contentTabsRef} className="mt-5 grid scroll-mt-20 grid-cols-4 border-b border-border" role="tablist" aria-label="Your profile content">
             {GRID_TABS.map((t) => {
               const Icon = t === "Posts" ? Grid3X3 : t === "Reels" ? Clapperboard : t === "Music" ? Music2 : Bookmark;
               return (
                 <button key={t} type="button" role="tab" aria-selected={tab === t} onClick={() => setTab(t)}
                   className={cn(
-                    "inline-flex min-h-12 items-center justify-center gap-1.5 border-b-2 px-1 text-xs font-bold transition-colors sm:text-sm",
+                    "inline-flex min-h-12 items-center justify-center gap-1 border-b-2 px-0.5 text-[11px] font-bold transition-colors focus-visible:outline-2 focus-visible:outline-primary sm:gap-1.5 sm:text-sm",
                     tab === t ? "border-primary text-primary" : "border-transparent text-muted-foreground",
                   )}>
-                  <Icon className="h-4 w-4" /> {t}
+                  <Icon className="h-4 w-4 shrink-0" /> {t}
                 </button>
               );
             })}
@@ -490,12 +508,12 @@ function ProfileScreen() {
               />
             )}
             {items.length > 0 && (
-              <ul className="grid grid-cols-3 gap-2">
+              <ul className="grid grid-cols-3 gap-2.5">
                 {tab === "Posts" && (
                   <li>
                     <Link
                       to="/create" search={{ from: "profile" }}
-                      className="flex aspect-[3/4] flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-primary/30 bg-primary/5 text-primary"
+                      className="flex aspect-[3/4] flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-primary/45 bg-primary/5 text-primary transition-colors hover:bg-primary/10"
                     >
                       <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/15">
                         <Plus className="h-4 w-4" />
@@ -510,14 +528,14 @@ function ProfileScreen() {
                       type="button"
                       onClick={() => setSelectedPost(item.id)}
                       aria-label={item.title || "Open post"}
-                      className="relative block aspect-[3/4] w-full overflow-hidden rounded-xl border border-border text-left"
+                      className="relative block aspect-[3/4] w-full overflow-hidden rounded-2xl border border-border text-left shadow-[0_8px_20px_rgba(1,9,23,0.15)]"
                     >
                       {item.cover ? (
                         <PostMedia url={item.cover} kind={item.kind} compact />
                       ) : (
                         <span className="absolute inset-0 bg-gradient-to-br from-surface-2 to-card" />
                       )}
-                      <span className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
+                      <span className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent" />
                       <span className="absolute inset-x-0 bottom-0 p-2">
                         {item.title && (
                           <span className="line-clamp-2 block text-[12px] leading-tight font-semibold text-white">
@@ -531,23 +549,29 @@ function ProfileScreen() {
                       </span>
                     </button>
                     {tab === "Posts" && (
-                      <button
-                        type="button"
-                        onClick={() => setPostToDelete({ id: item.id, title: item.title })}
-                        aria-label={`Delete post: ${item.title || "Untitled post"}`}
-                        className="absolute left-2 top-2 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/65 text-white backdrop-blur transition-colors hover:bg-red-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-                      >
-                        <Trash2 className="h-4 w-4" aria-hidden="true" />
-                      </button>
-                    )}
-                    {tab === "Posts" && (
-                      <Link
-                        to="/create" search={{ from: "profile" }}
-                        aria-label="Create another post"
-                        className="absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-black/55 text-white backdrop-blur"
-                      >
-                        <Plus className="h-3.5 w-3.5" />
-                      </Link>
+                      <div className="absolute right-2 top-2 z-10">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              type="button"
+                              aria-label={`Options for post: ${item.title || "Untitled post"}`}
+                              className="flex h-9 w-9 items-center justify-center rounded-full border border-white/25 bg-black/65 text-white backdrop-blur-sm transition-colors hover:bg-black/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                            >
+                              <MoreHorizontal className="h-5 w-5" aria-hidden="true" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" sideOffset={5}>
+                            <DropdownMenuItem
+                              aria-label={`Delete post: ${item.title || "Untitled post"}`}
+                              onSelect={() => setPostToDelete({ id: item.id, title: item.title })}
+                              className="min-h-10 gap-2 text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" aria-hidden="true" />
+                              Delete post
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     )}
                   </li>
                 ))}
@@ -555,39 +579,40 @@ function ProfileScreen() {
             )}
           </section>
           )}
-          {/* Saved content — real counts only; there is no Downloads feature
-              in the app, so the board's Downloads row is left out. */}
-          <div className="mt-6 mb-3 flex items-center justify-between gap-2">
-            <h2 className="font-display text-[21px] leading-none">Saved content</h2>
-          </div>
-          <div className="grid grid-cols-3 gap-2.5">
-            <SavedTile
-              icon={BookMarked}
-              label="Bible verses"
-              count={savedScriptures.data?.length}
-              to="/bible"
-            />
-            <SavedTile
-              icon={Highlighter}
-              label="Highlights"
-              count={highlights.data?.length}
-              to="/bible"
-            />
-            <SavedTile icon={Bookmark} label="Saved posts" count={savedPostCount} to="/community" />
-          </div>
-
-          <Link to="/events" className="nuru-card mt-3 flex items-center gap-3 p-3">
-            <span className="nuru-disc nuru-disc-terra h-9 w-9">
-              <CalendarDays className="h-4 w-4" strokeWidth={1.9} />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-[13px] font-bold">Events</span>
-              <span className="block text-[11px] text-ink-3">
-                {myEvents.data ? `${myEvents.data.length} booked` : "— booked"}
-              </span>
-            </span>
-            <ChevronRight className="h-4 w-4 shrink-0 text-ink-3" strokeWidth={2} />
-          </Link>
+          {/* Keep saved tools with the Saved tab rather than extending every
+              profile visit into a second dashboard below the post grid. */}
+          {tab === "Saved" && (
+            <section className="pt-5" aria-label="Saved content shortcuts">
+              <h2 className="mb-3 font-display text-xl font-semibold">Your saved library</h2>
+              <div className="grid grid-cols-3 gap-2.5">
+                <SavedTile
+                  icon={BookMarked}
+                  label="Bible verses"
+                  count={savedScriptures.data?.length}
+                  to="/bible"
+                />
+                <SavedTile
+                  icon={Highlighter}
+                  label="Highlights"
+                  count={highlights.data?.length}
+                  to="/bible"
+                />
+                <SavedTile icon={Bookmark} label="Saved posts" count={savedPostCount} to="/community" />
+              </div>
+              <Link to="/events" className="mt-3 flex min-h-16 items-center gap-3 rounded-2xl border border-border bg-surface-2/50 p-3 transition-colors hover:bg-surface-2">
+                <span className="nuru-disc nuru-disc-terra h-9 w-9">
+                  <CalendarDays className="h-4 w-4" strokeWidth={1.9} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[13px] font-bold">Events</span>
+                  <span className="block text-[11px] text-ink-3">
+                    {myEvents.data ? `${myEvents.data.length} booked` : "— booked"}
+                  </span>
+                </span>
+                <ChevronRight className="h-4 w-4 shrink-0 text-ink-3" strokeWidth={2} />
+              </Link>
+            </section>
+          )}
 
         </div>
       )}

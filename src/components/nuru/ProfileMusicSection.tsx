@@ -27,13 +27,13 @@ export function ProfileMusicFeature({
   const [playing, setPlaying] = useState<MediaItem | null>(null);
   const featured = songs.data?.[0]?.item;
   return (
-    <section className="mt-4 overflow-hidden rounded-3xl border border-border-strong bg-[linear-gradient(125deg,#0B233D,#143859_56%,#10243B)] p-4 text-white shadow-[0_14px_40px_rgba(3,14,31,0.18)]" aria-label="Profile song">
-      <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-blue-200">
+    <section className="relative mt-3.5 overflow-hidden rounded-2xl border border-sky-500/25 bg-[linear-gradient(115deg,#0A2440,#12365B_58%,#0C233B)] p-3.5 text-white shadow-[0_10px_24px_rgba(3,14,31,0.15)]" aria-label="Profile song">
+      <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-sky-200">
         <Music2 className="h-4 w-4" /> My profile soundtrack
       </div>
       {featured ? (
-        <div className="mt-3 flex items-center gap-3">
-          <MusicArtwork item={featured} className="h-16 w-16 shrink-0 rounded-2xl" />
+        <div className="mt-2.5 flex items-center gap-3">
+          <MusicArtwork item={featured} className="h-14 w-14 shrink-0 rounded-xl" />
           <div className="min-w-0 flex-1">
             <p className="truncate text-[14px] font-bold">{featured.title}</p>
             <p className="mt-1 truncate text-xs text-blue-100/80">{featured.creator_name || "Gospel music"}</p>
@@ -42,14 +42,16 @@ export function ProfileMusicFeature({
             </button>
           </div>
           <button type="button" onClick={() => setPlaying(featured)} aria-label={`Play ${featured.title}`}
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white text-[#143859] shadow-lg">
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-sky-400 text-[#092444] shadow-[0_4px_16px_rgba(56,189,248,0.2)] transition-transform hover:scale-105">
             <Play className="h-5 w-5 fill-current" />
           </button>
         </div>
       ) : (
-        <button type="button" onClick={onBrowse} className="mt-3 flex min-h-14 w-full items-center justify-between rounded-2xl border border-white/20 bg-white/10 px-4 text-left text-sm">
-          <span>Add your favourite worship song to your profile</span>
-          <Plus className="h-5 w-5 shrink-0" />
+        <button type="button" onClick={onBrowse} className="mt-2.5 flex min-h-12 w-full items-center gap-3 rounded-xl border border-sky-200/15 bg-white/[0.06] px-3 py-2 text-left transition-colors hover:bg-white/10">
+          <span className="min-w-0 flex-1 text-[13px] leading-snug text-sky-50">Add your favourite worship song</span>
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-sky-400/45 bg-sky-400/15">
+            <Plus className="h-[18px] w-[18px]" aria-hidden="true" />
+          </span>
         </button>
       )}
       {playing && (

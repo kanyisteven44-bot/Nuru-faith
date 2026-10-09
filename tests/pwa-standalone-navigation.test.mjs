@@ -48,7 +48,7 @@ test("the canonical installation guide never appears in an installed app", () =>
   const page = read("src/components/nuru/PublicSeoLanding.tsx");
   const welcome = read("src/routes/welcome.tsx");
   assert.match(page, /<PwaInstallGuide \/>/);
-  assert.match(welcome, /<PwaInstallGuide \/>/);
+  assert.doesNotMatch(welcome, /<PwaInstallGuide \/>/);
 });
 
 test("browser app install does not become an in-app redirect", () => {

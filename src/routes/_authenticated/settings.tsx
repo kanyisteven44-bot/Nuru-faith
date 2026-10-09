@@ -146,7 +146,7 @@ function SettingsScreen() {
             onClick={() => setSecurityOpen((open) => !open)}
             expanded={securityOpen}
           />
-          <RowLink icon={Bell} label="Notifications" to="/notifications" />
+          <RowLink icon={Bell} label="Notifications" description="Set up alerts for calls and messages, even when Nuru is closed" to="/notifications" />
         </Section>
 
         {securityOpen && (

@@ -3,6 +3,7 @@ import { fetchCallHistory } from "./calls";
 import { callHistoryLabel } from "@/lib/callHistory";
 import type { Database } from "@/integrations/supabase/types";
 import { chatAttachmentInfo } from "@/lib/chatAttachments";
+import { directChatFilter } from "@/lib/chatPagination";
 
 type DirectRow = Database["public"]["Tables"]["direct_messages"]["Row"];
 type GroupRow = Database["public"]["Tables"]["group_chat_messages"]["Row"];
@@ -94,17 +95,12 @@ export async function fetchChatMessages(
   }
 
   if ("user" in target) {
-    let q = supabase
+    // Keep the peer constraint and cursor in ONE PostgREST logic tree:
+    // calling .or() twice overwrites the first filter and mixes conversations.
+    const q = supabase
       .from("direct_messages")
       .select("*")
-      .or(
-        `and(sender_id.eq.${target.self},recipient_id.eq.${target.user}),and(sender_id.eq.${target.user},recipient_id.eq.${target.self})`,
-      );
-    if (before) {
-      q = q.or(
-        `created_at.lt.${before.created_at},and(created_at.eq.${before.created_at},id.lt.${before.id})`,
-      );
-    }
+      .or(directChatFilter(target.self, target.user, before));
     const { data, error } = await q
       .order("created_at", { ascending: false })
       .order("id", { ascending: false })

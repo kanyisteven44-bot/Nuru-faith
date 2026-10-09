@@ -12,6 +12,7 @@
     "format": "prettier --write .",
     "test": "node --experimental-strip-types --test tests/*.test.mjs",
     "typecheck": "tsc --noEmit",
+    "catalog:wikidata": "node scripts/wikidata-gospel-artists.mjs",
     "shots": "node scripts/ui-shots.mjs"
   },
   "overrides": {

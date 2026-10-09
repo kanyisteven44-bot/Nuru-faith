@@ -819,7 +819,7 @@ const packs = [
       ["🎶", "This song reminds me of you"],
       ["💙", "Here for you"],
     ],
-  }
+  },
 
   {
     name: "Meme Energy",

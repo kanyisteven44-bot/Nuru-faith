@@ -1,4 +1,5 @@
 import { CoverImage } from "@/components/nuru/CoverImage";
+import { SpotifyWorship } from "@/components/nuru/SpotifyWorship";
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -54,7 +55,7 @@ export const Route = createFileRoute("/_authenticated/music")({
 });
 
 const TABS = ["Music", "Podcasts", "Sermons", "Videos"] as const;
-const MUSIC_MODES = ["Audio", "Video"] as const;
+const MUSIC_MODES = ["Audio", "Video", "Spotify"] as const;
 type Tab = (typeof TABS)[number];
 type MusicMode = (typeof MUSIC_MODES)[number];
 
@@ -262,6 +263,8 @@ function MusicScreen() {
           </div>
         )}
       </div>
+
+      {tab === "Music" && musicMode === "Spotify" && <SpotifyWorship />}
 
       {tab === "Music" && musicMode === "Video" && (
         <MusicDiscovery

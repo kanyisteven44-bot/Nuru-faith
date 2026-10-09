@@ -23,7 +23,9 @@ const pages = [
   ["/christian-community-app", "community-public"],
 ];
 const viewports = [
+  { label: "mobile-320", width: 320, height: 720, mobile: true },
   { label: "mobile-360", width: 360, height: 800, mobile: true },
+  { label: "mobile-412", width: 412, height: 915, mobile: true },
   { label: "mobile-390", width: 390, height: 844, mobile: true },
   { label: "mobile-430", width: 430, height: 932, mobile: true },
   { label: "desktop", width: 1366, height: 768, mobile: false },
@@ -62,6 +64,9 @@ for (const viewport of viewports) {
         } catch { /* unsupported performance observer category */ }
       });
       const response = await tab.goto(url, { waitUntil: "domcontentloaded", timeout: 45000 });
+      const initialHtml = route.startsWith("/auth?") && response
+        ? await response.text()
+        : "";
       if (route.startsWith("/auth?")) {
         // Browser-first pages used to return an empty shell during hydration,
         // especially at 360px on the first cold context. The sign-in form is
@@ -97,6 +102,10 @@ for (const viewport of viewports) {
       const problems = [];
       if (response?.status() !== 200) problems.push("http_" + response?.status());
       if (v.text < 12) problems.push("empty_page");
+      // A real form needs to be present in the *initial response*, not only
+      // after JavaScript downloads. Blank SSR shells are poor launch UX.
+      if (route.startsWith("/auth?") && !initialHtml.includes("<form"))
+        problems.push("auth_not_server_rendered");
       if (v.appError) problems.push("app_error_page");
       if (v.overflow > 8) problems.push("horizontal_overflow_" + v.overflow + "px");
       if (v.brokenImages.length) problems.push("broken_images:" + v.brokenImages.join(","));

@@ -3,7 +3,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { NuruGlyph } from "@/components/nuru/Logo";
 import { cn } from "@/lib/utils";
 import { ArrowRight } from "lucide-react";
-import { OPENING_IMAGE_SRC, OPENING_IMAGE_SRCSET, OPENING_IMAGE_SIZES } from "@/lib/openingImage";
+import { OPENING_IMAGE_SRC } from "@/lib/openingImage";
+import { OpeningPhoto } from "@/components/nuru/OpeningPhoto";
 
 const SESSION_KEY = "nuru-opening-v5-shown";
 const HOLD_MS = 650;
@@ -172,24 +173,21 @@ export function SplashScreen({
     >
       <div className="absolute inset-0" aria-hidden="true">
         {/* Keep photography visible while rotating layers load or transition. */}
-        <img
-          src={OPENING_PHOTOS[0]}
-          srcSet={OPENING_IMAGE_SRCSET}
-          sizes={OPENING_IMAGE_SIZES}
-          alt=""
+        <OpeningPhoto
           decoding="async"
           fetchPriority="high"
           className="nuru-opening-photo nuru-opening-photo-base"
         />
         {OPENING_PHOTOS.map((src, index) => (
-          <img
+          index === 0 ? <OpeningPhoto
+            key={src}
+            className={cn("nuru-opening-photo", index === photoIndex ? "nuru-opening-photo-active" : "nuru-opening-photo-idle")}
+          /> : <img
             key={src}
             src={index <= photoIndex ? src : undefined}
-            srcSet={index === 0 ? OPENING_IMAGE_SRCSET : undefined}
-            sizes={index === 0 ? OPENING_IMAGE_SIZES : undefined}
             alt=""
             decoding="async"
-            fetchPriority={index === 0 ? "high" : "auto"}
+            fetchPriority="auto"
             className={cn(
               "nuru-opening-photo",
               index === photoIndex ? "nuru-opening-photo-active" : "nuru-opening-photo-idle",

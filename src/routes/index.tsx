@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { SplashScreen } from "@/components/nuru/SplashScreen";
 import { NuruGlyph } from "@/components/nuru/Logo";
 import { Link } from "@tanstack/react-router";
-import { OPENING_IMAGE_PRELOAD, OPENING_IMAGE_SRC, OPENING_IMAGE_SRCSET, OPENING_IMAGE_SIZES } from "@/lib/openingImage";
+import { OPENING_IMAGE_PRELOADS } from "@/lib/openingImage";
+import { OpeningPhoto } from "@/components/nuru/OpeningPhoto";
 
 const PUBLIC_SITE = "https://nurufaith.co.ke/";
 
@@ -27,7 +28,7 @@ export const Route = createFileRoute("/")({
       { property: "og:type", content: "website" },
     ],
     // Keep metadata crawlable while making the first visible paint branded.
-    links: [{ rel: "canonical", href: PUBLIC_SITE }, OPENING_IMAGE_PRELOAD],
+    links: [{ rel: "canonical", href: PUBLIC_SITE }, ...OPENING_IMAGE_PRELOADS],
   }),
   component: EntryPage,
 });
@@ -66,11 +67,7 @@ function EntryPage() {
       >
         {/* Paint the intro's base photo from server HTML, before auth/hydration.
             The animated overlay reuses this resource when it becomes active. */}
-        <img
-          src={OPENING_IMAGE_SRC}
-          srcSet={OPENING_IMAGE_SRCSET}
-          sizes={OPENING_IMAGE_SIZES}
-          alt=""
+        <OpeningPhoto
           aria-hidden="true"
           width={1600}
           height={1067}

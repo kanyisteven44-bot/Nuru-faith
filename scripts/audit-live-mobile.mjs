@@ -99,6 +99,10 @@ for (const viewport of viewports) {
           return photo?.complete && photo.naturalWidth > 0 &&
             Number(getComputedStyle(photo).opacity) > 0;
         }, undefined, { timeout: 12000 });
+        const photoSource = await splash.locator(".nuru-opening-photo-base").evaluate(photo => photo.currentSrc);
+        const portraitExpected = viewport.width <= 640 && viewport.width / viewport.height <= 800 / 1067;
+        if (photoSource.includes("friends-outdoors-portrait-v1.webp") !== portraitExpected)
+          throw Error("Opening selected the wrong photo for this viewport");
         const fits = await splash.getByRole("button", { name: "Continue", exact: true }).evaluate(button => {
           const rect = button.getBoundingClientRect();
           return rect.left >= 0 && rect.right <= innerWidth &&

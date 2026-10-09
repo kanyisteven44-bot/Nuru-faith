@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SplashScreen } from "@/components/nuru/SplashScreen";
 import { NuruLockup } from "@/components/nuru/Logo";
-import { OPENING_IMAGE_PRELOAD } from "@/lib/openingImage";
+import { OPENING_IMAGE_PRELOADS } from "@/lib/openingImage";
 
 export const Route = createFileRoute("/opening")({
   head: () => ({
@@ -10,7 +10,7 @@ export const Route = createFileRoute("/opening")({
       { title: "Opening preview — Nuru Faith" },
       { name: "robots", content: "noindex, nofollow" },
     ],
-    links: [OPENING_IMAGE_PRELOAD],
+    links: [...OPENING_IMAGE_PRELOADS],
   }),
   component: OpeningPreview,
 });

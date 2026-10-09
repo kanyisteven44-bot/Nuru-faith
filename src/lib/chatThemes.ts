@@ -138,7 +138,7 @@ for (const [id, name] of photos)
  * refresh or app relaunch: a chat does not need to re-download all metadata.
  */
 export function realPhotoTheme(id: string, author?: string, sourceUrl?: string): ChatTheme {
-  if (!/^\\d{1,6}$/.test(id)) return CHAT_THEMES[0]!;
+  if (!/^\d{1,6}$/.test(id)) return CHAT_THEMES[0]!;
   const url = `https://picsum.photos/id/${id}/640/960.webp`;
   return {
     id: `real-photo-${id}`,
@@ -159,7 +159,7 @@ export function realPhotoTheme(id: string, author?: string, sourceUrl?: string):
 export function findChatTheme(id?: string | null): ChatTheme {
   const existing = CHAT_THEMES.find((t) => t.id === id);
   if (existing) return existing;
-  const match = id?.match(/^real-photo-(\\d{1,6})$/);
+  const match = id?.match(/^real-photo-(\d{1,6})$/);
   return match ? realPhotoTheme(match[1]!) : CHAT_THEMES[0]!;
 }
 export function chatThemeStorageKey(userId: string, thread: string): string {

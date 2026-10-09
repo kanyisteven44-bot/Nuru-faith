@@ -173,7 +173,7 @@ export function ChatThemePicker({
               onChange={(e) => {
                 setQuery(e.target.value);
                 setVisibleCount(36);
-              }
+              }}
               placeholder="Search backgrounds…"
               className="min-h-11 min-w-0 flex-1 bg-transparent text-sm outline-none"
             />
@@ -264,7 +264,7 @@ export function ChatThemePicker({
               className="shrink-0 truncate text-xs text-primary underline underline-offset-2">
               Photo by {preview.photoCredit || "photographer"} on Unsplash · View original
             </a>
-          )
+          )}
           {error && (
             <p role="alert" className="shrink-0 text-xs text-rose-600">
               {error}

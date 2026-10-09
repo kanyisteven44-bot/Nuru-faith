@@ -47,7 +47,7 @@ const LANGUAGE_CODES: Record<string, string> = {
   luganda: "lg-UG", kikuyu: "ki-KE", gikuyu: "ki-KE",
   luo: "luo-KE", dholuo: "luo-KE", kamba: "kam-KE", kikamba: "kam-KE",
   luhya: "luy-KE", kiluhya: "luy-KE", kalenjin: "kln-KE",
-  maasai: "mas-KE", masai: "mas-KE", somali: "so-SO",
+  maasai: "mas-KE", masai: "mas-KE",
   turkana: "tuv-KE", pokot: "pko-KE", "taita": "dav-KE",
   "meru": "mer-KE", kimeru: "mer-KE",
   "swahili zaire": "sw-CD",

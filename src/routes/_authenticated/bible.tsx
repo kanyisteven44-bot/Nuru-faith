@@ -149,7 +149,17 @@ function BibleScreen() {
 
   const match = (b: BibleBook) => b.name.toLowerCase().includes(query.trim().toLowerCase());
 
-  const testamentBooks = (testament === "Old" ? OLD_TESTAMENT : NEW_TESTAMENT).filter(match);
+  const referenceMatch = query.trim().match(/^(.+?)\s+(\d+)(?::(\d+))?$/);
+  const referenceBook = referenceMatch ? findBook(referenceMatch[1]!) : undefined;
+  const referenceChapter = Number(referenceMatch?.[2]);
+  const referenceVerse = referenceMatch?.[3] ? Number(referenceMatch[3]) : undefined;
+  const referenceTarget = referenceBook && referenceChapter >= 1 &&
+    referenceChapter <= referenceBook.chapters &&
+    (referenceVerse === undefined || referenceVerse >= 1)
+    ? { book: referenceBook, chapter: referenceChapter, verse: referenceVerse }
+    : null;
+
+  const testamentBooks = (query.trim() ? ALL_BOOKS : testament === "Old" ? OLD_TESTAMENT : NEW_TESTAMENT).filter(match);
 
   return (
     <AppShell>
@@ -177,11 +187,25 @@ function BibleScreen() {
               autoFocus
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && referenceTarget) setReader(referenceTarget);
+              }}
               placeholder="Search books, topics or verses…"
               aria-label="Search the Bible"
               className="input-nuru pl-11"
             />
           </div>
+        )}
+
+        {searchOpen && referenceTarget && (
+          <button
+            type="button"
+            onClick={() => setReader(referenceTarget)}
+            className="nuru-card mt-3 w-full px-4 py-3 text-left text-sm font-semibold"
+          >
+            Read {referenceTarget.book.name} {referenceTarget.chapter}
+            {referenceTarget.verse ? `:${referenceTarget.verse}` : ""}
+          </button>
         )}
 
         {/* Jump straight back into the book last opened. */}

@@ -1,4 +1,13 @@
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { PostMedia, PostPresentation } from "@/components/nuru/PostMedia";
 import { CoverImage } from "@/components/nuru/CoverImage";
 import { useRef, useState } from "react";
@@ -24,6 +33,7 @@ import {
   Plus,
   Settings,
   Sparkles,
+  Trash2,
   type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -35,6 +45,7 @@ import {
   fetchMyEventIds,
   fetchMyPosts,
   fetchMySavedPostRows,
+  deleteOwnPost,
   fetchProfile,
   fetchProfileCounts,
   updateProfile,
@@ -80,6 +91,8 @@ function ProfileScreen() {
   const photoInput = useRef<HTMLInputElement>(null);
   const [tab, setTab] = useState<GridTab>("Posts");
   const [selectedPost, setSelectedPost] = useState<string | null>(null);
+  const [postToDelete, setPostToDelete] = useState<{ id: string; title: string } | null>(null);
+  const [deletingPost, setDeletingPost] = useState(false);
   const [people, setPeople] = useState<PeopleKind | null>(null);
 
   const profile = useQuery({
@@ -146,6 +159,36 @@ function ProfileScreen() {
   });
 
   const selectedItem = items.find((item) => item.id === selectedPost);
+
+  async function confirmDeletePost() {
+    if (!userId || !postToDelete || deletingPost) return;
+    setDeletingPost(true);
+    try {
+      const result = await deleteOwnPost(userId, postToDelete.id);
+      setSelectedPost(null);
+      setPostToDelete(null);
+      // Refresh every place the deleted post or its counters may be cached.
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["my-posts", userId] }),
+        qc.invalidateQueries({ queryKey: ["profile-counts", userId] }),
+        qc.invalidateQueries({ queryKey: ["posts"] }),
+        qc.invalidateQueries({ queryKey: ["public-profile-posts", userId] }),
+        qc.invalidateQueries({ queryKey: ["saved-post-rows-count", userId] }),
+        qc.invalidateQueries({ queryKey: ["saved-posts", userId] }),
+        qc.invalidateQueries({ queryKey: ["post-likes", userId] }),
+        qc.invalidateQueries({ queryKey: ["comments", postToDelete.id] }),
+      ]);
+      if (result.mediaCleanupFailed) {
+        toast.warning("Post deleted, but its uploaded file couldn't be cleaned up.");
+      } else {
+        toast.success("Post deleted");
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Couldn't delete that post");
+    } finally {
+      setDeletingPost(false);
+    }
+  }
 
   async function save() {
     if (!userId) return;
@@ -488,6 +531,16 @@ function ProfileScreen() {
                       </span>
                     </button>
                     {tab === "Posts" && (
+                      <button
+                        type="button"
+                        onClick={() => setPostToDelete({ id: item.id, title: item.title })}
+                        aria-label={`Delete post: ${item.title || "Untitled post"}`}
+                        className="absolute left-2 top-2 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/65 text-white backdrop-blur transition-colors hover:bg-red-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                      >
+                        <Trash2 className="h-4 w-4" aria-hidden="true" />
+                      </button>
+                    )}
+                    {tab === "Posts" && (
                       <Link
                         to="/create" search={{ from: "profile" }}
                         aria-label="Create another post"
@@ -556,8 +609,55 @@ function ProfileScreen() {
               start={selectedItem.musicStart}
             />
           )}
+          {tab === "Posts" && selectedItem && (
+            <button
+              type="button"
+              onClick={() => {
+                setPostToDelete({ id: selectedItem.id, title: selectedItem.title });
+                setSelectedPost(null);
+              }}
+              className="mt-3 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-destructive/40 bg-destructive/10 px-4 text-sm font-semibold text-destructive"
+            >
+              <Trash2 className="h-4 w-4" /> Delete post
+            </button>
+          )}
         </DialogContent>
       </Dialog>
+      <AlertDialog
+        open={!!postToDelete}
+        onOpenChange={(open) => {
+          if (!open && !deletingPost) setPostToDelete(null);
+        }}
+      >
+        <AlertDialogContent className="w-[calc(100%-2rem)] max-w-md rounded-2xl border-border-strong bg-card">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this post?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes the post from your profile and the community,
+              including its likes and comments. You can't undo this.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {postToDelete?.title && (
+            <p className="line-clamp-2 rounded-xl bg-surface-2 px-3 py-2 text-sm">
+              {postToDelete.title}
+            </p>
+          )}
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel disabled={deletingPost} className="min-h-11 rounded-xl">
+              Keep post
+            </AlertDialogCancel>
+            <button
+              type="button"
+              onClick={() => void confirmDeletePost()}
+              disabled={deletingPost}
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-destructive px-5 text-sm font-semibold text-destructive-foreground disabled:opacity-60"
+            >
+              {deletingPost ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+              {deletingPost ? "Deleting…" : "Delete permanently"}
+            </button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       {people && userId && (
         <PeopleSheet
           kind={people}

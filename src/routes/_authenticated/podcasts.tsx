@@ -38,7 +38,7 @@ const TOPICS = [
 
 function PodcastsScreen() {
   const [selected, setSelected] = useState<MediaItem | null>(null);
-  const [audioArchive, setAudioArchive] = useState(false);
+  const [audioArchive, setAudioArchive] = useState(true);
   function playVideo(video: YouTubeVideo) {
     setSelected({
       id: video.youtubeVideoId,
@@ -88,7 +88,7 @@ function PodcastsScreen() {
         onPlay={playVideo}
         onPlayItem={setSelected}
       />
-      <div className="px-4 pb-4">
+      <div className="px-4 pb-4"><p className="text-xs text-muted-foreground">Approved audio-only podcasts appear below, while video podcasts remain available above.</p>
         <button
           type="button"
           className="min-h-11 text-sm text-primary"
@@ -98,7 +98,7 @@ function PodcastsScreen() {
           {audioArchive ? "Hide audio archive" : "Browse audio archive"}
         </button>
       </div>
-      {audioArchive && <MediaCatalog mediaType="podcast" query={query} />}
+      {audioArchive && <MediaCatalog mediaType="podcast" query={query} playback="audio" onPlay={setSelected} />}
       {selected && <MediaPlayback item={selected} onClose={() => setSelected(null)} />}
     </AppShell>
   );

@@ -60,5 +60,6 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Test interactive opening on 320–430px phones
         env:
-          NURU_INTRO_URL: https://deploy-preview-${{ github.event.pull_request.number }}--nurufaith.netlify.app
+          # Use Nuru's actual production provider rather than Netlify's flaky preview.
+          NURU_INTRO_URL: https://nuru-faith-git-feat-premium-first-entry-20261009-vortiqora.vercel.app
         run: node scripts/audit-intro-preview.mjs

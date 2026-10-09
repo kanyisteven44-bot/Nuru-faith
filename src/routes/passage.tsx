@@ -107,10 +107,14 @@ function SharedPassage() {
         </div>
       ) : (
         <article className="nuru-card space-y-5 p-5">
-          {rows.length > 0 &&
-            TRANSLATIONS.find((t) => t.id === search.translation)?.language === "English" && (
-              <BibleReadAloud verses={rows} label="selected verses" />
-            )}
+          {rows.length > 0 && (
+            <BibleReadAloud
+              key={`${reference}:${search.translation}:${search.verses}`}
+              verses={rows}
+              label="selected verses"
+              language={TRANSLATIONS.find((t) => t.id === search.translation)?.language ?? "Unknown language"}
+            />
+          )}
           {rows.map((v) => (
             <p key={v.verse} className="font-serif text-xl leading-relaxed" dir="auto">
               <span className="mr-2 align-super font-sans text-xs font-semibold text-primary">

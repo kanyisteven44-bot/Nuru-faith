@@ -823,13 +823,13 @@ function Reader({
           )}
           {!unavailable && passage.data && (
             <article className="rounded-3xl border border-border/70 bg-surface px-4 py-4 sm:px-8 sm:py-6">
-              {TRANSLATIONS.find((t) => t.id === translation)?.language === "English" && (
-                <BibleReadAloud
-                  compact
-                  key={`${reference}:${translation}`}
-                  verses={passage.data.verses}
-                />
-              )}
+              <BibleReadAloud
+                compact
+                key={`${reference}:${translation}`}
+                verses={passage.data.verses}
+                language={TRANSLATIONS.find((t) => t.id === translation)?.language ?? "Unknown language"}
+                startVerse={verse}
+              />
               {selecting || selectedVerses.length > 0 ? (
                 <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-border bg-surface-2 p-3">
                   <p className="min-w-0 flex-1 break-words text-sm">

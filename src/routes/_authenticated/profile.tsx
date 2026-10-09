@@ -391,40 +391,6 @@ function ProfileScreen() {
             </section>
           )}
 
-          {/* Saved content — real counts only; there is no Downloads feature
-              in the app, so the board's Downloads row is left out. */}
-          <div className="mt-6 mb-3 flex items-center justify-between gap-2">
-            <h2 className="font-display text-[21px] leading-none">Saved content</h2>
-          </div>
-          <div className="grid grid-cols-3 gap-2.5">
-            <SavedTile
-              icon={BookMarked}
-              label="Bible verses"
-              count={savedScriptures.data?.length}
-              to="/bible"
-            />
-            <SavedTile
-              icon={Highlighter}
-              label="Highlights"
-              count={highlights.data?.length}
-              to="/bible"
-            />
-            <SavedTile icon={Bookmark} label="Saved posts" count={savedPostCount} to="/community" />
-          </div>
-
-          <Link to="/events" className="nuru-card mt-3 flex items-center gap-3 p-3">
-            <span className="nuru-disc nuru-disc-terra h-9 w-9">
-              <CalendarDays className="h-4 w-4" strokeWidth={1.9} />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-[13px] font-bold">Events</span>
-              <span className="block text-[11px] text-ink-3">
-                {myEvents.data ? `${myEvents.data.length} booked` : "— booked"}
-              </span>
-            </span>
-            <ChevronRight className="h-4 w-4 shrink-0 text-ink-3" strokeWidth={2} />
-          </Link>
-
           <div className="mt-6 grid grid-cols-4 border-b border-border" role="tablist" aria-label="Your profile content">
             {GRID_TABS.map((t) => {
               const Icon = t === "Posts" ? Grid3X3 : t === "Reels" ? Clapperboard : t === "Music" ? Music2 : Bookmark;
@@ -535,6 +501,40 @@ function ProfileScreen() {
               </ul>
             )}
           </section>
+          {/* Saved content — real counts only; there is no Downloads feature
+              in the app, so the board's Downloads row is left out. */}
+          <div className="mt-6 mb-3 flex items-center justify-between gap-2">
+            <h2 className="font-display text-[21px] leading-none">Saved content</h2>
+          </div>
+          <div className="grid grid-cols-3 gap-2.5">
+            <SavedTile
+              icon={BookMarked}
+              label="Bible verses"
+              count={savedScriptures.data?.length}
+              to="/bible"
+            />
+            <SavedTile
+              icon={Highlighter}
+              label="Highlights"
+              count={highlights.data?.length}
+              to="/bible"
+            />
+            <SavedTile icon={Bookmark} label="Saved posts" count={savedPostCount} to="/community" />
+          </div>
+
+          <Link to="/events" className="nuru-card mt-3 flex items-center gap-3 p-3">
+            <span className="nuru-disc nuru-disc-terra h-9 w-9">
+              <CalendarDays className="h-4 w-4" strokeWidth={1.9} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[13px] font-bold">Events</span>
+              <span className="block text-[11px] text-ink-3">
+                {myEvents.data ? `${myEvents.data.length} booked` : "— booked"}
+              </span>
+            </span>
+            <ChevronRight className="h-4 w-4 shrink-0 text-ink-3" strokeWidth={2} />
+          </Link>
+
           )}
         </div>
       )}

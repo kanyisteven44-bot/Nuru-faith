@@ -1,5 +1,6 @@
 /** Live Nuru Faith browser QA: actual Chromium on several phone/desktop sizes.
- * Public routes are fully tested. Protected routes are tested READ-ONLY only
+ * Selected public routes are checked for rendering and layout, not every feature.
+ * Protected routes are tested READ-ONLY only
  * if a dedicated QA account is supplied via NURU_QA_EMAIL/PASSWORD.
  */
 import { chromium } from "playwright";
@@ -21,6 +22,12 @@ const pages = [
   ["/reset-password", "reset-page"], ["/privacy", "privacy"],
   ["/terms", "terms"], ["/bible-app-for-young-people", "bible-public"],
   ["/christian-community-app", "community-public"],
+  ["/opening", "opening"], ["/christian-app", "christian-app"],
+  ["/christian-app-kenya", "christian-app-kenya"],
+  ["/gospel-music-app", "gospel-music-public"],
+  ["/books", "books"], ["/faith-courses", "faith-courses"],
+  ["/passage?book=John&chapter=3&verses=16&translation=web", "shared-passage"],
+  ["/design-preview", "design-preview"],
 ];
 const viewports = [
   { label: "mobile-320", width: 320, height: 720, mobile: true },
@@ -76,6 +83,22 @@ for (const viewport of viewports) {
       } else {
         await tab.waitForTimeout(1700);
       }
+      if (route === "/opening") {
+        const splash = tab.getByTestId("nuru-splash");
+        await splash.waitFor({ state: "visible", timeout: 12000 });
+        // The photo must actually decode and remain visible behind transitions.
+        await tab.waitForFunction(() => {
+          const photo = document.querySelector(".nuru-opening-photo-base");
+          return photo?.complete && photo.naturalWidth > 0 &&
+            Number(getComputedStyle(photo).opacity) > 0;
+        }, undefined, { timeout: 12000 });
+        const fits = await splash.getByRole("button", { name: "Continue", exact: true }).evaluate(button => {
+          const rect = button.getBoundingClientRect();
+          return rect.left >= 0 && rect.right <= innerWidth &&
+            rect.top >= 0 && rect.bottom <= innerHeight;
+        });
+        if (!fits) throw Error("Opening Continue is outside the viewport");
+      }
       const v = await tab.evaluate(() => {
         const root = document.documentElement;
         const visibleImages = Array.from(document.images).filter(img => {
@@ -118,6 +141,11 @@ for (const viewport of viewports) {
       if (v.perf?.lcp > 3500) risks.push({ device: viewport.label, route, lcpMs: v.perf.lcp });
       if (viewport.label === "mobile-390") {
         await tab.screenshot({ path: path.join(OUT, label + ".png"), fullPage: true });
+      }
+      if (route === "/opening") {
+        await tab.getByTestId("nuru-splash").getByRole("button", { name: "Continue", exact: true }).click();
+        await tab.getByTestId("nuru-splash").waitFor({ state: "detached", timeout: 5000 });
+        console.log("PASS opening photo, visible Continue and dismissal", viewport.label);
       }
     } catch(e) {
       failures++;

@@ -81,7 +81,7 @@ function EntryPage() {
           <span className="flex h-24 w-24 items-center justify-center rounded-[24px] border border-white/15 bg-white/[.06] shadow-[0_0_60px_rgba(72,191,255,.17)]">
             <NuruGlyph className="h-16 w-16" />
           </span>
-          <h1 className="mt-7 text-3xl font-bold tracking-[.18em]">NURU FAITH</h1>
+          <h1 className="mt-7 font-sans text-3xl font-bold tracking-[.18em]">NURU FAITH</h1>
           <p className="mt-4 text-sm tracking-[.16em] text-cyan-100/80">CONNECT · GROW · PURPOSE</p>
           <Link to="/welcome" className="mt-10 inline-flex min-h-11 items-center justify-center rounded-full border border-cyan-200/25 bg-white/10 px-6 text-sm font-semibold text-white hover:bg-white/20">
             Continue to Nuru Faith

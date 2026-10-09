@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { finishSpotifyConnect } from "@/lib/spotifyPkce";
 
-export const Route = createFileRoute("/auth/spotify/callback")({ component: SpotifyCallback });
+export const Route = createFileRoute("/auth/spotify/callback" as never)({ component: SpotifyCallback });
 function SpotifyCallback() {
   const [message, setMessage] = useState("Checking Spotify connection…");
   const [connected, setConnected] = useState(false);
@@ -25,7 +25,7 @@ function SpotifyCallback() {
     <section className="w-full max-w-md rounded-2xl border border-border bg-card p-6 space-y-4">
       <h1 className="text-2xl font-bold">{connected ? "Spotify verified" : "Spotify connection"}</h1>
       <p role="status" className="text-sm">{message}</p>
-      <Link className="underline text-sm block" to="/spotify/connect">Connect again</Link>
+      <a className="underline text-sm block" href="/spotify/connect">Connect again</a>
       <Link className="underline text-sm block" to="/home">Return to Nuru Faith</Link>
     </section>
   </main>;

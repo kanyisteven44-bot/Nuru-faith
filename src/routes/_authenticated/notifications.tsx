@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Bell,
@@ -10,6 +10,9 @@ import {
   LoaderCircle,
   MessageCircle,
   Phone,
+  PhoneIncoming,
+  Smartphone,
+  RefreshCw,
   Users,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -37,7 +40,7 @@ export const Route = createFileRoute("/_authenticated/notifications")({
   component: NotificationsScreen,
 });
 
-const TABS = ["All", "Social", "Mentorship", "Events"] as const;
+const TABS = ["All", "Calls", "Social", "Mentorship", "Events"] as const;
 type Tab = (typeof TABS)[number];
 
 const ICONS: Record<string, typeof Bell> = {
@@ -69,7 +72,7 @@ function NotificationsScreen() {
     tab === "All"
       ? all
       : all.filter((n) => {
-          const expected = tab === "Events" ? "event" : tab.toLowerCase();
+          const expected = tab === "Events" ? "event" : tab === "Calls" ? "call" : tab.toLowerCase();
           return n.category === expected;
         });
 
@@ -91,6 +94,27 @@ function NotificationsScreen() {
 
       {userId && <PushControl />}
 
+      <div className="mx-4 mb-4 flex items-start gap-3 rounded-2xl border border-primary/25 bg-primary/5 p-4">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <PhoneIncoming className="h-5 w-5" />
+        </span>
+        <div className="min-w-0">
+          <h2 className="text-sm font-bold">Incoming calls when Nuru is closed</h2>
+          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+            Enable device alerts above, then allow notifications for Nuru in Android and Chrome.
+            On supported devices a call alert can appear while Nuru is closed. Tap <strong>Open call</strong>
+            to return to Nuru and answer while the caller is still ringing.
+          </p>
+          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+            For reliable delivery, install Nuru on your home screen, keep internet on and avoid
+            restricting Chrome or Nuru's background activity. Sound and vibration depend on Android settings.
+          </p>
+          <Link to="/messages" search={{}} className="mt-3 inline-flex min-h-9 items-center gap-1 text-xs font-bold text-primary hover:underline">
+            <Phone className="h-4 w-4" /> Open messages and call history
+          </Link>
+        </div>
+      </div>
+
       <div className="px-4 pb-1">
         <PillTabs tabs={TABS} value={tab} onChange={setTab} />
       </div>
@@ -100,7 +124,7 @@ function NotificationsScreen() {
         {!notifications.isLoading && rows.length === 0 && (
           <EmptyState
             title="Nothing here yet"
-            description="Community, mentorship and event updates will show up here."
+            description={tab === "Calls" ? "Your incoming-call alerts will appear here. Try a call from another Nuru account after enabling device alerts." : "New notifications will show up here."}
           />
         )}
         {rows.map((n) => {
@@ -153,7 +177,7 @@ function NotificationsScreen() {
 }
 
 function PushControl() {
-  const [state, setState] = useState<WebPushState | "checking">("checking");
+  const [state, setState] = useState<WebPushState | "checking" | "error">("checking");
   const [busy, setBusy] = useState(false);
   const [testing, setTesting] = useState(false);
 
@@ -165,7 +189,7 @@ function PushControl() {
         if (active) setState(next);
       })
       .catch(() => {
-        if (active) setState("available");
+        if (active) setState("error");
       });
 
     return () => {
@@ -173,10 +197,36 @@ function PushControl() {
     };
   }, []);
 
-  if (state === "unsupported") return null;
+  async function retryCheck() {
+    setState("checking");
+    try {
+      setState(await getWebPushState());
+    } catch {
+      setState("error");
+      toast.error("Couldn't check device notifications. Please retry while online.");
+    }
+  }
+
+  if (state === "unsupported") {
+    return (
+      <div className="px-4 pb-3">
+        <div className="nuru-card flex items-start gap-3 p-4">
+          <Smartphone className="h-5 w-5 shrink-0 text-muted-foreground" />
+          <div>
+            <p className="text-sm font-semibold">Background alerts not supported here</p>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              This browser cannot register Web Push. On Android, open Nuru in a current version
+              of Chrome and enable notifications there. In-app calls still work while Nuru is open.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const enabled = state === "enabled";
   const blocked = state === "blocked";
+  const hasError = state === "error";
 
   async function togglePush() {
     if (blocked || state === "checking") return;
@@ -194,7 +244,7 @@ function PushControl() {
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Couldn't update device notifications");
-      const next = await getWebPushState().catch(() => "available" as const);
+      const next = await getWebPushState().catch(() => "error" as const);
       setState(next);
     } finally {
       setBusy(false);
@@ -206,7 +256,7 @@ function PushControl() {
     setTesting(true);
     try {
       const request = sendTestWebPush();
-      toast("Test queued — minimize or close Nuru now. The alert will fire in about 5 seconds.");
+      toast("Test requested. Minimize Nuru now; the alert should arrive shortly.");
       await request;
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Couldn't send the test alert");
@@ -230,21 +280,32 @@ function PushControl() {
         <div className="min-w-0 flex-1">
           <p className="text-[13px] font-semibold">
             {blocked
-              ? "Device alerts are blocked"
-              : enabled
-                ? "Device alerts are on"
-                : "Get alerts when Nuru is closed"}
+              ? "Allow device alerts in Chrome settings"
+              : hasError
+                ? "Could not verify device alerts"
+                : state === "checking"
+                  ? "Checking device alerts…"
+                  : enabled
+                    ? "Device alerts enabled"
+                    : "Receive calls when Nuru is closed"}
           </p>
           <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">
             {blocked
-              ? "Allow notifications for this site in your browser settings to enable them."
-              : enabled
-                ? "Community and mentorship updates can reach this browser in the background."
-                : "Enable secure browser alerts for this device. You can turn them off anytime."}
+              ? "Android Settings → Apps → Chrome → Notifications, then allow alerts for nurufaith.co.ke in Chrome Site settings. Return here afterward."
+              : hasError
+                ? "Check your internet connection and try again. We cannot confirm that this browser is registered."
+                : enabled
+                  ? "Incoming calls and messages can notify this device when Nuru is minimized or closed."
+                  : "Allow notifications on this device to receive incoming call alerts in the background."}
           </p>
         </div>
 
-        {!blocked && (
+        {hasError ? (
+          <button type="button" disabled={busy} onClick={() => void retryCheck()}
+            className="inline-flex min-h-10 items-center gap-1 rounded-xl bg-primary px-3 text-xs font-semibold text-primary-foreground">
+            <RefreshCw className="h-4 w-4" /> Retry
+          </button>
+        ) : !blocked && (
           <div className="flex shrink-0 flex-col gap-2">
             {enabled && (
               <button
@@ -253,7 +314,7 @@ function PushControl() {
                 onClick={() => void sendTest()}
                 className="flex min-h-9 min-w-16 items-center justify-center rounded-xl bg-primary px-3 text-[11px] font-semibold text-primary-foreground disabled:opacity-50"
               >
-                {testing ? <LoaderCircle className="h-4 w-4 animate-spin" /> : "Test"}
+                {testing ? <LoaderCircle className="h-4 w-4 animate-spin" /> : "Test alert"}
               </button>
             )}
             <button

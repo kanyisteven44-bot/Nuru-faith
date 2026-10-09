@@ -354,9 +354,9 @@ function PushControl() {
           </span>
           <div className="flex shrink-0 items-center gap-1.5">
             {enabled ? (
-              <button type="button" disabled={testing || busy} onClick={() => void sendTest()}
+              <button type="button" aria-label="Test alert" disabled={testing || busy} onClick={() => void sendTest()}
                 className="inline-flex min-h-10 items-center rounded-xl bg-primary px-3 text-[12px] font-semibold text-primary-foreground disabled:opacity-50">
-                {testing ? <LoaderCircle className="h-4 w-4 animate-spin" /> : "Test alert"}
+                {testing ? <LoaderCircle className="h-4 w-4 animate-spin" /> : "Test"}
               </button>
             ) : hasError ? (
               <button type="button" onClick={() => void retryCheck()} className="inline-flex min-h-10 items-center gap-1 rounded-xl bg-primary px-3 text-xs font-semibold text-primary-foreground">

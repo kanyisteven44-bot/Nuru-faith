@@ -38,7 +38,7 @@ jobs:
         run: npm run build
 
   installed-google:
-    if: github.event_name == 'pull_request' && github.head_ref == 'qa/installed-pwa-google-current-20261009'
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

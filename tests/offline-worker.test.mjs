@@ -19,7 +19,7 @@ function worker({
       addEventListener: (name, fn) => events.set(name, fn),
     },
     caches: {
-      keys: async () => ["nuru-static-v6-arch-icon", "nuru-reading-shell-v1", "other-app"],
+      keys: async () => ["nuru-static-v6-arch-icon", "nuru-static-v7-offline-reading", "nuru-reading-shell-v1", "other-app"],
       delete: async (key) => deleted.push(key),
       match: async (key) => saved.get(typeof key === "string" ? key : key.url),
       open: async () => ({ addAll: async (urls) => cached.push(...urls), put: async () => {} }),
@@ -56,7 +56,7 @@ test("worker updates retain downloaded reading cache and unrelated caches", asyn
   let done;
   w.events.get("activate")({ waitUntil: (p) => (done = p) });
   await done;
-  assert.deepEqual(w.deleted, ["nuru-static-v6-arch-icon"]);
+  assert.deepEqual(w.deleted, ["nuru-static-v6-arch-icon", "nuru-static-v7-offline-reading"]);
 });
 test("offline install includes the reader script; private API traffic is never cached", async () => {
   const w = worker();

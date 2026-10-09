@@ -44,7 +44,8 @@ test("public homepage contains visible SSR marketing content and permits indexin
   const homepage = read("src/routes/index.tsx");
   assert.ok(homepage.includes('name: "robots", content: "index, follow, max-image-preview:large"'));
   assert.ok(homepage.includes('const PUBLIC_SITE = "https://nurufaith.co.ke/"'));
-  assert.ok(homepage.includes("PublicSeoLanding"));
+  assert.ok(homepage.includes("NuruGlyph"));
+  assert.ok(homepage.includes("CONNECT · GROW · PURPOSE"));
   assert.ok(homepage.includes("Stephen Kanyi"));
   assert.ok(homepage.includes("Vortiqora Technologies"));
   assert.ok(!homepage.includes('content: "noindex, follow"'));

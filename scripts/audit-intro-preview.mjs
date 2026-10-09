@@ -51,7 +51,24 @@ try {
         await page.waitForTimeout(1200);
       }
 
-      await page.getByRole("button", { name: "Continue", exact: true }).click({ timeout: 10000 });
+      const beforeClick = await page.evaluate(() => ({
+        href: location.href,
+        headings: [...document.querySelectorAll("h1,h2")].map((e) => e.textContent?.trim().slice(0, 100)),
+        buttons: [...document.querySelectorAll("button")].map((e) => ({
+          label: e.getAttribute("aria-label"),
+          text: e.textContent?.trim().slice(0, 70),
+          disabled: e.disabled,
+          width: Math.round(e.getBoundingClientRect().width),
+        })),
+        errorView: document.body.innerText.includes("This page didn't load"),
+        text: document.body.innerText.trim().slice(0, 350),
+      }));
+      console.log("INTRO_BROWSER_DEBUG_BEFORE " + JSON.stringify({ width, beforeClick }));
+      await page.getByRole("button", { name: /Continue/i }).click({ timeout: 10000 });
+      console.log("INTRO_BROWSER_DEBUG_AFTER " + JSON.stringify({ width, ui: await page.evaluate(() => ({
+        heading: document.querySelector("h1")?.textContent?.trim(),
+        buttons: [...document.querySelectorAll("button")].map((e) => e.textContent?.trim().slice(0, 50)),
+      })) }));
       await page.getByText("You are loved.", { exact: false }).first().waitFor({ timeout: 9000 });
       const second = await page.evaluate(() => ({
         overflow: document.documentElement.scrollWidth - innerWidth,

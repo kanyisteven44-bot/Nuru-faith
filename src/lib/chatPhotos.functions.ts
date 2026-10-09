@@ -47,11 +47,11 @@ function safeSource(raw: string): boolean {
 function validPhoto(value: unknown): value is RawPhoto {
   if (!value || typeof value !== "object") return false;
   const row = value as Record<string, unknown>;
-  return typeof row.id === "string" && /^\d{1,6}$/.test(row.id) &&
-    typeof row.author === "string" && row.author.trim().length > 0 &&
-    typeof row.url === "string" && safeSource(row.url) &&
-    typeof row.width === "number" && row.width >= 600 &&
-    typeof row.height === "number" && row.height >= 600;
+  return typeof row["id"] === "string" && /^\d{1,6}$/.test(row["id"]) &&
+    typeof row["author"] === "string" && row["author"].trim().length > 0 &&
+    typeof row["url"] === "string" && safeSource(row["url"]) &&
+    typeof row["width"] === "number" && row["width"] >= 600 &&
+    typeof row["height"] === "number" && row["height"] >= 600;
 }
 
 async function loadCatalogue(): Promise<RealChatPhoto[]> {

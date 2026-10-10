@@ -16,6 +16,14 @@ test("only the former apex host is rewritten to the independently deployed minis
   assert.ok(config.rewrites.every((r) => !r.has?.some((h) => h.type === "host" && h.value === app)));
 });
 
+test("bare apex root is explicitly routed to the ministry homepage", () => {
+  const root = config.rewrites?.find((r) => r.source === "/" &&
+    r.has?.some((h) => h.type === "host" && h.value === apex));
+  assert.ok(root, "a bare / must match, not only nested paths");
+  assert.equal(root.destination, "https://nuru-faith-ministry.vercel.app/");
+  assert.equal(config.rewrites?.[0]?.source, "/", "specific root precedes catch-all rewrite");
+});
+
 test("auth links arriving at the old apex are forwarded to the youth app", () => {
   for (const route of ["/auth", "/auth-callback", "/reset-password", "/verify", "/confirm"]) {
     const rule = config.redirects?.find((r) => r.source === route &&

@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useAuth } from "@/hooks/useAuth";
 import { NuruGlyph } from "@/components/nuru/Logo";
 import { cn } from "@/lib/utils";
 import { ArrowRight } from "lucide-react";
@@ -38,15 +37,18 @@ function alreadyShown() {
 export function SplashScreen({
   preview = false,
   initialOnly = false,
+  authReady = false,
   onComplete,
 }: {
   preview?: boolean;
   initialOnly?: boolean;
+  authReady?: boolean;
   onComplete?: () => void;
 }) {
-  const { loading } = useAuth();
-  const loadingRef = useRef(loading);
-  loadingRef.current = loading;
+  // The entry route already resolves getSession. Reuse that result rather than
+  // setting up another auth subscription just for the opening animation.
+  const loadingRef = useRef(!authReady);
+  loadingRef.current = !authReady;
 
   const [stage, setStage] = useState<"pending" | "playing" | "exiting" | "gone">("pending");
   const [photoIndex, setPhotoIndex] = useState(0);
@@ -128,8 +130,8 @@ export function SplashScreen({
   }, [preview, stage, exit]);
 
   useEffect(() => {
-    if (!preview && stage === "playing" && minElapsed.current && !loading) exit();
-  }, [loading, preview, stage, exit]);
+    if (!preview && stage === "playing" && minElapsed.current && authReady) exit();
+  }, [authReady, preview, stage, exit]);
 
   useEffect(() => {
     if (stage !== "exiting") return;

@@ -3,7 +3,9 @@ import { chromium } from "playwright";
 // Smoke test public sign-in UI only. No credentials or accounts are touched.
 // Simulated display-mode does not replace a genuine Android install test.
 const cases = [
-  { origin: "https://app.nurufaith.co.ke", installed: true, expect: "embedded" },
+  // Temporary browser fallback: embedded GIS is blocked until Google Cloud
+  // authorizes this origin. CI checks the real safe behavior, not a fake success.
+  { origin: "https://app.nurufaith.co.ke", installed: true, expect: "browser" },
   { origin: "https://app.nurufaith.co.ke", installed: false, expect: "browser" },
   { origin: "https://nurufaith.website", installed: true, expect: "browser" },
 ];

@@ -6,7 +6,7 @@ const src=readFileSync(new URL("../src/components/nuru/PublicSeoLanding.tsx",imp
 test("Nuru home logo and breadcrumb genuinely link to official homepage",()=>{
   assert.match(src,/<Link to="\/" className="flex items-center gap-3" aria-label="Nuru Faith home">/);
   assert.match(src,/<Link to="\/" className="hover:text-foreground hover:underline">Nuru Faith<\/Link>/);
-  assert.match(src,/item: "https:\/\/nurufaith\.co\.ke\/",/);
+  assert.match(src,/item: "https:\/\/app\.nurufaith\.co\.ke\/",/);
   assert.doesNotMatch(src,/<a href="\/about" className="flex items-center gap-3"/);
 });
 test("public CTA navigation is handled by the app instead of reloading the entire page",()=>{
@@ -20,7 +20,7 @@ test("public CTA navigation is handled by the app instead of reloading the entir
   assert.match(src,/<Link to="\/terms"/);
 });
 test("canonical and privacy/SEO copy remain unchanged",()=>{
-  assert.match(src,/"https:\/\/nurufaith\.co\.ke\/#website"/);
+  assert.match(src,/"https:\/\/app\.nurufaith\.co\.ke\/#website"/);
   assert.match(src,/application\/ld\+json/);
   assert.match(src,/PublicSeoLanding/);
 });

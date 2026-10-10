@@ -10,7 +10,7 @@ test("legacy Nuru installations receive a manual migration prompt without forced
   assert.match(notice, /nurufaith\.website/);
   assert.match(notice, /www\.nurufaith\.website/);
   assert.match(notice, /window\.location\.hostname/);
-  assert.match(notice, /https:\/\/nurufaith\.co\.ke/);
+  assert.match(notice, /https:\/\/app\.nurufaith\.co\.ke/);
   assert.match(notice, /onClick=\{dismiss\}/);
   assert.match(notice, /href=\{destination\}/);
   assert.match(notice, /installed \? \(/);

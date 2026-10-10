@@ -24,7 +24,7 @@ test("unregister can remove only the caller's own subscription", () => {
 
 test("account deletion and password changes accept the canonical Nuru origin", () => {
   const source = read("supabase/functions/delete-account/index.ts");
-  assert.match(source, /"https:\/\/nurufaith\.co\.ke"/);
+  assert.match(source, /"https:\/\/app\.nurufaith\.co\.ke"/);
   assert.match(source, /"https:\/\/nurufaith\.website"/);
   assert.match(source, /if \(origin && !origins\.has\(origin\)\) return reply\(403/);
   assert.match(source, /auth\.getUser\(token\)/);

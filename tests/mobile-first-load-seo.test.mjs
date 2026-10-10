@@ -28,8 +28,8 @@ test("home no longer downloads the unused Welcome landscape before first render"
 });
 
 test("public legal documents have stable canonical URLs", () => {
-  assert.match(read("src/routes/privacy.tsx"), /rel: "canonical", href: "https:\/\/nurufaith\.co\.ke\/privacy"/);
-  assert.match(read("src/routes/terms.tsx"), /rel: "canonical", href: "https:\/\/nurufaith\.co\.ke\/terms"/);
+  assert.match(read("src/routes/privacy.tsx"), /rel: "canonical", href: "https:\/\/app\.nurufaith\.co\.ke\/privacy"/);
+  assert.match(read("src/routes/terms.tsx"), /rel: "canonical", href: "https:\/\/app\.nurufaith\.co\.ke\/terms"/);
   const secure = read("src/routes/_authenticated/route.tsx");
   assert.match(secure, /"noindex, nofollow"/);
 });

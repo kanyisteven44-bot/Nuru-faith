@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PublicSeoLanding } from "@/components/nuru/PublicSeoLanding";
 
-const canonical = "https://nurufaith.co.ke/christian-app";
+const canonical = "https://app.nurufaith.co.ke/christian-app";
 
 export const Route = createFileRoute("/christian-app")({
   head: () => ({
@@ -54,7 +54,7 @@ function ChristianAppPage() {
       faq={[
         { question: "What is Nuru Faith?", answer: "Nuru Faith is a Christian faith and community app that combines Bible reading, learning, prayer, worship media, mentorship and social community features." },
         { question: "Who is Nuru Faith for?", answer: "Nuru is designed especially with young people and growing Christians in mind, while remaining useful to anyone looking for a faith-centered digital community." },
-        { question: "Can I use Nuru Faith on the web?", answer: "Yes. Nuru Faith is available through its web experience at nurufaith.co.ke." },
+        { question: "Can I use Nuru Faith on the web?", answer: "Yes. Nuru Faith is available through its web experience at app.nurufaith.co.ke." },
       ]}
       related={[
         { href: "/bible-app-for-young-people", label: "Bible app for young people" },

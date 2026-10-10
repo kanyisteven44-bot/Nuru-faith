@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
-const domain = "https://nurufaith.co.ke";
+const domain = "https://app.nurufaith.co.ke";
 
 test("sitemap lists only canonical public .co.ke URLs", () => {
   const sitemap = read("public/sitemap.xml");
@@ -43,13 +43,13 @@ test("about page identifies the founder as publicly readable content and structu
 test("public homepage contains visible SSR marketing content and permits indexing", () => {
   const homepage = read("src/routes/index.tsx");
   assert.ok(homepage.includes('name: "robots", content: "index, follow, max-image-preview:large"'));
-  assert.ok(homepage.includes('const PUBLIC_SITE = "https://nurufaith.co.ke/"'));
+  assert.ok(homepage.includes('const PUBLIC_SITE = "https://app.nurufaith.co.ke/"'));
   assert.ok(homepage.includes("NuruGlyph"));
   assert.ok(homepage.includes("CONNECT · GROW · PURPOSE"));
   assert.ok(homepage.includes("Stephen Kanyi"));
   assert.ok(homepage.includes("Vortiqora Technologies"));
   assert.ok(!homepage.includes('content: "noindex, follow"'));
-  assert.ok(!homepage.includes('href: "https://nurufaith.co.ke/about"'));
+  assert.ok(!homepage.includes('href: "https://app.nurufaith.co.ke/about"'));
 });
 
 test("private routes are still excluded from search indexing", () => {

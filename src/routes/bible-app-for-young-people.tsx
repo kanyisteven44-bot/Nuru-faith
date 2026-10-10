@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PublicSeoLanding } from "@/components/nuru/PublicSeoLanding";
 
-const canonical = "https://nurufaith.co.ke/bible-app-for-young-people";
+const canonical = "https://app.nurufaith.co.ke/bible-app-for-young-people";
 
 export const Route = createFileRoute("/bible-app-for-young-people")({
   head: () => ({

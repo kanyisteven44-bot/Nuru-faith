@@ -13,16 +13,16 @@ test("PWA launch mode is client-only, and the old Nuru domain remains distinct",
   assert.equal(isInstalledApp(), false);
   assert.equal(isLegacyNuruHost("nurufaith.website"), true);
   assert.equal(isLegacyNuruHost("WWW.NURUFAITH.WEBSITE"), true);
-  assert.equal(isLegacyNuruHost("nurufaith.co.ke"), false);
+  assert.equal(isLegacyNuruHost("app.nurufaith.co.ke"), false);
 });
 
 test("new installed app and browser use the official auth callback origin", () => {
   assert.equal(loginCallbackOrigin(
-    "https://nurufaith.co.ke", "nurufaith.co.ke", true,
-  ), "https://nurufaith.co.ke");
+    "https://app.nurufaith.co.ke", "app.nurufaith.co.ke", true,
+  ), "https://app.nurufaith.co.ke");
   assert.equal(loginCallbackOrigin(
     "https://nurufaith.website", "nurufaith.website", false,
-  ), "https://nurufaith.co.ke");
+  ), "https://app.nurufaith.co.ke");
 });
 
 test("legacy installed PWA completes sign-in on its own origin", () => {
@@ -40,7 +40,7 @@ test("the canonical installation guide never appears in an installed app", () =>
   const src = read("src/components/nuru/PwaInstallGuide.tsx");
   assert.match(src, /beforeinstallprompt/);
   assert.match(src, /appinstalled/);
-  assert.match(src, /if \(!ready \|\| installed \|\| window\.location\.hostname !== "nurufaith\.co\.ke"\) return null/);
+  assert.match(src, /if \(!ready \|\| installed \|\| window\.location\.hostname !== "app\.nurufaith\.co\.ke"\) return null/);
   assert.match(src, /<button/);
   assert.match(src, /promptEvent\.prompt\(\)/);
   assert.match(src, /Install Nuru Faith/);

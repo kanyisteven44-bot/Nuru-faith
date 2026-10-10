@@ -1,9 +1,13 @@
 import { createClient } from "npm:@supabase/supabase-js@2.117.2";
 
 const origins = new Set([
+  "https://app.nurufaith.co.ke", // official youth app origin
+  // Former apex app origin: kept only until the apex becomes the separate
+  // ministry website, so already-installed PWAs there can still delete accounts.
   "https://nurufaith.co.ke",
   "https://www.nurufaith.co.ke",
   "https://nurufaith.website", // legacy installed PWA origin
+  "https://www.nurufaith.website",
   "https://nuru-faith-vortiqora.vercel.app",
   "https://nuru-faith-git-main-vortiqora.vercel.app",
 ]);

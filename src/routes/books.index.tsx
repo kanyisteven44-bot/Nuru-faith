@@ -15,9 +15,9 @@ export const Route = createFileRoute("/books/")({
         property: "og:description",
         content: "Explore Christian books and faith-centered reading for spiritual growth.",
       },
-      { property: "og:url", content: "https://nurufaith.co.ke/books/" },
+      { property: "og:url", content: "https://app.nurufaith.co.ke/books/" },
     ],
-    links: [{ rel: "canonical", href: "https://nurufaith.co.ke/books/" }],
+    links: [{ rel: "canonical", href: "https://app.nurufaith.co.ke/books/" }],
   }),
   component: lazyRouteComponent(() => import("@/components/nuru/BooksScreen"), "BooksScreen"),
 });

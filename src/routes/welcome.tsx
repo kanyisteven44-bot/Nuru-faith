@@ -19,7 +19,7 @@ export const Route = createFileRoute("/welcome")({
     ],
     // Preload only on the page that actually paints this responsive hero.
     links: [
-      { rel: "canonical", href: "https://nurufaith.co.ke/welcome" },
+      { rel: "canonical", href: "https://app.nurufaith.co.ke/welcome" },
       // Entry and the intro use Inter; discover the display font here when needed.
       { rel: "preload", as: "font", type: "font/woff2",
         href: "/fonts/vEFI2_tTDB4M7-auWDN0ahZJW1gb8tc.woff2",

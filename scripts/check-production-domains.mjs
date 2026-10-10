@@ -4,7 +4,7 @@
  * Checks availability/indexing/security headers, NOT private account behavior.
  * No credentials and no mutation of user data.
  */
-const canonical = "https://nurufaith.co.ke";
+const canonical = "https://app.nurufaith.co.ke";
 const legacy = "https://nurufaith.website";
 
 const targets = [
@@ -60,18 +60,18 @@ for (const { url, type } of targets) {
       check(!!response.headers.get("strict-transport-security"), `${url}: HTTPS HSTS header missing`);
     }
     if (type === "homepage" || type === "legacy-home") {
-      check(body.includes('rel="canonical" href="https://nurufaith.co.ke/"'), `${url}: incorrect canonical`);
+      check(body.includes('rel="canonical" href="https://app.nurufaith.co.ke/"'), `${url}: incorrect canonical`);
       check(!/<meta[^>]+name="robots"[^>]+content="noindex/i.test(body), `${url}: homepage not indexable`);
     }
     if (type === "about") {
-      check(body.includes('rel="canonical" href="https://nurufaith.co.ke/about"'), `${url}: incorrect about canonical`);
+      check(body.includes('rel="canonical" href="https://app.nurufaith.co.ke/about"'), `${url}: incorrect about canonical`);
     }
     if (type === "private") {
       check(/<meta[^>]+name="robots"[^>]+content="noindex, nofollow"/i.test(body), `${url}: private page is indexable`);
     }
     if (type === "sitemap") {
-      check(body.includes("<loc>https://nurufaith.co.ke/</loc>"), `${url}: homepage missing from sitemap`);
-      check(body.includes("<loc>https://nurufaith.co.ke/about</loc>"), `${url}: about missing from sitemap`);
+      check(body.includes("<loc>https://app.nurufaith.co.ke/</loc>"), `${url}: homepage missing from sitemap`);
+      check(body.includes("<loc>https://app.nurufaith.co.ke/about</loc>"), `${url}: about missing from sitemap`);
     }
     if (type === "manifest") {
       const manifest = JSON.parse(body);

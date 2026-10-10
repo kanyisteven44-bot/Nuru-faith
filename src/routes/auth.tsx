@@ -48,7 +48,7 @@ function publicAppOrigin() {
   const configured = import.meta.env["VITE_PUBLIC_APP_URL"]?.trim().replace(/\/$/, "");
   const official = configured && /^https:\/\//.test(configured)
     ? configured
-    : "https://nurufaith.co.ke";
+    : "https://app.nurufaith.co.ke";
   return loginCallbackOrigin(window.location.origin, window.location.hostname, isInstalledApp(), official);
 }
 

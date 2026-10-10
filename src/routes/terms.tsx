@@ -10,7 +10,7 @@ export const Route = createFileRoute("/terms")({
         content: "Terms governing use of Nuru Faith accounts, community and media features.",
       },
     ],
-    links: [{ rel: "canonical", href: "https://nurufaith.co.ke/terms" }],
+    links: [{ rel: "canonical", href: "https://app.nurufaith.co.ke/terms" }],
   }),
   component: TermsPage,
 });

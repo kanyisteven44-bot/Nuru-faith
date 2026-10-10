@@ -21,7 +21,7 @@ const domainRoutes = [
   {
     src: "^/(.*)$",
     has: [{ type: "host", value: "nurufaith.co.ke" }],
-    dest: "https://nuru-faith-ministry.vercel.app/$1",
+    dest: "https://ministry.nurufaith.co.ke/$1",
   },
 ];
 const vercelNitro = { preset: "vercel", vercel: { config: { routes: domainRoutes } } };

@@ -284,6 +284,16 @@
   ],
   "rewrites": [
     {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "nurufaith.co.ke"
+        }
+      ],
+      "destination": "https://nuru-faith-ministry.vercel.app/"
+    },
+    {
       "source": "/:path*",
       "has": [
         {

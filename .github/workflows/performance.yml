@@ -1,0 +1,75 @@
+name: Production Lighthouse (mobile and desktop)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "public/**"
+      - "vite.config.ts"
+      - ".github/workflows/performance.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        device: [mobile, desktop]
+    steps:
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Confirm Chrome
+        run: google-chrome --version
+
+      - name: Audit public production entry
+        env:
+          DEVICE: ${{ matrix.device }}
+        run: |
+          set -euo pipefail
+          if [ "$DEVICE" = desktop ]; then
+            PRESET="--preset=desktop"
+          else
+            PRESET=""
+          fi
+          npx --yes lighthouse@12.8.2 https://nurufaith.co.ke/ \
+            --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage" \
+            --only-categories=performance \
+            --output=json --output-path="lighthouse-${DEVICE}.json" \
+            --max-wait-for-load=45000 --quiet ${PRESET}
+
+      - name: Summarize measured score and vital timings
+        if: success()
+        env:
+          DEVICE: ${{ matrix.device }}
+        run: |
+          node --input-type=module <<'NODE' | tee -a "$GITHUB_STEP_SUMMARY"
+          import fs from 'node:fs';
+          const report = JSON.parse(fs.readFileSync(`lighthouse-${process.env.DEVICE}.json`, 'utf8'));
+          const a = report.audits;
+          const metric = key => a[key]?.numericValue == null ? 'n/a' : `${Math.round(a[key].numericValue)} ms`;
+          console.log(`## ${process.env.DEVICE} Lighthouse (production)`);
+          console.log(`**Score:** ${Math.round((report.categories.performance?.score ?? 0) * 100)}/100`);
+          console.log(`**LCP:** ${metric('largest-contentful-paint')}`);
+          console.log(`**TBT:** ${metric('total-blocking-time')}`);
+          console.log(`**FCP:** ${metric('first-contentful-paint')}`);
+          console.log(`**Speed index:** ${metric('speed-index')}`);
+          console.log(`**CLS:** ${a['cumulative-layout-shift']?.numericValue ?? 'n/a'}`);
+          console.log('Lab data from GitHub-hosted Chrome; not real-user CrUX metrics.');
+          NODE
+
+      - name: Save audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-${{ matrix.device }}
+          path: lighthouse-${{ matrix.device }}.json
+          if-no-files-found: ignore

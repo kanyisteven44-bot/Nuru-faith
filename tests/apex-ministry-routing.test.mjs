@@ -5,13 +5,16 @@ import { readFileSync } from "node:fs";
 const config = JSON.parse(readFileSync(new URL("../vercel.json", import.meta.url), "utf8"));
 const apex = "nurufaith.co.ke";
 const app = "app.nurufaith.co.ke";
+const publicMinistryOrigin = "https://ministry.nurufaith.co.ke";
 
 test("only the former apex host is rewritten to the independently deployed ministry", () => {
   const rewrite = config.rewrites?.find((r) =>
-    r.destination === "https://nuru-faith-ministry.vercel.app/:path*"
+    r.destination === "https://ministry.nurufaith.co.ke/:path*"
   );
   assert.ok(rewrite, "ministry rewrite exists");
   assert.equal(rewrite.source, "/:path*");
+  const nitroConfig = readFileSync(new URL("../vite.config.ts", import.meta.url), "utf8");
+  assert.ok(nitroConfig.includes(`dest: "${publicMinistryOrigin}/$1"`), "Nitro routes use the verified public ministry upstream");
   assert.deepEqual(rewrite.has, [{ type: "host", value: apex }]);
   assert.ok(config.rewrites.every((r) => !r.has?.some((h) => h.type === "host" && h.value === app)));
 });

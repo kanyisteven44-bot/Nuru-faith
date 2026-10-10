@@ -7,7 +7,7 @@ import { Link } from "@tanstack/react-router";
 import { OPENING_IMAGE_PRELOADS } from "@/lib/openingImage";
 import { OpeningPhoto } from "@/components/nuru/OpeningPhoto";
 
-const PUBLIC_SITE = "https://nurufaith.co.ke/";
+const PUBLIC_SITE = "https://app.nurufaith.co.ke/";
 
 export const Route = createFileRoute("/")({
   head: () => ({

@@ -6,7 +6,7 @@ import { shouldUseEmbeddedGoogleSignIn } from "../src/lib/pwaMode.ts";
 const goodId = "1234567890-aBcD123xyz.apps.googleusercontent.com";
 const available = {
   installed: true,
-  hostname: "nurufaith.co.ke",
+  hostname: "app.nurufaith.co.ke",
   clientId: goodId,
 };
 

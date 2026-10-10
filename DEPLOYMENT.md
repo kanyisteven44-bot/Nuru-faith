@@ -86,3 +86,21 @@ The build should produce `.vercel/output/functions/__server.func/` (Node
 `nodejs22.x` function) rather than `.output/server/wrangler.json`
 (Cloudflare Worker) — the latter means the build ran without `VERCEL` set in
 the environment.
+
+## Youth app moves to app.nurufaith.co.ke
+
+The youth social app's official origin is `https://app.nurufaith.co.ke`. The apex
+`nurufaith.co.ke` will become a separate, independent ministry website.
+
+Order (no downtime):
+1. Add `app.nurufaith.co.ke` to the Vercel project `nuru-faith` and confirm it serves the app.
+2. Supabase Auth (project `qnqkcqywvqzfkickezxd`): set Site URL to `https://app.nurufaith.co.ke`
+   and add redirect URLs `https://app.nurufaith.co.ke/**`. Keep `https://nurufaith.co.ke/**`
+   and `https://nurufaith.website/**` until those installs are retired.
+3. Google OAuth client: add `https://app.nurufaith.co.ke` as an authorised JavaScript origin.
+4. Set Vercel `VITE_PUBLIC_APP_URL=https://app.nurufaith.co.ke` and redeploy.
+5. Only then move the apex to the ministry project.
+
+Installed PWAs on the old apex cannot move with an origin change: their storage, service
+worker and session belong to that origin. They see a notice asking people to reinstall
+from the app address. `nurufaith.website` installs keep working as before.

@@ -385,7 +385,7 @@ function PushControl() {
                 </button>
               </>
             ) : blocked ? (
-              <p>Open Android Settings → Apps → Chrome → Notifications, then allow notifications for nurufaith.co.ke in Chrome Site settings.</p>
+              <p>Open Android Settings → Apps → Chrome → Notifications, then allow notifications for app.nurufaith.co.ke in Chrome Site settings.</p>
             ) : unsupported ? (
               <p>This browser cannot register Web Push. On Android, open Nuru in a current version of Chrome to enable background call alerts. In-app calls still work while Nuru is open.</p>
             ) : (

@@ -40,9 +40,9 @@ export const Route = createFileRoute("/faith-courses/")({
         content:
           "Structured Christian learning on prayer, discipleship, Scripture, relationships and everyday faith.",
       },
-      { property: "og:url", content: "https://nurufaith.co.ke/faith-courses/" },
+      { property: "og:url", content: "https://app.nurufaith.co.ke/faith-courses/" },
     ],
-    links: [{ rel: "canonical", href: "https://nurufaith.co.ke/faith-courses/" }],
+    links: [{ rel: "canonical", href: "https://app.nurufaith.co.ke/faith-courses/" }],
   }),
   component: FaithCoursesScreen,
 });

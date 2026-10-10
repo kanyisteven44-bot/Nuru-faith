@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { canonicalBrowserDestination } from "../src/lib/pwaMode.ts";
 
-const canonical = "https://nurufaith.co.ke";
+const canonical = "https://app.nurufaith.co.ke";
 
 test("deprecated web browser links move to the official Nuru domain with route/query/hash preserved", () => {
   assert.equal(canonicalBrowserDestination("https://nurufaith.website/", false), canonical + "/");
@@ -41,7 +41,7 @@ test("auth callbacks and password reset links never leave their original origin"
 });
 
 test("official and other hosts never redirect", () => {
-  assert.equal(canonicalBrowserDestination("https://nurufaith.co.ke/", false), null);
+  assert.equal(canonicalBrowserDestination("https://app.nurufaith.co.ke/", false), null);
   assert.equal(canonicalBrowserDestination("https://example.com/admin", false), null);
   assert.equal(canonicalBrowserDestination("not valid url", false), null);
   assert.equal(canonicalBrowserDestination("javascript:alert(1)", false), null);

@@ -10,7 +10,7 @@ function simulateWorker() {
   const handlers = {};
   const shown = [];
   const self = {
-    location: { origin: "https://nurufaith.co.ke", href: "https://nurufaith.co.ke/sw.js" },
+    location: { origin: "https://app.nurufaith.co.ke", href: "https://app.nurufaith.co.ke/sw.js" },
     addEventListener: (type, listener) => { handlers[type] = listener; },
     registration: { showNotification: async (title, options) => { shown.push({ title, options }); } },
     clients: { matchAll: async () => [], openWindow: async () => null },
@@ -56,7 +56,7 @@ test("opening a call alert waits for page navigation before focusing the app", a
   const order = [];
   let redirected;
   const existing = {
-    url: "https://nurufaith.co.ke/home",
+    url: "https://app.nurufaith.co.ke/home",
     navigate: async (target) => {
       order.push("navigate " + target);
       return redirected;

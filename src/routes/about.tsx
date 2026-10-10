@@ -18,15 +18,15 @@ export const Route = createFileRoute("/about")({
         content:
           "Stephen Kanyi began developing Nuru Faith at age 18, with a vision to connect faith, learning, worship and community through technology.",
       },
-      { property: "og:url", content: "https://nurufaith.co.ke/about" },
-      { property: "og:image", content: "https://nurufaith.co.ke/photos/friends-outdoors.jpg" },
+      { property: "og:url", content: "https://app.nurufaith.co.ke/about" },
+      { property: "og:image", content: "https://app.nurufaith.co.ke/photos/friends-outdoors.jpg" },
       { name: "twitter:title", content: "About Nuru Faith & Founder Stephen Kanyi | Christian App" },
       {
         name: "twitter:description",
         content: "Discover the journey of Stephen Kanyi, founder of Nuru Faith, developed at age 18 in Kenya.",
       },
     ],
-    links: [{ rel: "canonical", href: "https://nurufaith.co.ke/about" }],
+    links: [{ rel: "canonical", href: "https://app.nurufaith.co.ke/about" }],
   }),
   component: AboutPage,
 });
@@ -36,42 +36,42 @@ const SEO_STRUCTURED_DATA = {
   "@graph": [
     {
       "@type": "Organization",
-      "@id": "https://nurufaith.co.ke/#organization",
+      "@id": "https://app.nurufaith.co.ke/#organization",
       name: "Vortiqora Technologies",
-      founder: { "@id": "https://nurufaith.co.ke/about#stephen-kanyi" },
-      url: "https://nurufaith.co.ke/about",
+      founder: { "@id": "https://app.nurufaith.co.ke/about#stephen-kanyi" },
+      url: "https://app.nurufaith.co.ke/about",
       logo: {
         "@type": "ImageObject",
-        url: "https://nurufaith.co.ke/icons/icon-512.png",
+        url: "https://app.nurufaith.co.ke/icons/icon-512.png",
       },
     },
     {
       "@type": "Person",
-      "@id": "https://nurufaith.co.ke/about#stephen-kanyi",
+      "@id": "https://app.nurufaith.co.ke/about#stephen-kanyi",
       name: "Stephen Kanyi",
-      url: "https://nurufaith.co.ke/about#founder",
+      url: "https://app.nurufaith.co.ke/about#founder",
       jobTitle: "Founder",
       description:
         "Stephen Kanyi is a Kenyan technology founder who began developing Nuru Faith at age 18 through Vortiqora Technologies, bringing faith, technology and community together for young people.",
-      worksFor: { "@id": "https://nurufaith.co.ke/#organization" },
+      worksFor: { "@id": "https://app.nurufaith.co.ke/#organization" },
     },
     {
       "@type": "WebSite",
-      "@id": "https://nurufaith.co.ke/#website",
-      url: "https://nurufaith.co.ke",
+      "@id": "https://app.nurufaith.co.ke/#website",
+      url: "https://app.nurufaith.co.ke",
       name: "Nuru Faith",
       inLanguage: "en",
-      publisher: { "@id": "https://nurufaith.co.ke/#organization" },
+      publisher: { "@id": "https://app.nurufaith.co.ke/#organization" },
     },
     {
       "@type": "WebApplication",
       name: "Nuru Faith",
-      url: "https://nurufaith.co.ke/about",
+      url: "https://app.nurufaith.co.ke/about",
       applicationCategory: "LifestyleApplication",
       operatingSystem: "Web",
       description:
         "A Christian faith and community app for Bible reading, courses, devotions, prayer, gospel media, mentorship and meaningful community.",
-      publisher: { "@id": "https://nurufaith.co.ke/#organization" },
+      publisher: { "@id": "https://app.nurufaith.co.ke/#organization" },
     },
   ],
 };

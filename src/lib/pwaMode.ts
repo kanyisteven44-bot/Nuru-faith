@@ -14,16 +14,24 @@ export function isLegacyNuruHost(hostname: string): boolean {
   return ["nurufaith.website", "www.nurufaith.website"].includes(hostname.toLowerCase());
 }
 
+/** The former apex app origin. It will become a separate ministry website, so
+ * the youth app no longer treats it as official — but already-installed PWAs
+ * on it must still finish sign-in on their own origin until that cutover.
+ */
+export function isFormerApexHost(hostname: string): boolean {
+  return ["nurufaith.co.ke", "www.nurufaith.co.ke"].includes(hostname.toLowerCase());
+}
+
 export function loginCallbackOrigin(
   currentOrigin: string,
   hostname: string,
   installed: boolean,
-  officialOrigin = "https://nurufaith.co.ke",
+  officialOrigin = "https://app.nurufaith.co.ke",
 ): string {
   // Sessions, browser storage and OAuth callbacks do not transfer between
   // domains. An already-installed legacy PWA must complete authentication
   // on the same origin; moving domains happens separately and voluntarily.
-  if (installed && isLegacyNuruHost(hostname)) return currentOrigin;
+  if (installed && (isLegacyNuruHost(hostname) || isFormerApexHost(hostname))) return currentOrigin;
   return officialOrigin;
 }
 
@@ -56,7 +64,7 @@ export function canonicalBrowserDestination(href: string, installed: boolean): s
     if (/(?:^|[&#])(?:access_token|refresh_token|code|token_hash)=/.test(url.hash)) return null;
 
     url.protocol = "https:";
-    url.hostname = "nurufaith.co.ke";
+    url.hostname = "app.nurufaith.co.ke";
     url.port = "";
     return url.toString();
   } catch {
@@ -85,7 +93,7 @@ export const LEGACY_CANONICAL_INIT_SCRIPT = String.raw`(function () {
       return;
     }
     try { if (sessionStorage.getItem("nuru-legacy-auth-in-progress") === "1") return; } catch (e) {}
-    url.hostname = "nurufaith.co.ke";
+    url.hostname = "app.nurufaith.co.ke";
     url.protocol = "https:";
     url.port = "";
     window.location.replace(url.href);
@@ -115,7 +123,7 @@ export function shouldUseEmbeddedGoogleSignIn({
 }): boolean {
   return (
     installed &&
-    hostname.toLowerCase() === "nurufaith.co.ke" &&
+    (hostname.toLowerCase() === "app.nurufaith.co.ke" || isFormerApexHost(hostname)) &&
     setting !== "false" &&
     typeof clientId === "string" &&
     /^[A-Za-z0-9_-]+\.apps\.googleusercontent\.com$/.test(clientId)

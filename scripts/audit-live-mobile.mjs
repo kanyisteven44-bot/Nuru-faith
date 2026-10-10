@@ -7,7 +7,7 @@ import { chromium } from "playwright";
 import fs from "node:fs/promises";
 import path from "node:path";
 
-const BASE = (process.env.NURU_QA_BASE || "https://nurufaith.co.ke").replace(/\/$/, "");
+const BASE = (process.env.NURU_QA_BASE || "https://app.nurufaith.co.ke").replace(/\/$/, "");
 const OUT = "browser-qa";
 const email = process.env.NURU_QA_EMAIL || "";
 const password = process.env.NURU_QA_PASSWORD || "";
@@ -184,7 +184,7 @@ for (const viewport of viewports) {
     // Test that clicking a real legacy browser link reaches the canonical URL.
     try {
       await tab.goto("https://nurufaith.website/admin?section=dashboard", { waitUntil: "domcontentloaded", timeout: 45000 });
-      await tab.waitForURL(u => u.hostname === "nurufaith.co.ke", { timeout: 15000 });
+      await tab.waitForURL(u => u.hostname === "app.nurufaith.co.ke", { timeout: 15000 });
       // A logged-out visitor must be shown Nuru sign-in. The intended admin
       // page is restored AFTER login, not rendered without authentication.
       await tab.waitForFunction(() =>

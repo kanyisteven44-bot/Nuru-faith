@@ -1,6 +1,6 @@
 # Nuru Faith launch-readiness gate
 
-**Production:** https://nurufaith.co.ke — GitHub `kanyisteven44-bot/Nuru-faith`, Vercel `nuru-faith`, Supabase `qnqkcqywvqzfkickezxd`.
+**Production:** https://app.nurufaith.co.ke — GitHub `kanyisteven44-bot/Nuru-faith`, Vercel `nuru-faith`, Supabase `qnqkcqywvqzfkickezxd`.
 
 Use this as a live release checklist, not as evidence that every journey has already passed.
 Do not approve a public launch solely from a READY deployment or Lighthouse score.
@@ -47,7 +47,7 @@ Do not approve a public launch solely from a READY deployment or Lighthouse scor
 - Every PR: `npm run typecheck`, `npm test`, production build and installed Google-sign-in UI smoke test.
 - Production: `.github/workflows/mobile-browser-audit.yml` measures public pages at mobile and desktop widths and preserves report/screenshots; it skips protected flows unless **separate dedicated** `NURU_QA_EMAIL` and `NURU_QA_PASSWORD` GitHub Actions secrets are provided.
 - Use **test-only accounts** without personal messages, real passwords or real account deletion. Never log or hardcode those credentials.
-- After merging: verify latest Vercel production deployment sha, `nurufaith.co.ke` alias, public URLs, runtime error timestamp and Google Console robots/indexing state.
+- After merging: verify latest Vercel production deployment sha, `app.nurufaith.co.ke` alias, public URLs, runtime error timestamp and Google Console robots/indexing state.
 - Before declaring **launch-ready**, record real device test evidence for the incomplete rows above and resolve SEV-1/SEV-2 blockers.
 
 ## Rollback and incident response

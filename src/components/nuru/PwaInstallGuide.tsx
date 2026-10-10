@@ -43,7 +43,7 @@ export function PwaInstallGuide() {
 
   // A user who installed Nuru on their phone should never see "Install app"
   // while using Nuru. Only show this on the verified official site.
-  if (!ready || installed || window.location.hostname !== "nurufaith.co.ke") return null;
+  if (!ready || installed || window.location.hostname !== "app.nurufaith.co.ke") return null;
 
   const install = async () => {
     if (!promptEvent) {

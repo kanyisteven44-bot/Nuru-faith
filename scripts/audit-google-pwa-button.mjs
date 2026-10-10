@@ -3,8 +3,8 @@ import { chromium } from "playwright";
 // Smoke test public sign-in UI only. No credentials or accounts are touched.
 // Simulated display-mode does not replace a genuine Android install test.
 const cases = [
-  { origin: "https://nurufaith.co.ke", installed: true, expect: "embedded" },
-  { origin: "https://nurufaith.co.ke", installed: false, expect: "browser" },
+  { origin: "https://app.nurufaith.co.ke", installed: true, expect: "embedded" },
+  { origin: "https://app.nurufaith.co.ke", installed: false, expect: "browser" },
   { origin: "https://nurufaith.website", installed: true, expect: "browser" },
 ];
 const browser = await chromium.launch({ headless: true, args: ["--disable-dev-shm-usage"] });
@@ -74,7 +74,7 @@ for (const testCase of cases) {
     console.log("NURU_GOOGLE_SMOKE " + JSON.stringify({
       test: testCase, actual, errors: errors.slice(0, 5), passed: good,
     }));
-    if (originError && official) console.log("ACTION_REQUIRED: Add https://nurufaith.co.ke to Google Cloud Authorized JavaScript origins.");
+    if (originError && official) console.log("ACTION_REQUIRED: Add https://app.nurufaith.co.ke to Google Cloud Authorized JavaScript origins.");
     if (!good) failures++;
   } catch (e) {
     failures++;

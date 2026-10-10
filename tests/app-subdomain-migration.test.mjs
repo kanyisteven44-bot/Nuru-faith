@@ -23,7 +23,13 @@ test("installed PWAs on the former apex finish sign-in on their own origin", () 
 test("the former apex is never force-redirected (it becomes the ministry site)", () => {
   assert.equal(canonicalBrowserDestination("https://nurufaith.co.ke/home", false), null);
   const vercel = JSON.parse(read("vercel.json"));
-  assert.ok(!(vercel.redirects ?? []).some((r) => r.has?.some((c) => c.type === "host" && /nurufaith\.co\.ke$/.test(c.value))));
+  // Only narrow auth-recovery and youth deep links may redirect from apex.
+  // Blanket apex redirects would make the ministry disappear.
+  assert.ok(!(vercel.redirects ?? []).some((r) =>
+    r.source === "/:path*" || r.source === "/(.*)" ||
+    (r.source === "/" && !(r.has ?? []).some((c) => c.type === "query"))
+  ));
+  assert.ok((vercel.redirects ?? []).every((r) => r.permanent === false));
 });
 
 test("old apex share links move to the app subdomain", () => {

@@ -1,6 +1,4 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import { MessageAlerts } from "@/components/nuru/MessageAlerts";
-import { CallManager } from "@/components/nuru/CallManager";
+import { createFileRoute, redirect, lazyRouteComponent } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { rememberAfterLogin } from "@/lib/afterLogin";
 
@@ -51,10 +49,10 @@ export const Route = createFileRoute("/_authenticated")({
 
     return { user };
   },
-  component: () => (
-    <CallManager>
-      <MessageAlerts />
-      <Outlet />
-    </CallManager>
+  // Route permissions load eagerly; realtime messaging and calling load only
+  // after someone actually enters the authenticated part of Nuru.
+  component: lazyRouteComponent(
+    () => import("@/components/nuru/AuthenticatedLayout"),
+    "AuthenticatedLayout",
   ),
 });

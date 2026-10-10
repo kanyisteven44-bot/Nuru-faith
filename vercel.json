@@ -291,7 +291,7 @@
           "value": "nurufaith.co.ke"
         }
       ],
-      "destination": "https://nuru-faith-ministry.vercel.app/:path*"
+      "destination": "https://ministry.nurufaith.co.ke/:path*"
     }
   ]
 }

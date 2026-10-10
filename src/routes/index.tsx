@@ -88,7 +88,7 @@ function EntryPage() {
           </Link>
         </div>
       </main>
-      <SplashScreen initialOnly onComplete={() => setIntroComplete(true)} />
+      <SplashScreen initialOnly onComplete={() => setIntroComplete(true)} authReady={destination !== null} />
     </>
   );
 }

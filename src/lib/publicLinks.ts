@@ -2,12 +2,12 @@
  * This is deliberately separate from app navigation and OAuth callbacks:
  * old-domain installed PWAs must keep their own origin until users migrate.
  */
-export const OFFICIAL_NURU_ORIGIN = "https://app.nurufaith.co.ke";
+export const OFFICIAL_NURU_ORIGIN = "https://nurufaith.co.ke";
 
 const OLD_NURU_HOSTS = new Set([
   "nurufaith.website",
   "www.nurufaith.website",
-  "nurufaith.co.ke",
+  "app.nurufaith.co.ke",
   "www.nurufaith.co.ke",
 ]);
 

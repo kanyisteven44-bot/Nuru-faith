@@ -10,6 +10,7 @@ import type { AdminSectionId } from "@/components/nuru/AdminCommandShell";
 const ADMIN_SECTION_IDS = [
   "dashboard",
   "operations",
+  "performance",
   "users",
   "churches",
   "content",

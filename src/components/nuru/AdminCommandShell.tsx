@@ -9,6 +9,7 @@ import {
   Home,
   MessageCircle,
   Music2,
+  Gauge,
   Search,
   Settings,
   ShieldCheck,
@@ -22,6 +23,7 @@ import { Avatar } from "@/components/nuru/AppShell";
 export type AdminSectionId =
   | "operations"
   | "dashboard"
+  | "performance"
   | "users"
   | "churches"
   | "content"
@@ -91,6 +93,7 @@ export function AdminCommandShell({
   const menu: MenuItem[] = [
     { kind: "section", id: "dashboard", label: "Dashboard", icon: Home },
     { kind: "section", id: "operations", label: "Operations", icon: UserCog },
+    { kind: "section", id: "performance", label: "Performance", icon: Gauge },
     { kind: "section", id: "users", label: "Users", icon: Users },
     { kind: "section", id: "churches", label: "Churches", icon: Church },
     { kind: "section", id: "content", label: "Content", icon: BookOpenCheck },
@@ -117,6 +120,7 @@ export function AdminCommandShell({
       q.includes("health")
     )
       return onSectionChange("operations");
+    if (q.includes("performance") || q.includes("lighthouse") || q.includes("speed")) return onSectionChange("performance");
     if (q.includes("church")) return onSectionChange("churches");
     if (q.includes("role") || q.includes("admin"))
       return onSectionChange(isSuperAdmin ? "roles" : "operations");

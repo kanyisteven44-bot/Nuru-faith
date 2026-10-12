@@ -73,7 +73,7 @@ except ValueError:
 st.success("Connected to Nuru Faith youth app · Live Supabase analytics")
 with st.sidebar:
     st.header("✦ Nuru Studio")
-    page = st.radio("Workspace", ["Social home", "Overview", "Content intelligence", "Moderation queue", "Growth trends", "System health"])
+    page = st.radio("Workspace", ["Social home", "Overview", "Content intelligence", "Moderation queue", "Growth trends", "Performance", "System health"])
     if st.button("Refresh live data"):
         st.rerun()
     st.caption("Role: verified super administrator")
@@ -187,6 +187,23 @@ elif page == "Moderation queue":
                 except ValueError:
                     st.error("The decision could not be saved. No success was confirmed.")
     st.caption("Actions are limited to approval status for the selected record. User accounts, roles and messages cannot be modified here.")
+
+elif page == "Performance":
+    st.header("⚡ Performance monitoring")
+    st.caption("Verified Lighthouse audit of the public Nuru Faith production homepage · 12 October 2026. Historical lab results, not live telemetry.")
+    mobile, desktop = st.columns(2)
+    with mobile:
+        st.metric("Mobile Lighthouse", "86 / 100")
+        st.progress(86, text="Mobile performance · target 80–90+")
+        st.write("LCP: 3.33 s · FCP: 2.43 s · TBT: 159 ms · CLS: 0.00057")
+    with desktop:
+        st.metric("Desktop Lighthouse", "98 / 100")
+        st.progress(98, text="Desktop performance")
+        st.write("LCP: 0.70 s · FCP: 0.50 s · TBT: 0 ms · CLS: 0.00014")
+    st.success("The measured public homepage meets the requested mobile score target.")
+    st.warning("These scores are not from the latest unpublished commit and do not cover signed-in pages, media playback, or chat. A successful audit workflow alone does not guarantee a score above 80.")
+    st.link_button("View latest Lighthouse audits", "https://github.com/kanyisteven44-bot/Nuru-faith/actions/workflows/performance.yml")
+    st.caption("Review each new workflow run for its measured score and Core Web Vitals before declaring performance improved.")
 
 elif page == "Growth trends":
     st.header("Growth and publishing trends")

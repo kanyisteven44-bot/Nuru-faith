@@ -74,7 +74,7 @@ except ValueError:
 st.success("Connected to Nuru Faith youth app · Live Supabase analytics")
 with st.sidebar:
     st.header("✦ Nuru Studio")
-    page = st.radio("Workspace", ["Social home", "Overview", "Content intelligence", "Moderation queue", "Growth trends", "Performance", "System health"])
+    page = st.radio("Workspace", ["Social home", "Overview", "Content intelligence", "Moderation queue", "Growth trends", "Performance", "App Health", "System health"])
     if st.button("Refresh live data"):
         st.rerun()
     st.caption("Role: verified super administrator")
@@ -238,6 +238,34 @@ elif page == "Performance":
                              str(audits.get(key, {}).get("displayValue", "n/a")) for key in metrics))
     st.caption("Target: mobile performance at least 80. Results are lab data for the public homepage, not real-user data or authenticated app routes. API results may be cached for up to 30 minutes.")
     st.link_button("GitHub Lighthouse history", "https://github.com/kanyisteven44-bot/Nuru-faith/actions/workflows/performance.yml")
+
+elif page == "App Health":
+    st.header("App Health & Error Center")
+    st.caption("Check public site availability and find simple, safe troubleshooting steps.")
+    if st.button("Check public websites", key="health_refresh"):
+        st.session_state["health_requested"] = True
+    if st.session_state.get("health_requested"):
+        for name, target in (("Homepage", "https://nurufaith.co.ke/"), ("App", "https://app.nurufaith.co.ke/")):
+            try:
+                with urlopen(Request(target, headers={"User-Agent": "NuruFaithHealth/1.0"}), timeout=12) as response:
+                    st.success(name + " responded: HTTP " + str(response.status))
+            except HTTPError as error:
+                st.error(name + " returned HTTP " + str(error.code) + ". Inspect Vercel deployment and domain settings.")
+            except (URLError, TimeoutError, ValueError):
+                st.warning(name + " could not be checked. Network or hosting may be involved.")
+    st.info("These checks do not read private logs or prove that login, messaging or media playback works.")
+    guides = [
+        ("Voice notes unavailable", "Check that the recording exists in Supabase Storage; inspect expired signed URLs, upload errors and access permissions.", "https://supabase.com/dashboard"),
+        ("Changes not showing", "Compare the live Vercel production commit with GitHub main; resolve build errors or deployment quotas, then deploy and verify.", "https://vercel.com/vortiqora/nuru-faith"),
+        ("Login problems", "Review Supabase Auth logs and allowed redirect URLs. Never disable row-level security to bypass an error.", "https://supabase.com/dashboard"),
+        ("Slow pages", "Run Lighthouse in Performance; investigate the measured LCP element, large images, scripts and slow requests before optimizing.", "https://github.com/kanyisteven44-bot/Nuru-faith/actions/workflows/performance.yml"),
+    ]
+    st.subheader("Errors explained and how to fix them")
+    for title, steps, link in guides:
+        with st.expander(title):
+            st.write(steps)
+            st.link_button("Open diagnostic tools", link)
+    st.caption("These are guidance examples, not automatically detected incidents. Confirm the cause before applying a fix.")
 
 elif page == "Growth trends":
     st.header("Growth and publishing trends")

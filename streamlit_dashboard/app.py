@@ -1,6 +1,7 @@
 """Nuru Faith youth app — restricted, aggregate-only Supabase insights."""
 import json
 from urllib.request import Request, urlopen
+from urllib.parse import urlencode
 from urllib.error import HTTPError, URLError
 
 import streamlit as st
@@ -189,21 +190,54 @@ elif page == "Moderation queue":
     st.caption("Actions are limited to approval status for the selected record. User accounts, roles and messages cannot be modified here.")
 
 elif page == "Performance":
-    st.header("⚡ Performance monitoring")
-    st.caption("Verified Lighthouse audit of the public Nuru Faith production homepage · 12 October 2026. Historical lab results, not live telemetry.")
-    mobile, desktop = st.columns(2)
-    with mobile:
-        st.metric("Mobile Lighthouse", "86 / 100")
-        st.progress(86, text="Mobile performance · target 80–90+")
-        st.write("LCP: 3.33 s · FCP: 2.43 s · TBT: 159 ms · CLS: 0.00057")
-    with desktop:
-        st.metric("Desktop Lighthouse", "98 / 100")
-        st.progress(98, text="Desktop performance")
-        st.write("LCP: 0.70 s · FCP: 0.50 s · TBT: 0 ms · CLS: 0.00014")
-    st.success("The measured public homepage meets the requested mobile score target.")
-    st.warning("These scores are not from the latest unpublished commit and do not cover signed-in pages, media playback, or chat. A successful audit workflow alone does not guarantee a score above 80.")
-    st.link_button("View latest Lighthouse audits", "https://github.com/kanyisteven44-bot/Nuru-faith/actions/workflows/performance.yml")
-    st.caption("Review each new workflow run for its measured score and Core Web Vitals before declaring performance improved.")
+    st.header("⚡ Lighthouse performance & quality")
+    st.caption("Live on-demand Google PageSpeed Insights · Public Nuru Faith homepage · Mobile and desktop")
+    st.info("Measures four Lighthouse categories: Performance, Accessibility, Best Practices and SEO. Scores are not fabricated when the API is unavailable.")
+
+    @st.cache_data(ttl=1800, show_spinner=False)
+    def lighthouse_audit(strategy):
+        params = [("url", "https://nurufaith.co.ke/"), ("strategy", strategy)]
+        params.extend(("category", category) for category in ("performance", "accessibility", "best-practices", "seo"))
+        request = Request("https://www.googleapis.com/pagespeedonline/v5/runPagespeed?" + urlencode(params),
+                          headers={"User-Agent": "NuruFaithAdminPerformance/1.0"})
+        try:
+            with urlopen(request, timeout=90) as response:
+                report = json.loads(response.read().decode())
+        except (HTTPError, URLError, TimeoutError, ValueError):
+            return None
+        result = report.get("lighthouseResult") or {}
+        if not result.get("categories") or not result.get("audits"):
+            return None
+        return result
+
+    if st.button("Run / refresh Lighthouse audits", key="lighthouse_refresh"):
+        lighthouse_audit.clear()
+
+    for strategy in ("mobile", "desktop"):
+        st.subheader(strategy.title() + " Lighthouse")
+        with st.spinner("Checking " + strategy + " homepage performance…"):
+            report = lighthouse_audit(strategy)
+        if not report:
+            st.warning("Fresh audit unavailable (network, rate limit or API error). No score has been assumed.")
+            continue
+        categories = report.get("categories", {})
+        columns = st.columns(4)
+        for column, key, title in zip(columns, ("performance", "accessibility", "best-practices", "seo"),
+                                       ("Performance", "Accessibility", "Best Practices", "SEO")):
+            score = categories.get(key, {}).get("score")
+            with column:
+                if isinstance(score, (float, int)):
+                    number = round(score * 100)
+                    st.metric(title, str(number) + "/100")
+                    st.progress(number)
+                else:
+                    st.metric(title, "Not measured")
+        audits = report.get("audits", {})
+        metrics = ("largest-contentful-paint", "first-contentful-paint", "total-blocking-time", "cumulative-layout-shift")
+        st.caption(" · ".join(key.replace("-", " ").title() + ": " +
+                             str(audits.get(key, {}).get("displayValue", "n/a")) for key in metrics))
+    st.caption("Target: mobile performance at least 80. Results are lab data for the public homepage, not real-user data or authenticated app routes. API results may be cached for up to 30 minutes.")
+    st.link_button("GitHub Lighthouse history", "https://github.com/kanyisteven44-bot/Nuru-faith/actions/workflows/performance.yml")
 
 elif page == "Growth trends":
     st.header("Growth and publishing trends")

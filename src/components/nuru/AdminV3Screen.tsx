@@ -43,6 +43,7 @@ import { AdminRoleManager } from "@/components/nuru/AdminRoleManager";
 import { AdminCommandShell, type AdminSectionId } from "@/components/nuru/AdminCommandShell";
 import { AdminOperationsHub } from "@/components/nuru/AdminOperationsHub";
 import { AdminDashboardOverview } from "@/components/nuru/AdminDashboardOverview";
+import { AdminPerformancePanel } from "@/components/nuru/AdminPerformancePanel";
 import { supabase } from "@/integrations/supabase/client";
 
 export function AdminV3Screen({ initialSection }: { initialSection: AdminSectionId }) {
@@ -608,28 +609,7 @@ export function AdminV3Screen({ initialSection }: { initialSection: AdminSection
         </AdminPanel>
       )}
 
-      {activeSection === "performance" && (
-        <section className="space-y-5 rounded-2xl border border-[#153b5c] bg-[#051421] p-5">
-          <div>
-            <h2 className="font-display text-xl font-semibold text-white">Performance monitoring</h2>
-            <p className="mt-2 text-sm text-slate-400">Last verified production homepage Lighthouse audit · 12 October 2026. This is a historical snapshot, not live telemetry or authenticated-page performance.</p>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {([{ device: "Mobile", score: 86, lcp: "3.33 s", fcp: "2.43 s", tbt: "159 ms", cls: "0.00057" },
-               { device: "Desktop", score: 98, lcp: "0.70 s", fcp: "0.50 s", tbt: "0 ms", cls: "0.00014" }] as const).map((item) => (
-              <div key={item.device} className="rounded-xl border border-[#234b68] bg-[#091e30] p-4">
-                <p className="text-sm text-slate-300">{item.device} Lighthouse</p>
-                <p className="mt-1 text-3xl font-bold text-emerald-300">{item.score}<span className="text-base text-slate-400">/100</span></p>
-                <div role="progressbar" aria-label={item.device + " performance score"} aria-valuenow={item.score} aria-valuemin={0} aria-valuemax={100} className="mt-3 h-2 overflow-hidden rounded-full bg-slate-700"><div className="h-full rounded-full bg-emerald-400" style={{ width: item.score + "%" }} /></div>
-                <p className="mt-3 text-xs text-slate-300">LCP {item.lcp} · FCP {item.fcp} · TBT {item.tbt} · CLS {item.cls}</p>
-              </div>
-            ))}
-          </div>
-          <p className="text-sm text-slate-300">Target: mobile score 80–90 or better. Current audited homepage meets target; other routes and the latest unpublished code have not been measured here.</p>
-          <a href="https://github.com/kanyisteven44-bot/Nuru-faith/actions/workflows/performance.yml" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center rounded-xl border border-cyan-400/40 px-4 text-sm font-semibold text-cyan-200 hover:bg-cyan-400/10">View latest Lighthouse runs ↗</a>
-          <p className="text-xs text-slate-500">A successful workflow run means the audit executed; check its reported score to verify the performance target.</p>
-        </section>
-      )}
+      {activeSection === "performance" && <AdminPerformancePanel />}
       {activeSection === "roles" && (
         <AdminPanel title="Roles" subtitle="Control who can operate Nuru administration.">
           {isSuper ? (

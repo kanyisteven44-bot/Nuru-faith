@@ -247,7 +247,7 @@ export function BibleReadAloud({
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <p className="font-semibold">No {language} voice is installed on this device.</p>
-              <p className="mt-1 text-muted-foreground">No matching voice was found on this device. You can still read the chapter.</p>
+              <p className="mt-1 text-muted-foreground">African-language Bible text is available, but matching narration requires a voice installed on this device. You can still read the chapter.</p>
             </div>
             <button type="button" aria-expanded={showVoiceHelp} onClick={() => setShowVoiceHelp((value) => !value)}
               className="shrink-0 rounded-lg border border-border bg-background px-3 py-2 font-semibold text-primary">

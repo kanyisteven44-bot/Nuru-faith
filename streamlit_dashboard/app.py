@@ -15,7 +15,7 @@ div[data-testid="stMetricLabel"] {color:#b7cfe2}
 .stButton>button {background:#b9ef54;color:#122a24;border-radius:10px;border:0;font-weight:700}
 </style>""", unsafe_allow_html=True)
 
-st.title("Nuru Faith — Admin Insights")
+st.title("✦ Nuru Social Studio")
 st.caption("Youth app · Restricted aggregate content reporting")
 
 try:
@@ -72,8 +72,8 @@ except ValueError:
 
 st.success("Connected to Nuru Faith youth app · Live Supabase analytics")
 with st.sidebar:
-    st.header("Nuru Control Center")
-    page = st.radio("Workspace", ["Overview", "Content intelligence", "Moderation queue", "Growth trends", "System health"])
+    st.header("✦ Nuru Studio")
+    page = st.radio("Workspace", ["Social home", "Overview", "Content intelligence", "Moderation queue", "Growth trends", "System health"])
     if st.button("Refresh live data"):
         st.rerun()
     st.caption("Role: verified super administrator")
@@ -101,7 +101,32 @@ def weekly_chart(rows):
     else:
         st.line_chart({str(row["week"]): int(row["count"]) for row in rows})
 
-if page == "Overview":
+
+try:
+    social = post_json("/rest/v1/rpc/nuru_streamlit_social_pulse", {}, st.session_state["nuru_access_token"])
+except ValueError:
+    social = None
+
+if page == "Social home":
+    st.header("Community pulse")
+    st.caption("Social-platform inspired creator analytics · Real Nuru Faith engagement")
+    if social:
+        cards([("Posts",social.get("posts")),("Post likes",social.get("post_likes")),("Comments",social.get("post_comments")),("Reel views",social.get("reel_views"))])
+        cards([("Reel likes",social.get("reel_likes")),("Follows",social.get("follows")),("Posts · 7d",social.get("posts_week")),("Views · 7d",social.get("views_week"))])
+        st.subheader("Social activity · Last 14 days")
+        activity = social.get("weekly_activity",[])
+        if activity:
+            st.line_chart({str(row["day"]):int(row["views"]) for row in activity})
+            st.caption("Daily reel views; no private activity details are displayed.")
+        else:
+            st.info("No activity recorded yet.")
+    else:
+        st.warning("Social analytics are temporarily unavailable.")
+    st.subheader("Creator dashboard")
+    cards([("Reels",counts.get("reels")),("Music",counts.get("songs")),("Podcasts",counts.get("podcasts")),("Pending media",counts.get("pending_media"))])
+    st.caption("Platform-wide totals, not an individual creator's private account.")
+
+elif page == "Overview":
     st.header("Executive overview")
     cards([("Media library", counts.get("media_items")), ("Music", counts.get("songs")), ("Podcasts", counts.get("podcasts")), ("Reels", counts.get("reels"))])
     cards([("Devotionals", counts.get("devotionals")), ("Scripture series", counts.get("scripture_series")), ("Courses", counts.get("courses")), ("Churches", counts.get("churches"))])
@@ -149,6 +174,7 @@ else:
     st.header("System health and data integrity")
     st.success("The protected basic analytics endpoint is responding.")
     st.write("Advanced reporting endpoint:", "Connected" if advanced is not None else "Unavailable")
+    st.write("Social analytics endpoint:", "Connected" if social is not None else "Unavailable")
     st.write("Access policy: authenticated super_admin only")
     st.write("Database access: read-only aggregate functions")
     st.write("Member messages, prayer requests, passwords and tokens: never displayed")

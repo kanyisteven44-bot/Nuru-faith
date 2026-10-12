@@ -70,46 +70,91 @@ except ValueError:
     st.error("Your session has expired or you do not have access. Please sign in again.")
     st.stop()
 
-st.success("Connected to Nuru Faith youth app · Supabase live aggregates")
-from datetime import datetime, timezone
-st.caption("Updated " + datetime.now(timezone.utc).strftime("%d %b %Y, %H:%M UTC") + " · Counts reflect the live database")
+st.success("Connected to Nuru Faith youth app · Live Supabase analytics")
+with st.sidebar:
+    st.header("Nuru Control Center")
+    page = st.radio("Workspace", ["Overview", "Content intelligence", "Moderation queue", "Growth trends", "System health"])
+    if st.button("Refresh live data"):
+        st.rerun()
+    st.caption("Role: verified super administrator")
+    st.caption("All metrics are aggregated. Sensitive personal records are excluded.")
 
-st.subheader("Content overview")
-primary = [("Reels","reels"),("Music items","songs"),("Podcasts","podcasts"),("Media sources","media_sources"),("Courses","courses")]
-for col,(label,key) in zip(st.columns(5),primary):
-    col.metric(label, f"{int(counts.get(key,0)):,}")
+try:
+    advanced = post_json("/rest/v1/rpc/nuru_streamlit_admin_advanced", {}, st.session_state["nuru_access_token"])
+except ValueError:
+    advanced = None
+    st.warning("Advanced reporting is temporarily unavailable. Basic insights remain accessible.")
 
-st.subheader("Approval overview")
-for col,(label,key) in zip(st.columns(4),[("Approved media","approved_media"),("Pending media","pending_media"),("Approved sources","approved_sources"),("Pending sources","pending_sources")]):
-    col.metric(label, f"{int(counts.get(key,0)):,}")
-if int(counts.get("pending_media",0)) > 0:
-    st.warning(f"{int(counts['pending_media']):,} media items are awaiting review. This dashboard is read-only; approvals must be handled through authorized moderation workflows.")
+def cards(items):
+    for col, (label, value) in zip(st.columns(len(items)), items):
+        col.metric(label, f"{int(value or 0):,}")
 
-st.subheader("Content breakdown")
-chart_data = {
-    "Music":int(counts.get("songs",0)),
-    "Podcasts":int(counts.get("podcasts",0)),
-    "Reels":int(counts.get("reels",0)),
-    "Devotionals":int(counts.get("devotionals",0)),
-    "Scripture series":int(counts.get("scripture_series",0)),
-    "Courses":int(counts.get("courses",0)),
-}
-st.bar_chart(chart_data, horizontal=True)
-st.caption("Categories represent different tables and may overlap in subject matter; these are content totals, not engagement statistics.")
+def category_chart(rows):
+    if not rows:
+        st.info("No data is available for this chart yet.")
+    else:
+        st.bar_chart({str(row["name"]): int(row["count"]) for row in rows}, horizontal=True)
 
-st.subheader("Explore the library")
-view = st.selectbox("Choose a reporting category", ["All content","Music and podcasts","Learning and Scripture","Sources and channels"])
-metrics = {
-    "All content":[("Media items","media_items"),("Churches","churches"),("Reels","reels")],
-    "Music and podcasts":[("Music","songs"),("Podcasts","podcasts"),("Approved media","approved_media"),("Pending media","pending_media")],
-    "Learning and Scripture":[("Courses","courses"),("Devotionals","devotionals"),("Scripture series","scripture_series")],
-    "Sources and channels":[("Media sources","media_sources"),("Approved sources","approved_sources"),("Approved YouTube channels","approved_channels")],
-}
-for col,(label,key) in zip(st.columns(len(metrics[view])),metrics[view]):
-    col.metric(label, f"{int(counts.get(key,0)):,}")
+def weekly_chart(rows):
+    if not rows:
+        st.info("No activity recorded in the last 12 weeks.")
+    else:
+        st.line_chart({str(row["week"]): int(row["count"]) for row in rows})
 
-with st.expander("Reporting definitions and limitations"):
-    st.write("Music and podcasts are classified from media_items.media_type. A separate sermon classification currently has no records; some sermon content may be catalogued as podcasts. Media sources are not necessarily distinct artists. Approval counts use is_approved flags. No private user records are requested.")
-    st.write("Super-admin access is enforced by the Supabase database function. This dashboard cannot approve, delete or edit content.")
+if page == "Overview":
+    st.header("Executive overview")
+    cards([("Media library", counts.get("media_items")), ("Music", counts.get("songs")), ("Podcasts", counts.get("podcasts")), ("Reels", counts.get("reels"))])
+    cards([("Devotionals", counts.get("devotionals")), ("Scripture series", counts.get("scripture_series")), ("Courses", counts.get("courses")), ("Churches", counts.get("churches"))])
+    st.subheader("Publishing and approval")
+    cards([("Approved media", counts.get("approved_media")), ("Pending media", counts.get("pending_media")), ("Approved sources", counts.get("approved_sources")), ("Pending sources", counts.get("pending_sources"))])
+    if advanced:
+        st.subheader("Last 7 days")
+        cards([("New media", advanced.get("media_last_7d")), ("New reels", advanced.get("reels_last_7d")), ("Registered profiles", advanced.get("users_total")), ("Administrators", advanced.get("admins_total"))])
 
-st.caption("Nuru Faith youth app · Secure, read-only administrative insights")
+elif page == "Content intelligence":
+    st.header("Content intelligence")
+    st.caption("Classified from the live catalog. A media source is not necessarily a unique artist.")
+    cards([("Music", counts.get("songs")), ("Podcasts", counts.get("podcasts")), ("Sources", counts.get("media_sources")), ("Approved channels", counts.get("approved_channels"))])
+    if advanced:
+        left, right = st.columns(2)
+        with left:
+            st.subheader("Media formats")
+            category_chart(advanced.get("media_categories", []))
+        with right:
+            st.subheader("Source classifications")
+            category_chart(advanced.get("source_kinds", []))
+    st.info("The catalog does not currently contain a distinct sermon media_type. Podcast totals must not be presented as verified sermon totals.")
+
+elif page == "Moderation queue":
+    st.header("Moderation command center")
+    cards([("Media awaiting approval", counts.get("pending_media")), ("Sources awaiting approval", counts.get("pending_sources")), ("Pending reports", advanced.get("pending_reports") if advanced else 0)])
+    st.warning("This is a read-only moderation overview. No bulk approval, deletion or role changes are available from this dashboard.")
+    st.markdown("**Review priorities**")
+    st.write("1. Verify licensing, attribution and content suitability before approving media.")
+    st.write("2. Review pending source identities and channel ownership.")
+    st.write("3. Handle user reports inside the authenticated Nuru Faith moderation interface.")
+
+elif page == "Growth trends":
+    st.header("Growth and publishing trends")
+    st.caption("Weekly upload counts over the past 12 weeks; not user activity or listening analytics.")
+    if advanced:
+        st.subheader("New media by week")
+        weekly_chart(advanced.get("weekly_media", []))
+        st.subheader("New reels by week")
+        weekly_chart(advanced.get("weekly_reels", []))
+    else:
+        st.info("Advanced trends are not available right now.")
+
+else:
+    st.header("System health and data integrity")
+    st.success("The protected basic analytics endpoint is responding.")
+    st.write("Advanced reporting endpoint:", "Connected" if advanced is not None else "Unavailable")
+    st.write("Access policy: authenticated super_admin only")
+    st.write("Database access: read-only aggregate functions")
+    st.write("Member messages, prayer requests, passwords and tokens: never displayed")
+    st.write("Data caveats: media sources are not necessarily distinct artists; sermons are not separately classified.")
+    if advanced:
+        cards([("Registered profiles", advanced.get("users_total")), ("Administrators", advanced.get("admins_total")), ("Media in 7 days", advanced.get("media_last_7d"))])
+
+st.divider()
+st.caption("Nuru Faith youth app · Administrator-only insights · No destructive actions")

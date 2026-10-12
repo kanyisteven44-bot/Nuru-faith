@@ -10,6 +10,7 @@ import {
   MessageCircle,
   Music2,
   Gauge,
+  HeartPulse,
   Search,
   Settings,
   ShieldCheck,
@@ -24,6 +25,7 @@ export type AdminSectionId =
   | "operations"
   | "dashboard"
   | "performance"
+  | "health"
   | "users"
   | "churches"
   | "content"
@@ -94,6 +96,7 @@ export function AdminCommandShell({
     { kind: "section", id: "dashboard", label: "Dashboard", icon: Home },
     { kind: "section", id: "operations", label: "Operations", icon: UserCog },
     { kind: "section", id: "performance", label: "Performance", icon: Gauge },
+    { kind: "section", id: "health", label: "App Health", icon: HeartPulse },
     { kind: "section", id: "users", label: "Users", icon: Users },
     { kind: "section", id: "churches", label: "Churches", icon: Church },
     { kind: "section", id: "content", label: "Content", icon: BookOpenCheck },
@@ -120,6 +123,7 @@ export function AdminCommandShell({
       q.includes("health")
     )
       return onSectionChange("operations");
+    if (q.includes("error") || q.includes("issue") || q.includes("app health")) return onSectionChange("health");
     if (q.includes("performance") || q.includes("lighthouse") || q.includes("speed")) return onSectionChange("performance");
     if (q.includes("church")) return onSectionChange("churches");
     if (q.includes("role") || q.includes("admin"))

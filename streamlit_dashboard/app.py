@@ -71,11 +71,45 @@ except ValueError:
     st.stop()
 
 st.success("Connected to Nuru Faith youth app · Supabase live aggregates")
-labels = [("Reels","reels"),("Songs (tracks)","songs"),("Sermon media","sermons"),("Media sources","artists"),("Courses","courses")]
-for col, (label,key) in zip(st.columns(5),labels):
+from datetime import datetime, timezone
+st.caption("Updated " + datetime.now(timezone.utc).strftime("%d %b %Y, %H:%M UTC") + " · Counts reflect the live database")
+
+st.subheader("Content overview")
+primary = [("Reels","reels"),("Music items","songs"),("Podcasts","podcasts"),("Media sources","media_sources"),("Courses","courses")]
+for col,(label,key) in zip(st.columns(5),primary):
     col.metric(label, f"{int(counts.get(key,0)):,}")
-st.caption("Media sources are not necessarily unique approved artists. Sermon media counts depend on the media-type classification.")
-st.subheader("Content library")
-for col,(label,key) in zip(st.columns(5),[("Devotionals","devotionals"),("Media items","media_items"),("Scripture series","scripture_series"),("Churches","churches"),("Approved channels","approved_channels")]):
+
+st.subheader("Approval overview")
+for col,(label,key) in zip(st.columns(4),[("Approved media","approved_media"),("Pending media","pending_media"),("Approved sources","approved_sources"),("Pending sources","pending_sources")]):
     col.metric(label, f"{int(counts.get(key,0)):,}")
-st.caption("Read-only totals. No messages, prayer requests, profiles or personal account records are queried.")
+if int(counts.get("pending_media",0)) > 0:
+    st.warning(f"{int(counts['pending_media']):,} media items are awaiting review. This dashboard is read-only; approvals must be handled through authorized moderation workflows.")
+
+st.subheader("Content breakdown")
+chart_data = {
+    "Music":int(counts.get("songs",0)),
+    "Podcasts":int(counts.get("podcasts",0)),
+    "Reels":int(counts.get("reels",0)),
+    "Devotionals":int(counts.get("devotionals",0)),
+    "Scripture series":int(counts.get("scripture_series",0)),
+    "Courses":int(counts.get("courses",0)),
+}
+st.bar_chart(chart_data, horizontal=True)
+st.caption("Categories represent different tables and may overlap in subject matter; these are content totals, not engagement statistics.")
+
+st.subheader("Explore the library")
+view = st.selectbox("Choose a reporting category", ["All content","Music and podcasts","Learning and Scripture","Sources and channels"])
+metrics = {
+    "All content":[("Media items","media_items"),("Churches","churches"),("Reels","reels")],
+    "Music and podcasts":[("Music","songs"),("Podcasts","podcasts"),("Approved media","approved_media"),("Pending media","pending_media")],
+    "Learning and Scripture":[("Courses","courses"),("Devotionals","devotionals"),("Scripture series","scripture_series")],
+    "Sources and channels":[("Media sources","media_sources"),("Approved sources","approved_sources"),("Approved YouTube channels","approved_channels")],
+}
+for col,(label,key) in zip(st.columns(len(metrics[view])),metrics[view]):
+    col.metric(label, f"{int(counts.get(key,0)):,}")
+
+with st.expander("Reporting definitions and limitations"):
+    st.write("Music and podcasts are classified from media_items.media_type. A separate sermon classification currently has no records; some sermon content may be catalogued as podcasts. Media sources are not necessarily distinct artists. Approval counts use is_approved flags. No private user records are requested.")
+    st.write("Super-admin access is enforced by the Supabase database function. This dashboard cannot approve, delete or edit content.")
+
+st.caption("Nuru Faith youth app · Secure, read-only administrative insights")

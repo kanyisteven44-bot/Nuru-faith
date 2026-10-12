@@ -11,6 +11,7 @@ const ADMIN_SECTION_IDS = [
   "dashboard",
   "operations",
   "performance",
+  "health",
   "users",
   "churches",
   "content",

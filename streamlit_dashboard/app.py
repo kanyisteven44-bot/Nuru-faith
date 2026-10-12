@@ -153,11 +153,40 @@ elif page == "Content intelligence":
 elif page == "Moderation queue":
     st.header("Moderation command center")
     cards([("Media awaiting approval", counts.get("pending_media")), ("Sources awaiting approval", counts.get("pending_sources")), ("Pending reports", advanced.get("pending_reports") if advanced else 0)])
-    st.warning("This is a read-only moderation overview. No bulk approval, deletion or role changes are available from this dashboard.")
-    st.markdown("**Review priorities**")
-    st.write("1. Verify licensing, attribution and content suitability before approving media.")
-    st.write("2. Review pending source identities and channel ownership.")
-    st.write("3. Handle user reports inside the authenticated Nuru Faith moderation interface.")
+    st.caption("Every decision is permission-checked in Supabase and recorded in the audit log.")
+    queue_name = st.selectbox("Review queue", ["Media items", "Media sources"])
+    queue_kind = "media_items" if queue_name == "Media items" else "media_sources"
+    try:
+        pending = post_json("/rest/v1/rpc/nuru_admin_pending", {"p_kind":queue_kind,"p_limit":30}, st.session_state["nuru_access_token"])
+    except ValueError:
+        pending = []
+        st.error("Unable to load moderation queue.")
+    if not pending:
+        st.info("No pending items found in this queue.")
+    else:
+        st.caption(f"Showing {len(pending)} pending records (up to 30).")
+        choices = {str(item["id"]): item for item in pending}
+        chosen = st.selectbox("Choose an item to review", list(choices.keys()), format_func=lambda uid: str(choices[uid].get("title","Untitled")) + " · " + str(choices[uid].get("kind","")))
+        selected = choices[chosen]
+        st.write("**Selected:**", selected.get("title","Untitled"))
+        st.write("**Type:**", selected.get("kind","Unknown"))
+        st.write("**Record ID:**", chosen)
+        st.warning("Review licensing, attribution, identity and content suitability before making a decision. This screen does not preview the underlying media.")
+        with st.form("moderation_decision"):
+            decision = st.radio("Decision", ["Approve", "Reject"], horizontal=True)
+            confirmation = st.checkbox("I have independently reviewed this item and understand this decision changes its approval status.")
+            submitted = st.form_submit_button("Apply reviewed decision", disabled=not confirmation)
+        if submitted:
+            if not confirmation:
+                st.error("Confirm your review before submitting.")
+            else:
+                try:
+                    post_json("/rest/v1/rpc/nuru_admin_review", {"p_kind":queue_kind,"p_id":chosen,"p_action":decision.lower()}, st.session_state["nuru_access_token"])
+                    st.success("Decision saved and audit-logged.")
+                    st.rerun()
+                except ValueError:
+                    st.error("The decision could not be saved. No success was confirmed.")
+    st.caption("Actions are limited to approval status for the selected record. User accounts, roles and messages cannot be modified here.")
 
 elif page == "Growth trends":
     st.header("Growth and publishing trends")

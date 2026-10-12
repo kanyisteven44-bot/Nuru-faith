@@ -246,7 +246,7 @@ export function BibleReadAloud({
         <div role="status" className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-3 py-3 text-xs text-foreground">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <p className="font-semibold">Audio unavailable in {language}</p>
+              <p className="font-semibold">No {language} voice is installed on this device.</p>
               <p className="mt-1 text-muted-foreground">No matching voice was found on this device. You can still read the chapter.</p>
             </div>
             <button type="button" aria-expanded={showVoiceHelp} onClick={() => setShowVoiceHelp((value) => !value)}
@@ -256,7 +256,7 @@ export function BibleReadAloud({
           </div>
           {showVoiceHelp && (
             <div className="mt-3 space-y-2 border-t border-border pt-3 leading-relaxed text-muted-foreground">
-              <p>Android Settings → Text-to-speech output → Install voice data, if your phone supports {language}. Reopen this chapter afterward.</p>
+              <p>Open Android Settings → Text-to-speech output → Install voice data, if your phone supports {language}. Reopen this chapter afterward.</p>
               {voices.length > 0 && <p>You may choose another installed voice above, but pronunciation may be inaccurate.</p>}
               <p>Voice support varies by device and language. Nuru will not silently read {language} Scripture using an English voice.</p>
             </div>

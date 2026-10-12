@@ -266,6 +266,41 @@ elif page == "App Health":
             st.write(steps)
             st.link_button("Open diagnostic tools", link)
     st.caption("These are guidance examples, not automatically detected incidents. Confirm the cause before applying a fix.")
+    st.subheader("Guided root-cause diagnosis")
+    problems = {
+        "Voice messages": ("Supabase Storage / media requests", [
+            "Check whether the file exists and whether other recordings play.",
+            "Inspect the failing media request: 401/403 suggests access or signed URL issues, 404 suggests a missing path.",
+            "Fix the verified issue, then test playback with a new recording."
+        ]),
+        "Login / signup": ("Supabase Authentication logs", [
+            "Reproduce with an authorized test account and record the error time.",
+            "Check the Auth log and allowed redirect URLs.",
+            "Fix the specific authentication error; do not disable RLS."
+        ]),
+        "Missing updates": ("GitHub CI and Vercel deployments", [
+            "Compare the latest passing GitHub commit with the live READY deployment.",
+            "Inspect build logs and quota errors if they differ.",
+            "Deploy a passing commit and verify the live site."
+        ]),
+        "Slow loading": ("Lighthouse and network timing", [
+            "Run the mobile Lighthouse audit for the app URL.",
+            "Inspect LCP, TBT and slow requests.",
+            "Fix the largest measured bottleneck and rerun the audit."
+        ]),
+        "Missing reels or music": ("Supabase queries, approval states and RLS", [
+            "Confirm content exists and is approved.",
+            "Inspect failed API requests and role-based access.",
+            "Fix the verified filter or permission issue and test with a normal user."
+        ]),
+    }
+    selected_problem = st.selectbox("What is not working?", list(problems))
+    source, steps = problems[selected_problem]
+    st.write("Where to investigate:", source)
+    for number, step in enumerate(steps, 1):
+        st.write(str(number) + ". " + step)
+    st.caption("A suggested cause is not a confirmed incident. Never expose access tokens or private member records.")
+
 
 elif page == "Growth trends":
     st.header("Growth and publishing trends")

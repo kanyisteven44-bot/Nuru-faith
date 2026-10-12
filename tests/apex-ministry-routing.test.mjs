@@ -24,3 +24,9 @@ test("no catch-all rewrite or redirect sends app users to the ministry", () => {
     assert.ok(!rule.destination?.includes(ministry));
   }
 });
+
+test("Nitro Vercel build output never rewrites either youth app host to ministry", () => {
+  const vite = readFileSync(new URL("../vite.config.ts", import.meta.url), "utf8");
+  assert.doesNotMatch(vite, /dest:\s*["'`]https:\/\/nuru-faith-ministry/);
+  assert.doesNotMatch(vite, /domainRoutes\s*=/);
+});

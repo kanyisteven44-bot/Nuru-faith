@@ -30,3 +30,16 @@ test("Nitro Vercel build output never rewrites either youth app host to ministry
   assert.doesNotMatch(vite, /dest:\s*["'`]https:\/\/nuru-faith-ministry/);
   assert.doesNotMatch(vite, /domainRoutes\s*=/);
 });
+
+test("both youth app hostnames remain protected from cross-project rewrites", () => {
+  const vite = readFileSync(new URL("../vite.config.ts", import.meta.url), "utf8");
+  for (const host of ["nurufaith.co.ke", "app.nurufaith.co.ke"]) {
+    const rules = [...(config.rewrites ?? []), ...(config.redirects ?? [])];
+    assert.ok(!rules.some((rule) =>
+      rule.has?.some((condition) => condition.type === "host" && condition.value === host) &&
+      /ministry/i.test(rule.destination ?? "")
+    ), host + " must never route to ministry");
+  }
+  assert.doesNotMatch(vite, /nuru-faith-ministry\.vercel\.app/);
+  assert.doesNotMatch(vite, /domainRoutes\s*=/);
+});

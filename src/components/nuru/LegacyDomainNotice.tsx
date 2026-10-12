@@ -31,7 +31,7 @@ export function LegacyDomainNotice() {
     try { setDismissed(sessionStorage.getItem("nuru-legacy-notice-dismissed") === "1"); } catch { /* blocked storage */ }
   }, []);
 
-  if (!onLegacyHost || dismissed) return null;
+  if (!onLegacyHost || dismissed || pathname === "/welcome") return null;
 
   const dismiss = () => {
     setDismissed(true);

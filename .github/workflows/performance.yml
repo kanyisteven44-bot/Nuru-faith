@@ -42,7 +42,7 @@ jobs:
           fi
           npx --yes lighthouse@12.8.2 https://nurufaith.co.ke/ \
             --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage" \
-            --only-categories=performance \
+            --only-categories=performance,accessibility,best-practices,seo \
             --output=json --output-path="lighthouse-${DEVICE}.json" \
             --max-wait-for-load=45000 --quiet ${PRESET}
 
@@ -57,7 +57,10 @@ jobs:
           const a = report.audits;
           const metric = key => a[key]?.numericValue == null ? 'n/a' : `${Math.round(a[key].numericValue)} ms`;
           console.log(`## ${process.env.DEVICE} Lighthouse (production)`);
-          console.log(`**Score:** ${Math.round((report.categories.performance?.score ?? 0) * 100)}/100`);
+          for (const [id, label] of [["performance","Performance"],["accessibility","Accessibility"],["best-practices","Best Practices"],["seo","SEO"]]) {
+            const score = report.categories[id]?.score;
+            console.log(`**${label}:** ${score == null ? "Not measured" : Math.round(score * 100) + "/100"}`);
+          }
           console.log(`**LCP:** ${metric('largest-contentful-paint')}`);
           console.log(`**TBT:** ${metric('total-blocking-time')}`);
           console.log(`**FCP:** ${metric('first-contentful-paint')}`);

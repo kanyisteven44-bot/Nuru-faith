@@ -175,7 +175,7 @@ elif page == "Moderation queue":
         with st.form("moderation_decision"):
             decision = st.radio("Decision", ["Approve", "Reject"], horizontal=True)
             confirmation = st.checkbox("I have independently reviewed this item and understand this decision changes its approval status.")
-            submitted = st.form_submit_button("Apply reviewed decision", disabled=not confirmation)
+            submitted = st.form_submit_button("Apply reviewed decision")
         if submitted:
             if not confirmation:
                 st.error("Confirm your review before submitting.")

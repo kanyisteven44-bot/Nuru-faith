@@ -44,6 +44,7 @@ import { AdminCommandShell, type AdminSectionId } from "@/components/nuru/AdminC
 import { AdminOperationsHub } from "@/components/nuru/AdminOperationsHub";
 import { AdminDashboardOverview } from "@/components/nuru/AdminDashboardOverview";
 import { AdminPerformancePanel } from "@/components/nuru/AdminPerformancePanel";
+import { AdminHealthPanel } from "@/components/nuru/AdminHealthPanel";
 import { supabase } from "@/integrations/supabase/client";
 
 export function AdminV3Screen({ initialSection }: { initialSection: AdminSectionId }) {
@@ -610,6 +611,7 @@ export function AdminV3Screen({ initialSection }: { initialSection: AdminSection
       )}
 
       {activeSection === "performance" && <AdminPerformancePanel />}
+      {activeSection === "health" && <AdminHealthPanel />}
       {activeSection === "roles" && (
         <AdminPanel title="Roles" subtitle="Control who can operate Nuru administration.">
           {isSuper ? (

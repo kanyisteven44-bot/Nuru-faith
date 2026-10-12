@@ -32,6 +32,7 @@ export function BibleReadAloud({
   const [rate, setRate] = useState(1);
   const [voiceId, setVoiceId] = useState("auto");
   const [error, setError] = useState("");
+  const [showVoiceHelp, setShowVoiceHelp] = useState(false);
   const [position, setPosition] = useState<number | null>(null);
   const generation = useRef(0);
   const current = useRef<SpeechSynthesisUtterance | null>(null);
@@ -242,17 +243,24 @@ export function BibleReadAloud({
         </p>
       )}
       {supported && voiceStatus === "unavailable" && (
-        <div role="status" className="space-y-1 rounded-xl border border-amber-500/25 bg-amber-500/5 px-3 py-2 text-xs leading-relaxed text-amber-500">
-          <p className="font-semibold">No {language} voice is installed on this device.</p>
-          <p>
-            {africanLanguage ? "African-language Bible text is available, but a matching narration voice is needed. " : ""}
-            Open Android Settings → Text-to-speech output → Install voice data, if your phone supports this language.
-            Return to Nuru and reopen the chapter to check again.
-          </p>
-          {voices.length > 0 && (
-            <p>Other installed voices appear in the Voice menu. You can select one manually, but it may mispronounce Scripture.</p>
+        <div role="status" className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-3 py-3 text-xs text-foreground">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="font-semibold">Audio unavailable in {language}</p>
+              <p className="mt-1 text-muted-foreground">No matching voice was found on this device. You can still read the chapter.</p>
+            </div>
+            <button type="button" aria-expanded={showVoiceHelp} onClick={() => setShowVoiceHelp((value) => !value)}
+              className="shrink-0 rounded-lg border border-border bg-background px-3 py-2 font-semibold text-primary">
+              {showVoiceHelp ? "Hide help" : "Voice help"}
+            </button>
+          </div>
+          {showVoiceHelp && (
+            <div className="mt-3 space-y-2 border-t border-border pt-3 leading-relaxed text-muted-foreground">
+              <p>Android Settings → Text-to-speech output → Install voice data, if your phone supports {language}. Reopen this chapter afterward.</p>
+              {voices.length > 0 && <p>You may choose another installed voice above, but pronunciation may be inaccurate.</p>}
+              <p>Voice support varies by device and language. Nuru will not silently read {language} Scripture using an English voice.</p>
+            </div>
           )}
-          <p>Availability varies by Android device and language. Nuru will not automatically substitute English narration.</p>
         </div>
       )}
       {supported && voiceStatus === "ready" && africanLanguage && (

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Pause, Play, Mic, Loader2 } from "lucide-react";
+import { Pause, Play, Loader2 } from "lucide-react";
 import { voiceSeconds, voiceTime } from "@/lib/voicePlayback";
 
 export function VoiceMessagePlayer({
@@ -51,7 +51,7 @@ export function VoiceMessagePlayer({
     }
   }
   return (
-    <div className={`w-[min(64vw,280px)] rounded-2xl p-2 ${mine ? "bg-white/10" : "bg-primary/5"}`}>
+    <div className={`w-[min(68vw,260px)] rounded-xl px-2 py-1.5 ${mine ? "bg-white/10" : "bg-primary/5"}`}>
       <audio
         ref={audio}
         src={src}
@@ -76,13 +76,13 @@ export function VoiceMessagePlayer({
           setError("Voice note unavailable. Please retry.");
         }}
       />
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         <button
           type="button"
           onClick={() => void toggle()}
           disabled={loading && !playing}
           aria-label={playing ? "Pause voice note" : "Play voice note"}
-          className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full shadow-sm ${mine ? "bg-white text-[#397cd5]" : "bg-primary text-primary-foreground"}`}
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full shadow-sm ${mine ? "bg-white text-[#397cd5]" : "bg-primary text-primary-foreground"}`}
         >
           {loading ? (
             <Loader2 className="h-5 w-5 animate-spin" />
@@ -93,9 +93,6 @@ export function VoiceMessagePlayer({
           )}
         </button>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5 text-[11px] font-semibold">
-            <Mic className="h-3 w-3" /> Voice message
-          </div>
           <input
             type="range"
             min="0"
@@ -112,7 +109,7 @@ export function VoiceMessagePlayer({
                 setElapsed(value);
               }
             }}
-            className={`h-11 w-full cursor-pointer ${mine ? "accent-white" : "accent-primary"}`}
+            className={`h-6 w-full cursor-pointer ${mine ? "accent-white" : "accent-primary"}`}
           />
           <div className="flex justify-between text-[10px] tabular-nums opacity-80">
             <span>{voiceTime(elapsed)}</span>
@@ -120,7 +117,7 @@ export function VoiceMessagePlayer({
           </div>
         </div>
       </div>
-      <div className="mt-1 flex items-center justify-between gap-2">
+      <div className="mt-0.5 flex items-center justify-end gap-2">
         <button
           type="button"
           onClick={() => {
@@ -129,17 +126,17 @@ export function VoiceMessagePlayer({
             if (audio.current) audio.current.playbackRate = next;
           }}
           aria-label={`Playback speed ${speed} times. Tap to change.`}
-          className="min-h-11 rounded-full bg-black/10 px-3 text-xs font-semibold"
+          className="min-h-7 rounded-full bg-black/10 px-2 text-[11px] font-semibold"
         >
           {speed}×
         </button>
       </div>
       {error && (
-        <p role="alert" className="mt-2 text-xs">
+        <p role="alert" className="mt-1 text-[11px] leading-snug">
           {error}{" "}
           <button
             type="button"
-            className="min-h-10 underline"
+            className="min-h-7 underline"
             onClick={() => {
               setError("");
               audio.current?.load();

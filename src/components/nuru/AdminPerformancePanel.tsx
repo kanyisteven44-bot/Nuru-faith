@@ -45,12 +45,21 @@ export function AdminPerformancePanel() {
     // Sequential requests avoid unnecessary pressure on the public API quota.
     for (const device of ["mobile", "desktop"] as const) {
       try {
-        const params = new URLSearchParams({ url, strategy: device });
-        for (const { key } of categories) params.append("category", key);
-        const response = await fetch(endpoint + "?" + params.toString(), { cache: "no-store" });
-        if (!response.ok) throw new Error("PageSpeed API returned HTTP " + response.status);
-        const data = await response.json();
-        const report = data.lighthouseResult;
+        // The public homepage has real Lighthouse JSON published by scheduled GitHub CI.
+        // Prefer that report: no Google API quota and no browser-side credentials.
+        let report: any;
+        if (url === site) {
+          const cached = await fetch("/lighthouse/latest-" + device + ".json", { cache: "no-store" });
+          if (cached.ok) report = await cached.json();
+        }
+        if (!report) {
+          const params = new URLSearchParams({ url, strategy: device });
+          for (const { key } of categories) params.append("category", key);
+          const response = await fetch(endpoint + "?" + params.toString(), { cache: "no-store" });
+          if (!response.ok) throw new Error(response.status === 429 ? "Google rate limit reached. Please try later; homepage reports are available after the scheduled audit publishes." : "PageSpeed API returned HTTP " + response.status);
+          const data = await response.json();
+          report = data.lighthouseResult;
+        }
         if (!report?.categories || !report?.audits) throw new Error("Incomplete Lighthouse report");
         const scores = emptyScores();
         for (const { key } of categories) {
@@ -62,7 +71,7 @@ export function AdminPerformancePanel() {
           fcp: fmt(report.audits, "first-contentful-paint"),
           tbt: fmt(report.audits, "total-blocking-time"),
           cls: fmt(report.audits, "cumulative-layout-shift"),
-          checkedAt: new Date().toLocaleString(),
+          checkedAt: report.fetchTime ? new Date(report.fetchTime).toLocaleString() : new Date().toLocaleString(),
           finalUrl: report.finalUrl ?? url,
           metrics: metricIds.map(id => toDetail(id, report.audits[id])),
           opportunities: Object.entries(report.audits as Record<string, RawAudit>)

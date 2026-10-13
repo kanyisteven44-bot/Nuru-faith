@@ -1,5 +1,5 @@
 import { useRouterState } from "@tanstack/react-router";
-import { isFormerApexHost, isInstalledApp } from "@/lib/pwaMode";
+import { isInstalledApp } from "@/lib/pwaMode";
 import { useEffect, useState } from "react";
 
 const LEGACY_HOSTS = new Set(["nurufaith.website", "www.nurufaith.website"]);
@@ -12,7 +12,6 @@ const NEW_ORIGIN = "https://app.nurufaith.co.ke";
  */
 export function LegacyDomainNotice() {
   const [onLegacyHost, setOnLegacyHost] = useState(false);
-  const [onFormerApex, setOnFormerApex] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const [installed, setInstalled] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -23,10 +22,9 @@ export function LegacyDomainNotice() {
     // Vercel domains serving the same built app.
     const host = window.location.hostname.toLowerCase();
     const installedNow = isInstalledApp();
-    // Former apex: only installed apps need a notice (browser visitors are
-    // sent to the app address by links/canonical tags, not redirected here).
-    setOnFormerApex(isFormerApexHost(host) && installedNow);
-    setOnLegacyHost(LEGACY_HOSTS.has(host) || (isFormerApexHost(host) && installedNow));
+    // Both nurufaith.co.ke and app.nurufaith.co.ke are supported app domains.
+    // Only retired .website installations should show a migration notice.
+    setOnLegacyHost(LEGACY_HOSTS.has(host));
     setInstalled(installedNow);
     try { setDismissed(sessionStorage.getItem("nuru-legacy-notice-dismissed") === "1"); } catch { /* blocked storage */ }
   }, []);
@@ -53,9 +51,7 @@ export function LegacyDomainNotice() {
             Nuru Faith has a new official address
           </p>
           <p className="mt-1 text-xs leading-relaxed text-slate-200">
-            {onFormerApex
-              ? "The youth app now lives at app.nurufaith.co.ke. This address will soon become a separate Nuru ministry website, and this installed app cannot move with it. Sign in at the new address, install it from Chrome, then remove this older icon."
-              : "Please move to app.nurufaith.co.ke. Sign in there, check your content, and install the new app from Chrome. Keep this older installation until you know the new one works."}
+            "Please move to app.nurufaith.co.ke. Sign in there, check your content, and install the new app from Chrome. Keep this older installation until you know the new one works."
           </p>
         </div>
         <button

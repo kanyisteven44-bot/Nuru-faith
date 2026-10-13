@@ -7,9 +7,9 @@ import { OpeningPhoto } from "@/components/nuru/OpeningPhoto";
 
 const SESSION_KEY = "nuru-opening-v5-shown";
 const HOLD_MS = 650;
-const MAX_MS = 4200;
+const MAX_MS = 1800;
 const EXIT_MS = 320;
-const PHOTO_WAIT_MS = 2600;
+const PHOTO_WAIT_MS = 1250;
 
 const OPENING_PHOTOS = [
   OPENING_IMAGE_SRC,

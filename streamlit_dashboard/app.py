@@ -3,12 +3,20 @@ import json
 from urllib.request import Request, urlopen
 from urllib.parse import urlencode
 from urllib.error import HTTPError, URLError
+from datetime import datetime, timezone
 
 import streamlit as st
 
 st.set_page_config(page_title="Nuru Faith | Admin Insights", page_icon="💙", layout="wide")
 
 st.markdown("""<style>
+[data-testid="stSidebar"]{background:#071827;border-right:1px solid #1c3d55}
+[data-testid="stSidebar"] [role="radiogroup"] label{border-radius:10px;padding:5px 7px}
+[data-testid="stSidebar"] [role="radiogroup"] label:hover{background:#15344a}
+h1,h2,h3{letter-spacing:-.025em}
+[data-testid="stMetricValue"]{font-size:clamp(1.5rem,2vw,2.2rem);font-weight:750}
+[data-testid="stAlert"]{border-radius:12px}
+@media(max-width:700px){.block-container{padding:1rem .85rem 3rem!important}div[data-testid="stMetric"]{padding:13px}h1{font-size:1.7rem!important}}
 .stApp {background:linear-gradient(140deg,#091525,#102942);color:#eaf4ff}
 .block-container {max-width:1220px;padding-top:2.6rem}
 div[data-testid="stMetric"] {background:#142f49;border:1px solid #28516b;padding:22px;border-radius:17px}
@@ -17,7 +25,7 @@ div[data-testid="stMetricLabel"] {color:#b7cfe2}
 </style>""", unsafe_allow_html=True)
 
 st.title("✦ Nuru Social Studio")
-st.caption("Youth app · Restricted aggregate content reporting")
+st.caption("Nuru Faith · Secure Super Admin workspace · Live aggregate insights")
 
 try:
     url = str(st.secrets["SUPABASE_URL"]).rstrip("/")
@@ -74,9 +82,12 @@ except ValueError:
 st.success("Connected to Nuru Faith youth app · Live Supabase analytics")
 with st.sidebar:
     st.header("✦ Nuru Studio")
+    st.caption("Command center · Youth app")
     page = st.radio("Workspace", ["Social home", "Overview", "Content intelligence", "Moderation queue", "Growth trends", "Performance", "App Health", "System health"])
-    if st.button("Refresh live data"):
+    if st.button("↻ Refresh live data", use_container_width=True):
         st.rerun()
+    st.divider()
+    st.link_button("Main admin panel ↗", "https://app.nurufaith.co.ke/admin", use_container_width=True)
     st.caption("Role: verified super administrator")
     st.caption("All metrics are aggregated. Sensitive personal records are excluded.")
 
@@ -88,7 +99,11 @@ except ValueError:
 
 def cards(items):
     for col, (label, value) in zip(st.columns(len(items)), items):
-        col.metric(label, f"{int(value or 0):,}")
+        try:
+            shown = f"{int(value):,}" if value is not None else "—"
+        except (TypeError, ValueError):
+            shown = "—"
+        col.metric(label, shown)
 
 def category_chart(rows):
     if not rows:
@@ -110,6 +125,7 @@ except ValueError:
 
 if page == "Social home":
     st.header("Community pulse")
+    st.caption("Snapshot: " + datetime.now(timezone.utc).strftime("%d %b %Y · %H:%M UTC") + " · Protected Supabase reporting.")
     st.caption("Social-platform inspired creator analytics · Real Nuru Faith engagement")
     if social:
         cards([("Posts",social.get("posts")),("Post likes",social.get("post_likes")),("Comments",social.get("post_comments")),("Reel views",social.get("reel_views"))])

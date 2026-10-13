@@ -77,14 +77,17 @@ jobs:
         env:
           DEVICE: ${{ matrix.device }}
         run: |
-          mkdir -p public/lighthouse
-          cp "lighthouse-${DEVICE}.json" "public/lighthouse/latest-${DEVICE}.json"
+          cp "lighthouse-${DEVICE}.json" "/tmp/nuru-lighthouse-${DEVICE}.json"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "public/lighthouse/latest-${DEVICE}.json"
-          git commit -m "chore: publish latest ${DEVICE} Lighthouse report [skip ci]" || exit 0
-          for attempt in 1 2 3; do
-            git pull --rebase origin main && git push origin HEAD:main && exit 0
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            git reset --hard origin/main
+            mkdir -p public/lighthouse
+            cp "/tmp/nuru-lighthouse-${DEVICE}.json" "public/lighthouse/latest-${DEVICE}.json"
+            git add "public/lighthouse/latest-${DEVICE}.json"
+            git commit -m "chore: publish latest ${DEVICE} Lighthouse report [skip ci]" || exit 0
+            if git push origin HEAD:main; then exit 0; fi
             sleep 3
           done
           exit 1

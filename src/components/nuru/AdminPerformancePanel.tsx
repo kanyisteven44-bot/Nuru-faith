@@ -2,7 +2,8 @@ import { useState } from "react";
 
 type Category = "performance" | "accessibility" | "best-practices" | "seo";
 type Device = "mobile" | "desktop";
-type Audit = { scores: Record<Category, number | null>; lcp: string; fcp: string; tbt: string; cls: string; checkedAt: string };
+type Detail = { id: string; title: string; displayValue: string; score: number | null; description: string };
+type Audit = { scores: Record<Category, number | null>; lcp: string; fcp: string; tbt: string; cls: string; checkedAt: string; finalUrl: string; metrics: Detail[]; opportunities: Detail[]; diagnostics: Detail[]; auditsByCategory: Record<Category, Detail[]> };
 const categories: { key: Category; name: string }[] = [
   { key: "performance", name: "Performance" }, { key: "accessibility", name: "Accessibility" },
   { key: "best-practices", name: "Best Practices" }, { key: "seo", name: "SEO" },
@@ -17,6 +18,14 @@ const auditedPages = [
   { label: "Settings", url: "https://nurufaith.co.ke/settings" },
   { label: "App homepage", url: "https://app.nurufaith.co.ke/" },
 ];
+const metricIds = ["first-contentful-paint", "speed-index", "largest-contentful-paint", "total-blocking-time", "cumulative-layout-shift", "interactive"];
+type RawAudit = { id?: string; title?: string; displayValue?: string; score?: number | null; description?: string; details?: { type?: string } };
+const toDetail = (id: string, value?: RawAudit): Detail => ({
+  id, title: value?.title ?? id, displayValue: value?.displayValue ?? "Unavailable",
+  score: typeof value?.score === "number" ? value.score : null,
+  description: value?.description ?? "",
+});
+const toneFor = (score: number | null) => score == null ? "#94a3b8" : score >= 0.9 ? "#22c55e" : score >= 0.5 ? "#f59e0b" : "#ef4444";
 const fmt = (audit: Record<string, { displayValue?: string }>, key: string) => audit[key]?.displayValue ?? "Unavailable";
 
 export function AdminPerformancePanel() {
@@ -51,6 +60,19 @@ export function AdminPerformancePanel() {
           tbt: fmt(report.audits, "total-blocking-time"),
           cls: fmt(report.audits, "cumulative-layout-shift"),
           checkedAt: new Date().toLocaleString(),
+          finalUrl: report.finalUrl ?? selectedPage,
+          metrics: metricIds.map(id => toDetail(id, report.audits[id])),
+          opportunities: Object.entries(report.audits as Record<string, RawAudit>)
+            .filter(([, audit]) => audit.details?.type === "opportunity" && audit.score != null && audit.score < 0.9)
+            .map(([id, audit]) => toDetail(id, audit))
+            .sort((a, b) => (a.score ?? 1) - (b.score ?? 1)).slice(0, 12),
+          diagnostics: Object.entries(report.audits as Record<string, RawAudit>)
+            .filter(([, audit]) => audit.score != null && audit.score < 0.9 && audit.details?.type !== "opportunity")
+            .map(([id, audit]) => toDetail(id, audit))
+            .sort((a, b) => (a.score ?? 1) - (b.score ?? 1)).slice(0, 20),
+          auditsByCategory: Object.fromEntries(categories.map(({ key }) => [key,
+            (report.categories[key]?.auditRefs ?? []).map((ref: { id: string }) => toDetail(ref.id, report.audits[ref.id]))
+          ])) as Record<Category, Detail[]>,
         };
       } catch (error) {
         failures[device] = error instanceof Error ? error.message : "Could not retrieve report";
@@ -92,7 +114,36 @@ export function AdminPerformancePanel() {
                 </div>;
               })}
             </div>
-            {result && <p className="mt-4 text-xs text-slate-300">LCP {result.lcp} · FCP {result.fcp} · TBT {result.tbt} · CLS {result.cls}</p>}
+            {result && <div className="mt-5 space-y-5">
+              <div>
+                <h4 className="text-sm font-semibold text-white">Lighthouse performance metrics</h4>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  {result.metrics.map(metric => <div key={metric.id} className="rounded-lg border border-white/10 bg-[#061523] p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-xs text-slate-300">{metric.title}</span>
+                      <strong className="text-sm text-white">{metric.displayValue}</strong>
+                    </div>
+                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-700" role={metric.score == null ? undefined : "progressbar"} aria-label={metric.title} aria-valuenow={metric.score == null ? undefined : Math.round(metric.score * 100)} aria-valuemin={0} aria-valuemax={100}>
+                      {metric.score != null && <div className="h-full rounded-full" style={{ width: Math.max(2, metric.score * 100) + "%", backgroundColor: toneFor(metric.score) }} />}
+                    </div>
+                    <p className="mt-1 text-[10px] text-slate-500">Relative Lighthouse metric score, not raw duration</p>
+                  </div>)}
+                </div>
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-white">Optimization opportunities</h4>
+                {result.opportunities.length ? <div className="mt-2 space-y-2">{result.opportunities.map(item => <details key={item.id} className="rounded-lg border border-white/10 p-3"><summary className="cursor-pointer text-xs text-slate-200">{item.title} · {item.displayValue}</summary><p className="mt-2 text-xs text-slate-400">{item.description || "Review this Lighthouse finding."}</p></details>)}</div> : <p className="mt-2 text-xs text-slate-400">No scored opportunities were returned.</p>}
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-white">Diagnostics</h4>
+                <div className="mt-2 space-y-2">{result.diagnostics.length ? result.diagnostics.map(item => <details key={item.id} className="rounded-lg border border-white/10 p-3"><summary className="cursor-pointer text-xs text-slate-200">{item.title} · {item.displayValue}</summary><p className="mt-2 text-xs text-slate-400">{item.description || "See Lighthouse report for details."}</p></details>) : <p className="text-xs text-slate-400">No scored diagnostics returned.</p>}</div>
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-white">Full category audit results</h4>
+                {categories.map(({ key, name }) => <details key={key} className="mt-2 rounded-lg border border-white/10 p-3"><summary className="cursor-pointer text-sm font-medium text-slate-200">{name} · {result.auditsByCategory[key].length} checks</summary><div className="mt-3 space-y-2">{result.auditsByCategory[key].map(item => <div key={item.id} className="flex items-start justify-between gap-3 border-b border-white/5 pb-2 text-xs"><span className="text-slate-300">{item.title}</span><span className="shrink-0 font-medium" style={{ color: toneFor(item.score) }}>{item.displayValue === "Unavailable" ? (item.score == null ? "Not scored" : Math.round(item.score * 100) + "/100") : item.displayValue}</span></div>)}</div></details>)}
+              </div>
+              <p className="break-all text-[11px] text-slate-500">Audited URL: {result.finalUrl}</p>
+            </div>}
             {errors[device] && <p role="alert" className="mt-3 text-xs text-amber-300">Audit unavailable: {errors[device]}</p>}
           </div>;
         })}

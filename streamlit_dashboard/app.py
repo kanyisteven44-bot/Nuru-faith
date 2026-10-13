@@ -257,40 +257,39 @@ elif page == "Moderation queue":
 
 elif page == "Performance":
     st.header("⚡ Lighthouse performance & quality")
-    st.caption("Live on-demand Google PageSpeed Insights · Public Nuru Faith homepage · Mobile and desktop")
-    st.info("Measures four Lighthouse categories: Performance, Accessibility, Best Practices and SEO. Scores are not fabricated when the API is unavailable.")
+    st.caption("Measured Lighthouse reports · Same source as Nuru Faith main admin · Mobile and desktop")
+    st.info("Scores, graphs and diagnostics come from the exact same saved Lighthouse JSON used by the main admin. Reports show their original measurement timestamp.")
 
-    @st.cache_data(ttl=1800, show_spinner=False)
-    def lighthouse_audit(strategy):
-        params = [("url", "https://nurufaith.co.ke/"), ("strategy", strategy)]
-        params.extend(("category", category) for category in ("performance", "accessibility", "best-practices", "seo"))
-        request = Request("https://www.googleapis.com/pagespeedonline/v5/runPagespeed?" + urlencode(params),
-                          headers={"User-Agent": "NuruFaithAdminPerformance/1.0"})
+    @st.cache_data(ttl=600, show_spinner=False)
+    def lighthouse_saved(strategy):
+        target = "https://nurufaith.co.ke/lighthouse/latest-" + strategy + ".json"
         try:
-            with urlopen(request, timeout=90) as response:
+            with urlopen(Request(target, headers={"User-Agent": "NuruFaithStreamlit/1.0"}), timeout=25) as response:
                 report = json.loads(response.read().decode())
+            if report.get("categories") and report.get("audits"):
+                return report
         except (HTTPError, URLError, TimeoutError, ValueError):
-            return None
-        result = report.get("lighthouseResult") or {}
-        if not result.get("categories") or not result.get("audits"):
-            return None
-        return result
+            pass
+        return None
 
-    if st.button("Run / refresh Lighthouse audits", key="lighthouse_refresh"):
-        lighthouse_audit.clear()
+    if st.button("↻ Reload published reports", key="lighthouse_refresh"):
+        lighthouse_saved.clear()
+        st.rerun()
 
     for strategy in ("mobile", "desktop"):
         st.subheader(strategy.title() + " Lighthouse")
-        with st.spinner("Checking " + strategy + " homepage performance…"):
-            report = lighthouse_audit(strategy)
+        report = lighthouse_saved(strategy)
         if not report:
-            st.warning("Fresh audit unavailable (network, rate limit or API error). No score has been assumed.")
+            st.warning("Published " + strategy + " report unavailable. No score has been estimated. Check the production deployment and Lighthouse workflow.")
             continue
-        categories = report.get("categories", {})
+        st.caption("Measured: " + str(report.get("fetchTime") or "Timestamp unavailable") +
+                   " · Audited URL: " + str(report.get("finalUrl") or report.get("requestedUrl") or "Unknown"))
+        categories = report.get("categories") or {}
+        audits = report.get("audits") or {}
         columns = st.columns(4)
         for column, key, title in zip(columns, ("performance", "accessibility", "best-practices", "seo"),
                                        ("Performance", "Accessibility", "Best Practices", "SEO")):
-            score = categories.get(key, {}).get("score")
+            score = (categories.get(key) or {}).get("score")
             with column:
                 if isinstance(score, (float, int)):
                     number = round(score * 100)
@@ -298,12 +297,65 @@ elif page == "Performance":
                     st.progress(number)
                 else:
                     st.metric(title, "Not measured")
-        audits = report.get("audits", {})
-        metrics = ("largest-contentful-paint", "first-contentful-paint", "total-blocking-time", "cumulative-layout-shift")
-        st.caption(" · ".join(key.replace("-", " ").title() + ": " +
-                             str(audits.get(key, {}).get("displayValue", "n/a")) for key in metrics))
-    st.caption("Target: mobile performance at least 80. Results are lab data for the public homepage, not real-user data or authenticated app routes. API results may be cached for up to 30 minutes.")
-    st.link_button("GitHub Lighthouse history", "https://github.com/kanyisteven44-bot/Nuru-faith/actions/workflows/performance.yml")
+
+        st.markdown("#### Performance metric breakdown")
+        metric_ids = ("first-contentful-paint", "speed-index", "largest-contentful-paint",
+                      "total-blocking-time", "cumulative-layout-shift", "interactive")
+        metric_rows = []
+        for key in metric_ids:
+            audit = audits.get(key) or {}
+            if audit:
+                metric_rows.append({"Metric": audit.get("title") or key,
+                                    "Value": audit.get("displayValue") or "Not measured",
+                                    "Score": round(audit["score"] * 100) if isinstance(audit.get("score"), (float, int)) else None})
+        if metric_rows:
+            st.dataframe(metric_rows, use_container_width=True, hide_index=True)
+            chart_rows = [row for row in metric_rows if row["Score"] is not None]
+            if chart_rows:
+                chart = (alt.Chart(alt.Data(values=chart_rows)).mark_bar(cornerRadiusEnd=5)
+                         .encode(x=alt.X("Score:Q", scale=alt.Scale(domain=[0, 100]), title="Lighthouse metric score / 100"),
+                                 y=alt.Y("Metric:N", sort=None, title=None),
+                                 color=alt.condition("datum.Score >= 90", alt.value("#22c55e"),
+                                         alt.condition("datum.Score >= 50", alt.value("#f59e0b"), alt.value("#ef4444"))),
+                                 tooltip=["Metric:N", "Value:N", "Score:Q"]).properties(height=250))
+                st.altair_chart(chart, use_container_width=True)
+                st.caption("Bars represent Lighthouse's normalized metric scores, not milliseconds.")
+
+        opportunities = [(key, item) for key, item in audits.items()
+                         if (item.get("details") or {}).get("type") == "opportunity"
+                         and isinstance(item.get("score"), (int, float)) and item["score"] < 0.9]
+        with st.expander("Optimization opportunities (" + str(len(opportunities)) + ")"):
+            if not opportunities:
+                st.write("No scored optimization opportunities in this report.")
+            for key, item in sorted(opportunities, key=lambda entry: entry[1]["score"]):
+                st.markdown("**" + str(item.get("title") or key) + "** · " + str(item.get("displayValue") or ""))
+                st.caption(str(item.get("description") or ""))
+
+        diagnostics = [(key, item) for key, item in audits.items()
+                       if isinstance(item.get("score"), (int, float)) and item["score"] < 0.9
+                       and (item.get("details") or {}).get("type") != "opportunity"]
+        with st.expander("Diagnostics (" + str(len(diagnostics)) + ")"):
+            if not diagnostics:
+                st.write("No scored diagnostics in this report.")
+            for key, item in sorted(diagnostics, key=lambda entry: entry[1]["score"])[:30]:
+                st.markdown("**" + str(item.get("title") or key) + "** · " + str(item.get("displayValue") or ""))
+
+        for key, title in (("performance", "Performance"), ("accessibility", "Accessibility"),
+                           ("best-practices", "Best Practices"), ("seo", "SEO")):
+            refs = (categories.get(key) or {}).get("auditRefs") or []
+            with st.expander(title + " · all Lighthouse checks (" + str(len(refs)) + ")"):
+                rows = []
+                for ref in refs:
+                    item = audits.get(ref.get("id")) or {}
+                    score = item.get("score")
+                    rows.append({"Check": item.get("title") or ref.get("id"),
+                                 "Result": item.get("displayValue") or
+                                 (str(round(score * 100)) + "/100" if isinstance(score, (float, int)) else "Not scored")})
+                if rows:
+                    st.dataframe(rows, use_container_width=True, hide_index=True)
+    st.caption("Historical lab measurements, not real-time scores or real-user monitoring. Different runs can legitimately produce different scores.")
+    st.link_button("Main admin performance ↗", "https://nurufaith.co.ke/admin?section=performance")
+    st.link_button("GitHub Lighthouse reports ↗", "https://github.com/kanyisteven44-bot/Nuru-faith/actions/workflows/performance.yml")
 
 elif page == "App Health":
     st.header("App Health & Error Center")

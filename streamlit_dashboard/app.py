@@ -6,6 +6,7 @@ from urllib.error import HTTPError, URLError
 from datetime import datetime, timezone
 
 import streamlit as st
+import altair as alt
 
 st.set_page_config(page_title="Nuru Faith | Admin Insights", page_icon="💙", layout="wide")
 
@@ -106,16 +107,60 @@ def cards(items):
         col.metric(label, shown)
 
 def category_chart(rows):
-    if not rows:
-        st.info("No data is available for this chart yet.")
-    else:
-        st.bar_chart({str(row["name"]): int(row["count"]) for row in rows}, horizontal=True)
+    data = [{"Category": str(row.get("name", "Unknown")), "Count": int(row.get("count") or 0)} for row in (rows or []) if isinstance(row, dict)]
+    if not data:
+        st.info("No categorized data available yet.")
+        return
+    chart = (alt.Chart(alt.Data(values=data))
+        .mark_bar(cornerRadiusEnd=6, color="#67d5e9")
+        .encode(x=alt.X("Count:Q", title="Records", axis=alt.Axis(format="d")),
+                y=alt.Y("Category:N", sort="-x", title=None),
+                tooltip=["Category:N", alt.Tooltip("Count:Q", format=",")])
+        .properties(height=max(170, len(data)*39)))
+    st.altair_chart(chart, use_container_width=True)
+
+
+def trend_chart(rows, date_key, value_key, label, *, height=300):
+    data = []
+    for row in rows or []:
+        if not isinstance(row, dict):
+            continue
+        try:
+            data.append({"Period": str(row[date_key]), "Value": int(row.get(value_key) or 0)})
+        except (KeyError, ValueError, TypeError):
+            continue
+    if not data:
+        st.info("No measured activity available for this period.")
+        return
+    selection = alt.selection_point(fields=["Period"], on="pointerover", nearest=True, empty=False)
+    base = alt.Chart(alt.Data(values=data)).encode(
+        x=alt.X("Period:N", sort=None, title=None, axis=alt.Axis(labelAngle=-35)),
+        y=alt.Y("Value:Q", title=label, axis=alt.Axis(format="d"), scale=alt.Scale(zero=True)))
+    area = base.mark_area(opacity=0.16, color="#54c9f2")
+    line = base.mark_line(point=True, strokeWidth=3, color="#79d8fa")
+    tooltip = base.mark_circle(size=110, opacity=0).encode(
+        tooltip=[alt.Tooltip("Period:N"), alt.Tooltip("Value:Q", title=label, format=",")]).add_params(selection)
+    st.altair_chart((area + line + tooltip).properties(height=height).interactive(), use_container_width=True)
+
 
 def weekly_chart(rows):
-    if not rows:
-        st.info("No activity recorded in the last 12 weeks.")
-    else:
-        st.line_chart({str(row["week"]): int(row["count"]) for row in rows})
+    trend_chart(rows, "week", "count", "New items", height=260)
+
+
+def approval_chart(approved, pending, title):
+    if approved is None or pending is None:
+        st.info("Approval status is unavailable.")
+        return
+    data = [{"Status": "Approved", "Items": int(approved)}, {"Status": "Pending", "Items": int(pending)}]
+    if sum(row["Items"] for row in data) == 0:
+        st.info("No approval records to visualize yet.")
+        return
+    chart = (alt.Chart(alt.Data(values=data)).mark_arc(innerRadius=72, outerRadius=110)
+        .encode(theta=alt.Theta("Items:Q"),
+                color=alt.Color("Status:N", scale=alt.Scale(domain=["Approved","Pending"], range=["#71e2ba","#f8bb67"])),
+                tooltip=["Status:N", alt.Tooltip("Items:Q", format=",")])
+        .properties(height=260, title=title))
+    st.altair_chart(chart, use_container_width=True)
 
 
 try:
@@ -133,7 +178,7 @@ if page == "Social home":
         st.subheader("Social activity · Last 14 days")
         activity = social.get("weekly_activity",[])
         if activity:
-            st.line_chart({str(row["day"]):int(row["views"]) for row in activity})
+            trend_chart(activity, "day", "views", "Reel views")
             st.caption("Daily reel views; no private activity details are displayed.")
         else:
             st.info("No activity recorded yet.")
@@ -148,6 +193,11 @@ elif page == "Overview":
     cards([("Media library", counts.get("media_items")), ("Music", counts.get("songs")), ("Podcasts", counts.get("podcasts")), ("Reels", counts.get("reels"))])
     cards([("Devotionals", counts.get("devotionals")), ("Scripture series", counts.get("scripture_series")), ("Courses", counts.get("courses")), ("Churches", counts.get("churches"))])
     st.subheader("Publishing and approval")
+    chart_left, chart_right = st.columns(2)
+    with chart_left:
+        approval_chart(counts.get("approved_media"), counts.get("pending_media"), "Media approval")
+    with chart_right:
+        approval_chart(counts.get("approved_sources"), counts.get("pending_sources"), "Source approval")
     cards([("Approved media", counts.get("approved_media")), ("Pending media", counts.get("pending_media")), ("Approved sources", counts.get("approved_sources")), ("Pending sources", counts.get("pending_sources"))])
     if advanced:
         st.subheader("Last 7 days")

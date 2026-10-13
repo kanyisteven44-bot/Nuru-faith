@@ -91,7 +91,7 @@ export function AdminPerformancePanel() {
     if (initialRun.current) return;
     initialRun.current = true;
     void check(site);
-    return () => { requestId.current++; };
+    return () => { /* Keep the initial request valid across React StrictMode effect replay. */ };
   }, []);
   return (
     <section className="space-y-5 rounded-2xl border border-[#153b5c] bg-[#051421] p-4 sm:p-5">

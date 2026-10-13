@@ -19,6 +19,7 @@ import { canonicalBrowserDestination, isInstalledApp, isLegacyNuruHost, LEGACY_C
 import { supabase } from "@/integrations/supabase/client";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
 import { ThemeProvider } from "@/hooks/useTheme";
+import { OPENING_IMAGE_PRELOADS } from "@/lib/openingImage";
 import { createAuthRefreshHandler } from "@/lib/authRefresh";
 
 // Read directly (not through the `supabase` proxy, which throws if unset) so a
@@ -108,10 +109,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:site_name", content: "Nuru Faith" },
       { property: "og:type", content: "website" },
       { property: "og:locale", content: "en_KE" },
-      { property: "og:image", content: "https://app.nurufaith.co.ke/photos/friends-outdoors.jpg" },
+      { property: "og:image", content: "https://nurufaith.co.ke/photos/friends-outdoors.jpg" },
       { property: "og:image:alt", content: "Nuru Faith — Christian faith, learning and community" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:image", content: "https://app.nurufaith.co.ke/photos/friends-outdoors.jpg" },
+      { name: "twitter:image", content: "https://nurufaith.co.ke/photos/friends-outdoors.jpg" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -143,6 +144,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootShell({ children }: { children: ReactNode }) {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const openingRoute = pathname === "/" || pathname === "/opening";
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -150,6 +153,10 @@ function RootShell({ children }: { children: ReactNode }) {
             flash of the wrong one. Must stay ahead of HeadContent. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <script dangerouslySetInnerHTML={{ __html: LEGACY_CANONICAL_INIT_SCRIPT }} />
+        {/* Start the visible photograph before stylesheet and JS preload discovery. */}
+        {openingRoute && OPENING_IMAGE_PRELOADS.map((preload) => (
+          <link key={preload.href} {...preload} />
+        ))}
         <HeadContent />
       </head>
       <body>

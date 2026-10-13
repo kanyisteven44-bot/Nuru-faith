@@ -64,7 +64,7 @@ export function canonicalBrowserDestination(href: string, installed: boolean): s
     if (/(?:^|[&#])(?:access_token|refresh_token|code|token_hash)=/.test(url.hash)) return null;
 
     url.protocol = "https:";
-    url.hostname = "app.nurufaith.co.ke";
+    url.hostname = "nurufaith.co.ke";
     url.port = "";
     return url.toString();
   } catch {
@@ -93,7 +93,7 @@ export const LEGACY_CANONICAL_INIT_SCRIPT = String.raw`(function () {
       return;
     }
     try { if (sessionStorage.getItem("nuru-legacy-auth-in-progress") === "1") return; } catch (e) {}
-    url.hostname = "app.nurufaith.co.ke";
+    url.hostname = "nurufaith.co.ke";
     url.protocol = "https:";
     url.port = "";
     window.location.replace(url.href);

@@ -7,7 +7,7 @@ import { OFFICIAL_NURU_ORIGIN, canonicalShareUrl } from "../src/lib/publicLinks.
 const read = (f) => readFileSync(new URL("../" + f, import.meta.url), "utf8");
 
 test("official youth app origin is the app subdomain", () => {
-  assert.equal(OFFICIAL_NURU_ORIGIN, "https://app.nurufaith.co.ke");
+  assert.equal(OFFICIAL_NURU_ORIGIN, "https://nurufaith.co.ke");
   assert.equal(isFormerApexHost("nurufaith.co.ke"), true);
   assert.equal(isFormerApexHost("app.nurufaith.co.ke"), false);
 });
@@ -33,8 +33,8 @@ test("the former apex is never force-redirected (it becomes the ministry site)",
 });
 
 test("old apex share links move to the app subdomain", () => {
-  assert.equal(canonicalShareUrl("https://nurufaith.co.ke/reels?reel=1"), "https://app.nurufaith.co.ke/reels?reel=1");
-  assert.equal(canonicalShareUrl("https://www.nurufaith.co.ke/ai"), "https://app.nurufaith.co.ke/ai");
+  assert.equal(canonicalShareUrl("https://nurufaith.co.ke/reels?reel=1"), "https://nurufaith.co.ke/reels?reel=1");
+  assert.equal(canonicalShareUrl("https://www.nurufaith.co.ke/ai"), "https://nurufaith.co.ke/ai");
 });
 
 test("account deletion accepts the app subdomain and transitional origins", () => {

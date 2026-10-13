@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   BarChart3,
+  ExternalLink,
   Bell,
   BookOpenCheck,
   Church,
@@ -221,6 +222,11 @@ export function AdminCommandShell({
             <Home className="h-4 w-4" />
             Back to Nuru Faith
           </Link>
+          {isSuperAdmin && (
+            <a href="https://nuru-faith-lwxqz8isstmdmszeo6ivqm.streamlit.app/" target="_blank" rel="noopener noreferrer" className="flex min-h-10 items-center gap-2 rounded-lg px-2 text-xs font-medium text-cyan-200 transition hover:bg-white/[0.035] hover:text-white">
+              <BarChart3 className="h-4 w-4" /> Social Studio <ExternalLink className="ml-auto h-3.5 w-3.5" />
+            </a>
+          )
         </div>
       </aside>
 

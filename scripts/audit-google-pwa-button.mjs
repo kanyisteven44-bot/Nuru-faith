@@ -5,8 +5,8 @@ import { chromium } from "playwright";
 const cases = [
   // Temporary browser fallback: embedded GIS is blocked until Google Cloud
   // authorizes this origin. CI checks the real safe behavior, not a fake success.
-  { origin: "https://app.nurufaith.co.ke", installed: true, expect: "browser" },
-  { origin: "https://app.nurufaith.co.ke", installed: false, expect: "browser" },
+  { origin: "https://nurufaith.co.ke", installed: true, expect: "browser" },
+  { origin: "https://nurufaith.co.ke", installed: false, expect: "browser" },
   { origin: "https://nurufaith.website", installed: true, expect: "browser" },
 ];
 const browser = await chromium.launch({ headless: true, args: ["--disable-dev-shm-usage"] });
@@ -76,7 +76,7 @@ for (const testCase of cases) {
     console.log("NURU_GOOGLE_SMOKE " + JSON.stringify({
       test: testCase, actual, errors: errors.slice(0, 5), passed: good,
     }));
-    if (originError && official) console.log("ACTION_REQUIRED: Add https://app.nurufaith.co.ke to Google Cloud Authorized JavaScript origins.");
+    if (originError && official) console.log("ACTION_REQUIRED: Add https://nurufaith.co.ke to Google Cloud Authorized JavaScript origins.");
     if (!good) failures++;
   } catch (e) {
     failures++;

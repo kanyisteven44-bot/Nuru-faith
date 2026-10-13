@@ -7,8 +7,9 @@ import { OpeningPhoto } from "@/components/nuru/OpeningPhoto";
 
 const SESSION_KEY = "nuru-opening-v5-shown";
 const HOLD_MS = 650;
-const MAX_MS = 1800;
+const MAX_MS = 4200;
 const EXIT_MS = 320;
+const PHOTO_WAIT_MS = 2600;
 
 const OPENING_PHOTOS = [
   OPENING_IMAGE_SRC,
@@ -55,6 +56,8 @@ export function SplashScreen({
   const exited = useRef(false);
   const minElapsed = useRef(false);
   const completed = useRef(false);
+  const [photoReady, setPhotoReady] = useState(false);
+  const [photoWaitExpired, setPhotoWaitExpired] = useState(false);
   const completionRef = useRef(onComplete);
   completionRef.current = onComplete;
 
@@ -81,10 +84,9 @@ export function SplashScreen({
       (navigator as Navigator & { standalone?: boolean }).standalone === true;
     if (
       !preview &&
-      (installed ||
-        window.location.pathname === "/opening" ||
+      (window.location.pathname === "/opening" ||
         (initialOnly && window.location.pathname !== "/") ||
-        alreadyShown())
+        (!installed && alreadyShown()))
     ) {
       setStage("gone");
       // Let entry routing continue even when this splash was already shown.
@@ -94,6 +96,12 @@ export function SplashScreen({
 
     setStage("playing");
   }, [preview, initialOnly]);
+
+  useEffect(() => {
+    if (stage !== "playing") return;
+    const timer = window.setTimeout(() => setPhotoWaitExpired(true), PHOTO_WAIT_MS);
+    return () => window.clearTimeout(timer);
+  }, [stage]);
 
   useEffect(() => {
     if (stage !== "playing") return;
@@ -117,7 +125,7 @@ export function SplashScreen({
     const min = setTimeout(
       () => {
         minElapsed.current = true;
-        if (!loadingRef.current || reducedMotion) exit();
+        if ((!loadingRef.current || reducedMotion) && (photoReady || photoWaitExpired)) exit();
       },
       reducedMotion ? 220 : HOLD_MS,
     );
@@ -127,11 +135,11 @@ export function SplashScreen({
       clearTimeout(min);
       clearTimeout(max);
     };
-  }, [preview, stage, exit]);
+  }, [preview, stage, exit, photoReady, photoWaitExpired]);
 
   useEffect(() => {
-    if (!preview && stage === "playing" && minElapsed.current && authReady) exit();
-  }, [authReady, preview, stage, exit]);
+    if (!preview && stage === "playing" && minElapsed.current && authReady && (photoReady || photoWaitExpired)) exit();
+  }, [authReady, preview, stage, exit, photoReady, photoWaitExpired]);
 
   useEffect(() => {
     if (stage !== "exiting") return;
@@ -178,6 +186,8 @@ export function SplashScreen({
         <OpeningPhoto
           decoding="async"
           fetchPriority="high"
+          onLoad={() => setPhotoReady(true)}
+          onError={() => setPhotoWaitExpired(true)}
           className="nuru-opening-photo nuru-opening-photo-base"
         />
         {OPENING_PHOTOS.map((src, index) => (

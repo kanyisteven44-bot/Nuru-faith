@@ -12,21 +12,28 @@ const emptyScores = (): Record<Category, number | null> => ({
 });
 const endpoint = "https://www.googleapis.com/pagespeedonline/v5/runPagespeed";
 const site = "https://nurufaith.co.ke/";
+const auditedPages = [
+  { label: "Homepage", url: "https://nurufaith.co.ke/" },
+  { label: "Settings", url: "https://nurufaith.co.ke/settings" },
+  { label: "App homepage", url: "https://app.nurufaith.co.ke/" },
+];
 const fmt = (audit: Record<string, { displayValue?: string }>, key: string) => audit[key]?.displayValue ?? "Unavailable";
 
 export function AdminPerformancePanel() {
+  const [selectedPage, setSelectedPage] = useState(site);
   const [results, setResults] = useState<Partial<Record<Device, Audit>>>({});
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<Device, string>>>({});
   async function check() {
     setLoading(true);
     setErrors({});
+    setResults({});
     const next: Partial<Record<Device, Audit>> = {};
     const failures: Partial<Record<Device, string>> = {};
     // Sequential requests avoid unnecessary pressure on the public API quota.
     for (const device of ["mobile", "desktop"] as const) {
       try {
-        const params = new URLSearchParams({ url: site, strategy: device });
+        const params = new URLSearchParams({ url: selectedPage, strategy: device });
         for (const { key } of categories) params.append("category", key);
         const response = await fetch(endpoint + "?" + params.toString(), { cache: "no-store" });
         if (!response.ok) throw new Error("PageSpeed API returned HTTP " + response.status);
@@ -58,12 +65,13 @@ export function AdminPerformancePanel() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="font-display text-xl font-semibold text-white">Lighthouse performance & quality</h2>
-          <p className="mt-1 text-sm text-slate-400">Four categories · Mobile and desktop · Public production homepage</p>
+          <p className="mt-1 text-sm text-slate-400">Four Lighthouse categories · Mobile and desktop · Choose the exact public page</p>
         </div>
         <button type="button" onClick={() => void check()} disabled={loading} className="min-h-11 rounded-xl bg-cyan-300 px-4 text-sm font-bold text-[#062033] disabled:opacity-50">
           {loading ? "Checking…" : "Run fresh audit"}
         </button>
       </div>
+      <label className="block text-sm font-medium text-slate-200">Page to audit<select value={selectedPage} onChange={(event) => { setSelectedPage(event.target.value); setResults({}); setErrors({}); }} disabled={loading} className="mt-2 block w-full rounded-xl border border-[#234b68] bg-[#091e30] px-3 py-3 text-sm text-white">{auditedPages.map((page) => <option key={page.url} value={page.url}>{page.label} · {page.url}</option>)}</select></label>
       <p className="text-xs text-slate-400">Fresh checks use Google's PageSpeed Insights API. Availability and rate limits are controlled by Google. No scores are shown until a report is received.</p>
       <div className="grid gap-4 xl:grid-cols-2">
         {(["mobile", "desktop"] as const).map(device => {
@@ -71,13 +79,16 @@ export function AdminPerformancePanel() {
           return <div key={device} className="rounded-xl border border-[#234b68] bg-[#091e30] p-4">
             <h3 className="text-base font-semibold capitalize text-white">{device}</h3>
             <p className="mt-1 text-xs text-slate-400">{result ? "Measured " + result.checkedAt : "No fresh measurement this session"}</p>
-            <div className="mt-4 grid grid-cols-2 gap-3">
+            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-2">
               {categories.map(({ key, name }) => {
                 const score = result?.scores[key];
-                return <div key={key} className="rounded-lg border border-white/10 p-3">
-                  <p className="text-xs text-slate-300">{name}</p>
-                  <p className={"mt-1 text-2xl font-bold " + (score == null ? "text-slate-400" : score >= 90 ? "text-emerald-300" : score >= 50 ? "text-amber-300" : "text-rose-300")}>{score == null ? "—" : score + "/100"}</p>
-                  {score != null && <div role="progressbar" aria-label={device + " " + name} aria-valuenow={score} aria-valuemin={0} aria-valuemax={100} className="mt-2 h-1.5 rounded-full bg-slate-700"><div className="h-full rounded-full bg-cyan-300" style={{ width: score + "%" }} /></div>}
+                const tone = score == null ? "#64748b" : score >= 90 ? "#22c55e" : score >= 50 ? "#f59e0b" : "#ef4444";
+                return <div key={key} className="flex flex-col items-center rounded-xl border border-white/10 bg-[#061523] p-3 text-center">
+                  <div role={score == null ? undefined : "progressbar"} aria-label={device + " " + name} aria-valuenow={score ?? undefined} aria-valuemin={score == null ? undefined : 0} aria-valuemax={score == null ? undefined : 100} className="flex h-20 w-20 items-center justify-center rounded-full" style={{ background: score == null ? "#1e293b" : `conic-gradient(${tone} ${score}%, #1e3448 0)` }}>
+                    <div className="flex h-[68px] w-[68px] items-center justify-center rounded-full bg-[#091e30] text-xl font-bold" style={{ color: tone }}>{score == null ? "—" : score}</div>
+                  </div>
+                  <p className="mt-3 text-xs font-semibold text-slate-200">{name}</p>
+                  {score == null && <span className="mt-1 text-[10px] text-slate-400">Unavailable</span>}
                 </div>;
               })}
             </div>
@@ -86,6 +97,7 @@ export function AdminPerformancePanel() {
           </div>;
         })}
       </div>
+      <p className="text-xs text-slate-400">Lighthouse categories: red 0–49, amber 50–89, green 90–100. An unavailable category is never treated as zero.</p>
       <p className="text-xs text-slate-400">Target: mobile performance ≥80. Lighthouse scores are lab measurements, not real-user monitoring or tests of authenticated pages. Run-to-run results can vary.</p>
       <a href="https://github.com/kanyisteven44-bot/Nuru-faith/actions/workflows/performance.yml" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center rounded-xl border border-cyan-400/40 px-4 text-sm font-semibold text-cyan-200">View scheduled Lighthouse reports ↗</a>
     </section>

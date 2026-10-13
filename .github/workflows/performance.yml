@@ -11,7 +11,7 @@ on:
       - ".github/workflows/performance.yml"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   lighthouse:
@@ -22,6 +22,9 @@ jobs:
       matrix:
         device: [mobile, desktop]
     steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
       - name: Use Node.js 22
         uses: actions/setup-node@v4
         with:
@@ -68,6 +71,23 @@ jobs:
           console.log(`**CLS:** ${a['cumulative-layout-shift']?.numericValue ?? 'n/a'}`);
           console.log('Lab data from GitHub-hosted Chrome; not real-user CrUX metrics.');
           NODE
+
+      - name: Publish latest successful report to repository
+        if: success()
+        env:
+          DEVICE: ${{ matrix.device }}
+        run: |
+          mkdir -p public/lighthouse
+          cp "lighthouse-${DEVICE}.json" "public/lighthouse/latest-${DEVICE}.json"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "public/lighthouse/latest-${DEVICE}.json"
+          git commit -m "chore: publish latest ${DEVICE} Lighthouse report [skip ci]" || exit 0
+          for attempt in 1 2 3; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 3
+          done
+          exit 1
 
       - name: Save audit report
         if: always()

@@ -3,7 +3,7 @@ import { isInstalledApp } from "@/lib/pwaMode";
 import { useEffect, useState } from "react";
 
 const LEGACY_HOSTS = new Set(["nurufaith.website", "www.nurufaith.website"]);
-const NEW_ORIGIN = "https://app.nurufaith.co.ke";
+const NEW_ORIGIN = "https://nurufaith.co.ke";
 
 /**
  * An opt-in move for older PWA installs. Never auto-redirect the legacy host:

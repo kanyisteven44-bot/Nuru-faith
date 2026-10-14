@@ -282,6 +282,20 @@ export function BibleReadAloud({
         </p>
       )}
       {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
+      {["ki", "kik"].includes((locale ?? "").split("-")[0]?.toLowerCase() ?? "") && (
+        <div className="rounded-xl border border-primary/20 bg-primary/5 p-3">
+          <p className="text-xs font-semibold text-foreground">Gĩkũyũ Bible · recorded narration</p>
+          <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+            Listen to an authentic Kikuyu Bible recording from Faith Comes By Hearing and its partners.
+            Opens the authorized Bible.is player in a new tab. Choose your book and chapter there; audio is not hosted by Nuru Faith.
+          </p>
+          <a href="https://live.bible.is/bible/KIUDPI/GEN/1"
+            target="_blank" rel="noopener noreferrer"
+            className="mt-2 inline-flex min-h-11 items-center rounded-xl bg-primary px-3 text-xs font-semibold text-primary-foreground">
+            Listen to human-recorded Gĩkũyũ ↗
+          </a>
+        </div>
+      )}
       <AfricanCloudBibleAudio language={language} verses={verses} startVerse={startVerse} />
     </section>
   );

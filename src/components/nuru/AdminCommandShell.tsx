@@ -234,7 +234,7 @@ export function AdminCommandShell({
         <header className="sticky top-0 z-40 border-b border-[#12314a] bg-[#03101d]/95 backdrop-blur-xl">
           <div className="flex min-h-16 flex-wrap items-center gap-3 px-4 py-3 sm:px-5 lg:px-6">
             <div className="min-w-0 shrink-0">
-              <p className="font-display text-base font-semibold text-white">Nuru Faith Admin</p>
+              <p className="font-display text-base font-semibold text-white">Aegis Console</p>
               <p className="hidden text-[10px] text-slate-500 sm:block">
                 Content, community and platform operations
               </p>

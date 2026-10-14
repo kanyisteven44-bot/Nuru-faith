@@ -29,7 +29,7 @@ export function BibleReadAloud({
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [voiceListReady, setVoiceListReady] = useState(false);
   const [state, setState] = useState<ReaderState>("idle");
-  const [rate, setRate] = useState(1);
+  const [rate, setRate] = useState(0.9);
   const [voiceId, setVoiceId] = useState("auto");
   const [error, setError] = useState("");
   const [showVoiceHelp, setShowVoiceHelp] = useState(false);
@@ -44,7 +44,17 @@ export function BibleReadAloud({
     ),
     [verses],
   );
-  const matching = useMemo(() => bibleMatchingVoices(voices, language), [voices, language]);
+  const matching = useMemo(() => bibleMatchingVoices(voices, language).sort((a, b) => {
+    // Prefer enhanced/natural voices when the device exposes them, without
+    // assuming a particular platform provides studio-quality narration.
+    const quality = (voice: SpeechSynthesisVoice) => {
+      const name = voice.name.toLowerCase();
+      return (/(natural|neural|premium|enhanced|high quality)/.test(name) ? 4 : 0)
+        + (!voice.localService ? 1 : 0)
+        - (/(compact|espeak|legacy)/.test(name) ? 2 : 0);
+    };
+    return quality(b) - quality(a);
+  }), [voices, language]);
   const locale = bibleSpeechLocale(language);
   const voiceKey = (voice: SpeechSynthesisVoice) =>
     [voice.voiceURI, voice.lang, voice.name].join("|");
@@ -119,6 +129,8 @@ export function BibleReadAloud({
       utterance.voice = chosen!;
       if (chosen?.lang || locale) utterance.lang = chosen?.lang || locale || "";
       utterance.rate = rate;
+      utterance.pitch = 1;
+      utterance.volume = 1;
       utterance.onend = () => next(i + 1);
       utterance.onerror = (event) => {
         if (token !== generation.current) return;
@@ -225,8 +237,9 @@ export function BibleReadAloud({
           Speed
           <select aria-label="Bible reading speed" value={rate} disabled={state !== "idle"}
             onChange={(event) => setRate(Number(event.target.value))} className={control}>
-            <option value={0.75}>0.75×</option>
-            <option value={1}>1×</option>
+            <option value={0.75}>0.75× · Reflective</option>
+            <option value={0.9}>0.9× · Gentle</option>
+            <option value={1}>1× · Normal</option>
             <option value={1.25}>1.25×</option>
             <option value={1.5}>1.5×</option>
           </select>

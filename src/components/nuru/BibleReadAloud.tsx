@@ -287,12 +287,12 @@ export function BibleReadAloud({
           <p className="text-xs font-semibold text-foreground">Gĩkũyũ Bible · recorded narration</p>
           <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
             Listen to an authentic Kikuyu Bible recording from Faith Comes By Hearing and its partners.
-            Opens the authorized Bible.is player; audio is not hosted by Nuru Faith.
+            Opens the authorized Bible.is player in a new tab. Choose your book and chapter there; audio is not hosted by Nuru Faith.
           </p>
-          <a href="https://www.bible.com/audio-bible/2926/GEN.1.OGKBIBLE"
+          <a href="https://live.bible.is/bible/KIUDPI/GEN/1"
             target="_blank" rel="noopener noreferrer"
             className="mt-2 inline-flex min-h-11 items-center rounded-xl bg-primary px-3 text-xs font-semibold text-primary-foreground">
-            Listen in Gĩkũyũ ↗
+            Listen to human-recorded Gĩkũyũ ↗
           </a>
         </div>
       )}

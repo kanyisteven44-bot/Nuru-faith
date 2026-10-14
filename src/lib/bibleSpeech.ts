@@ -87,10 +87,10 @@ export type SpeechVoiceSummary = { lang: string; name: string; voiceURI: string 
  * Only prioritize voices explicitly identified as feminine by the device. */
 export function bibleNarratorPreferenceScore(voice: { name: string; localService?: boolean }): number {
   const name = voice.name.toLowerCase();
-  const feminine = /\\b(female|woman|feminine|samantha|victoria|karen|moira|tessa|ava|allison|serena|zira|aria|jenny|emma|olivia|susan)\\b/.test(name);
-  const masculine = /\\b(male|man|masculine|david|mark|daniel|alex|fred|george|thomas)\\b/.test(name);
-  const quality = /\\b(natural|neural|premium|enhanced|high quality)\\b/.test(name);
-  const lowQuality = /\\b(compact|espeak|legacy)\\b/.test(name);
+  const feminine = /\b(female|woman|feminine|samantha|victoria|karen|moira|tessa|ava|allison|serena|zira|aria|jenny|emma|olivia|susan)\\b/.test(name);
+  const masculine = /\b(male|man|masculine|david|mark|daniel|alex|fred|george|thomas)\\b/.test(name);
+  const quality = /\b(natural|neural|premium|enhanced|high quality)\\b/.test(name);
+  const lowQuality = /\b(compact|espeak|legacy)\\b/.test(name);
   return (feminine ? 12 : 0) - (masculine ? 12 : 0)
     + (quality ? 4 : 0) - (lowQuality ? 2 : 0)
     + (voice.localService === false ? 1 : 0);

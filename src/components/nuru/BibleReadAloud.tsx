@@ -4,6 +4,7 @@ import { AfricanCloudBibleAudio } from "./AfricanCloudBibleAudio";
 import {
   bibleDeviceVoiceStatus,
   bibleMatchingVoices,
+  bibleNarratorPreferenceScore,
   bibleSpeechChunks,
   bibleSpeechLocale,
   isAfricanBibleLanguage,
@@ -44,17 +45,10 @@ export function BibleReadAloud({
     ),
     [verses],
   );
-  const matching = useMemo(() => bibleMatchingVoices(voices, language).sort((a, b) => {
-    // Prefer enhanced/natural voices when the device exposes them, without
-    // assuming a particular platform provides studio-quality narration.
-    const quality = (voice: SpeechSynthesisVoice) => {
-      const name = voice.name.toLowerCase();
-      return (/(natural|neural|premium|enhanced|high quality)/.test(name) ? 4 : 0)
-        + (!voice.localService ? 1 : 0)
-        - (/(compact|espeak|legacy)/.test(name) ? 2 : 0);
-    };
-    return quality(b) - quality(a);
-  }), [voices, language]);
+  const matching = useMemo(() =>
+    [...bibleMatchingVoices(voices, language)].sort(
+      (a, b) => bibleNarratorPreferenceScore(b) - bibleNarratorPreferenceScore(a),
+    ), [voices, language]);
   const locale = bibleSpeechLocale(language);
   const voiceKey = (voice: SpeechSynthesisVoice) =>
     [voice.voiceURI, voice.lang, voice.name].join("|");
@@ -65,6 +59,7 @@ export function BibleReadAloud({
   );
   const africanLanguage = isAfricanBibleLanguage(language);
   const canPlay = supported && chunks.length > 0 && voiceStatus === "ready";
+  const feminineVoiceFound = matching.some((voice) => bibleNarratorPreferenceScore(voice) >= 12);
 
   useEffect(() => {
     const api = typeof window !== "undefined" ? window.speechSynthesis : null;
@@ -218,7 +213,7 @@ export function BibleReadAloud({
           <select aria-label="Bible narration voice" disabled={state !== "idle" || !supported}
             value={voiceId} onChange={(event) => setVoiceId(event.target.value)}
             className={control + " min-w-0 flex-1"}>
-            <option value="auto">Auto ({language})</option>
+            <option value="auto">Gentle female preferred ({language})</option>
             {matching.map((voice) => (
               <option key={voiceKey(voice)} value={voiceKey(voice)}>
                 {voice.name} ({voice.lang})
@@ -279,6 +274,11 @@ export function BibleReadAloud({
       {supported && voiceStatus === "ready" && africanLanguage && (
         <p className="text-[11px] text-muted-foreground">
           {chosen?.name || language} · African-language narration uses the voice installed on this device.
+        </p>
+      )}
+      {voiceId === "auto" && supported && voiceStatus === "ready" && !feminineVoiceFound && (
+        <p className="text-[11px] text-muted-foreground">
+          Your device has no clearly labelled female voice for {language}. Playing the best matching installed voice; choose another above if you prefer.
         </p>
       )}
       {error && <p role="alert" className="text-xs text-destructive">{error}</p>}

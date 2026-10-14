@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useBlocker } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Image as ImageIcon,
@@ -22,6 +22,17 @@ import { createReel } from "@/services/reels";
 import { POST_MUSIC, POST_MUSIC_BY_ID } from "@/lib/postMusic";
 import { PostSoundtrack, PostPresentation } from "@/components/nuru/PostMedia";
 import { AppShell, Avatar } from "@/components/nuru/AppShell";
+
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 
 const createSearchSchema = z.object({
   group: z.string().uuid().optional(),
@@ -56,6 +67,9 @@ function CreateScreen() {
   const [phase, setPhase] = useState<"uploading" | "publishing" | null>(null);
   const [previewTrack, setPreviewTrack] = useState<string | null>(null);
   const publishing = useRef(false);
+  const completed = useRef(false);
+  const [publishError, setPublishError] = useState("");
+  const [musicLimit, setMusicLimit] = useState(60);
   const [mediaPreviewError, setMediaPreviewError] = useState("");
   const [ownsVideo, setOwnsVideo] = useState(false);
   const [step, setStep] = useState<"edit" | "review">("edit");
@@ -70,6 +84,13 @@ function CreateScreen() {
   const [musicId, setMusicId] = useState<string | null>(null);
   const [musicStart, setMusicStart] = useState(0);
   const [selectedGroup, setSelectedGroup] = useState<string | null>(search.group ?? null);
+  const hasDraft = !!(body.trim() || scripture.trim() || media || musicId);
+  const blocker = useBlocker({
+    shouldBlockFn: () => !completed.current && (publishing.current || hasDraft),
+    enableBeforeUnload: () => !completed.current && (publishing.current || hasDraft),
+    withResolver: true,
+  });
+  useEffect(() => setMusicLimit(60), [musicQuery]);
   useEffect(
     () => () => {
       if (media) URL.revokeObjectURL(media.url);
@@ -98,6 +119,7 @@ function CreateScreen() {
 
   async function publish() {
     if (publishing.current) return;
+    setPublishError("");
     if (mediaPreviewError) {
       toast.error(mediaPreviewError);
       return;
@@ -181,6 +203,7 @@ function CreateScreen() {
           group_id: audience === "My Group" ? mentorGroupId : null,
         });
       published = true;
+      completed.current = true;
       await Promise.allSettled([
         qc.invalidateQueries({ queryKey: ["reel-feed"] }),
         qc.invalidateQueries({ queryKey: ["my-reels", userId] }),
@@ -209,7 +232,9 @@ function CreateScreen() {
         void navigate({ to: "/community" });
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Couldn't publish that");
+      const message = e instanceof Error ? e.message : "Couldn't publish that";
+      setPublishError(message);
+      toast.error(message);
     } finally {
       if (path && !published) {
         try {
@@ -276,6 +301,44 @@ function CreateScreen() {
         </button>
       </header>
 
+      <AlertDialog
+        open={blocker.status === "blocked"}
+        onOpenChange={(open) => {
+          if (!open) blocker.reset?.();
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {busy ? "Your upload is still running" : "Discard your unfinished creation?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {busy
+                ? "Keep this page open until publishing finishes."
+                : "Your caption, video and song selection will be lost if you leave."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => blocker.reset?.()}>Keep editing</AlertDialogCancel>
+            {!busy && (
+              <AlertDialogAction onClick={() => blocker.proceed?.()}>
+                Discard and leave
+              </AlertDialogAction>
+            )}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      {publishError && (
+        <div
+          role="alert"
+          className="mx-4 mt-3 rounded-2xl border border-destructive/30 p-3 text-sm"
+        >
+          <p>Couldn’t publish: {publishError}</p>
+          <p className="mt-1 text-muted-foreground">
+            Your creation is still here. Check your connection and try publishing again.
+          </p>
+        </div>
+      )}
       {busy && (
         <div
           role="status"
@@ -407,6 +470,7 @@ function CreateScreen() {
                     )
                   }
                   controls
+                  preload="metadata"
                   playsInline
                   className="max-h-[55dvh] w-full rounded-xl"
                 />
@@ -571,7 +635,7 @@ function CreateScreen() {
               </p>
               {previewTrack && <PostSoundtrack key={previewTrack} id={previewTrack} />}
               <div className="max-h-72 space-y-1 overflow-auto">
-                {matchingMusic.slice(0, 60).map((t) => (
+                {matchingMusic.slice(0, musicLimit).map((t) => (
                   <div key={t.id} className="flex items-center rounded-xl border border-border/50">
                     <button
                       type="button"
@@ -600,7 +664,8 @@ function CreateScreen() {
                     </button>
                     <button
                       type="button"
-                      aria-label={`Preview ${t.title}`}
+                      aria-label={`${previewTrack === t.id ? "Stop previewing" : "Preview"} ${t.title}`}
+                      aria-pressed={previewTrack === t.id}
                       onClick={() => setPreviewTrack(previewTrack === t.id ? null : t.id)}
                       className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-primary"
                     >
@@ -608,6 +673,15 @@ function CreateScreen() {
                     </button>
                   </div>
                 ))}
+                {matchingMusic.length > musicLimit && (
+                  <button
+                    type="button"
+                    onClick={() => setMusicLimit((limit) => limit + 60)}
+                    className="min-h-11 w-full rounded-xl border border-border text-sm text-primary"
+                  >
+                    Show more songs ({matchingMusic.length - musicLimit} remaining)
+                  </button>
+                )}
                 {!matchingMusic.length && (
                   <p className="p-3 text-sm text-muted-foreground">
                     No matching track. Try another song or mood.

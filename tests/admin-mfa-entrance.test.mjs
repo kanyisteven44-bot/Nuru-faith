@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 const read = (path) => readFileSync(new URL("../" + path, import.meta.url), "utf8");
 
 test("admin command center refuses to mount before verified MFA", () => {
-  const src = read("src/routes/_authenticated/admin.tsx");
+  const src = read("src/routes/_authenticated/steward-f2b071d9d2b8.tsx");
   const guard = src.indexOf('if (access === "none")');
   const dashboard = src.indexOf("<AdminV3Screen");
   assert.ok(guard !== -1 && dashboard > guard);

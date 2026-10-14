@@ -22,8 +22,8 @@ test("legacy Nuru installations receive a manual migration prompt without forced
 
 test("admin migration destination preserves the correct official dashboard route", () => {
   const notice = read("src/components/nuru/LegacyDomainNotice.tsx");
-  assert.match(notice, /pathname === "\/admin"/);
-  assert.match(notice, /\/admin\?section=dashboard/);
+  assert.match(notice, /pathname === "\/steward-f2b071d9d2b8"/);
+  assert.match(notice, /\/steward-f2b071d9d2b8\?section=dashboard/);
   assert.match(notice, /\/welcome/);
 });
 

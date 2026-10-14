@@ -13,7 +13,7 @@ const read = (file) =>
 test("new Nuru share links use only the verified co.ke origin", () => {
   assert.equal(OFFICIAL_NURU_ORIGIN, "https://nurufaith.co.ke");
   assert.equal(publicNuruUrl("/ai"), "https://nurufaith.co.ke/ai");
-  assert.equal(publicNuruUrl("/admin?section=dashboard"), "https://nurufaith.co.ke/admin?section=dashboard");
+  assert.equal(publicNuruUrl("/steward-f2b071d9d2b8?section=dashboard"), "https://nurufaith.co.ke/steward-f2b071d9d2b8?section=dashboard");
   assert.equal(publicNuruUrl("/passage?book=John&chapter=3"), "https://nurufaith.co.ke/passage?book=John&chapter=3");
   assert.equal(publicNuruUrl("https://attacker.example/"), "https://nurufaith.co.ke");
 });

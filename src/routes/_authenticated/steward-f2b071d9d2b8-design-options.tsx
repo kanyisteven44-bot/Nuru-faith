@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { NuruMark } from "@/components/nuru/Logo";
 
-export const Route = createFileRoute("/_authenticated/admin-design-options")({
+export const Route = createFileRoute("/_authenticated/steward-f2b071d9d2b8-design-options")({
   head: () => ({
     meta: [
       { title: "Admin UI Options — Nuru Faith" },
@@ -79,7 +79,7 @@ function AdminDesignOptions() {
     <div className="min-h-dvh bg-[#020a13] text-slate-100">
       <header className="sticky top-0 z-50 border-b border-[#13334b] bg-[#03101d]/95 backdrop-blur-xl">
         <div className="mx-auto flex max-w-[1700px] items-center gap-3 px-4 py-3 sm:px-6">
-          <Link to="/admin" search={{ section: "dashboard" }} className="flex items-center gap-3">
+          <Link to="/steward-f2b071d9d2b8" search={{ section: "dashboard" }} className="flex items-center gap-3">
             <NuruMark className="h-10 w-10" />
             <span>
               <span className="block font-display text-base font-semibold text-white">Nuru Admin UI Lab</span>
@@ -91,7 +91,7 @@ function AdminDesignOptions() {
               No live admin functions changed
             </span>
             <Link
-              to="/admin"
+              to="/steward-f2b071d9d2b8"
               search={{ section: "dashboard" }}
               className="rounded-xl border border-[#234b68] bg-[#071727] px-3 py-2 text-xs font-semibold text-slate-200"
             >

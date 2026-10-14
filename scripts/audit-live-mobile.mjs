@@ -183,13 +183,13 @@ for (const viewport of viewports) {
     }
     // Test that clicking a real legacy browser link reaches the canonical URL.
     try {
-      await tab.goto("https://nurufaith.website/admin?section=dashboard", { waitUntil: "domcontentloaded", timeout: 45000 });
+      await tab.goto("https://nurufaith.website/steward-f2b071d9d2b8?section=dashboard", { waitUntil: "domcontentloaded", timeout: 45000 });
       await tab.waitForURL(u => u.hostname === "nurufaith.co.ke", { timeout: 15000 });
       // A logged-out visitor must be shown Nuru sign-in. The intended admin
       // page is restored AFTER login, not rendered without authentication.
       await tab.waitForFunction(() =>
         location.pathname === "/auth" &&
-        sessionStorage.getItem("nuru-return-after-login") === "/admin?section=dashboard",
+        sessionStorage.getItem("nuru-return-after-login") === "/steward-f2b071d9d2b8?section=dashboard",
         { timeout: 15000 },
       );
       console.log("PASS old admin URL kept across canonical redirect and login gate");

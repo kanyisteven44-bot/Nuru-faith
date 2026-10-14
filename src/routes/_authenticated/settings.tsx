@@ -131,7 +131,7 @@ function SettingsScreen() {
         </p>
 
         <Section title="Account">
-          {isStaff && <RowLink icon={LayoutDashboard} label="Admin Dashboard" to="/admin" />}
+          {isStaff && <RowLink icon={LayoutDashboard} label="Admin Dashboard" to="/steward-f2b071d9d2b8" />}
           <RowButton
             icon={UserCog}
             label="Profile"

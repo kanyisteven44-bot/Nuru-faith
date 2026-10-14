@@ -62,7 +62,7 @@ export function AdminV3Screen({ initialSection }: { initialSection: AdminSection
 
   function setActiveSection(section: AdminSectionId) {
     setLocalSection(section);
-    void navigate({ to: "/admin", search: { section }, replace: true });
+    void navigate({ to: "/steward-f2b071d9d2b8", search: { section }, replace: true });
   }
 
   useEffect(() => {

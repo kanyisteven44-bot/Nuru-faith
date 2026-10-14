@@ -11,11 +11,11 @@ const targets = [
   { url: canonical + "/", type: "homepage" },
   { url: canonical + "/about", type: "about" },
   { url: canonical + "/auth", type: "private" },
-  { url: canonical + "/admin?section=dashboard", type: "private" },
+  { url: canonical + "/steward-f2b071d9d2b8?section=dashboard", type: "private" },
   { url: canonical + "/sitemap.xml", type: "sitemap" },
   { url: legacy + "/", type: "legacy-home" },
   { url: legacy + "/ai", type: "legacy-page" },
-  { url: legacy + "/admin?section=dashboard", type: "legacy-page" },
+  { url: legacy + "/steward-f2b071d9d2b8?section=dashboard", type: "legacy-page" },
   { url: legacy + "/manifest.webmanifest", type: "manifest" },
   { url: legacy + "/sw.js", type: "worker" },
 ];

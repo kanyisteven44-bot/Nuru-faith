@@ -27,8 +27,6 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as YoutubeAccountRouteImport } from './routes/youtube-account'
-import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
-import { Route as AuthenticatedAdminDesignOptionsRouteImport } from './routes/_authenticated/admin-design-options'
 import { Route as AuthenticatedAiRouteImport } from './routes/_authenticated/ai'
 import { Route as AuthenticatedBibleRouteImport } from './routes/_authenticated/bible'
 import { Route as AuthenticatedChurchRouteImport } from './routes/_authenticated/church'
@@ -52,6 +50,8 @@ import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedReelsRouteImport } from './routes/_authenticated/reels'
 import { Route as AuthenticatedServeRouteImport } from './routes/_authenticated/serve'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
+import { Route as AuthenticatedStewardF2b071d9d2b8RouteImport } from './routes/_authenticated/steward-f2b071d9d2b8'
+import { Route as AuthenticatedStewardF2b071d9d2b8DesignOptionsRouteImport } from './routes/_authenticated/steward-f2b071d9d2b8-design-options'
 import { Route as BooksIndexRouteImport } from './routes/books.index'
 import { Route as BooksBookIdRouteImport } from './routes/books.$bookId'
 import { Route as FaithCoursesIndexRouteImport } from './routes/faith-courses.index'
@@ -153,17 +153,6 @@ const YoutubeAccountRoute = YoutubeAccountRouteImport.update({
   path: '/youtube-account',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedAdminDesignOptionsRoute =
-  AuthenticatedAdminDesignOptionsRouteImport.update({
-    id: '/admin-design-options',
-    path: '/admin-design-options',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedAiRoute = AuthenticatedAiRouteImport.update({
   id: '/ai',
   path: '/ai',
@@ -281,6 +270,18 @@ const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedStewardF2b071d9d2b8Route =
+  AuthenticatedStewardF2b071d9d2b8RouteImport.update({
+    id: '/steward-f2b071d9d2b8',
+    path: '/steward-f2b071d9d2b8',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedStewardF2b071d9d2b8DesignOptionsRoute =
+  AuthenticatedStewardF2b071d9d2b8DesignOptionsRouteImport.update({
+    id: '/steward-f2b071d9d2b8-design-options',
+    path: '/steward-f2b071d9d2b8-design-options',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const BooksIndexRoute = BooksIndexRouteImport.update({
   id: '/books/',
   path: '/books/',
@@ -362,8 +363,6 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/welcome': typeof WelcomeRoute
   '/youtube-account': typeof YoutubeAccountRoute
-  '/admin': typeof AuthenticatedAdminRoute
-  '/admin-design-options': typeof AuthenticatedAdminDesignOptionsRoute
   '/ai': typeof AuthenticatedAiRoute
   '/bible': typeof AuthenticatedBibleRoute
   '/church': typeof AuthenticatedChurchRoute
@@ -387,6 +386,8 @@ export interface FileRoutesByFullPath {
   '/reels': typeof AuthenticatedReelsRoute
   '/serve': typeof AuthenticatedServeRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/steward-f2b071d9d2b8': typeof AuthenticatedStewardF2b071d9d2b8Route
+  '/steward-f2b071d9d2b8-design-options': typeof AuthenticatedStewardF2b071d9d2b8DesignOptionsRoute
   '/books/$bookId': typeof BooksBookIdRoute
   '/books/': typeof BooksIndexRoute
   '/faith-courses/': typeof FaithCoursesIndexRoute
@@ -417,8 +418,6 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/welcome': typeof WelcomeRoute
   '/youtube-account': typeof YoutubeAccountRoute
-  '/admin': typeof AuthenticatedAdminRoute
-  '/admin-design-options': typeof AuthenticatedAdminDesignOptionsRoute
   '/ai': typeof AuthenticatedAiRoute
   '/bible': typeof AuthenticatedBibleRoute
   '/church': typeof AuthenticatedChurchRoute
@@ -442,6 +441,8 @@ export interface FileRoutesByTo {
   '/reels': typeof AuthenticatedReelsRoute
   '/serve': typeof AuthenticatedServeRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/steward-f2b071d9d2b8': typeof AuthenticatedStewardF2b071d9d2b8Route
+  '/steward-f2b071d9d2b8-design-options': typeof AuthenticatedStewardF2b071d9d2b8DesignOptionsRoute
   '/books/$bookId': typeof BooksBookIdRoute
   '/books': typeof BooksIndexRoute
   '/faith-courses': typeof FaithCoursesIndexRoute
@@ -474,8 +475,6 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/welcome': typeof WelcomeRoute
   '/youtube-account': typeof YoutubeAccountRoute
-  '/_authenticated/admin': typeof AuthenticatedAdminRoute
-  '/_authenticated/admin-design-options': typeof AuthenticatedAdminDesignOptionsRoute
   '/_authenticated/ai': typeof AuthenticatedAiRoute
   '/_authenticated/bible': typeof AuthenticatedBibleRoute
   '/_authenticated/church': typeof AuthenticatedChurchRoute
@@ -499,6 +498,8 @@ export interface FileRoutesById {
   '/_authenticated/reels': typeof AuthenticatedReelsRoute
   '/_authenticated/serve': typeof AuthenticatedServeRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/steward-f2b071d9d2b8': typeof AuthenticatedStewardF2b071d9d2b8Route
+  '/_authenticated/steward-f2b071d9d2b8-design-options': typeof AuthenticatedStewardF2b071d9d2b8DesignOptionsRoute
   '/books/$bookId': typeof BooksBookIdRoute
   '/books/': typeof BooksIndexRoute
   '/faith-courses/': typeof FaithCoursesIndexRoute
@@ -531,8 +532,6 @@ export interface FileRouteTypes {
     | '/terms'
     | '/welcome'
     | '/youtube-account'
-    | '/admin'
-    | '/admin-design-options'
     | '/ai'
     | '/bible'
     | '/church'
@@ -556,6 +555,8 @@ export interface FileRouteTypes {
     | '/reels'
     | '/serve'
     | '/settings'
+    | '/steward-f2b071d9d2b8'
+    | '/steward-f2b071d9d2b8-design-options'
     | '/books/$bookId'
     | '/books/'
     | '/faith-courses/'
@@ -586,8 +587,6 @@ export interface FileRouteTypes {
     | '/terms'
     | '/welcome'
     | '/youtube-account'
-    | '/admin'
-    | '/admin-design-options'
     | '/ai'
     | '/bible'
     | '/church'
@@ -611,6 +610,8 @@ export interface FileRouteTypes {
     | '/reels'
     | '/serve'
     | '/settings'
+    | '/steward-f2b071d9d2b8'
+    | '/steward-f2b071d9d2b8-design-options'
     | '/books/$bookId'
     | '/books'
     | '/faith-courses'
@@ -642,8 +643,6 @@ export interface FileRouteTypes {
     | '/terms'
     | '/welcome'
     | '/youtube-account'
-    | '/_authenticated/admin'
-    | '/_authenticated/admin-design-options'
     | '/_authenticated/ai'
     | '/_authenticated/bible'
     | '/_authenticated/church'
@@ -667,6 +666,8 @@ export interface FileRouteTypes {
     | '/_authenticated/reels'
     | '/_authenticated/serve'
     | '/_authenticated/settings'
+    | '/_authenticated/steward-f2b071d9d2b8'
+    | '/_authenticated/steward-f2b071d9d2b8-design-options'
     | '/books/$bookId'
     | '/books/'
     | '/faith-courses/'
@@ -832,20 +833,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof YoutubeAccountRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/admin': {
-      id: '/_authenticated/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AuthenticatedAdminRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin-design-options': {
-      id: '/_authenticated/admin-design-options'
-      path: '/admin-design-options'
-      fullPath: '/admin-design-options'
-      preLoaderRoute: typeof AuthenticatedAdminDesignOptionsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/ai': {
       id: '/_authenticated/ai'
       path: '/ai'
@@ -1007,6 +994,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/steward-f2b071d9d2b8': {
+      id: '/_authenticated/steward-f2b071d9d2b8'
+      path: '/steward-f2b071d9d2b8'
+      fullPath: '/steward-f2b071d9d2b8'
+      preLoaderRoute: typeof AuthenticatedStewardF2b071d9d2b8RouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/steward-f2b071d9d2b8-design-options': {
+      id: '/_authenticated/steward-f2b071d9d2b8-design-options'
+      path: '/steward-f2b071d9d2b8-design-options'
+      fullPath: '/steward-f2b071d9d2b8-design-options'
+      preLoaderRoute: typeof AuthenticatedStewardF2b071d9d2b8DesignOptionsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/books/': {
       id: '/books/'
       path: '/books'
@@ -1088,8 +1089,6 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
-  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
-  AuthenticatedAdminDesignOptionsRoute: typeof AuthenticatedAdminDesignOptionsRoute
   AuthenticatedAiRoute: typeof AuthenticatedAiRoute
   AuthenticatedBibleRoute: typeof AuthenticatedBibleRoute
   AuthenticatedChurchRoute: typeof AuthenticatedChurchRoute
@@ -1113,6 +1112,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReelsRoute: typeof AuthenticatedReelsRoute
   AuthenticatedServeRoute: typeof AuthenticatedServeRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedStewardF2b071d9d2b8Route: typeof AuthenticatedStewardF2b071d9d2b8Route
+  AuthenticatedStewardF2b071d9d2b8DesignOptionsRoute: typeof AuthenticatedStewardF2b071d9d2b8DesignOptionsRoute
   AuthenticatedCreatorVideoIdRoute: typeof AuthenticatedCreatorVideoIdRoute
   AuthenticatedFaithCoursesSlugRoute: typeof AuthenticatedFaithCoursesSlugRoute
   AuthenticatedMentorsIdRoute: typeof AuthenticatedMentorsIdRoute
@@ -1124,8 +1125,6 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
-  AuthenticatedAdminDesignOptionsRoute: AuthenticatedAdminDesignOptionsRoute,
   AuthenticatedAiRoute: AuthenticatedAiRoute,
   AuthenticatedBibleRoute: AuthenticatedBibleRoute,
   AuthenticatedChurchRoute: AuthenticatedChurchRoute,
@@ -1149,6 +1148,9 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedReelsRoute: AuthenticatedReelsRoute,
   AuthenticatedServeRoute: AuthenticatedServeRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedStewardF2b071d9d2b8Route: AuthenticatedStewardF2b071d9d2b8Route,
+  AuthenticatedStewardF2b071d9d2b8DesignOptionsRoute:
+    AuthenticatedStewardF2b071d9d2b8DesignOptionsRoute,
   AuthenticatedCreatorVideoIdRoute: AuthenticatedCreatorVideoIdRoute,
   AuthenticatedFaithCoursesSlugRoute: AuthenticatedFaithCoursesSlugRoute,
   AuthenticatedMentorsIdRoute: AuthenticatedMentorsIdRoute,

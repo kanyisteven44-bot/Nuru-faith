@@ -642,7 +642,7 @@ function AdminPanel({
   return (
     <section className="rounded-2xl border border-[#153b5c] bg-[#051421] p-4 sm:p-5">
       <div className="mb-5">
-        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-300">Nuru Admin</p>
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-300">Aegis Console</p>
         <h1 className="mt-1 font-display text-2xl font-semibold text-white">{title}</h1>
         <p className="mt-1 text-sm text-slate-400">{subtitle}</p>
       </div>

@@ -4,26 +4,25 @@
  * Checks availability/indexing/security headers, NOT private account behavior.
  * No credentials and no mutation of user data.
  */
-const canonical = "https://app.nurufaith.co.ke";
+export const canonical = "https://nurufaith.co.ke";
+const temporary = "https://app.nurufaith.co.ke";
 const legacy = "https://nurufaith.website";
 
-const targets = [
+export const targets = [
   { url: canonical + "/", type: "homepage" },
   { url: canonical + "/about", type: "about" },
-  { url: canonical + "/auth", type: "private" },
+  { url: canonical + "/auth?mode=login", type: "private" },
   { url: canonical + "/admin?section=dashboard", type: "private" },
   { url: canonical + "/sitemap.xml", type: "sitemap" },
+  { url: canonical + "/manifest.webmanifest", type: "manifest" },
+  { url: canonical + "/sw.js", type: "worker" },
+  { url: temporary + "/", type: "temporary" },
   { url: legacy + "/", type: "legacy-home" },
   { url: legacy + "/ai", type: "legacy-page" },
   { url: legacy + "/admin?section=dashboard", type: "legacy-page" },
   { url: legacy + "/manifest.webmanifest", type: "manifest" },
   { url: legacy + "/sw.js", type: "worker" },
 ];
-
-const errors = [];
-function check(condition, message) {
-  if (!condition) errors.push(message);
-}
 
 async function retrieve(url) {
   let lastError;
@@ -49,9 +48,15 @@ async function retrieve(url) {
   throw lastError ?? new Error("Failed to fetch " + url);
 }
 
-for (const { url, type } of targets) {
-  try {
-    const { response, body } = await retrieve(url);
+export function responseErrors({ url, type }, response, body) {
+  const errors = [];
+  const check = (condition, message) => { if (!condition) errors.push(message); };
+  if (type === "temporary" && [301, 302, 307, 308].includes(response.status)) {
+    let destination;
+    try { destination = new URL(response.headers.get("location"), url); } catch { /* fail below */ }
+    check(destination?.href === canonical + "/", `${url}: temporary host redirects to the wrong destination`);
+    return errors;
+  }
     check(response.status === 200, `${url}: expected HTTP 200, got ${response.status}`);
     check(!response.headers.has("location"), `${url}: unexpected redirect`);
     if (["homepage", "about", "private", "legacy-home", "legacy-page"].includes(type)) {
@@ -60,18 +65,18 @@ for (const { url, type } of targets) {
       check(!!response.headers.get("strict-transport-security"), `${url}: HTTPS HSTS header missing`);
     }
     if (type === "homepage" || type === "legacy-home") {
-      check(body.includes('rel="canonical" href="https://app.nurufaith.co.ke/"'), `${url}: incorrect canonical`);
+      check(body.includes('rel="canonical" href="https://nurufaith.co.ke/"'), `${url}: incorrect canonical`);
       check(!/<meta[^>]+name="robots"[^>]+content="noindex/i.test(body), `${url}: homepage not indexable`);
     }
     if (type === "about") {
-      check(body.includes('rel="canonical" href="https://app.nurufaith.co.ke/about"'), `${url}: incorrect about canonical`);
+      check(body.includes('rel="canonical" href="https://nurufaith.co.ke/about"'), `${url}: incorrect about canonical`);
     }
     if (type === "private") {
       check(/<meta[^>]+name="robots"[^>]+content="noindex, nofollow"/i.test(body), `${url}: private page is indexable`);
     }
     if (type === "sitemap") {
-      check(body.includes("<loc>https://app.nurufaith.co.ke/</loc>"), `${url}: homepage missing from sitemap`);
-      check(body.includes("<loc>https://app.nurufaith.co.ke/about</loc>"), `${url}: about missing from sitemap`);
+      check(body.includes("<loc>https://nurufaith.co.ke/</loc>"), `${url}: homepage missing from sitemap`);
+      check(body.includes("<loc>https://nurufaith.co.ke/about</loc>"), `${url}: about missing from sitemap`);
     }
     if (type === "manifest") {
       const manifest = JSON.parse(body);
@@ -79,6 +84,15 @@ for (const { url, type } of targets) {
       check(manifest.start_url === "/", `${url}: old PWA start URL changed`);
     }
     if (type === "worker") check(body.includes('self.addEventListener("install"'), `${url}: service worker unavailable`);
+  return errors;
+}
+
+export async function runSmoke() {
+const errors = [];
+for (const { url, type } of targets) {
+  try {
+    const { response, body } = await retrieve(url);
+    errors.push(...responseErrors({ url, type }, response, body));
     console.log(`${response.status} ${url}`);
   } catch (error) {
     errors.push(`${url}: ${error instanceof Error ? error.message : String(error)}`);
@@ -92,3 +106,7 @@ if (errors.length) {
 } else {
   console.log("\nNuru public production smoke passed. Authenticated phone features need device testing.");
 }
+
+}
+
+if (process.argv[1] && import.meta.url === new URL(process.argv[1], "file:").href) await runSmoke();

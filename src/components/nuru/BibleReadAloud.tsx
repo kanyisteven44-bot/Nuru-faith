@@ -282,7 +282,7 @@ export function BibleReadAloud({
         </p>
       )}
       {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
-      {["ki", "kik"].includes((locale ?? "").split("-")[0].toLowerCase()) && (
+      {["ki", "kik"].includes((locale ?? "").split("-")[0]?.toLowerCase() ?? "") && (
         <div className="rounded-xl border border-primary/20 bg-primary/5 p-3">
           <p className="text-xs font-semibold text-foreground">Gĩkũyũ Bible · recorded narration</p>
           <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">

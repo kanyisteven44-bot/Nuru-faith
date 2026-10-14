@@ -26,7 +26,7 @@ const adminSearchSchema = z.object({
   section: z.enum(ADMIN_SECTION_IDS).optional(),
 });
 
-export const Route = createFileRoute("/_authenticated/admin")({
+export const Route = createFileRoute("/_authenticated/steward-f2b071d9d2b8")({
   validateSearch: adminSearchSchema,
   head: () => ({
     meta: [

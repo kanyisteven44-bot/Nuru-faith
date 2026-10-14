@@ -9,7 +9,7 @@ test("production smoke checks both domains and old app resources hourly", () => 
   assert.match(script, /https:\/\/nurufaith\.website/);
   assert.match(script, /manifest\.webmanifest/);
   assert.match(script, /\/sw\.js/);
-  assert.match(script, /\/admin\?section=dashboard/);
+  assert.match(script, /\/steward-f2b071d9d2b8\?section=dashboard/);
   assert.match(script, /\/sitemap\.xml/);
   assert.match(script, /noindex, nofollow/);
   assert.match(script, /content-security-policy/);

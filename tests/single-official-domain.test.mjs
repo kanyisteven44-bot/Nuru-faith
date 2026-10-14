@@ -8,8 +8,8 @@ const canonical = "https://nurufaith.co.ke";
 test("deprecated web browser links move to the official Nuru domain with route/query/hash preserved", () => {
   assert.equal(canonicalBrowserDestination("https://nurufaith.website/", false), canonical + "/");
   assert.equal(
-    canonicalBrowserDestination("https://nurufaith.website/admin?section=dashboard", false),
-    canonical + "/admin?section=dashboard",
+    canonicalBrowserDestination("https://nurufaith.website/steward-f2b071d9d2b8?section=dashboard", false),
+    canonical + "/steward-f2b071d9d2b8?section=dashboard",
   );
   assert.equal(
     canonicalBrowserDestination("https://www.nurufaith.website/reels?reel=123#comments", false),
@@ -24,7 +24,7 @@ test("deprecated web browser links move to the official Nuru domain with route/q
 test("old installed PWAs never navigate across origins while opened from their icons", () => {
   assert.equal(canonicalBrowserDestination("https://nurufaith.website/home", true), null);
   assert.equal(canonicalBrowserDestination("https://nurufaith.website/ai", true), null);
-  assert.equal(canonicalBrowserDestination("https://nurufaith.website/admin?section=dashboard", true), null);
+  assert.equal(canonicalBrowserDestination("https://nurufaith.website/steward-f2b071d9d2b8?section=dashboard", true), null);
 });
 
 test("auth callbacks and password reset links never leave their original origin", () => {

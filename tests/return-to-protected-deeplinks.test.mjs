@@ -16,13 +16,13 @@ function browser(href,{standalone=false,storage=new Map()}={}){
 }
 
 test("old browser deep link redirects before admin route guard, preserving exact route",()=>{
-  assert.equal(browser("https://nurufaith.website/admin?section=dashboard").moved,
-    "https://nurufaith.co.ke/admin?section=dashboard");
+  assert.equal(browser("https://nurufaith.website/steward-f2b071d9d2b8?section=dashboard").moved,
+    "https://nurufaith.co.ke/steward-f2b071d9d2b8?section=dashboard");
   assert.equal(browser("https://www.nurufaith.website/bible?chapter=3#verse16").moved,
     "https://nurufaith.co.ke/bible?chapter=3#verse16");
 });
 test("already-installed PWAs never cross origin, avoiding Chrome X tab",()=>{
-  assert.equal(browser("https://nurufaith.website/admin?section=dashboard",{standalone:true}).moved,null);
+  assert.equal(browser("https://nurufaith.website/steward-f2b071d9d2b8?section=dashboard",{standalone:true}).moved,null);
 });
 test("old reset links and callbacks remain on their origin and preserve the post-callback session",()=>{
   const storage=new Map();
@@ -39,8 +39,8 @@ test("save and consume same-origin protected return destination without open-red
     getItem:k=>storage.get(k)??null,setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)
   }});
   try {
-    rememberAfterLogin("/admin?section=dashboard","https://nurufaith.co.ke");
-    assert.equal(takeAfterLogin("https://nurufaith.co.ke"),"/admin?section=dashboard");
+    rememberAfterLogin("/steward-f2b071d9d2b8?section=dashboard","https://nurufaith.co.ke");
+    assert.equal(takeAfterLogin("https://nurufaith.co.ke"),"/steward-f2b071d9d2b8?section=dashboard");
     assert.equal(takeAfterLogin("https://nurufaith.co.ke"),null);
     rememberAfterLogin("https://attacker.example/","https://nurufaith.co.ke");
     assert.equal(takeAfterLogin("https://nurufaith.co.ke"),null);

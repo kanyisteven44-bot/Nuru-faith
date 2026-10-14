@@ -36,8 +36,8 @@ export function LegacyDomainNotice() {
     try { sessionStorage.setItem("nuru-legacy-notice-dismissed", "1"); } catch { /* blocked storage */ }
   };
 
-  const destination = pathname === "/admin"
-    ? `${NEW_ORIGIN}/admin?section=dashboard`
+  const destination = pathname === "/steward-f2b071d9d2b8"
+    ? `${NEW_ORIGIN}/steward-f2b071d9d2b8?section=dashboard`
     : `${NEW_ORIGIN}/welcome`;
 
   return (

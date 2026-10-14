@@ -158,9 +158,9 @@ export function AdminCommandShell({
           <NuruMark className="h-10 w-10 shrink-0" />
           <span className="min-w-0">
             <span className="block font-display text-base font-semibold tracking-[0.08em] text-white">
-              NURU FAITH
+              AEGIS CONSOLE
             </span>
-            <span className="block text-[10px] text-slate-500">Administration</span>
+            <span className="block text-[10px] text-slate-500">Secure operations</span>
           </span>
         </Link>
 

@@ -82,7 +82,9 @@ export function ReelPane(props: ReelPaneProps) {
     queryKey: ["reel-media", reelPath, playerAttempt],
     enabled: !!reelPath && near,
     queryFn: async () => {
-      const { data, error } = await supabase.storage.from("reel-media").createSignedUrl(reelPath!, 3600);
+      const { data, error } = await supabase.storage
+        .from("reel-media")
+        .createSignedUrl(reelPath!, 3600);
       if (error || !data) throw new Error("Couldn't load this reel. Tap Retry.");
       return data.signedUrl;
     },
@@ -96,8 +98,13 @@ export function ReelPane(props: ReelPaneProps) {
   function syncSoundtrack(video: HTMLVideoElement, play: boolean) {
     const audio = audioRef.current;
     if (!audio) return;
-    if (audio.readyState >= 1) audio.currentTime = Math.min((reel.music_start_seconds ?? 0) + video.currentTime, Math.max(0, audio.duration - 0.05));
-    if (play) void audio.play().catch(() => setPlaybackError("Tap the reel to start its soundtrack."));
+    if (audio.readyState >= 1)
+      audio.currentTime = Math.min(
+        (reel.music_start_seconds ?? 0) + video.currentTime,
+        Math.max(0, audio.duration - 0.05),
+      );
+    if (play)
+      void audio.play().catch(() => setPlaybackError("Tap the reel to start its soundtrack."));
     else audio.pause();
   }
   const hasVideo = !!reel.video_url;
@@ -267,7 +274,21 @@ export function ReelPane(props: ReelPaneProps) {
         }}
         onPointerUp={handlePointerUp}
       >
-        {soundtrack && shouldLoad && <audio ref={audioRef} src={soundtrack.url} muted={muted} preload={active ? "metadata" : "none"} onLoadedMetadata={() => { if (videoRef.current) syncSoundtrack(videoRef.current, !videoRef.current.paused); }} onError={() => setPlaybackError("This soundtrack could not load. Check your connection and retry.")} />}
+        {soundtrack && shouldLoad && (
+          <audio
+            key={`${reel.id}:${playerAttempt}`}
+            ref={audioRef}
+            src={soundtrack.url}
+            muted={muted}
+            preload={active ? "metadata" : "none"}
+            onLoadedMetadata={() => {
+              if (videoRef.current) syncSoundtrack(videoRef.current, !videoRef.current.paused);
+            }}
+            onError={() =>
+              setPlaybackError("This soundtrack could not load. Check your connection and retry.")
+            }
+          />
+        )}
         {hasVideo && shouldLoad ? (
           <video
             key={`${reel.id}:${playerAttempt}`}
@@ -279,15 +300,25 @@ export function ReelPane(props: ReelPaneProps) {
               setPlaybackError("");
               if (videoRef.current) syncSoundtrack(videoRef.current, true);
             }}
-            onPause={() => { setPlaying(false); audioRef.current?.pause(); }}
-            onSeeked={event => syncSoundtrack(event.currentTarget, !event.currentTarget.paused)}
-            onWaiting={() => { setPlaying(false); audioRef.current?.pause(); }}
+            onPause={() => {
+              setPlaying(false);
+              audioRef.current?.pause();
+            }}
+            onSeeked={(event) => syncSoundtrack(event.currentTarget, !event.currentTarget.paused)}
+            onWaiting={() => {
+              setPlaying(false);
+              audioRef.current?.pause();
+            }}
             onError={() => {
+              audioRef.current?.pause();
               setPlaying(false);
               setPlaybackError("This video could not load. Check your connection and retry.");
             }}
             playsInline
-            onEnded={() => { audioRef.current?.pause(); props.onEnded(); }}
+            onEnded={() => {
+              audioRef.current?.pause();
+              props.onEnded();
+            }}
             muted={muted || !!soundtrack}
             preload={active ? "auto" : "metadata"}
             className="h-full w-full object-cover"

@@ -8,7 +8,6 @@ import {
   Video,
   X,
   Clapperboard,
-  Check,
   Play,
   Loader2,
 } from "lucide-react";

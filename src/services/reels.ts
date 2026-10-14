@@ -1,3 +1,4 @@
+import { POST_MUSIC_BY_ID } from "@/lib/postMusic";
 import { fetchWatchedVideoIds } from "@/lib/reelWatchData";
 import { isPresentableReel } from "@/lib/reelPresentation";
 import { supabase } from "@/integrations/supabase/client";
@@ -385,6 +386,7 @@ export async function createReel(input: {
     creator_handle: input.creatorHandle,
     creator_avatar_url: input.creatorAvatarUrl,
     caption: input.caption,
+    audio_title: input.musicTrackId ? POST_MUSIC_BY_ID.get(input.musicTrackId)?.title ?? null : null,
     music_track_id: input.musicTrackId ?? null,
     music_start_seconds: input.musicStartSeconds ?? 0,
     video_url: input.videoUrl,

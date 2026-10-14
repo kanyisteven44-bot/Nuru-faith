@@ -289,7 +289,7 @@ export function BibleReadAloud({
             Listen to an authentic Kikuyu Bible recording from Faith Comes By Hearing and its partners.
             Opens the authorized Bible.is player; audio is not hosted by Nuru Faith.
           </p>
-          <a href="https://live.bible.is/bible/kiudpi/GEN/1"
+          <a href="https://www.bible.com/audio-bible/2926/GEN.1.OGKBIBLE"
             target="_blank" rel="noopener noreferrer"
             className="mt-2 inline-flex min-h-11 items-center rounded-xl bg-primary px-3 text-xs font-semibold text-primary-foreground">
             Listen in Gĩkũyũ ↗

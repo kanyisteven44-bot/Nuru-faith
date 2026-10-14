@@ -1,13 +1,24 @@
 import { useEffect, useRef, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Image as ImageIcon, Music2, Search, Video, X } from "lucide-react";
+import {
+  Image as ImageIcon,
+  Music2,
+  Search,
+  Video,
+  X,
+  Clapperboard,
+  Play,
+  Loader2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { createPost, fetchMyGroupIds, fetchGroups, fetchProfile } from "@/services/content";
 import { supabase } from "@/integrations/supabase/client";
+import { validateComposerMedia, formatMediaSize } from "@/lib/composerMedia";
+import { createReel } from "@/services/reels";
 import { POST_MUSIC, POST_MUSIC_BY_ID } from "@/lib/postMusic";
 import { PostSoundtrack, PostPresentation } from "@/components/nuru/PostMedia";
 import { AppShell, Avatar } from "@/components/nuru/AppShell";
@@ -15,6 +26,7 @@ import { AppShell, Avatar } from "@/components/nuru/AppShell";
 const createSearchSchema = z.object({
   group: z.string().uuid().optional(),
   from: z.literal("profile").optional(),
+  mode: z.enum(["post", "reel"]).optional(),
 });
 
 export const Route = createFileRoute("/_authenticated/create")({
@@ -40,6 +52,12 @@ function CreateScreen() {
   const qc = useQueryClient();
   const { userId } = useAuth();
   const search = Route.useSearch();
+  const [mode, setMode] = useState<"post" | "reel">(search.mode ?? "post");
+  const [phase, setPhase] = useState<"uploading" | "publishing" | null>(null);
+  const [previewTrack, setPreviewTrack] = useState<string | null>(null);
+  const publishing = useRef(false);
+  const [mediaPreviewError, setMediaPreviewError] = useState("");
+  const [ownsVideo, setOwnsVideo] = useState(false);
   const [step, setStep] = useState<"edit" | "review">("edit");
   const [body, setBody] = useState("");
   const [scripture, setScripture] = useState("");
@@ -79,6 +97,11 @@ function CreateScreen() {
   const mentorGroupId = selectedGroup ?? myGroups[0]?.id ?? null;
 
   async function publish() {
+    if (publishing.current) return;
+    if (mediaPreviewError) {
+      toast.error(mediaPreviewError);
+      return;
+    }
     if (!userId) {
       toast.error("Sign in to post");
       return;
@@ -92,11 +115,19 @@ function CreateScreen() {
       toast.error("Join a group before posting to one");
       return;
     }
+    if (mode === "reel" && (!media || !media.file.type.startsWith("video/") || !ownsVideo)) {
+      toast.error("Choose your video and confirm you have permission to share it.");
+      return;
+    }
+    publishing.current = true;
     setBusy(true);
     let path: string | null = null;
     let published = false;
     try {
       if (media) {
+        const mediaError = validateComposerMedia(media.file, mode === "reel");
+        if (mediaError) throw new Error(mediaError);
+        setPhase("uploading");
         const extensions: Record<string, string> = {
           "image/jpeg": "jpg",
           "image/png": "png",
@@ -112,29 +143,65 @@ function CreateScreen() {
           throw new Error("Choose a file smaller than 50 MB.");
         path = `${userId}/${crypto.randomUUID()}.${ext}`;
         const { error } = await supabase.storage
-          .from("post-media")
+          .from(mode === "reel" ? "reel-media" : "post-media")
           .upload(path, media.file, { contentType: media.file.type, upsert: false });
         if (error) throw new Error("Couldn't upload your media. Please retry.");
       }
 
-      await createPost({
-        author_id: userId,
-        kind: media ? (media.file.type.startsWith("image/") ? "image" : "video") : "text",
-        body: text,
-        media_url: path ? `post:${path}` : null,
-        music_track_id: musicId,
-        music_start_seconds: musicStart,
-        scripture_ref: scripture.trim() || null,
-        group_id: audience === "My Group" ? mentorGroupId : null,
-      });
+      setPhase("publishing");
+      if (mode === "reel") {
+        await createReel({
+          authorId: userId,
+          creatorName: profile.data?.full_name || "Nuru member",
+          creatorHandle: profile.data?.username || "member",
+          creatorAvatarUrl: profile.data?.avatar_url ?? null,
+          caption: text,
+          videoUrl: `reel:${path}`,
+          posterUrl: null,
+          scriptureRef: scripture.trim() || null,
+          hashtags: [...new Set(text.match(/#[\p{L}\p{N}_]+/gu) ?? [])].map((tag) => tag.slice(1)),
+          topic: "Faith",
+          isBibleTeaching: false,
+          churchId: null,
+          groupId: null,
+          sourceType: "user_upload",
+          rightsStatus: "owned",
+          musicTrackId: musicId,
+          musicStartSeconds: musicStart,
+        });
+      } else
+        await createPost({
+          author_id: userId,
+          kind: media ? (media.file.type.startsWith("image/") ? "image" : "video") : "text",
+          body: text,
+          media_url: path ? `post:${path}` : null,
+          music_track_id: musicId,
+          music_start_seconds: musicStart,
+          scripture_ref: scripture.trim() || null,
+          group_id: audience === "My Group" ? mentorGroupId : null,
+        });
       published = true;
-      await Promise.all([
+      await Promise.allSettled([
+        qc.invalidateQueries({ queryKey: ["reel-feed"] }),
+        qc.invalidateQueries({ queryKey: ["my-reels", userId] }),
         qc.invalidateQueries({ queryKey: ["posts"] }),
         qc.invalidateQueries({ queryKey: ["my-posts", userId] }),
         qc.invalidateQueries({ queryKey: ["profile-counts", userId] }),
       ]);
-      toast.success(audience === "My Group" ? "Shared with your group" : "Posted");
-      if (audience === "My Group" && mentorGroupId) {
+      toast.success(
+        mode === "reel"
+          ? "Your reel is published"
+          : audience === "My Group"
+            ? "Shared with your group"
+            : "Posted",
+      );
+      if (mode === "reel") {
+        void navigate(
+          search.from === "profile"
+            ? { to: "/profile", search: { tab: "reels" } }
+            : { to: "/reels" },
+        );
+      } else if (audience === "My Group" && mentorGroupId) {
         void navigate({ to: "/groups", search: { group: mentorGroupId } });
       } else if (search.from === "profile") {
         void navigate({ to: "/profile" });
@@ -144,7 +211,15 @@ function CreateScreen() {
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Couldn't publish that");
     } finally {
-      if (path && !published) await supabase.storage.from("post-media").remove([path]);
+      if (path && !published) {
+        try {
+          await supabase.storage.from(mode === "reel" ? "reel-media" : "post-media").remove([path]);
+        } catch {
+          /* Preserve the original publish error. */
+        }
+      }
+      publishing.current = false;
+      setPhase(null);
       setBusy(false);
     }
   }
@@ -170,21 +245,49 @@ function CreateScreen() {
           <X className="h-5 w-5" />
         </button>
         <h1 className="font-display text-[17px] font-semibold">
-          {step === "edit" ? "New post" : "Ready to share"}
+          {step === "edit" ? (mode === "reel" ? "New reel" : "New post") : "Ready to share"}
         </h1>
         <button
           type="button"
           onClick={() => {
-            if (step === "edit") setStep("review");
-            else void publish();
+            if (step === "edit") {
+              setMusicOpen(false);
+              setPreviewTrack(null);
+              setStep("review");
+            } else void publish();
           }}
-          disabled={busy || (!body.trim() && !media)}
+          disabled={
+            !!mediaPreviewError ||
+            busy ||
+            (!body.trim() && !media) ||
+            (mode === "reel" && (!media?.file.type.startsWith("video/") || !ownsVideo))
+          }
           className="rounded-lg bg-primary px-4 py-1.5 text-[13px] font-semibold text-primary-foreground disabled:opacity-50"
         >
-          {busy ? "Sharing…" : step === "edit" ? "Next" : "Share"}
+          {busy
+            ? phase === "uploading"
+              ? "Uploading…"
+              : "Publishing…"
+            : step === "edit"
+              ? "Next"
+              : mode === "reel"
+                ? "Publish reel"
+                : "Share"}
         </button>
       </header>
 
+      {busy && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="mx-4 mt-3 flex items-center gap-2 rounded-2xl border border-primary/25 bg-primary/5 p-3 text-sm"
+        >
+          <Loader2 className="h-4 w-4 animate-spin" />
+          {phase === "uploading"
+            ? "Uploading your video or photo. Keep this page open."
+            : "Publishing to Nuru…"}
+        </div>
+      )}
       {step === "review" ? (
         <div className="space-y-4 px-4 py-5">
           <PostPresentation
@@ -211,7 +314,43 @@ function CreateScreen() {
           </button>
         </div>
       ) : (
-        <div className="px-4 pt-2">
+        <div className="mx-auto max-w-xl px-4 pt-2">
+          <div
+            className="mb-5 grid grid-cols-2 gap-2 rounded-2xl border border-border bg-surface-2 p-1"
+            aria-label="What would you like to share?"
+          >
+            {(["post", "reel"] as const).map((value) => (
+              <button
+                key={value}
+                type="button"
+                disabled={busy}
+                aria-pressed={mode === value}
+                onClick={() => {
+                  setMode(value);
+                  if (value === "reel") {
+                    setAudience("Public");
+                    if (media && !media.file.type.startsWith("video/")) {
+                      setMedia(null);
+                      setMediaPreviewError("");
+                    }
+                  }
+                }}
+                className={cn(
+                  "flex min-h-11 items-center justify-center gap-2 rounded-xl text-sm font-semibold",
+                  mode === value
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground",
+                )}
+              >
+                {value === "reel" ? (
+                  <Clapperboard className="h-4 w-4" />
+                ) : (
+                  <ImageIcon className="h-4 w-4" />
+                )}
+                {value === "reel" ? "Reel" : "Post"}
+              </button>
+            ))}
+          </div>
           <div className="flex items-center gap-3">
             <Avatar
               url={profile.data?.avatar_url ?? null}
@@ -234,16 +373,20 @@ function CreateScreen() {
               onClick={() => {
                 if (fileInput.current) {
                   fileInput.current.accept =
-                    "image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime";
+                    mode === "reel"
+                      ? "video/mp4,video/webm,video/quicktime"
+                      : "image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime";
                   fileInput.current.click();
                 }
               }}
               className="mt-5 flex min-h-40 w-full flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-primary/35 bg-primary/5"
             >
               <ImageIcon className="h-9 w-9 text-primary" />
-              <strong className="text-sm">Choose a photo or video</strong>
+              <strong className="text-sm">
+                {mode === "reel" ? "Choose your reel video" : "Choose a photo or video"}
+              </strong>
               <span className="text-xs text-muted-foreground">
-                Add music and a caption before sharing
+                Add music, write your caption, then preview · Up to 50 MB
               </span>
             </button>
           )}
@@ -258,6 +401,11 @@ function CreateScreen() {
               ) : (
                 <video
                   src={media.url}
+                  onError={() =>
+                    setMediaPreviewError(
+                      "This video cannot be previewed on this device. Try an MP4 video.",
+                    )
+                  }
                   controls
                   playsInline
                   className="max-h-[55dvh] w-full rounded-xl"
@@ -266,13 +414,38 @@ function CreateScreen() {
               <button
                 type="button"
                 disabled={busy}
-                onClick={() => setMedia(null)}
+                onClick={() => {
+                  setMedia(null);
+                  setMediaPreviewError("");
+                }}
                 aria-label="Remove attachment"
                 className="absolute right-3 top-3 rounded-full bg-black/70 p-2 text-white"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
+          )}
+          {mediaPreviewError && (
+            <p role="alert" className="mt-2 text-sm text-destructive">
+              {mediaPreviewError}
+            </p>
+          )}
+          {media && (
+            <p className="mt-2 truncate text-xs text-muted-foreground">
+              {media.file.name} · {formatMediaSize(media.file.size)}
+            </p>
+          )}
+          {mode === "reel" && (
+            <label className="mt-4 flex items-start gap-3 rounded-2xl border border-border bg-surface-2 p-3 text-xs leading-relaxed">
+              <input
+                type="checkbox"
+                checked={ownsVideo}
+                onChange={(e) => setOwnsVideo(e.target.checked)}
+                className="mt-0.5 h-4 w-4 shrink-0"
+              />
+              This is my video, or I have permission to share it. Reels are visible to the Nuru
+              community.
+            </label>
           )}
           <textarea
             value={body}
@@ -284,6 +457,7 @@ function CreateScreen() {
             className="mt-4 w-full resize-none bg-transparent text-[15px] leading-relaxed outline-none placeholder:text-muted-foreground"
           />
 
+          <p className="text-right text-[11px] text-muted-foreground">{body.length}/2000</p>
           <input
             value={scripture}
             onChange={(e) => setScripture(e.target.value)}
@@ -302,28 +476,33 @@ function CreateScreen() {
               const file = e.target.files?.[0];
               e.target.value = "";
               if (!file) return;
-              if (file.size > 50 * 1024 * 1024) {
-                toast.error("Choose a file smaller than 50 MB.");
+              const error = validateComposerMedia(file, mode === "reel");
+              if (error) {
+                toast.error(error);
                 return;
               }
+              setMediaPreviewError("");
+              setOwnsVideo(false);
               setMedia({ file, url: URL.createObjectURL(file) });
             }}
           />
-          <div className="grid grid-cols-3 gap-3 pt-5">
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => {
-                if (fileInput.current) {
-                  fileInput.current.accept = "image/jpeg,image/png,image/webp,image/gif";
-                  fileInput.current.click();
-                }
-              }}
-              className="flex min-h-20 flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-surface-2 text-sm"
-            >
-              <ImageIcon className="h-6 w-6 text-primary" />
-              Photo
-            </button>
+          <div className={cn("grid gap-3 pt-5", mode === "reel" ? "grid-cols-2" : "grid-cols-3")}>
+            {mode === "post" && (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => {
+                  if (fileInput.current) {
+                    fileInput.current.accept = "image/jpeg,image/png,image/webp,image/gif";
+                    fileInput.current.click();
+                  }
+                }}
+                className="flex min-h-20 flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-surface-2 text-sm"
+              >
+                <ImageIcon className="h-6 w-6 text-primary" />
+                Photo
+              </button>
+            )}
             <button
               type="button"
               disabled={busy}
@@ -349,7 +528,7 @@ function CreateScreen() {
               Music
             </button>
           </div>
-          {track && (
+          {track && !musicOpen && (
             <div className="mt-4">
               <PostSoundtrack key={musicId} id={track.id} start={musicStart} />
               <label className="mt-3 block text-xs">
@@ -390,32 +569,44 @@ function CreateScreen() {
               <p className="my-2 text-xs text-muted-foreground">
                 {POST_MUSIC.length} tracks · Kevin MacLeod · CC BY 4.0
               </p>
+              {previewTrack && <PostSoundtrack key={previewTrack} id={previewTrack} />}
               <div className="max-h-72 space-y-1 overflow-auto">
-                {matchingMusic.map((t) => (
-                  <button
-                    key={t.id}
-                    type="button"
-                    onClick={() => {
-                      setMusicId(t.id);
-                      setMusicStart(0);
-                      setMusicOpen(false);
-                    }}
-                    className={cn(
-                      "flex min-h-16 w-full items-center gap-3 rounded-xl px-3 py-2 text-left",
-                      musicId === t.id ? "bg-primary/15" : "hover:bg-surface-2",
-                    )}
-                  >
-                    <Music2 className="h-5 w-5 shrink-0 text-primary" />
-                    <span className="min-w-0 flex-1">
-                      <strong className="block truncate text-sm">{t.title}</strong>
-                      <span className="block truncate text-xs text-muted-foreground">
-                        {t.artist} · {t.mood}
+                {matchingMusic.slice(0, 60).map((t) => (
+                  <div key={t.id} className="flex items-center rounded-xl border border-border/50">
+                    <button
+                      type="button"
+                      aria-pressed={musicId === t.id}
+                      onClick={() => {
+                        setMusicId(t.id);
+                        setMusicStart(0);
+                        setPreviewTrack(null);
+                        setMusicOpen(false);
+                      }}
+                      className={cn(
+                        "flex min-h-16 w-full items-center gap-3 rounded-xl px-3 py-2 text-left",
+                        musicId === t.id ? "bg-primary/15" : "hover:bg-surface-2",
+                      )}
+                    >
+                      <Music2 className="h-5 w-5 shrink-0 text-primary" />
+                      <span className="min-w-0 flex-1">
+                        <strong className="block truncate text-sm">{t.title}</strong>
+                        <span className="block truncate text-xs text-muted-foreground">
+                          {t.artist} · {t.mood}
+                        </span>
                       </span>
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {Math.floor(t.duration / 60)}:{String(t.duration % 60).padStart(2, "0")}
-                    </span>
-                  </button>
+                      <span className="text-xs text-muted-foreground">
+                        {Math.floor(t.duration / 60)}:{String(t.duration % 60).padStart(2, "0")}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={`Preview ${t.title}`}
+                      onClick={() => setPreviewTrack(previewTrack === t.id ? null : t.id)}
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-primary"
+                    >
+                      <Play className="h-4 w-4" />
+                    </button>
+                  </div>
                 ))}
                 {!matchingMusic.length && (
                   <p className="p-3 text-sm text-muted-foreground">
@@ -426,53 +617,56 @@ function CreateScreen() {
             </section>
           )}
 
-          <div className="pt-6 pb-8">
-            {audience === "My Group" && (
-              <>
-                {search.group && (
-                  <p className="mb-2 rounded-xl border border-primary/20 bg-primary/5 px-3 py-2 text-xs text-muted-foreground">
-                    You opened the composer from a group. This post will stay scoped to that group unless you choose Public.
-                  </p>
-                )}
-                <select
-                aria-label="Choose group"
-                value={mentorGroupId ?? ""}
-                onChange={(e) => setSelectedGroup(e.target.value)}
-                className="input-nuru mb-3"
-              >
-                {myGroups.map((g) => (
-                  <option key={g.id} value={g.id}>
-                    {g.name}
-                  </option>
-                ))}
-              </select>
-              </>
-            )}
-            <h2 className="mb-2 font-display text-[15px] font-semibold">Add to</h2>
-            <div className="space-y-2">
-              {AUDIENCES.map((a) => (
-                <button
-                  key={a}
-                  type="button"
-                  onClick={() => setAudience(a)}
-                  className={cn(
-                    "flex w-full items-center justify-between rounded-xl border px-4 py-3 text-sm font-medium transition-colors",
-                    audience === a
-                      ? "border-primary/60 bg-primary/12 text-foreground"
-                      : "border-border bg-surface-2/60 text-secondary-foreground",
+          {mode === "post" && (
+            <div className="pt-6 pb-8">
+              {audience === "My Group" && (
+                <>
+                  {search.group && (
+                    <p className="mb-2 rounded-xl border border-primary/20 bg-primary/5 px-3 py-2 text-xs text-muted-foreground">
+                      You opened the composer from a group. This post will stay scoped to that group
+                      unless you choose Public.
+                    </p>
                   )}
-                >
-                  {a}
-                  <span
+                  <select
+                    aria-label="Choose group"
+                    value={mentorGroupId ?? ""}
+                    onChange={(e) => setSelectedGroup(e.target.value)}
+                    className="input-nuru mb-3"
+                  >
+                    {myGroups.map((g) => (
+                      <option key={g.id} value={g.id}>
+                        {g.name}
+                      </option>
+                    ))}
+                  </select>
+                </>
+              )}
+              <h2 className="mb-2 font-display text-[15px] font-semibold">Add to</h2>
+              <div className="space-y-2">
+                {AUDIENCES.map((a) => (
+                  <button
+                    key={a}
+                    type="button"
+                    onClick={() => setAudience(a)}
                     className={cn(
-                      "h-4 w-4 rounded-full border",
-                      audience === a ? "border-leaf bg-leaf" : "border-border-strong",
+                      "flex w-full items-center justify-between rounded-xl border px-4 py-3 text-sm font-medium transition-colors",
+                      audience === a
+                        ? "border-primary/60 bg-primary/12 text-foreground"
+                        : "border-border bg-surface-2/60 text-secondary-foreground",
                     )}
-                  />
-                </button>
-              ))}
+                  >
+                    {a}
+                    <span
+                      className={cn(
+                        "h-4 w-4 rounded-full border",
+                        audience === a ? "border-leaf bg-leaf" : "border-border-strong",
+                      )}
+                    />
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
     </AppShell>

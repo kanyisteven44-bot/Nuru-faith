@@ -16,13 +16,14 @@ export function PostMedia({
   soundtrack?: boolean;
   onPlayback?: (video: HTMLVideoElement, playing: boolean) => void;
 }) {
-  const path = url.startsWith("post:") ? url.slice(5) : null;
+  const bucket = url.startsWith("reel:") ? "reel-media" : "post-media";
+  const path = /^(post|reel):/.test(url) ? url.slice(5) : null;
   const media = useQuery({
-    queryKey: ["post-media", path],
+    queryKey: ["post-media", bucket, path],
     enabled: !!path,
     queryFn: async () => {
       const { data, error } = await supabase.storage
-        .from("post-media")
+        .from(bucket)
         .createSignedUrl(path!, 3600);
       if (error || !data) throw new Error("Media unavailable");
       return data.signedUrl;

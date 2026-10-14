@@ -15,6 +15,8 @@ import { ReelInteractiveActions } from "./ReelInteractiveActions";
 import { Sheet } from "@/components/nuru/Sheet";
 import { ReelFaithActions } from "./ReelFaithActions";
 import { ReelCaption } from "./ReelCaption";
+import { supabase } from "@/integrations/supabase/client";
+import { POST_MUSIC_BY_ID } from "@/lib/postMusic";
 import { ReelProgress } from "./ReelProgress";
 
 export type ReelPaneProps = {
@@ -57,6 +59,7 @@ export function ReelPane(props: ReelPaneProps) {
   const { reel, index, active, near, muted, autoplayAllowed, commentsOpen, onActive, onView } =
     props;
   const paneRef = useRef<HTMLElement | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const tapTimer = useRef<number | null>(null);
   const viewLogged = useRef(false);
@@ -74,6 +77,36 @@ export function ReelPane(props: ReelPaneProps) {
   const [toolsOpen, setToolsOpen] = useState(false);
 
   const commentsVisible = commentsOpen || externalCommentsOpen || toolsOpen;
+  const reelPath = reel.video_url?.startsWith("reel:") ? reel.video_url.slice(5) : null;
+  const reelMedia = useQuery({
+    queryKey: ["reel-media", reelPath, playerAttempt],
+    enabled: !!reelPath && near,
+    queryFn: async () => {
+      const { data, error } = await supabase.storage
+        .from("reel-media")
+        .createSignedUrl(reelPath!, 3600);
+      if (error || !data) throw new Error("Couldn't load this reel. Tap Retry.");
+      return data.signedUrl;
+    },
+    staleTime: 50 * 60 * 1000,
+  });
+  const videoSource = reelPath ? reelMedia.data : reel.video_url;
+  useEffect(() => {
+    if (reelMedia.isError) setPlaybackError("Couldn’t load this reel. Tap Retry.");
+  }, [reelMedia.isError]);
+  const soundtrack = reel.music_track_id ? POST_MUSIC_BY_ID.get(reel.music_track_id) : null;
+  function syncSoundtrack(video: HTMLVideoElement, play: boolean) {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (audio.readyState >= 1)
+      audio.currentTime = Math.min(
+        (reel.music_start_seconds ?? 0) + video.currentTime,
+        Math.max(0, audio.duration - 0.05),
+      );
+    if (play)
+      void audio.play().catch(() => setPlaybackError("Tap the reel to start its soundtrack."));
+    else audio.pause();
+  }
   const hasVideo = !!reel.video_url;
   const isYouTubeEmbed = reel.source_type === "youtube" && !!reel.external_id;
   const youtubeDetails = useQuery({
@@ -125,19 +158,26 @@ export function ReelPane(props: ReelPaneProps) {
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
-    v.muted = muted;
+    v.muted = muted || !!soundtrack;
+    if (audioRef.current) audioRef.current.muted = muted;
     if (shouldPlay) {
       void v
         .play()
         .catch(() => setPlaybackError("Playback could not start. Tap Retry to try again."));
     } else {
       v.pause();
+      audioRef.current?.pause();
       if (!active) {
         v.currentTime = 0;
         setPaused(false);
       }
     }
-  }, [active, shouldPlay, muted, shouldLoad, playerAttempt]);
+  }, [active, shouldPlay, muted, shouldLoad, playerAttempt, videoSource, soundtrack]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    return () => audio?.pause();
+  }, []);
 
   /* --- a view only counts after ~2 seconds of being active --- */
   useEffect(() => {
@@ -234,25 +274,52 @@ export function ReelPane(props: ReelPaneProps) {
         }}
         onPointerUp={handlePointerUp}
       >
+        {soundtrack && shouldLoad && (
+          <audio
+            key={`${reel.id}:${playerAttempt}`}
+            ref={audioRef}
+            src={soundtrack.url}
+            muted={muted}
+            preload={active ? "metadata" : "none"}
+            onLoadedMetadata={() => {
+              if (videoRef.current) syncSoundtrack(videoRef.current, !videoRef.current.paused);
+            }}
+            onError={() =>
+              setPlaybackError("This soundtrack could not load. Check your connection and retry.")
+            }
+          />
+        )}
         {hasVideo && shouldLoad ? (
           <video
             key={`${reel.id}:${playerAttempt}`}
             ref={videoRef}
-            src={reel.video_url ?? undefined}
+            src={videoSource ?? undefined}
             poster={resolveMedia(reel.poster_url)}
             onPlaying={() => {
               setPlaying(true);
               setPlaybackError("");
+              if (videoRef.current) syncSoundtrack(videoRef.current, true);
             }}
-            onPause={() => setPlaying(false)}
-            onWaiting={() => setPlaying(false)}
+            onPause={() => {
+              setPlaying(false);
+              audioRef.current?.pause();
+            }}
+            onSeeked={(event) => syncSoundtrack(event.currentTarget, !event.currentTarget.paused)}
+            onWaiting={() => {
+              setPlaying(false);
+              audioRef.current?.pause();
+            }}
             onError={() => {
+              audioRef.current?.pause();
               setPlaying(false);
               setPlaybackError("This video could not load. Check your connection and retry.");
             }}
             playsInline
-            onEnded={props.onEnded}
-            muted={muted}
+            onEnded={() => {
+              audioRef.current?.pause();
+              props.onEnded();
+            }}
+            muted={muted || !!soundtrack}
             preload={active ? "auto" : "metadata"}
             className="h-full w-full object-cover"
           />

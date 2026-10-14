@@ -33,7 +33,7 @@ export const REPORT_REASONS = [
 export type ReelFeed = "For You" | "Following" | "My Church";
 
 const REEL_SELECT =
-  "id, author_id, creator_name, creator_handle, creator_avatar_url, caption, hashtags, video_url, poster_url, audio_title, scripture_ref, topic, is_bible_teaching, church_id, series_id, like_count, comment_count, view_count, created_at, source_type, rights_status, external_id, external_url, title, churches(name, slug, verified)";
+  "id, author_id, creator_name, creator_handle, creator_avatar_url, caption, music_track_id, music_start_seconds, hashtags, video_url, poster_url, audio_title, scripture_ref, topic, is_bible_teaching, church_id, series_id, like_count, comment_count, view_count, created_at, source_type, rights_status, external_id, external_url, title, churches(name, slug, verified)";
 
 export type ReelSourceType =
   | "nuru_original"
@@ -51,6 +51,8 @@ export type Reel = {
   creator_handle: string;
   creator_avatar_url: string | null;
   caption: string | null;
+  music_track_id?: string | null;
+  music_start_seconds?: number;
   hashtags: string[] | null;
   video_url: string | null;
   poster_url: string | null;
@@ -370,6 +372,8 @@ export async function createReel(input: {
   churchId: string | null;
   groupId: string | null;
   /** Only set for imported (non-Nuru) Reels; uploads keep the column defaults. */
+  musicTrackId?: string | null;
+  musicStartSeconds?: number;
   sourceType?: ReelSourceType;
   rightsStatus?: string;
   externalId?: string | null;
@@ -381,6 +385,8 @@ export async function createReel(input: {
     creator_handle: input.creatorHandle,
     creator_avatar_url: input.creatorAvatarUrl,
     caption: input.caption,
+    music_track_id: input.musicTrackId ?? null,
+    music_start_seconds: input.musicStartSeconds ?? 0,
     video_url: input.videoUrl,
     poster_url: input.posterUrl,
     scripture_ref: input.scriptureRef,

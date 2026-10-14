@@ -2477,6 +2477,8 @@ export type Database = {
       }
       reels: {
         Row: {
+          music_track_id: string | null
+          music_start_seconds: number
           audio_title: string | null
           author_id: string | null
           caption: string | null
@@ -2511,6 +2513,8 @@ export type Database = {
           view_count: number
         }
         Insert: {
+          music_track_id?: string | null
+          music_start_seconds?: number
           audio_title?: string | null
           author_id?: string | null
           caption?: string | null
@@ -2545,6 +2549,8 @@ export type Database = {
           view_count?: number
         }
         Update: {
+          music_track_id?: string | null
+          music_start_seconds?: number
           audio_title?: string | null
           author_id?: string | null
           caption?: string | null

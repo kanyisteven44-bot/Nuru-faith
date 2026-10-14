@@ -12,6 +12,7 @@ import { PostMedia, PostPresentation } from "@/components/nuru/PostMedia";
 import { CoverImage } from "@/components/nuru/CoverImage";
 import { useRef, useState } from "react";
 import { profilePhotoExtension } from "@/lib/profilePhoto";
+import { z } from "zod";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -60,6 +61,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { ProfileMusicFeature, ProfileMusicSection } from "@/components/nuru/ProfileMusicSection";
 
 export const Route = createFileRoute("/_authenticated/profile")({
+  validateSearch: z.object({ tab: z.enum(["posts", "reels", "music", "saved"]).optional() }),
   head: () => ({
     meta: [
       { title: "Profile — Nuru Faith" },
@@ -92,7 +94,8 @@ function ProfileScreen() {
   const [uploading, setUploading] = useState(false);
   const photoInput = useRef<HTMLInputElement>(null);
   const contentTabsRef = useRef<HTMLDivElement>(null);
-  const [tab, setTab] = useState<GridTab>("Posts");
+  const requestedTab = Route.useSearch().tab;
+  const [tab, setTab] = useState<GridTab>(requestedTab === "reels" ? "Reels" : requestedTab === "music" ? "Music" : requestedTab === "saved" ? "Saved" : "Posts");
   const [selectedPost, setSelectedPost] = useState<string | null>(null);
   const [postToDelete, setPostToDelete] = useState<{ id: string; title: string } | null>(null);
   const [deletingPost, setDeletingPost] = useState(false);
@@ -153,9 +156,9 @@ function ProfileScreen() {
     return {
       id: String(r["id"]),
       title: String(r["caption"] ?? r["body"] ?? ""),
-      cover: (r["poster_url"] ?? r["media_url"] ?? null) as string | null,
+      cover: (r["poster_url"] ?? r["video_url"] ?? r["media_url"] ?? null) as string | null,
       likes: Number(r["like_count"] ?? 0),
-      kind: String(r["kind"] ?? "image"),
+      kind: r["video_url"] ? "video" : String(r["kind"] ?? "image"),
       musicId: r["music_track_id"] as string | undefined,
       musicStart: Number(r["music_start_seconds"] ?? 0),
     };
@@ -372,9 +375,9 @@ function ProfileScreen() {
           </dl>
 
           <div className="mt-3.5 grid grid-cols-2 gap-2.5">
-            <Link to="/create" search={{ from: "profile" }}
+            <Link to="/create" search={{ from: "profile", mode: tab === "Reels" ? "reel" : "post" }}
               className="nuru-raise inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-3 text-[13px] font-bold text-primary-foreground shadow-[0_5px_18px_rgba(37,125,245,0.14)] sm:text-sm">
-              <Plus className="h-4 w-4" /> Create post
+              <Plus className="h-4 w-4" /> {tab === "Reels" ? "Create reel" : "Create post"}
             </Link>
             <Link to="/settings" search={{ panel: "profile" }}
               className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border-strong bg-surface-2 px-3 text-[13px] font-bold sm:text-sm">
@@ -490,13 +493,13 @@ function ProfileScreen() {
               <EmptyState
                 title={`No ${tab.toLowerCase()} yet`}
                 action={
-                  tab === "Posts" ? (
+                  tab === "Posts" || tab === "Reels" ? (
                     <Link
-                      to="/create" search={{ from: "profile" }}
+                      to="/create" search={{ from: "profile", mode: tab === "Reels" ? "reel" : "post" }}
                       className="inline-flex min-h-9 items-center gap-1 rounded-full bg-primary/15 px-3 text-xs font-semibold text-primary"
                     >
                       <Plus className="h-3.5 w-3.5" />
-                      Create post
+                      {tab === "Reels" ? "Create your first reel" : "Create post"}
                     </Link>
                   ) : undefined
                 }

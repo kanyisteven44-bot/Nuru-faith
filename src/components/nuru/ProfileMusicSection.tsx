@@ -204,6 +204,7 @@ export function ProfileMusicSection({ memberId, editable }: { memberId: string; 
             <input aria-label="Search songs to add to profile" value={search} onChange={(event) => setSearch(event.target.value)}
               placeholder="Search gospel songs or artists" className="min-w-0 flex-1 bg-transparent text-sm outline-none" />
           </label>
+          {catalog.isFetching && !catalog.isLoading && <p role="status" className="text-xs text-muted-foreground">Finding songs…</p>}
           {catalog.isLoading && <CardSkeleton count={2} height="h-16" />}
           {catalog.isError && (
             <button type="button" onClick={() => void catalog.refetch()} className="min-h-11 text-sm font-semibold text-primary">
@@ -225,10 +226,10 @@ export function ProfileMusicSection({ memberId, editable }: { memberId: string; 
                     <p className="truncate text-xs font-bold">{item.title}</p>
                     <p className="truncate text-[11px] text-muted-foreground">{item.creator_name || "Gospel artist"}</p>
                   </div>
-                  <button type="button" disabled={alreadyAdded || add.isPending} onClick={() => add.mutate(item.id)}
+                  <button type="button" disabled={alreadyAdded || add.isPending || catalog.isFetching} onClick={() => add.mutate(item.id)}
                     className="inline-flex min-h-10 items-center gap-1 rounded-full bg-primary/15 px-3 text-xs font-bold text-primary disabled:opacity-60">
-                    {alreadyAdded ? <Check className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
-                    {alreadyAdded ? "Added" : "Add"}
+                    {add.isPending && add.variables === item.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : alreadyAdded ? <Check className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
+                    {add.isPending && add.variables === item.id ? "Adding…" : alreadyAdded ? "Added" : "Add"}
                   </button>
                 </div>
               );

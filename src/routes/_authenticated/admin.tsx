@@ -30,12 +30,12 @@ export const Route = createFileRoute("/_authenticated/admin")({
   validateSearch: adminSearchSchema,
   head: () => ({
     meta: [
-      { title: "Nuru Faith Admin" },
+      { title: "Aegis Console | Secure Access" },
       { name: "robots", content: "noindex, nofollow" },
       {
         name: "description",
         content:
-          "Nuru Faith administration is protected by a verified authenticator.",
+          "Aegis Console requires verified, authorized access.",
       },
     ],
   }),
@@ -79,7 +79,7 @@ function AdminRoute() {
           <ShieldCheck className="h-7 w-7 shrink-0 text-leaf" aria-hidden="true" />
           <div>
             <h1 className="font-display text-lg font-semibold">
-              Secure Nuru administration
+              Aegis Console
             </h1>
             <p className="text-xs leading-relaxed text-muted-foreground">
               Your account needs a verified authenticator before the admin dashboard opens.
@@ -92,7 +92,7 @@ function AdminRoute() {
           </p>
         )}
         {access === "challenge" && (
-          <MfaChallenge title="Verify your admin session" onSuccess={() => void checkMfa()} />
+          <MfaChallenge title="Verify your secure session" onSuccess={() => void checkMfa()} />
         )}
         {access === "setup" && (
           <MfaSecurityPanel required onReady={() => void checkMfa()} />

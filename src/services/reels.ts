@@ -130,6 +130,9 @@ export async function fetchReelPage(params: {
     .select(REEL_SELECT)
     .eq("status", "published")
     .order("created_at", { ascending: false })
+    // Imported batches often share a timestamp. A unique tie breaker keeps
+    // adjacent offset windows disjoint when the database changes row order.
+    .order("id", { ascending: false })
     .range(candidateFrom, candidateTo);
 
   if (feed === "Following") {

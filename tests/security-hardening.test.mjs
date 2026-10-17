@@ -65,28 +65,29 @@ test("new and reset passwords use the hardened validator", () => {
 
 test("the metadata worker authorizes staff before loading the privileged client", () => {
   const worker = read("src/lib/musicCatalog.functions.ts");
-  const roleCheck = worker.indexOf("if (roleError || !roles?.length)");
+  const roleCheck = worker.indexOf("if (roles.error || !roles.data?.length)");
   const privilegedClient = worker.indexOf('await import("@/integrations/supabase/client.server")');
   assert.ok(roleCheck > 0 && privilegedClient > roleCheck);
   assert.match(worker, /middleware\(\[requireSupabaseAuth\]\)/);
-  assert.match(worker, /if \(!trust\?\.is_verified \|\| !trustedChannel\(trust\.trust_level\)\)/);
+  const checkpointSql = read(
+    "supabase/migrations/20261017085944_persistent_music_source_checkpoints.sql",
+  );
+  assert.match(checkpointSql, /t\.is_verified and t\.trust_level in/);
   assert.match(worker, /ignoreDuplicates: true/);
   assert.doesNotMatch(worker, /\.from\("media_sources"\)[\s\S]{0,80}\.(insert|update|upsert)/);
 });
 
 test("import cursors cannot be supplied by clients and progress is not publicly writable", () => {
   const worker = read("src/lib/musicCatalog.functions.ts");
-  const input = worker.slice(worker.indexOf(".inputValidator("), worker.indexOf(".handler("));
+  const endpoint = worker.slice(worker.indexOf("export const importReviewedCatalogPage"));
+  const input = endpoint.slice(endpoint.indexOf(".validator("), endpoint.indexOf(".handler("));
   assert.doesNotMatch(input, /\b(?:channelId|pageToken|is_approved|title|external_id)\s*:/);
-  // An administrator may select reviewed sources, but cannot supply a cursor or bypass review.
   assert.match(input, /channelIds:[\s\S]*\.max\(200\)/);
-  const sourceQuery = worker.slice(
-    worker.indexOf("function sourceQuery()"),
-    worker.indexOf("let query = sourceQuery()"),
+  const sourceQuery = read(
+    "supabase/migrations/20261017085944_persistent_music_source_checkpoints.sql",
   );
-  assert.match(sourceQuery, /\.eq\("is_approved", true\)/);
-  assert.match(sourceQuery, /\.eq\("is_verified", true\)/);
-  assert.match(sourceQuery, /\.in\("youtube_channel_id", data.channelIds\)/);
+  assert.match(sourceQuery, /s\.is_approved and s\.is_verified/);
+  assert.match(sourceQuery, /s\.youtube_channel_id=any\(p_channel_ids\)/);
   const migration = read("supabase/migrations/20261005055626_server_media_import_progress.sql");
   assert.match(migration, /enable row level security/);
   assert.match(migration, /revoke all on public.media_catalog_imports from anon, authenticated/);

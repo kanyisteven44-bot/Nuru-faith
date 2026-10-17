@@ -262,7 +262,7 @@ export function AdminMediaWorkspace() {
 
       let totalAdded = 0;
       let pages = 0;
-      let restart = true;
+      let restart = false;
       let hasMore = false;
 
       do {
@@ -273,6 +273,7 @@ export function AdminMediaWorkspace() {
           data: {
             kind: quickKind,
             restart,
+            refreshTotal: pages === 0,
             channelIds: [creator.channelId],
           },
         });

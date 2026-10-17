@@ -3453,6 +3453,30 @@ export type Database = {
       }
     }
     Functions: {
+      next_media_catalog_source: {
+        Args: { p_kind: string; p_channel_ids?: string[] };
+        Returns: Json;
+      };
+      checkpoint_media_catalog_source: {
+        Args: {
+          p_kind: string;
+          p_channel_id: string;
+          p_lease: string;
+          p_expected_token: string | null;
+          p_next_token: string | null;
+          p_playlist_id: string;
+          p_stats: Json;
+          p_duration_ms: number;
+        };
+        Returns: undefined;
+      };
+      reset_media_catalog_sources: {
+        Args: { p_kind: string; p_channel_ids: string[]; p_lease: string };
+        Returns: undefined;
+      };
+      media_catalog_scan_summary: { Args: { p_kind: string }; Returns: Json };
+
+
       account_deletion_storage_inventory: {
         Args: { account_id: string }
         Returns: {

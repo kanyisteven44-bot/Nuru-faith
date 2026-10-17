@@ -3,7 +3,6 @@ import {
   CalendarDays,
   Church,
   Clapperboard,
-  Compass,
   GraduationCap,
   Home,
   MessageCircle,
@@ -61,7 +60,6 @@ export const SIDEBAR_GROUPS: { heading: string; items: NavLink[] }[] = [
     items: [
       { to: "/reels", label: "Reels", icon: Clapperboard },
       { to: "/music", label: "Music", icon: Music2 },
-      { to: "/explore", label: "Explore", icon: Compass },
     ],
   },
 ];

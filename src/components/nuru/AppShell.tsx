@@ -8,6 +8,7 @@ import { fetchProfile } from "@/services/content";
 import { generatedAvatar } from "@/lib/avatar";
 import { recordNuruActivity } from "@/services/pilot";
 import { NuruArch, NuruLockup, NuruMark } from "./Logo";
+import { isNavigationActive } from "@/lib/navigation";
 import { MOBILE_NAV, SIDEBAR_GROUPS } from "./nav";
 
 /**
@@ -40,8 +41,15 @@ export function AppShell({
   if (flush) {
     return (
       <div className="relative flex h-dvh overflow-hidden bg-background lg:gap-6 lg:p-6">
+        <a href="#main-content" className="nuru-skip-link">
+          Skip to content
+        </a>
         {!hideNav && <Sidebar pathname={pathname} />}
-        <main className="relative z-10 h-full min-w-0 flex-1 overflow-hidden lg:rounded-3xl">
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="relative z-10 h-full min-w-0 flex-1 overflow-hidden lg:rounded-3xl"
+        >
           {children}
         </main>
         {!hideNav && <MobileNav pathname={pathname} />}
@@ -52,6 +60,9 @@ export function AppShell({
   return (
     <div className="relative min-h-dvh bg-background">
       <div className="mx-auto flex w-full max-w-[1480px] gap-6 lg:p-6">
+        <a href="#main-content" className="nuru-skip-link">
+          Skip to content
+        </a>
         {!hideNav && <Sidebar pathname={pathname} />}
         <div
           className={cn(
@@ -60,7 +71,11 @@ export function AppShell({
             wide === "xl" && "max-w-none",
           )}
         >
-          <main className={cn("relative z-10 w-full", hideNav ? "" : "pb-28 lg:pb-0")}>
+          <main
+            id="main-content"
+            tabIndex={-1}
+            className={cn("relative z-10 w-full", hideNav ? "" : "pb-28 lg:pb-0")}
+          >
             {children}
           </main>
         </div>
@@ -80,7 +95,7 @@ export function Sidebar({ pathname }: { pathname: string }) {
   });
 
   return (
-    <aside className="hidden w-[232px] shrink-0 flex-col rounded-3xl border border-border bg-surface p-4 lg:flex">
+    <aside className="hidden w-[232px] shrink-0 self-start lg:sticky lg:top-6 lg:max-h-[calc(100dvh-3rem)] lg:overflow-y-auto flex-col rounded-3xl border border-border bg-surface p-4 lg:flex">
       <Link to="/home" className="mb-6 flex items-center gap-2.5 px-2">
         <NuruMark className="h-9 w-9" />
         <span className="font-sans text-[19px] font-bold tracking-tight">Nuru Faith</span>
@@ -90,17 +105,19 @@ export function Sidebar({ pathname }: { pathname: string }) {
         {SIDEBAR_GROUPS.map((group) => (
           <div key={group.heading}>
             <p className="px-3 pb-1.5 text-[12px] font-semibold text-ink-3">{group.heading}</p>
-            <ul className="space-y-2">
+            <ul className="space-y-1">
               {group.items.map((item) => {
-                const active = pathname.startsWith(item.to);
+                const active = isNavigationActive(pathname, item.to);
                 return (
                   <li key={item.to}>
                     <Link
                       to={item.to}
                       aria-current={active ? "page" : undefined}
                       className={cn(
-                        "nuru-soft-control flex min-h-11 items-center gap-3 rounded-2xl px-3 text-[14px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                        active ? "nuru-soft-primary" : "text-ink-2 hover:text-foreground",
+                        "nuru-nav-link flex min-h-11 items-center gap-3 rounded-2xl px-3 text-[14px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                        active
+                          ? "bg-primary/10 text-primary"
+                          : "text-ink-2 hover:bg-surface-2 hover:text-foreground",
                       )}
                     >
                       <item.icon className="h-[18px] w-[18px] shrink-0" strokeWidth={1.9} />
@@ -146,7 +163,7 @@ export function MobileNav({ pathname }: { pathname: string }) {
     >
       <ul className="nuru-nav-dock mx-auto grid max-w-xl grid-cols-5 gap-1 rounded-[26px] border border-border-strong p-1.5 backdrop-blur-xl">
         {MOBILE_NAV.map((item) => (
-          <NavItem key={item.to} {...item} active={pathname.startsWith(item.to)} />
+          <NavItem key={item.to} {...item} active={isNavigationActive(pathname, item.to)} />
         ))}
       </ul>
     </nav>
@@ -170,9 +187,11 @@ function NavItem({
         to={to}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "nuru-soft-control flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-[19px] px-0.5 text-[10px] font-semibold",
+          "nuru-nav-link flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-[19px] px-0.5 text-[10px] font-semibold",
           "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-          active ? "nuru-soft-primary" : "text-ink-2 hover:text-foreground",
+          active
+            ? "bg-primary/10 text-primary"
+            : "text-ink-2 hover:bg-surface-2 hover:text-foreground",
         )}
       >
         <Icon className="h-5 w-5" strokeWidth={active ? 2.4 : 1.8} />
@@ -203,7 +222,7 @@ export function BoardHeader({
           type="button"
           onClick={() => void navigate({ to: ".." })}
           aria-label="Go back"
-          className="absolute left-2 flex h-10 w-10 items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none lg:left-0"
+          className="absolute left-2 flex h-11 w-11 items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none lg:left-0"
         >
           <ArrowLeft className="h-5 w-5" strokeWidth={2} />
         </button>
@@ -301,7 +320,7 @@ export function ScreenHeader({
           type="button"
           onClick={() => void navigate({ to: ".." })}
           aria-label="Go back"
-          className="-ml-1 shrink-0 rounded-full p-1.5 text-secondary-foreground transition-colors hover:text-foreground"
+          className="-ml-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-secondary-foreground transition-colors hover:text-foreground"
         >
           <ArrowLeft className="h-5 w-5" />
         </button>

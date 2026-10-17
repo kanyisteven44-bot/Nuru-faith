@@ -68,9 +68,13 @@ export function bibleSpeechLocale(language: string): string | null {
   const normalized = normalizeLanguage(language);
   if (!normalized) return null;
   if (LANGUAGE_CODES[normalized]) return LANGUAGE_CODES[normalized];
-  // Catalogs sometimes provide a BCP-47 language tag rather than a label.
-  if (/^[a-z]{2,3}(?:-[a-z]{2,4}){1,2}$/i.test(language))
-    return language.replaceAll("_", "-");
+  // Catalogs may use tags, including underscore-separated script/region tags.
+  // Validate with Intl rather than accepting malformed regions by regex alone.
+  const tag = language.trim().replaceAll("_", "-");
+  if (/^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/i.test(tag)) {
+    try { return Intl.getCanonicalLocales(tag)[0] ?? null; }
+    catch { return null; }
+  }
   // eBible also includes "Arabic, Standard", "Swahili: Kenya", and
   // regional/dialect labels. Prefer explicit codes before checking prefixes.
   const candidate = normalized.split(/\s+(?:of|in)\s+/)[0] ?? normalized;

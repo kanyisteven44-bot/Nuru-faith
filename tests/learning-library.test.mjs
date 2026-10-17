@@ -21,6 +21,8 @@ function load(path) {
       if (name === "@/lib/bible")
         return { OLD_TESTAMENT: books.slice(0, 39), NEW_TESTAMENT: books.slice(39) };
       if (name === "./chapterStudies") return load("src/data/chapterStudies.ts");
+      if (name === "./extendedFaithCourses.json")
+        return { default: JSON.parse(read("src/data/extendedFaithCourses.json")) };
       throw new Error(`Unexpected catalogue dependency: ${name}`);
     },
   });

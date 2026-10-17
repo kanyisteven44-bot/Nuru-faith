@@ -52,6 +52,7 @@ function FaithCoursesScreen() {
   const [provider, setProvider] = useState("all");
   const [category, setCategory] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(24);
+  const [format, setFormat] = useState("all");
   const hero = useRotatingMedia(NURU_PHOTO_POOLS.courses, "faith-courses-hero");
 
   const filtered = useMemo(() => {
@@ -60,12 +61,15 @@ function FaithCoursesScreen() {
       const matchesCategory = !category || item.category === category;
       const matchesQuery =
         !q || `${item.title} ${item.description} ${item.category}`.toLowerCase().includes(q);
-      return matchesCategory && matchesQuery;
+      const matchesFormat =
+        format === "all" || (format === "extended" ? item.extended : item.guidedStudy);
+      return matchesCategory && matchesQuery && matchesFormat;
     });
-  }, [query, category]);
+  }, [query, category, format]);
 
   const externalFiltered = externalCourses.filter(
     (item) =>
+      format === "all" &&
       (!category || item.category === category) &&
       (!query.trim() ||
         `${item.title} ${item.provider} ${item.category}`
@@ -80,8 +84,8 @@ function FaithCoursesScreen() {
       <ScreenHeader title="Faith Courses" subtitle="Learn deeply. Live faithfully." />
       <LearningLinks active="Courses" />
 
-      <div className="space-y-6 px-4 pb-6">
-        <section className="nuru-card relative h-52 overflow-hidden lg:h-80">
+      <div className="mx-auto max-w-6xl space-y-7 px-4 pb-10 sm:px-6">
+        <section className="nuru-card relative min-h-72 overflow-hidden lg:min-h-96">
           <CoverImage
             src={hero}
             loading="eager"
@@ -89,20 +93,113 @@ function FaithCoursesScreen() {
             className="absolute inset-0 h-full w-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/65 to-black/20" />
-          <div className="relative flex h-full max-w-[78%] flex-col justify-end p-4">
+          <div className="relative flex min-h-72 max-w-xl flex-col justify-center p-6 sm:p-10 lg:min-h-96">
             <span className="mb-2 inline-flex w-fit items-center gap-1 rounded-full border border-leaf/25 bg-leaf/10 px-2.5 py-1 text-[10px] font-bold tracking-wide text-leaf uppercase">
               <GraduationCap className="h-3.5 w-3.5" />
               Nuru Learning
             </span>
-            <h1 className="font-display text-[27px] leading-tight font-bold text-white">
-              Build a faith you understand.
+            <h1 className="font-display text-4xl leading-tight font-bold text-white sm:text-5xl">
+              Rooted in Scripture.
+              <br />
+              Ready for everyday life.
             </h1>
             <p className="mt-2 text-[12px] leading-relaxed text-white/75">
               {FAITH_COURSES.length} Nuru courses and self-guided Scripture studies, plus{" "}
               {externalCourses.length} free BibleProject classes.
             </p>
+            <a
+              href="#course-catalogue"
+              className="mt-5 inline-flex min-h-11 w-fit items-center gap-3 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
+            >
+              Find your next course <ChevronRight className="h-4 w-4" />
+            </a>
           </div>
         </section>
+
+        {!query && !category && nativeVisible && format === "all" && (
+          <section aria-labelledby="extended-course-heading">
+            <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-leaf">
+                  Go deeper
+                </p>
+                <h2 id="extended-course-heading" className="mt-1 font-display text-2xl font-bold">
+                  Faith for the life you live
+                </h2>
+              </div>
+              <span className="text-xs text-muted-foreground">
+                12 new lessons · Practical exercises
+              </span>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {FAITH_COURSES.filter((item) => item.extended).map((item) => (
+                <Link
+                  key={item.slug}
+                  to="/faith-courses/$slug"
+                  params={{ slug: item.slug }}
+                  className="nuru-card group overflow-hidden transition-colors hover:border-primary/50 focus-visible:outline-2 focus-visible:outline-ring"
+                >
+                  <div className="relative h-40 overflow-hidden">
+                    <CoverImage
+                      src={resolveMedia(item.cover)}
+                      alt=""
+                      loading="lazy"
+                      className="h-full w-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/75 to-transparent" />
+                    <span className="absolute bottom-4 left-4 rounded-full border border-white/25 bg-black/40 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
+                      Extended course · {item.level}
+                    </span>
+                  </div>
+                  <div className="p-5">
+                    <h3 className="font-display text-xl font-bold">{item.title}</h3>
+                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                      {item.description}
+                    </p>
+                    <div className="mt-5 flex items-center justify-between border-t border-border pt-4 text-xs text-muted-foreground">
+                      <span>
+                        {item.lessons.length} lessons · {item.estimatedMinutes} min guided study
+                      </span>
+                      <ChevronRight className="h-5 w-5 text-primary" />
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
+        <div id="course-catalogue" className="scroll-mt-24 space-y-3">
+          <h2 className="font-display text-2xl font-bold">Explore the library</h2>
+          <p className="text-sm text-muted-foreground">
+            Choose a practical course or take your time with a guided Scripture study.
+          </p>
+          <div className="flex flex-wrap gap-2" aria-label="Course format">
+            {[
+              ["all", "Everything"],
+              ["extended", "Extended courses"],
+              ["studies", "Scripture studies"],
+            ].map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={format === value}
+                onClick={() => {
+                  setFormat(value!);
+                  setVisibleCount(24);
+                }}
+                className={cn(
+                  "min-h-11 rounded-xl border px-4 text-sm font-semibold",
+                  format === value
+                    ? "border-primary bg-primary/15 text-primary"
+                    : "border-border text-muted-foreground",
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <div className="relative">
           <Search className="pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -121,12 +218,13 @@ function FaithCoursesScreen() {
         <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
           <button
             type="button"
+            aria-pressed={category === null}
             onClick={() => {
               setCategory(null);
               setVisibleCount(24);
             }}
             className={cn(
-              "shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-semibold",
+              "min-h-11 shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-semibold",
               category === null
                 ? "border-primary bg-primary text-primary-foreground"
                 : "border-border bg-surface-2 text-secondary-foreground",
@@ -138,12 +236,13 @@ function FaithCoursesScreen() {
             <button
               key={item}
               type="button"
+              aria-pressed={category === item}
               onClick={() => {
                 setCategory(item);
                 setVisibleCount(24);
               }}
               className={cn(
-                "shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-semibold",
+                "min-h-11 shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-semibold",
                 category === item
                   ? "border-primary bg-primary text-primary-foreground"
                   : "border-border bg-surface-2 text-secondary-foreground",
@@ -154,7 +253,7 @@ function FaithCoursesScreen() {
           ))}
         </div>
 
-        {!query && !category && nativeVisible && (
+        {!query && !category && nativeVisible && format === "all" && (
           <section>
             <div className="mb-3 flex items-end justify-between gap-4">
               <div>
@@ -257,9 +356,26 @@ function FaithCoursesScreen() {
         )}
         {(nativeVisible ? filtered.length : 0) + (externalVisible ? externalFiltered.length : 0) ===
           0 && (
-          <p className="py-6 text-center text-sm text-ink-2">
-            No courses match. Try another search or provider.
-          </p>
+          <div className="nuru-card p-8 text-center" role="status">
+            <BookOpen className="mx-auto mb-3 h-8 w-8 text-primary" />
+            <p className="font-display text-lg font-semibold">No courses match these filters</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Try a broader topic, provider or course format.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setQuery("");
+                setCategory(null);
+                setProvider("all");
+                setFormat("all");
+                setVisibleCount(24);
+              }}
+              className="mt-4 min-h-11 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground"
+            >
+              Clear filters
+            </button>
+          </div>
         )}
         <a
           href="https://www.biblicaltraining.org/classes"
@@ -345,8 +461,11 @@ function CourseRow({ course }: { course: FaithCourse }) {
         <span className="block text-[10px] font-bold tracking-wide text-leaf uppercase">
           {course.category} · {course.guidedStudy ? "Guided Scripture study" : course.level}
         </span>
-        <span className="mt-0.5 block truncate font-display text-sm font-semibold">
+        <span className="mt-0.5 block font-display text-base leading-snug font-semibold">
           {course.title}
+        </span>
+        <span className="mt-1 hidden text-xs leading-relaxed text-muted-foreground sm:line-clamp-2">
+          {course.description}
         </span>
         <span className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
           {course.lessons.length} lessons

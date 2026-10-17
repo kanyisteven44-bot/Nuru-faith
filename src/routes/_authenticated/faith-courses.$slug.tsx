@@ -1,5 +1,5 @@
 import { CoverImage } from "@/components/nuru/CoverImage";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -25,6 +25,7 @@ import { SaveOffline } from "@/components/nuru/SaveOffline";
 import { passageText } from "@/lib/offlineReading";
 import { ReadingTools } from "@/components/nuru/ReadingTools";
 import { fetchPassage, DEFAULT_TRANSLATION } from "@/lib/bible";
+import { courseLessonContent, courseLessonText } from "@/lib/courseLesson";
 import { courseProgress } from "@/lib/courseProgress";
 
 export const Route = createFileRoute("/_authenticated/faith-courses/$slug")({
@@ -69,16 +70,7 @@ function FaithCourseDetail() {
     })),
   });
 
-  const teaching = useMemo(() => {
-    if (!course || !lesson) return null;
-    return {
-      context: `${lesson.focus} Begin by reading the whole passage around ${lesson.references.join(
-        " and ",
-      )}, not only the quoted verse. Ask who is speaking, who is listening, what problem is being addressed, and what comes immediately before and after.`,
-      meaning: `${course.description} In this lesson, the goal is not merely to collect information. Look for what the passage reveals about God's character, human motives, the work of Christ, and the kind of response Scripture calls faithful.`,
-      practice: `Turn the lesson into one concrete response this week. Keep it specific enough to practise and small enough to repeat. Christian formation usually happens through faithful patterns over time, not one intense moment.`,
-    };
-  }, [course, lesson]);
+  const teaching = course && lesson ? courseLessonContent(course, lesson) : null;
 
   if (!course || !lesson || !teaching) {
     return (
@@ -96,6 +88,13 @@ function FaithCourseDetail() {
         </div>
       </AppShell>
     );
+  }
+
+  function openLesson(index: number) {
+    setLessonIndex(index);
+    document
+      .getElementById("course-lesson")
+      ?.scrollIntoView({ block: "start", behavior: "instant" });
   }
 
   async function toggleDone(index: number) {
@@ -184,11 +183,7 @@ function FaithCourseDetail() {
                   ...passages.map(
                     (p) => `${p.reference} · ${p.translation}\n\n${passageText(p.verses)}`,
                   ),
-                  `Context\n${part.focus} Begin by reading the whole passage around ${part.references.join(" and ")}, not only the quoted verse. Ask who is speaking, who is listening, what problem is being addressed, and what comes immediately before and after.`,
-                  `What it means\n${course.description} In this lesson, the goal is not merely to collect information. Look for what the passage reveals about God's character, human motives, the work of Christ, and the kind of response Scripture calls faithful.`,
-                  `Real-life examples\n${course.examples.join("\n")}`,
-                  "Put it into practice\nTurn the lesson into one concrete response this week. Keep it specific enough to practise and small enough to repeat. Christian formation usually happens through faithful patterns over time, not one intense moment.",
-                  "Reflect\nWhat does this lesson reveal about God? What does it expose or encourage in your own life? What is one faithful response you can practise before the next lesson?",
+                  courseLessonText(course, part),
                 ].join("\n\n"),
               });
             }
@@ -219,7 +214,7 @@ function FaithCourseDetail() {
                   <button
                     type="button"
                     className="min-h-11 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground"
-                    onClick={() => setLessonIndex(learning.nextLesson!)}
+                    onClick={() => openLesson(learning.nextLesson!)}
                   >
                     Continue learning · Lesson {learning.nextLesson + 1}
                   </button>
@@ -255,7 +250,7 @@ function FaithCourseDetail() {
                   key={item.title}
                   type="button"
                   aria-current={active ? "step" : undefined}
-                  onClick={() => setLessonIndex(index)}
+                  onClick={() => openLesson(index)}
                   className={`nuru-card flex w-full items-center gap-3 px-3 py-3 text-left transition-colors ${
                     active ? "border-primary/70 bg-primary/8" : ""
                   }`}
@@ -284,12 +279,20 @@ function FaithCourseDetail() {
           </div>
         </details>
 
-        <section className="nuru-card overflow-hidden">
+        <section
+          id="course-lesson"
+          className="nuru-card scroll-mt-6 overflow-hidden border-primary/15"
+        >
           <div className="border-b border-border px-4 py-3">
             <p className="text-[10px] font-bold tracking-[0.14em] text-leaf uppercase">
-              Lesson {lessonIndex + 1}
+              Lesson {lessonIndex + 1} of {course.lessons.length}
             </p>
             <h2 className="mt-1 font-display text-2xl font-semibold">{lesson.title}</h2>
+            {course.extended && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                30-minute guided session · Read, reflect & practise
+              </p>
+            )}
             {course.guidedStudy && (
               <p className="mt-2 text-xs text-muted-foreground">
                 Self-guided Scripture study · World English Bible
@@ -297,7 +300,7 @@ function FaithCourseDetail() {
             )}
           </div>
 
-          <div className="p-4 sm:p-7">
+          <div className="mx-auto max-w-3xl p-5 sm:p-10">
             <ReadingTools
               fontSize={fontSize}
               onFontSize={setFontSize}
@@ -309,12 +312,13 @@ function FaithCourseDetail() {
                       ...scripture.map((passage) => passage.data?.text ?? ""),
                       teaching.context,
                       teaching.meaning,
-                      ...course.examples,
+                      ...teaching.examples,
                       teaching.practice,
+                      ...teaching.reflection,
                     ].join("\n\n")
               }
             />
-            <div className="nuru-reader-copy space-y-7" style={{ fontSize }}>
+            <div className="nuru-reader-copy space-y-10" style={{ fontSize }}>
               <div>
                 <div className="mb-2 flex items-center gap-2">
                   <BookOpen className="h-4 w-4 text-leaf" />
@@ -377,7 +381,7 @@ function FaithCourseDetail() {
                   <h3 className="text-sm font-semibold">Real-life examples</h3>
                 </div>
                 <ul className="space-y-2">
-                  {course.examples.map((example) => (
+                  {teaching.examples.map((example) => (
                     <li
                       key={example}
                       className="flex gap-2 text-[13px] leading-relaxed text-secondary-foreground"
@@ -400,10 +404,11 @@ function FaithCourseDetail() {
                 <p className="text-[10px] font-bold tracking-[0.14em] text-muted-foreground uppercase">
                   Reflect
                 </p>
-                <p className="mt-2 text-[13px] leading-relaxed text-secondary-foreground">
-                  What does this lesson reveal about God? What does it expose or encourage in your
-                  own life? What is one faithful response you can practise before the next lesson?
-                </p>
+                <ol className="mt-3 space-y-3 list-decimal pl-5 text-secondary-foreground">
+                  {teaching.reflection.map((question) => (
+                    <li key={question}>{question}</li>
+                  ))}
+                </ol>
               </div>
 
               <button
@@ -429,7 +434,7 @@ function FaithCourseDetail() {
                   <button
                     type="button"
                     className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-border text-sm font-semibold"
-                    onClick={() => setLessonIndex((index) => index - 1)}
+                    onClick={() => openLesson(lessonIndex - 1)}
                   >
                     <ChevronLeft className="h-4 w-4" /> Previous lesson
                   </button>
@@ -438,7 +443,7 @@ function FaithCourseDetail() {
                   <button
                     type="button"
                     className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-border text-sm font-semibold"
-                    onClick={() => setLessonIndex((index) => index + 1)}
+                    onClick={() => openLesson(lessonIndex + 1)}
                   >
                     Next lesson <ChevronRight className="h-4 w-4" />
                   </button>
@@ -465,9 +470,13 @@ function LessonSection({
     <div>
       <div className="mb-2 flex items-center gap-2">
         <Icon className="h-4 w-4 text-leaf" />
-        <h3 className="text-sm font-semibold">{title}</h3>
+        <h3 className="font-display text-xl font-semibold">{title}</h3>
       </div>
-      <p className="text-[13px] leading-relaxed text-secondary-foreground">{body}</p>
+      <div className="space-y-5 leading-[1.9] text-secondary-foreground">
+        {body.split(/\n\n+/).map((paragraph) => (
+          <p key={paragraph}>{paragraph}</p>
+        ))}
+      </div>
     </div>
   );
 }

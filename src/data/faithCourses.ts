@@ -1,9 +1,17 @@
 import { CHAPTER_STUDIES } from "./chapterStudies";
+import extendedCourses from "./extendedFaithCourses.json";
 
 export type FaithCourseLesson = {
   title: string;
   references: string[];
   focus: string;
+  content?: {
+    context: string;
+    meaning: string;
+    practice: string;
+    reflection: string[];
+    examples: string[];
+  };
 };
 
 export type FaithCourse = {
@@ -16,6 +24,7 @@ export type FaithCourse = {
   estimatedMinutes: number;
   featured?: boolean;
   guidedStudy?: boolean;
+  extended?: boolean;
   examples: string[];
   lessons: FaithCourseLesson[];
 };
@@ -1096,6 +1105,7 @@ export const FAITH_COURSES: FaithCourse[] = [
   }),
 ];
 
+FAITH_COURSES.unshift(...(extendedCourses as FaithCourse[]));
 FAITH_COURSES.push(...CHAPTER_STUDIES);
 
 export const FEATURED_FAITH_COURSES = FAITH_COURSES.filter((item) => item.featured);

@@ -1,4 +1,5 @@
-﻿import { supabase } from "@/integrations/supabase/client";
+﻿import type { CommunityPostKind } from "@/lib/communityFeed";
+import { supabase } from "@/integrations/supabase/client";
 
 function unwrap<T>(res: { data: T | null; error: { message: string } | null }): T {
   if (res.error) throw new Error(res.error.message);
@@ -129,11 +130,7 @@ export const fetchChurches = async (search?: string) => {
 };
 
 export async function fetchChurchById(id: string) {
-  const { data, error } = await supabase
-    .from("churches")
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
+  const { data, error } = await supabase.from("churches").select("*").eq("id", id).maybeSingle();
   if (error) throw new Error(error.message);
   return data;
 }
@@ -203,7 +200,7 @@ function authorFields(profiles: unknown) {
 
 export const COMMUNITY_PAGE_SIZE = 20;
 
-export async function fetchPostPage(page: number, authorIds?: string[]) {
+export async function fetchPostPage(page: number, authorIds?: string[], kind?: CommunityPostKind) {
   if (authorIds && authorIds.length === 0) return [];
 
   const from = page * COMMUNITY_PAGE_SIZE;
@@ -213,11 +210,12 @@ export async function fetchPostPage(page: number, authorIds?: string[]) {
     .from("posts")
     .select("*, profiles(full_name, username, avatar_url)")
     .order("created_at", { ascending: false })
-    .range(from, to);
+    .order("id", { ascending: false });
 
+  if (kind) query = query.eq("kind", kind);
   if (authorIds) query = query.in("author_id", authorIds);
 
-  const rows = unwrap(await query);
+  const rows = unwrap(await query.range(from, to));
   return rows.map((row) => ({ ...row, ...authorFields(row.profiles) }));
 }
 

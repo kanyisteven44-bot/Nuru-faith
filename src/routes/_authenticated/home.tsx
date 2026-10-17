@@ -110,7 +110,7 @@ function HomeScreen() {
             <Link
               to="/notifications"
               aria-label={unread > 0 ? `Notifications, ${unread} unread` : "Notifications"}
-              className="relative flex h-10 w-10 items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              className="relative flex h-11 w-11 items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             >
               <Bell className="h-5 w-5" strokeWidth={1.8} />
               {unread > 0 && (
@@ -148,8 +148,8 @@ function HomeScreen() {
                 className="absolute inset-0 h-full w-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-black/20" />
-              <div className="relative flex min-h-[360px] flex-col justify-end p-6 sm:min-h-[410px] lg:min-h-[440px] lg:p-8">
-                <h1 className="mb-8 font-display text-[36px] leading-tight font-semibold text-white lg:text-[44px]">
+              <div className="relative flex min-h-[300px] flex-col justify-end p-6 sm:min-h-[360px] lg:min-h-[380px] lg:p-8">
+                <h1 className="mb-5 font-display text-[36px] leading-tight font-semibold text-white lg:text-[44px]">
                   A Brighter You.
                 </h1>
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -192,7 +192,7 @@ function HomeScreen() {
                   <Link
                     to="/bible"
                     search={{ reference }}
-                    className="nuru-soft-control nuru-soft-primary inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full bg-primary px-4 text-[14px] font-semibold whitespace-nowrap text-primary-foreground transition-colors hover:brightness-105 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+                    className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full bg-primary px-4 text-[14px] font-semibold whitespace-nowrap text-primary-foreground transition-colors hover:brightness-105 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
                   >
                     <BookOpen className="h-4 w-4 shrink-0" strokeWidth={2} />
                     Read Bible
@@ -200,7 +200,7 @@ function HomeScreen() {
                   <Link
                     to="/ai"
                     search={{ contextType: "verse", contextLabel: reference }}
-                    className="nuru-soft-control inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full border border-border bg-surface px-4 text-[14px] font-semibold whitespace-nowrap text-foreground transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                    className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full border border-border bg-surface px-4 text-[14px] font-semibold whitespace-nowrap text-foreground transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                   >
                     <Sparkles className="h-4 w-4 shrink-0" strokeWidth={2} />
                     Reflect
@@ -231,9 +231,9 @@ function HomeScreen() {
                     <Link
                       to={to}
                       aria-label={`Open ${label}`}
-                      className="nuru-soft-control group flex min-h-[76px] min-w-0 items-center gap-2.5 rounded-2xl border border-border bg-card px-3 py-3 text-left shadow-sm transition-[transform,background-color,border-color] duration-150 hover:border-primary/35 hover:bg-surface-2 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                      className="group flex min-h-[76px] min-w-0 items-center gap-2.5 rounded-2xl border border-border bg-card px-3 py-3 text-left shadow-sm transition-[transform,background-color,border-color] duration-150 hover:border-primary/35 hover:bg-surface-2 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                     >
-                      <span className="nuru-soft-inset flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-accent text-primary transition-colors group-hover:bg-primary/15">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-accent text-primary transition-colors group-hover:bg-primary/15">
                         <Icon aria-hidden="true" className="h-5 w-5" strokeWidth={1.9} />
                       </span>
                       <span className="min-w-0 break-words text-[12.5px] font-semibold leading-tight text-foreground sm:text-sm">

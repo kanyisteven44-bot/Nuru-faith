@@ -38,7 +38,7 @@ export function SectionHeader({
         (to ? (
           <Link
             to={to}
-            className="shrink-0 text-xs font-semibold text-leaf transition-opacity hover:opacity-80"
+            className="inline-flex min-h-11 shrink-0 items-center text-xs font-semibold text-leaf transition-opacity hover:opacity-80"
           >
             {action}
           </Link>
@@ -70,7 +70,8 @@ export function PillTabs<T extends string>({
   return (
     <div
       className={cn("no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1 py-1", className)}
-      role="tablist"
+      role="group"
+      aria-label="Filter options"
     >
       {tabs.map((tab) => {
         const active = tab === value;
@@ -78,14 +79,13 @@ export function PillTabs<T extends string>({
           <button
             key={tab}
             type="button"
-            role="tab"
-            aria-selected={active}
+            aria-pressed={active}
             onClick={() => onChange(tab)}
             className={cn(
-              "nuru-soft-control min-h-11 shrink-0 rounded-full border px-4 text-[13px] font-semibold transition-colors",
+              "min-h-11 shrink-0 rounded-full border px-4 text-[13px] font-semibold transition-colors",
               "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
               active
-                ? "nuru-soft-primary border-primary bg-primary text-primary-foreground"
+                ? "border-primary bg-primary text-primary-foreground"
                 : "border-border text-ink-2 hover:bg-surface-2 hover:text-foreground",
             )}
           >
@@ -97,7 +97,7 @@ export function PillTabs<T extends string>({
   );
 }
 
-/** Primary action with a soft raised bevel and an inset pressed state. */
+/** Primary action with a clear, solid accent. */
 export function GradientButton({
   children,
   className,
@@ -107,7 +107,7 @@ export function GradientButton({
     <button
       {...props}
       className={cn(
-        "nuru-soft-control nuru-soft-primary inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:brightness-105 active:scale-[0.99] disabled:opacity-50",
+        "inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:brightness-105 active:scale-[0.99] disabled:opacity-50",
         "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none",
         className,
       )}
@@ -128,7 +128,7 @@ export function GhostButton({
     <button
       {...props}
       className={cn(
-        "nuru-soft-control inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-border bg-surface px-5 text-sm font-semibold text-foreground transition-colors hover:bg-surface-2 disabled:opacity-50",
+        "inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-border bg-surface px-5 text-sm font-semibold text-foreground transition-colors hover:bg-surface-2 disabled:opacity-50",
         "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
         className,
       )}

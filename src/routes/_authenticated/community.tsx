@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, ChevronDown, Church, Image as ImageIcon, Search, Users } from "lucide-react";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ChevronDown, Church, Image as ImageIcon, Search, Users } from "lucide-react";
 import { toast } from "sonner";
+import { COMMUNITY_KIND_FOR_TAB, type CommunityPostKind } from "@/lib/communityFeed";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchFollowingIds } from "@/services/reels";
 import {
@@ -47,11 +48,7 @@ const TABS = ["All", "Prayer", "Testimony", "News", "Following", "People", "Grou
 type Tab = (typeof TABS)[number];
 
 /** Which post `kind` each content chip narrows the feed to. */
-const KIND_FOR_TAB: Partial<Record<Tab, string>> = {
-  Prayer: "prayer",
-  Testimony: "testimony",
-  News: "news",
-};
+const KIND_FOR_TAB: Partial<Record<Tab, CommunityPostKind>> = COMMUNITY_KIND_FOR_TAB;
 
 function CommunityScreen() {
   const { userId } = useAuth();
@@ -72,10 +69,11 @@ function CommunityScreen() {
   });
   const followingIds = following.data ?? [];
 
+  const kind = KIND_FOR_TAB[tab];
   const posts = useInfiniteQuery({
-    queryKey: ["posts", tab, tab === "Following" ? followingIds : "all"],
+    queryKey: ["posts", userId, kind ?? "all", tab === "Following" ? followingIds : "all"],
     queryFn: ({ pageParam }) =>
-      fetchPostPage(pageParam, tab === "Following" ? followingIds : undefined),
+      fetchPostPage(pageParam, tab === "Following" ? followingIds : undefined, kind),
     initialPageParam: 0,
     getNextPageParam: (lastPage, pages) =>
       lastPage.length === COMMUNITY_PAGE_SIZE ? pages.length : undefined,
@@ -97,11 +95,10 @@ function CommunityScreen() {
 
   const likedIds = new Set(likes.data ?? []);
   const savedIds = new Set(saves.data ?? []);
-  const allRows = (posts.data?.pages.flat() ?? []) as PostRow[];
-  // The kind chips narrow what has already loaded; the query itself is shared
-  // across them so switching a chip does not refetch the feed.
-  const kind = KIND_FOR_TAB[tab];
-  const rows = kind ? allRows.filter((r) => r.kind === kind) : allRows;
+  const rows = (posts.data?.pages.flat() ?? []) as PostRow[];
+  const feedLoading = posts.isLoading || (tab === "Following" && following.isPending);
+  const feedFailed = posts.isError || (tab === "Following" && following.isError);
+  const feedReady = posts.isSuccess && (tab !== "Following" || following.isSuccess);
 
   return (
     <AppShell>
@@ -114,7 +111,7 @@ function CommunityScreen() {
             to="/explore"
             search={{ q: "", kind: "all" }}
             aria-label="Search community"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border-strong bg-[linear-gradient(180deg,#143254,#0C2440)] text-ink-2"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border-strong bg-surface-2 text-ink-2"
           >
             <Search className="h-4 w-4" />
           </Link>
@@ -124,7 +121,7 @@ function CommunityScreen() {
         <div className="mt-3 flex justify-center">
           <Link
             to="/church"
-            className="inline-flex max-w-full items-center gap-2 rounded-full border border-border-strong bg-[linear-gradient(180deg,#143254,#0C2440)] py-1.5 pr-3 pl-1.5 text-[13px] font-semibold"
+            className="inline-flex max-w-full items-center gap-2 rounded-full border border-border-strong bg-surface-2 py-1.5 pr-3 pl-1.5 text-[13px] font-semibold"
           >
             <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface-2 text-ink-2">
               <Church className="h-3.5 w-3.5" strokeWidth={1.9} />
@@ -137,7 +134,7 @@ function CommunityScreen() {
         {/* Composer — opens the real Create screen rather than editing here. */}
         <Link
           to="/create"
-          className="mt-3 flex items-center gap-2.5 rounded-full border border-border-strong bg-[#151B18] py-2 pr-2 pl-2"
+          className="mt-3 flex items-center gap-2.5 rounded-full border border-border-strong bg-surface py-2 pr-2 pl-2"
         >
           <Avatar
             url={profile.data?.avatar_url ?? null}
@@ -163,16 +160,19 @@ function CommunityScreen() {
         <PeopleTab userId={userId} />
       ) : (
         <div className="space-y-3 px-4 pt-2">
-          {posts.isLoading && <CardSkeleton count={3} height="h-48" />}
-          {posts.isError && (
-            <ErrorState message="Couldn't load the feed." onRetry={() => void posts.refetch()} />
+          {feedLoading && <CardSkeleton count={3} height="h-48" />}
+          {feedFailed && (
+            <ErrorState
+              message="Couldn't load the feed."
+              onRetry={() => void (following.isError ? following.refetch() : posts.refetch())}
+            />
           )}
-          {!posts.isLoading && rows.length === 0 && (
+          {feedReady && !feedFailed && rows.length === 0 && (
             <EmptyState
               title={tab === "Following" ? "Nothing from people you follow" : "No posts yet"}
               description={
                 tab === "Following"
-                  ? "Join a group to see what your community is sharing."
+                  ? "Follow people in the People tab to see their updates here."
                   : "Be the first to share what God is doing."
               }
               action={
@@ -279,24 +279,36 @@ function GroupsTab({ userId }: { userId: string | null }) {
   });
   const joined = new Set(mine.data ?? []);
 
-  async function toggle(groupId: string, isMember: boolean) {
-    if (!userId) {
-      toast.error("Sign in to join groups");
-      return;
-    }
-    try {
+  const membership = useMutation({
+    mutationFn: async ({ groupId, isMember }: { groupId: string; isMember: boolean }) => {
+      if (!userId) throw new Error("Sign in to join groups");
       if (isMember) await leaveGroup(userId, groupId);
       else await joinGroup(userId, groupId);
-      await qc.invalidateQueries({ queryKey: ["my-group-ids", userId] });
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Couldn't update that group");
-    }
-  }
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["my-group-ids", userId] }),
+        qc.invalidateQueries({ queryKey: ["groups"] }),
+        qc.invalidateQueries({ queryKey: ["chat-groups", userId] }),
+      ]);
+    },
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "Couldn't update that group"),
+  });
 
   return (
     <div className="space-y-2 px-4 pt-2">
       {groups.isLoading && <CardSkeleton count={4} height="h-16" />}
-      {!groups.isLoading && (groups.data ?? []).length === 0 && (
+      {(groups.isError || mine.isError) && (
+        <ErrorState
+          message="Couldn't load groups or your memberships."
+          onRetry={() => {
+            if (groups.isError) void groups.refetch();
+            if (mine.isError) void mine.refetch();
+          }}
+        />
+      )}
+      {groups.isSuccess && (groups.data ?? []).length === 0 && (
         <EmptyState title="No groups yet" description="Groups from your church will appear here." />
       )}
       {(groups.data ?? []).map((g) => {
@@ -306,28 +318,32 @@ function GroupsTab({ userId }: { userId: string | null }) {
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-primary/35 bg-primary/12 text-leaf">
               <Users className="h-5 w-5" strokeWidth={1.8} />
             </span>
-            <span className="min-w-0 flex-1">
+            <Link
+              to="/groups"
+              search={{ group: g.id }}
+              className="min-w-0 flex-1 rounded-lg py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
               <span className="block truncate text-sm font-semibold">{g.name}</span>
               <span className="block truncate text-[11px] text-muted-foreground">
                 {g.description ?? `${g.member_count ?? 0} members`}
               </span>
-            </span>
+            </Link>
             <button
               type="button"
-              onClick={() => void toggle(g.id, isMember)}
+              onClick={() => membership.mutate({ groupId: g.id, isMember })}
+              disabled={!mine.isSuccess || membership.isPending}
+              aria-busy={membership.isPending && membership.variables?.groupId === g.id}
               className={
                 isMember
-                  ? "flex shrink-0 items-center gap-1 rounded-lg border border-border-strong bg-surface-2 px-3 py-1.5 text-[11px] font-semibold text-secondary-foreground"
-                  : "shrink-0 rounded-lg bg-primary px-3.5 py-1.5 text-[11px] font-semibold text-primary-foreground"
+                  ? "flex min-h-11 shrink-0 items-center gap-1 disabled:opacity-50 rounded-lg border border-border-strong bg-surface-2 px-3 py-1.5 text-[11px] font-semibold text-secondary-foreground"
+                  : "min-h-11 shrink-0 disabled:opacity-50 rounded-lg bg-primary px-3.5 py-1.5 text-[11px] font-semibold text-primary-foreground"
               }
             >
-              {isMember ? (
-                <>
-                  <Check className="h-3 w-3" /> Joined
-                </>
-              ) : (
-                "Join"
-              )}
+              {membership.isPending && membership.variables?.groupId === g.id
+                ? "Updating…"
+                : isMember
+                  ? "Leave"
+                  : "Join"}
             </button>
           </div>
         );

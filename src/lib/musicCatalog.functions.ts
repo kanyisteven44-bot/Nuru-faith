@@ -1,42 +1,106 @@
-import { catalogueTarget } from "./catalogTargets";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { trustedChannel } from "./content-policy";
-import { eligiblePodcastVideo, eligibleReviewedMusicUpload, isoSeconds } from "./musicImport";
+import { assertAdminWriteAssurance } from "./adminDirectoryAccess";
+import { catalogueTarget } from "./catalogTargets";
+import { processCatalogPage, type ImportStats } from "./musicCatalogEngine";
 
-const thumb = z.object({ url: z.string() });
-const videoSchema = z.object({
+const kindSchema = z.enum(["music", "podcast"]);
+const sourceSchema = z.object({
   id: z.string(),
-  snippet: z.object({
-    title: z.string(),
-    channelId: z.string(),
-    channelTitle: z.string(),
-    categoryId: z.string().optional(),
-    publishedAt: z.string(),
-    defaultAudioLanguage: z.string().optional(),
-    thumbnails: z.object({ high: thumb.optional(), medium: thumb.optional() }),
-  }),
-  status: z.object({
-    embeddable: z.boolean(),
-    privacyStatus: z.string(),
-    uploadStatus: z.string(),
-  }),
-  contentDetails: z.object({
-    duration: z.string(),
-    regionRestriction: z
-      .object({ blocked: z.array(z.string()).optional(), allowed: z.array(z.string()).optional() })
-      .optional(),
-  }),
+  name: z.string(),
+  channelId: z.string(),
+  languages: z
+    .array(z.string())
+    .nullable()
+    .transform((value) => value ?? []),
+  pageToken: z.string().nullable(),
+  playlistId: z.string().nullable(),
 });
+const zeroStats = (): ImportStats => ({
+  fetched: 0,
+  parsed: 0,
+  eligible: 0,
+  inserted: 0,
+  skippedExisting: 0,
+  rejected: 0,
+});
+async function requireImporter(context: {
+  supabase: SupabaseClient<Database>;
+  userId: string;
+  claims: { aal?: unknown };
+}) {
+  const roles = await context.supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", context.userId)
+    .in("role", ["super_admin", "moderator"]);
+  if (roles.error || !roles.data?.length)
+    throw new Error("Only Nuru administrators can import the shared catalogue.");
+}
+function progressError(error: { code?: string; message?: string }) {
+  return new Error(
+    error.code === "PGRST202" || error.code === "42P01"
+      ? "The importer checkpoint migration is not installed. Ask the administrator to complete the importer upgrade."
+      : `Import checkpoint unavailable (${error.code ?? "database"}). Progress was preserved.`,
+  );
+}
 
-/** One bounded batch; the admin screen drives resumable reviewed imports. */
+export const getCatalogImportDashboard = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .validator(z.object({ kind: kindSchema.default("music") }))
+  .handler(async ({ data, context }) => {
+    await requireImporter(context);
+    const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
+    const [summary, progress] = await Promise.all([
+      db.rpc("media_catalog_scan_summary", { p_kind: data.kind }),
+      db
+        .from("media_catalog_imports")
+        .select("status,last_error,updated_at,imported_total")
+        .eq("kind", data.kind)
+        .single(),
+    ]);
+    if (summary.error) throw progressError(summary.error);
+    if (progress.error) throw progressError(progress.error);
+    return {
+      summary: z
+        .object({
+          sourceTotal: z.number(),
+          completedSources: z.number(),
+          pages: z.number(),
+          fetched: z.number(),
+          inserted: z.number(),
+          skippedExisting: z.number(),
+          rejected: z.number(),
+          durationMs: z.number(),
+          recent: z.array(
+            z.object({
+              name: z.string(),
+              channel_id: z.string(),
+              completed: z.boolean(),
+              pages_processed: z.number(),
+              inserted: z.number(),
+              skipped_existing: z.number(),
+              rejected: z.number(),
+              updated_at: z.string(),
+            }),
+          ),
+        })
+        .parse(summary.data),
+      progress: progress.data,
+    };
+  });
+
+/** One fenced, resumable source page. Completed creators are excluded by default. */
 export const importReviewedCatalogPage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({
-      kind: z.enum(["music", "podcast"]).default("music"),
+      kind: kindSchema.default("music"),
       restart: z.boolean().default(false),
+      refreshTotal: z.boolean().default(false),
       channelIds: z
         .array(z.string().regex(/^UC[A-Za-z0-9_-]{22}$/))
         .max(200)
@@ -44,245 +108,170 @@ export const importReviewedCatalogPage = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data, context }) => {
-    const { data: roles, error: roleError } = await context.supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", context.userId)
-      .in("role", ["super_admin", "moderator"]);
-    if (roleError || !roles?.length)
-      throw new Error("Only Nuru administrators can import the shared catalogue.");
-    const target = catalogueTarget(data.kind);
-    // Music is exhaustive: the numeric target is a benchmark, not a stopping cap.
-    const stopAtTarget = data.kind !== "music";
+    await requireImporter(context);
+    assertAdminWriteAssurance(context.claims.aal);
+    if (data.restart && !data.channelIds.length)
+      throw new Error("Select specific creators before explicitly rescanning their history.");
     const key = process.env["YOUTUBE_API_KEY"];
-    if (!key)
-      throw new Error(
-        "Set the server-only YOUTUBE_API_KEY in Vercel and redeploy before importing.",
-      );
-    async function call(path: string, params: Record<string, string>): Promise<unknown> {
-      const url = new URL(`https://www.googleapis.com/youtube/v3/${path}`);
-      url.search = new URLSearchParams({ ...params, key: key! }).toString();
-      const response = await fetch(url, { signal: AbortSignal.timeout(15000) });
-      if (!response.ok)
-        throw new Error(
-          `YouTube returned ${response.status}. Import paused; check the API key and quota, then resume.`,
-        );
-      return response.json();
-    }
-    // This owner-authorized metadata worker cannot change source approvals or user data.
-    // Authenticate/authorize before loading the server-only privileged client.
+    if (!key) throw new Error("YouTube API is not configured on the server.");
     const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
-    const leaseToken = crypto.randomUUID();
-    const now = new Date().toISOString();
+    const leaseToken = crypto.randomUUID(),
+      started = Date.now();
     const { data: progress, error: leaseError } = await db
       .from("media_catalog_imports")
       .update({ lease_token: leaseToken, lease_until: new Date(Date.now() + 90000).toISOString() })
       .eq("kind", data.kind)
-      .or(`lease_until.is.null,lease_until.lt.${now}`)
+      .or(`lease_until.is.null,lease_until.lt.${new Date().toISOString()}`)
       .select("*")
       .maybeSingle();
-    if (leaseError) throw new Error(`Import progress unavailable (${leaseError.code}).`);
+    if (leaseError) throw progressError(leaseError);
     if (!progress) throw new Error("Another import batch is running. Wait before resuming.");
-    const cursor =
-      data.restart ||
-      (data.channelIds.length > 0 &&
-        progress.channel_id &&
-        !data.channelIds.includes(progress.channel_id))
-        ? { channelId: null, pageToken: null }
-        : { channelId: progress.channel_id, pageToken: progress.page_token };
-    async function batch() {
-      const songCount = async () => {
-        const { count, error } = await db
+    async function nextSource() {
+      const result = await db.rpc("next_media_catalog_source", {
+        p_kind: data.kind,
+        p_channel_ids: data.channelIds,
+      });
+      if (result.error) throw progressError(result.error);
+      return sourceSchema.nullable().parse(result.data);
+    }
+    try {
+      let before = progress.imported_total;
+      // Count once at the start of a user run, not twice for every 50-upload page.
+      if (data.refreshTotal) {
+        const count = await db
           .from("media_items")
           .select("id", { head: true, count: "exact" })
           .eq("source", "youtube")
           .eq("media_type", data.kind)
           .eq("is_approved", true);
-        if (error) throw new Error(`Catalogue database error (${error.code}): ${error.message}`);
-        return count ?? 0;
-      };
-      const before = await songCount();
-      if (stopAtTarget && before >= target)
+        if (count.error) throw new Error("Catalogue count is unavailable; retry later.");
+        before = count.count ?? 0;
+        const sync = await db
+          .from("media_catalog_imports")
+          .update({ imported_total: before })
+          .eq("kind", data.kind)
+          .eq("lease_token", leaseToken)
+          .select("kind")
+          .single();
+        if (sync.error) throw progressError(sync.error);
+      }
+      if (data.restart) {
+        const reset = await db.rpc("reset_media_catalog_sources", {
+          p_kind: data.kind,
+          p_channel_ids: data.channelIds,
+          p_lease: leaseToken,
+        });
+        if (reset.error) throw progressError(reset.error);
+      }
+      if (data.kind !== "music" && before >= catalogueTarget(data.kind))
         return {
           total: before,
           added: 0,
           next: null,
           targetReached: true,
-          stats: { fetched: 0, parsed: 0, eligible: 0, inserted: 0, skippedExisting: 0 },
+          stats: zeroStats(),
+          sourceName: null,
+          durationMs: Date.now() - started,
         };
-      function sourceQuery() {
-        let query = db
-          .from("media_sources")
-          .select("id,name,youtube_channel_id,language_codes")
-          .eq("is_approved", true)
-          .eq("is_verified", true)
-          .eq("source_type", "youtube")
-          .in("content_kind", [data.kind, "mixed"])
-          .not("youtube_channel_id", "is", null);
-        if (data.channelIds.length) query = query.in("youtube_channel_id", data.channelIds);
-        return query;
-      }
-      let query = sourceQuery();
-      if (cursor.channelId) query = query.eq("youtube_channel_id", cursor.channelId);
-      const { data: sources, error } = await query.order("id").limit(1);
-      if (error) throw new Error(`Catalogue database error (${error.code}): ${error.message}`);
-      const source = sources?.[0];
+      const source = await nextSource();
       if (!source) {
-        if (cursor.channelId)
-          throw new Error("This source is no longer approved. Start a fresh scan.");
+        const end = await db
+          .from("media_catalog_imports")
+          .update({
+            status: data.channelIds.length ? "complete" : "exhausted",
+            last_error: null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("kind", data.kind)
+          .eq("lease_token", leaseToken)
+          .select("kind")
+          .single();
+        if (end.error) throw progressError(end.error);
         return {
           total: before,
           added: 0,
           next: null,
           targetReached: false,
-          stats: { fetched: 0, parsed: 0, eligible: 0, inserted: 0, skippedExisting: 0 },
+          stats: zeroStats(),
+          sourceName: null,
+          durationMs: Date.now() - started,
         };
       }
-      const { data: following, error: nextError } = await sourceQuery()
-        .gt("id", source.id)
-        .order("id")
-        .limit(1);
-      if (nextError)
-        throw new Error(`Catalogue source error (${nextError.code}): ${nextError.message}`);
-      const nextChannel = following?.[0]?.youtube_channel_id;
-      const channelId = source.youtube_channel_id!;
-      const { data: trust, error: trustError } = await db
-        .from("approved_youtube_channels")
-        .select("trust_level,is_verified")
-        .eq("channel_id", channelId)
-        .maybeSingle();
-      if (trustError) throw new Error("Channel trust review is unavailable.");
-      if (!trust?.is_verified || !trustedChannel(trust.trust_level))
-        return {
-          total: before,
-          added: 0,
-          next: nextChannel ? { channelId: nextChannel, pageToken: null } : null,
-          targetReached: false,
-          stats: { fetched: 0, parsed: 0, eligible: 0, inserted: 0, skippedExisting: 0 },
-        };
-
-      const channel = z
-        .object({
-          items: z
-            .array(
-              z.object({
-                contentDetails: z.object({ relatedPlaylists: z.object({ uploads: z.string() }) }),
-              }),
-            )
-            .default([]),
-        })
-        .parse(await call("channels", { part: "contentDetails", id: channelId }));
-      const uploads = channel.items[0]?.contentDetails.relatedPlaylists.uploads;
-      if (!uploads)
-        return {
-          total: before,
-          added: 0,
-          next: nextChannel ? { channelId: nextChannel, pageToken: null } : null,
-          targetReached: false,
-          stats: { fetched: 0, parsed: 0, eligible: 0, inserted: 0, skippedExisting: 0 },
-        };
-      const page = z
-        .object({
-          items: z
-            .array(z.object({ contentDetails: z.object({ videoId: z.string() }) }))
-            .default([]),
-          nextPageToken: z.string().optional(),
-        })
-        .parse(
-          await call("playlistItems", {
-            part: "contentDetails",
-            playlistId: uploads,
-            maxResults: "50",
-            ...(cursor.pageToken ? { pageToken: cursor.pageToken } : {}),
-          }),
-        );
-      const ids = page.items.map((item) => item.contentDetails.videoId);
-      const response = ids.length
-        ? z
-            .object({ items: z.array(z.unknown()).default([]) })
-            .parse(
-              await call("videos", { part: "snippet,status,contentDetails", id: ids.join(",") }),
-            )
-        : { items: [] };
-      const parsedVideos = response.items.flatMap((item) => {
-        // Upcoming/deleted uploads may lack duration or status metadata.
-        // Reject only that incomplete video, preserving valid items in its page.
-        const parsed = videoSchema.safeParse(item);
-        return parsed.success ? [parsed.data] : [];
+      const result = await processCatalogPage({
+        kind: data.kind,
+        source,
+        call: async (path, params) => {
+          const url = new URL(`https://www.googleapis.com/youtube/v3/${path}`);
+          url.search = new URLSearchParams({ ...params, key }).toString();
+          const response = await fetch(url, { signal: AbortSignal.timeout(15000) });
+          if (!response.ok)
+            throw new Error(
+              `YouTube returned ${response.status}. Import paused; saved pages were retained. Check quota or an expired page token before resuming.`,
+            );
+          return response.json();
+        },
+        existingIds: async (ids) => {
+          const known = await db
+            .from("media_items")
+            .select("external_id")
+            .eq("source", "youtube")
+            .in("external_id", ids);
+          if (known.error)
+            throw new Error("Could not check existing uploads. Import paused before advancing.");
+          return new Set(
+            (known.data ?? []).map((row) => row.external_id).filter((id): id is string => !!id),
+          );
+        },
+        insert: async (rows) => {
+          const inserted = await db
+            .from("media_items")
+            .upsert(rows, { onConflict: "source,external_id", ignoreDuplicates: true })
+            .select("id");
+          if (inserted.error)
+            throw new Error(
+              `Catalogue insert failed (${inserted.error.code}). The saved page was retained.`,
+            );
+          return inserted.data?.length ?? 0;
+        },
       });
-      const eligibleVideos = parsedVideos.filter((video) =>
-        (data.kind === "music" ? eligibleReviewedMusicUpload : eligiblePodcastVideo)(video, channelId),
-      );
-      const rows = eligibleVideos.map((video) => ({
-        source: "youtube",
-        external_id: video.id,
-        source_id: source.id,
-        title: video.snippet.title,
-        creator_name: video.snippet.channelTitle,
-        youtube_channel_id: channelId,
-        media_type: data.kind,
-        category: data.kind === "music" ? "worship" : "faith",
-        language_code:
-          video.snippet.defaultAudioLanguage?.split("-")[0] ?? source.language_codes[0] ?? "und",
-        thumbnail_url:
-          video.snippet.thumbnails.high?.url ?? video.snippet.thumbnails.medium?.url ?? null,
-        duration_seconds: isoSeconds(video.contentDetails.duration),
-        published_at: video.snippet.publishedAt,
-        is_approved: true,
-        can_download: false,
-      }));
-      let inserted = 0;
-      if (rows.length) {
-        const { data: insertedRows, error } = await db
-          .from("media_items")
-          .upsert(rows, { onConflict: "source,external_id", ignoreDuplicates: true })
-          .select("id");
-        if (error) throw new Error(`Catalogue database error (${error.code}): ${error.message}`);
-        inserted = insertedRows?.length ?? 0;
+      const checkpoint = await db.rpc("checkpoint_media_catalog_source", {
+        p_kind: data.kind,
+        p_channel_id: source.channelId,
+        p_lease: leaseToken,
+        p_expected_token: source.pageToken,
+        p_next_token: result.nextPageToken,
+        p_playlist_id: result.playlistId,
+        p_stats: result.stats,
+        p_duration_ms: Date.now() - started,
+      });
+      if (checkpoint.error) throw progressError(checkpoint.error);
+      const next = await nextSource();
+      const total = before + result.stats.inserted;
+      const targetReached = data.kind !== "music" && total >= catalogueTarget(data.kind);
+      if (!next || targetReached) {
+        const end = await db
+          .from("media_catalog_imports")
+          .update({
+            status: targetReached || data.channelIds.length ? "complete" : "exhausted",
+            last_error: null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("kind", data.kind)
+          .eq("lease_token", leaseToken)
+          .select("kind")
+          .single();
+        if (end.error) throw progressError(end.error);
       }
-      const total = await songCount();
-      const next = page.nextPageToken
-        ? { channelId, pageToken: page.nextPageToken }
-        : nextChannel
-          ? { channelId: nextChannel, pageToken: null }
-          : null;
       return {
         total,
-        added: inserted,
-        next: stopAtTarget && total >= target ? null : next,
-        targetReached: stopAtTarget && total >= target,
-        stats: {
-          fetched: ids.length,
-          parsed: parsedVideos.length,
-          eligible: eligibleVideos.length,
-          inserted,
-          skippedExisting: Math.max(0, eligibleVideos.length - inserted),
-        },
+        added: result.stats.inserted,
+        next:
+          targetReached || !next ? null : { channelId: next.channelId, pageToken: next.pageToken },
+        targetReached,
+        stats: result.stats,
+        sourceName: source.name,
+        durationMs: Date.now() - started,
       };
-    }
-    try {
-      const result = await batch();
-      const { error } = await db
-        .from("media_catalog_imports")
-        .update({
-          channel_id: result.next?.channelId ?? null,
-          page_token: result.next?.pageToken ?? null,
-          imported_total: result.total,
-          pages_processed: progress.pages_processed + 1,
-          status: result.targetReached
-            ? "complete"
-            : result.next
-              ? "running"
-              : data.channelIds.length
-                ? "complete"
-                : "exhausted",
-          last_error: null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("kind", data.kind)
-        .eq("lease_token", leaseToken);
-      if (error) throw new Error(`Could not checkpoint catalogue progress (${error.code}).`);
-      return result;
     } catch (error) {
       const message = error instanceof Error ? error.message : "Catalogue import paused.";
       await db

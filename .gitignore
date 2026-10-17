@@ -52,3 +52,6 @@ lint-baseline.json
 
 # Local resumable media-import checkpoint
 .media-import-state.json
+
+# Supabase CLI local cache
+supabase/.temp/

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowLeft,
+  ChevronLeft,
   BookOpen,
   CheckCircle2,
   ChevronRight,
@@ -24,6 +25,7 @@ import { SaveOffline } from "@/components/nuru/SaveOffline";
 import { passageText } from "@/lib/offlineReading";
 import { ReadingTools } from "@/components/nuru/ReadingTools";
 import { fetchPassage, DEFAULT_TRANSLATION } from "@/lib/bible";
+import { courseProgress } from "@/lib/courseProgress";
 
 export const Route = createFileRoute("/_authenticated/faith-courses/$slug")({
   head: () => ({
@@ -54,9 +56,9 @@ function FaithCourseDetail() {
       return new Set((data ?? []).map((row) => row.lesson_index));
     },
   });
-  const done = progressQuery.data ?? new Set<number>();
-
-  const progress = course ? Math.round((done.size / course.lessons.length) * 100) : 0;
+  const learning = courseProgress(progressQuery.data ?? [], course?.lessons.length ?? 0);
+  const done = learning.completed;
+  const progress = learning.percent;
   const lesson = course?.lessons[lessonIndex] ?? null;
   const scripture = useQueries({
     queries: (lesson?.references ?? []).map((reference) => ({
@@ -112,8 +114,11 @@ function FaithCourseDetail() {
             course_slug: slug,
             lesson_index: index,
           });
-      const { error } = await request;
+      const { data, error } = await request.select("lesson_index");
       if (error) throw error;
+      if (!data?.some((row) => row.lesson_index === index)) {
+        throw new Error("Lesson progress was not confirmed by the server");
+      }
       const next = new Set(done);
       if (next.has(index)) next.delete(index);
       else next.add(index);
@@ -204,6 +209,23 @@ function FaithCourseDetail() {
               <span className="text-leaf">{progress}%</span>
             </div>
             <ProgressBar value={progress} />
+            {progressQuery.isSuccess && (
+              <div className="mt-3 space-y-2">
+                <p role="status" className="text-xs text-muted-foreground">
+                  {done.size} of {course.lessons.length} lessons completed
+                  {learning.finished ? " · Course complete. You can revisit any lesson." : ""}
+                </p>
+                {learning.nextLesson !== null && learning.nextLesson !== lessonIndex && (
+                  <button
+                    type="button"
+                    className="min-h-11 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground"
+                    onClick={() => setLessonIndex(learning.nextLesson!)}
+                  >
+                    Continue learning · Lesson {learning.nextLesson + 1}
+                  </button>
+                )}
+              </div>
+            )}
             {progressQuery.isError && (
               <p role="alert" className="mt-2 text-xs text-warning">
                 Progress could not load. Check your connection and{" "}
@@ -232,6 +254,7 @@ function FaithCourseDetail() {
                 <button
                   key={item.title}
                   type="button"
+                  aria-current={active ? "step" : undefined}
                   onClick={() => setLessonIndex(index)}
                   className={`nuru-card flex w-full items-center gap-3 px-3 py-3 text-left transition-colors ${
                     active ? "border-primary/70 bg-primary/8" : ""
@@ -398,18 +421,29 @@ function FaithCourseDetail() {
                   : progressQuery.isLoading
                     ? "Loading progress…"
                     : done.has(lessonIndex)
-                      ? "Lesson completed ✓"
+                      ? "Completed ✓ · Mark incomplete"
                       : "Mark lesson complete"}
               </button>
-              {lessonIndex < course.lessons.length - 1 && (
-                <button
-                  type="button"
-                  className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-border text-sm font-semibold"
-                  onClick={() => setLessonIndex((index) => index + 1)}
-                >
-                  Next lesson <ChevronRight className="h-4 w-4" />
-                </button>
-              )}
+              <div className="flex gap-3">
+                {lessonIndex > 0 && (
+                  <button
+                    type="button"
+                    className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-border text-sm font-semibold"
+                    onClick={() => setLessonIndex((index) => index - 1)}
+                  >
+                    <ChevronLeft className="h-4 w-4" /> Previous lesson
+                  </button>
+                )}
+                {lessonIndex < course.lessons.length - 1 && (
+                  <button
+                    type="button"
+                    className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-border text-sm font-semibold"
+                    onClick={() => setLessonIndex((index) => index + 1)}
+                  >
+                    Next lesson <ChevronRight className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </section>
